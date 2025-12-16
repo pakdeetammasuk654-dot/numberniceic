@@ -1,6 +1,7 @@
 package service
 
 import (
+	"regexp"
 	"strings"
 )
 
@@ -13,8 +14,48 @@ type ThaiChar struct {
 	IsThai    bool
 }
 
+// SanitizeInput cleans the input string by removing any characters that are not
+// Thai letters, English letters, or whitespace.
+func SanitizeInput(input string) string {
+	// Regex pattern:
+	// ^ means "not"
+	// a-zA-Z means English letters
+	// \p{Thai} is the correct way to match Thai characters in Go regex
+	// \s means whitespace
+	// So this replaces anything that is NOT English, Thai, or whitespace with an empty string.
+
+	// Using \p{Thai} is safer and cleaner in Go than raw unicode ranges
+	reg := regexp.MustCompile(`[^a-zA-Z\p{Thai}\s]+`)
+	cleaned := reg.ReplaceAllString(input, "")
+	return strings.TrimSpace(cleaned)
+}
+
+// GetPairTypeColor determines the hex color code for a given pair type.
+func GetPairTypeColor(pairType string) string {
+	trimmedType := strings.TrimSpace(pairType)
+	switch trimmedType {
+	// Good Pairs (Green Gradient)
+	case "D10":
+		return "#2E7D32" // Dark Green (Best)
+	case "D8":
+		return "#43A047" // Medium Green
+	case "D5":
+		return "#66BB6A" // Light Green
+
+	// Bad Pairs (Red Gradient)
+	case "R10":
+		return "#C62828" // Dark Red (Worst)
+	case "R7":
+		return "#E53935" // Medium Red
+	case "R5":
+		return "#EF5350" // Light Red
+
+	default:
+		return "#9E9E9E" // Grey (Neutral)
+	}
+}
+
 // DecodeName takes a Thai name string and breaks it down into its constituent characters.
-// It handles consonants, vowels (including complex ones), and tone marks.
 func DecodeName(name string) []ThaiChar {
 	// Normalize and clean the input string
 	cleanedName := strings.ReplaceAll(name, " ", "") // Allow spaces between names but remove them for processing

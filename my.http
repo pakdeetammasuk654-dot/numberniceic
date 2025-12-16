@@ -16,7 +16,7 @@ Accept: application/json
 
 ### Test Decode Name (Wednesday Night - WEDNESDAY2)
 # พุธกลางคืน (18:00 - 05:59)
-GET http://localhost:3000/decode?name=อณัญญา&day=WEDNESDAY2
+GET http://localhost:3000/decode?name=ราหู&day=WEDNESDAY2
 Accept: application/json
 
 ### Test Decode Name (With Leading/Trailing Spaces)
@@ -24,9 +24,30 @@ GET http://localhost:3000/decode?name=  จิตรา  &day=TUESDAY
 Accept: application/json
 
 ### Test Error: Missing Day Parameter
-GET http://localhost:3000/decode?name=สมชาย
+GET http://localhost:3000/decode?name=สมชาย&day=SUNDAY
 Accept: application/json
 
 ### Test Error: Missing Name Parameter
 GET http://localhost:3000/decode?day=MONDAY
+Accept: application/json
+
+### Test Similar Names (Normal Case)
+# Find names similar to "สมชาย" that are auspicious for Monday
+GET http://localhost:3000/similar-names?name=สมชาย&day=MONDAY
+Accept: application/json
+
+### Test Similar Names (Wednesday Night)
+# Find names similar to "ราหู" for Wednesday Night
+GET http://localhost:3000/similar-names?name=อณัญญา&day=SUNDAY
+Accept: application/json
+
+### Test Similar Names (Error: Missing Parameters)
+GET http://localhost:3000/similar-names
+Accept: application/json
+
+
+### Test Auspicious Names
+# Find names similar to "สมชาย" for Monday,
+# but only those with auspicious t_sat and t_sha values.
+GET http://localhost:3000/auspicious-names?name=อณัญญา&day=SUNDAY
 Accept: application/json
