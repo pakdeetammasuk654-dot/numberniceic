@@ -1,0 +1,32 @@
+### Test Decode Name (Normal Case - Monday)
+# Should return numerology, shadow values, and check for Klakini (Monday bad chars: กขคฆง)
+GET http://localhost:3000/decode?name=สมชาย ใจดี&day=MONDAY
+Accept: application/json
+
+### Test Decode Name (Klakini Case - Sunday)
+# Sunday bad chars: ศษส
+# Name "สมชาย" contains 'ส', so is_klakini should be true for 'ส'
+GET http://localhost:3000/decode?name=สมชาย ใจดี&day=SUNDAY
+Accept: application/json
+
+### Test Decode Name (Wednesday Day - WEDNESDAY1)
+# พุธกลางวัน (06:00 - 17:59)
+GET http://localhost:3000/decode?name=กฤษฎา&day=WEDNESDAY1
+Accept: application/json
+
+### Test Decode Name (Wednesday Night - WEDNESDAY2)
+# พุธกลางคืน (18:00 - 05:59)
+GET http://localhost:3000/decode?name=อณัญญา&day=WEDNESDAY2
+Accept: application/json
+
+### Test Decode Name (With Leading/Trailing Spaces)
+GET http://localhost:3000/decode?name=  จิตรา  &day=TUESDAY
+Accept: application/json
+
+### Test Error: Missing Day Parameter
+GET http://localhost:3000/decode?name=สมชาย
+Accept: application/json
+
+### Test Error: Missing Name Parameter
+GET http://localhost:3000/decode?day=MONDAY
+Accept: application/json
