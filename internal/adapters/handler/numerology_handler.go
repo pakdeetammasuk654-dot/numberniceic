@@ -27,10 +27,14 @@ type PairMeaningResult struct {
 	Meaning    domain.NumberPairMeaning `json:"meaning"`
 }
 
-// DisplayChar is used for rendering the name with highlighted klakini characters
 type DisplayChar struct {
 	Char  string
 	IsBad bool
+}
+
+type SampleName struct {
+	Name      string
+	AvatarURL string
 }
 
 type NumerologyHandler struct {
@@ -56,7 +60,6 @@ func NewNumerologyHandler(
 	}
 }
 
-// isHtmxRequest checks for the HX-Request header.
 func isHtmxRequest(c *fiber.Ctx) bool {
 	return c.Get("HX-Request") == "true"
 }
@@ -131,90 +134,70 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 	var klakiniChars []string
 	var displayChars []DisplayChar
 
-	// Combined Logic: Calculation AND Display Preparation
-	// We iterate over the DECODED Thai characters (which group consonants with their vowels/tones)
 	for _, thaiChar := range decodedChars {
-		// 1. Calculation Logic
+		// Calculation Logic
 		if thaiChar.IsThai {
-			processChar := func(charStr string) {
+			processComponent := func(charStr string) {
+				if charStr == "" {
+					return
+				}
 				numVal := numerologyData[charStr]
 				shaVal := shadowData[charStr]
-
-				isKla := false
-				for _, r := range charStr {
-					if h.klakiniCache.IsKlakini(day, r) {
-						isKla = true
-						// Add unique bad chars to the list
-						found := false
-						for _, existing := range klakiniChars {
-							if existing == string(r) {
-								found = true
-								break
-							}
-						}
-						if !found {
-							klakiniChars = append(klakiniChars, string(r))
-						}
-					}
-				}
-
-				results = append(results, DecodedResult{
-					Character:       charStr,
-					NumerologyValue: numVal,
-					ShadowValue:     shaVal,
-					IsKlakini:       isKla,
-				})
+				isKla := h.klakiniCache.IsKlakini(day, []rune(charStr)[0])
+				results = append(results, DecodedResult{charStr, numVal, shaVal, isKla})
 				totalNumerologyValue += numVal
 				totalShadowValue += shaVal
 			}
-			if thaiChar.Consonant != "" {
-				processChar(thaiChar.Consonant)
-			}
-			for _, vowelRune := range thaiChar.Vowel {
-				processChar(string(vowelRune))
-			}
+			processComponent(thaiChar.Consonant)
+			processComponent(thaiChar.Vowel)
+			processComponent(thaiChar.ToneMark)
 		}
 
-		// 2. Display Logic
-		// Check if ANY part of this Thai character cluster is Klakini
-		isClusterBad := false
+		// Display Logic
 		for _, r := range thaiChar.Original {
-			if h.klakiniCache.IsKlakini(day, r) {
-				isClusterBad = true
-				break
+			isBad := h.klakiniCache.IsKlakini(day, r)
+			displayChars = append(displayChars, DisplayChar{string(r), isBad})
+			if isBad {
+				found := false
+				for _, existing := range klakiniChars {
+					if existing == string(r) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					klakiniChars = append(klakiniChars, string(r))
+				}
 			}
 		}
-
-		displayChars = append(displayChars, DisplayChar{
-			Char:  thaiChar.Original, // This contains the full cluster (e.g., "กิ", "ป่")
-			IsBad: isClusterBad,
-		})
 	}
 
 	numerologyPairs := formatTotalValue(totalNumerologyValue)
 	shadowPairs := formatTotalValue(totalShadowValue)
 
-	getMeanings := func(pairs []string) []PairMeaningResult {
-		var meanings []PairMeaningResult
-		for _, p := range pairs {
-			if meaning, ok := h.numberPairCache.GetMeaning(p); ok {
-				meanings = append(meanings, PairMeaningResult{PairNumber: p, Meaning: meaning})
-			}
-		}
-		return meanings
-	}
+	numMeanings, numPos, numNeg := getMeaningsAndScores(numerologyPairs, h.numberPairCache)
+	shaMeanings, shaPos, shaNeg := getMeaningsAndScores(shadowPairs, h.numberPairCache)
+
+	grandTotalScore := numPos + numNeg + shaPos + shaNeg
+	isSunDead := grandTotalScore < 0
 
 	responseData := fiber.Map{
 		"input_name":             c.Query("name"),
 		"cleaned_name":           name,
 		"display_chars":          displayChars,
-		"input_day":              c.Query("day"),
+		"input_day":              service.GetThaiDay(day),
 		"total_numerology_value": totalNumerologyValue,
 		"total_shadow_value":     totalShadowValue,
-		"numerology_pairs":       getMeanings(numerologyPairs),
-		"shadow_pairs":           getMeanings(shadowPairs),
+		"numerology_pairs":       numMeanings,
+		"shadow_pairs":           shaMeanings,
 		"klakini_characters":     klakiniChars,
 		"decoded_parts":          results,
+		"num_positive_score":     numPos,
+		"num_negative_score":     numNeg,
+		"sha_positive_score":     shaPos,
+		"sha_negative_score":     shaNeg,
+		"grand_total_score":      grandTotalScore,
+		"is_sun_dead":            isSunDead,
 	}
 
 	if isHtmxRequest(c) {
@@ -223,20 +206,45 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 	return c.JSON(responseData)
 }
 
+func getMeaningsAndScores(pairs []string, pairCache *cache.NumberPairCache) ([]PairMeaningResult, int, int) {
+	var meanings []PairMeaningResult
+	var posScore, negScore int
+	for _, p := range pairs {
+		if meaning, ok := pairCache.GetMeaning(p); ok {
+			meanings = append(meanings, PairMeaningResult{PairNumber: p, Meaning: meaning})
+			if meaning.PairPoint > 0 {
+				posScore += meaning.PairPoint
+			} else {
+				negScore += meaning.PairPoint
+			}
+		}
+	}
+	return meanings, posScore, negScore
+}
+
+// formatTotalValue corrected to handle all multi-digit numbers by splitting into pairs.
 func formatTotalValue(total int) []string {
 	s := strconv.Itoa(total)
 	if total < 0 {
 		return []string{}
 	}
-	if total < 10 {
+	if len(s) < 2 {
 		return []string{fmt.Sprintf("%02d", total)}
 	}
-	if total < 100 {
+	if len(s) == 2 {
 		return []string{s}
 	}
+
 	var pairs []string
-	for i := 0; i < len(s)-1; i++ {
-		pairs = append(pairs, s[i:i+2])
+	// If length is odd (e.g., 3, 5), use overlapping pairs.
+	if len(s)%2 != 0 {
+		for i := 0; i < len(s)-1; i++ {
+			pairs = append(pairs, s[i:i+2])
+		}
+	} else { // If length is even (e.g., 4, 6), use non-overlapping pairs.
+		for i := 0; i < len(s); i += 2 {
+			pairs = append(pairs, s[i:i+2])
+		}
 	}
 	return pairs
 }

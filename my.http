@@ -6,7 +6,7 @@ Accept: application/json
 ### Test Decode Name (Klakini Case - Sunday)
 # Sunday bad chars: ศษส
 # Name "สมชาย" contains 'ส', so is_klakini should be true for 'ส'
-GET http://localhost:3000/decode?name=สมชาย ใจดี&day=SUNDAY
+GET http://localhost:3000/decode?name=เวฬา&day=SUNDAY
 Accept: application/json
 
 ### Test Decode Name (Wednesday Day - WEDNESDAY1)

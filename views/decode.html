@@ -1,40 +1,110 @@
+<!-- Solar System Animation -->
+<div class="solar-system-container">
+    <div class="solar-system">
+        <div class="{{if .is_sun_dead}}sun sun-dead{{else}}sun{{end}}">
+            <div class="sun-name">
+                {{range .display_chars}}{{if .IsBad}}<span class="klakini-char">{{.Char}}</span>{{else}}<span>{{.Char}}</span>{{end}}{{end}}
+            </div>
+        </div>
+        <div class="orbit orbit-inner"></div>
+        <div class="orbit orbit-outer"></div>
+        {{ $numCount := len .numerology_pairs }}
+        {{ range $i, $pair := .numerology_pairs }}
+            {{ $delay := mul $i (div 20.0 $numCount) }}
+            <div class="planet-container orbit-inner" style="animation-delay: -{{ $delay }}s;">
+                <div class="planet" style="background-color: {{.Meaning.Color}}; animation-delay: -{{ $delay }}s;" title="{{.Meaning.MiracleDesc}}">
+                    {{.PairNumber}}
+                </div>
+            </div>
+        {{ end }}
+        {{ $shaCount := len .shadow_pairs }}
+        {{ range $i, $pair := .shadow_pairs }}
+            {{ $delay := mul $i (div 30.0 $shaCount) }}
+            <div class="planet-container orbit-outer" style="animation-delay: -{{ $delay }}s;">
+                <div class="planet" style="background-color: {{.Meaning.Color}}; animation-delay: -{{ $delay }}s;" title="{{.Meaning.MiracleDesc}}">
+                    {{.PairNumber}}
+                </div>
+            </div>
+        {{ end }}
+    </div>
+</div>
+
+<!-- Single, Consolidated Result Card -->
 <div class="result-box">
-    <h2>
-        ผลการถอดรหัส:
+    <!-- Header: Name -->
+    <h2 style="margin-top: 0; text-align: center;">
         <span class="highlighted-name">{{range .display_chars}}{{if .IsBad}}<span class="klakini-char">{{.Char}}</span>{{else}}<span>{{.Char}}</span>{{end}}{{end}}</span>
     </h2>
-    <p><strong>วันเกิด:</strong> {{ .input_day }}</p>
-</div>
 
-<div class="result-box">
-    <h3>เลขศาสตร์ (Numerology)</h3>
-    <p>ผลรวม: {{ .total_numerology_value }}</p>
-    <div class="pairs">
-        {{range .numerology_pairs}}
-            <span style="background-color: {{.Meaning.Color}};" title="{{.Meaning.MiracleDesc}}">
-                {{.PairNumber}}
-            </span>
-        {{end}}
+    <!-- Sub-Header: Birthday, Klakini -->
+    <div class="info-grid">
+        <div style="text-align: center;">
+            <strong>วันเกิด:</strong> {{ .input_day }}
+        </div>
+        <div style="text-align: center;">
+            <strong>อักษรกาลกิณี:</strong>
+            {{if .klakini_characters}}
+                <span class="icon-bad">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    <span class="klakini">{{range .klakini_characters}}{{.}} {{end}}</span>
+                </span>
+            {{else}}
+                <span class="icon-good">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    ไม่พบ
+                </span>
+            {{end}}
+        </div>
     </div>
-</div>
 
-<div class="result-box">
-    <h3>เลขพลังเงา (Shadow)</h3>
-    <p>ผลรวม: {{ .total_shadow_value }}</p>
-    <div class="pairs">
-        {{range .shadow_pairs}}
-            <span style="background-color: {{.Meaning.Color}};" title="{{.Meaning.MiracleDesc}}">
-                {{.PairNumber}}
-            </span>
-        {{end}}
+    <hr class="section-divider">
+
+    <!-- Score Analysis Grid -->
+    <div class="score-analysis-grid">
+        <!-- Numerology Section -->
+        <div class="score-analysis-section">
+            <div class="pairs">
+                {{range .numerology_pairs}}
+                    <span style="background-color: {{.Meaning.Color}};" title="{{.Meaning.MiracleDesc}}">
+                        {{.PairNumber}}
+                    </span>
+                {{end}}
+            </div>
+            <h4>เลขศาสตร์ ({{ .total_numerology_value }})</h4>
+            <div class="score-summary">
+                <div class="score-values">
+                    <span class="score-good">ดี: +{{ .num_positive_score }}</span>
+                    <span class="score-bad">ร้าย: {{ .num_negative_score }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shadow Section -->
+        <div class="score-analysis-section">
+            <div class="pairs">
+                {{range .shadow_pairs}}
+                    <span style="background-color: {{.Meaning.Color}};" title="{{.Meaning.MiracleDesc}}">
+                        {{.PairNumber}}
+                    </span>
+                {{end}}
+            </div>
+            <h4>เลขพลังเงา ({{ .total_shadow_value }})</h4>
+            <div class="score-summary">
+                <div class="score-values">
+                    <span class="score-good">ดี: +{{ .sha_positive_score }}</span>
+                    <span class="score-bad">ร้าย: {{ .sha_negative_score }}</span>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
 
-<div class="result-box">
-    <h3>อักษรกาลกิณีที่พบ</h3>
-    {{if .klakini_characters}}
-        <p class="klakini">{{range .klakini_characters}}{{.}} {{end}}</p>
-    {{else}}
-        <p>ไม่พบอักษรกาลกิณี</p>
-    {{end}}
+    <hr class="section-divider">
+
+    <!-- Grand Total (Moved to bottom) -->
+    <div class="grand-total-summary">
+        <strong>คะแนนรวมสุทธิ:</strong>
+        <span class="{{if lt .grand_total_score 0}}score-bad{{else}}score-good{{end}}">
+            {{if gt .grand_total_score 0}}+{{end}}{{.grand_total_score}}
+        </span>
+    </div>
 </div>

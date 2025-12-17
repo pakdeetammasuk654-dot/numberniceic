@@ -1,5 +1,4 @@
 body {
-    /* Use Sarabun font */
     font-family: 'Sarabun', sans-serif;
     margin: 0;
     background-color: #f9f9f9;
@@ -18,6 +17,31 @@ main {
 .form-group label {
     display: block;
     margin-bottom: 0.5rem;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-wrapper input {
+    padding-right: 2.5rem;
+}
+
+.clear-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 1.5rem;
+    color: #999;
+    display: none;
+}
+
+.clear-btn:hover {
+    color: #333;
 }
 
 .form-group input, .form-group select {
@@ -46,25 +70,38 @@ main {
 }
 
 #results {
-    margin-top: 2rem;
+    margin-top: 0.5rem; /* Reduced */
 }
 
-/* Styles from decode.html & similar_names.html */
 .result-box {
     border: 1px solid #ccc;
     padding: 1rem;
     margin-top: 1rem;
     border-radius: 8px;
     background-color: white;
+    position: relative;
+    z-index: 50;
+}
+
+.pairs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.5rem;
 }
 
 .pairs span {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    margin: 0.2rem;
-    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin: 0.3rem;
     color: white;
     font-weight: bold;
+    font-size: 1rem;
 }
 
 .klakini {
@@ -72,19 +109,59 @@ main {
     font-weight: bold;
 }
 
-/*
-   Advanced Technique: Use text-shadow to color the text
-   and make the text itself transparent.
-   This sometimes prevents color bleeding to diacritics in some browsers.
-*/
 .klakini-char {
-    color: transparent;  /* Hide the actual text color */
-    text-shadow: 0 0 0 #D32F2F; /* Create a shadow that looks like text */
+    color: #D32F2F;
     font-weight: bold;
 }
 
-.highlighted-name span {
-    /* Ensure normal characters also behave consistently */
+.highlighted-name {
+    white-space: pre-wrap;
+    font-family: 'Kanit', sans-serif;
+}
+
+.highlighted-name > span {
+    display: inline-block;
+}
+
+.info-grid {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.grand-total-summary {
+    text-align: center;
+    font-size: 1.2rem;
+    margin-top: 1rem;
+}
+
+.icon-good {
+    color: #2E7D32;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: bold;
+}
+
+.icon-good svg {
+    width: 1.2em;
+    height: 1.2em;
+}
+
+.icon-bad {
+    color: #D32F2F;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: bold;
+}
+
+.icon-bad svg {
+    width: 1.2em;
+    height: 1.2em;
 }
 
 .name-card {
@@ -101,4 +178,295 @@ main {
 
 #spinner {
     margin-top: 1rem;
+}
+
+.score-good {
+    color: #2E7D32;
+    font-weight: bold;
+}
+
+.score-bad {
+    color: #C62828;
+    font-weight: bold;
+}
+
+.score-analysis-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.score-analysis-section {
+    text-align: center;
+}
+
+.score-analysis-section h4 {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.score-summary {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 0;
+}
+
+.score-values {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.section-divider {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 1.5rem 0;
+}
+
+.content-divider {
+    border: none;
+    border-top: 1px solid #e0e0e0;
+    margin: 1.5rem 0;
+}
+
+/* --- Avatar Styles --- */
+.sample-names-container {
+    text-align: center;
+    margin-top: 1.5rem;
+    margin-bottom: 0; /* No space below avatars */
+    padding: 0;
+    position: relative;
+    z-index: 10;
+}
+
+.avatars-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.5rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.avatar-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.avatar-card:hover {
+    transform: scale(1.1);
+}
+
+.avatar-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid #007bff;
+    object-fit: cover;
+}
+
+.avatar-name {
+    margin-top: 0.25rem;
+    font-weight: 500;
+    color: #333;
+    font-size: 0.8rem;
+}
+
+/* --- Solar System Animation --- */
+.solar-system-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0; /* Reduced padding */
+    min-height: 300px; /* Reduced min-height */
+    overflow: visible;
+    position: relative;
+    z-index: 200;
+}
+
+.solar-system {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.sun {
+    width: 100px;
+    height: 100px;
+    background-color: #FFD700;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-weight: bold;
+    color: #333;
+    box-shadow: 0 0 20px #FFD700, 0 0 40px #FFA500;
+    animation: pulse 4s infinite;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    z-index: 10;
+    transition: background-color 0.5s, box-shadow 0.5s;
+}
+
+.sun-dead {
+    background-color: #616161;
+    color: #BDBDBD;
+    box-shadow: none;
+    animation: none;
+}
+
+.sun-name {
+    font-family: 'Kanit', sans-serif;
+    font-weight: bold;
+    white-space: pre-wrap;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.sun-name > span {
+    display: inline-block;
+}
+
+.sun-dead .sun-name .klakini-char {
+    color: #ff8a80;
+}
+
+.orbit {
+    position: absolute;
+    border-radius: 50%;
+    border-style: dashed;
+    border-width: 1px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.orbit-inner {
+    width: 180px;
+    height: 180px;
+    border-color: #FF9800;
+}
+
+.orbit-outer {
+    width: 280px;
+    height: 280px;
+    border-color: #FF9800;
+}
+
+.planet-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: spin 1s linear infinite;
+    z-index: 20;
+}
+
+.planet-container.orbit-inner {
+    width: 180px;
+    height: 180px;
+    animation-duration: 20s;
+}
+
+.planet-container.orbit-outer {
+    width: 280px;
+    height: 280px;
+    animation-duration: 30s;
+}
+
+.planet {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    margin-left: -15px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: anti-spin 1s linear infinite;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.planet-container.orbit-inner .planet {
+    animation-duration: 20s;
+}
+
+.planet-container.orbit-outer .planet {
+    animation-duration: 30s;
+}
+
+/* --- Responsive Styles --- */
+@media (max-width: 768px) {
+    .avatars-grid {
+        gap: 0.5rem;
+    }
+    .avatar-img {
+        width: 50px;
+        height: 50px;
+    }
+    .avatar-name {
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .score-analysis-grid {
+        grid-template-columns: 1fr;
+    }
+    .score-analysis-section:not(:first-child) {
+        border-top: 1px solid #eee;
+        padding-top: 1rem;
+    }
+
+    .avatars-grid {
+        gap: 0.25rem;
+    }
+    .avatar-img {
+        width: 40px;
+        height: 40px;
+        border-width: 2px;
+    }
+    .avatar-name {
+        font-size: 0.6rem;
+        word-break: break-word;
+    }
+
+    .solar-system {
+        transform: scale(0.8);
+    }
+}
+
+@keyframes spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes anti-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(-360deg); }
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 20px #FFD700, 0 0 40px #FFA500; }
+    50% { box-shadow: 0 0 30px #FFD700, 0 0 50px #FFA500; }
+    100% { box-shadow: 0 0 20px #FFD700, 0 0 40px #FFA500; }
 }

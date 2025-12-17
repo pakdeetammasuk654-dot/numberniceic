@@ -5,7 +5,6 @@ import (
 	"strings"
 )
 
-// ThaiChar represents a decomposed Thai character (consonant, vowel, tone mark).
 type ThaiChar struct {
 	Original  string
 	Consonant string
@@ -14,134 +13,127 @@ type ThaiChar struct {
 	IsThai    bool
 }
 
-// SanitizeInput cleans the input string by removing any characters that are not
-// Thai letters, English letters, or whitespace.
 func SanitizeInput(input string) string {
-	// Regex pattern:
-	// ^ means "not"
-	// a-zA-Z means English letters
-	// \p{Thai} is the correct way to match Thai characters in Go regex
-	// \s means whitespace
-	// So this replaces anything that is NOT English, Thai, or whitespace with an empty string.
-
-	// Using \p{Thai} is safer and cleaner in Go than raw unicode ranges
 	reg := regexp.MustCompile(`[^a-zA-Z\p{Thai}\s]+`)
 	cleaned := reg.ReplaceAllString(input, "")
 	return strings.TrimSpace(cleaned)
 }
 
-// GetPairTypeColor determines the hex color code for a given pair type.
+func GetThaiDay(day string) string {
+	normalizedDay := strings.ToLower(strings.TrimSpace(day))
+	switch normalizedDay {
+	case "sunday":
+		return "วันอาทิตย์"
+	case "monday":
+		return "วันจันทร์"
+	case "tuesday":
+		return "วันอังคาร"
+	case "wednesday1":
+		return "วันพุธ (กลางวัน)"
+	case "wednesday2":
+		return "วันพุธ (กลางคืน)"
+	case "thursday":
+		return "วันพฤหัสบดี"
+	case "friday":
+		return "วันศุกร์"
+	case "saturday":
+		return "วันเสาร์"
+	default:
+		return strings.Title(normalizedDay)
+	}
+}
+
 func GetPairTypeColor(pairType string) string {
 	trimmedType := strings.TrimSpace(pairType)
 	switch trimmedType {
-	// Good Pairs (Green Gradient)
 	case "D10":
-		return "#2E7D32" // Dark Green (Best)
+		return "#2E7D32"
 	case "D8":
-		return "#43A047" // Medium Green
+		return "#43A047"
 	case "D5":
-		return "#66BB6A" // Light Green
-
-	// Bad Pairs (Red Gradient)
+		return "#66BB6A"
 	case "R10":
-		return "#C62828" // Dark Red (Worst)
+		return "#C62828"
 	case "R7":
-		return "#E53935" // Medium Red
+		return "#E53935"
 	case "R5":
-		return "#EF5350" // Light Red
-
+		return "#EF5350"
 	default:
-		return "#9E9E9E" // Grey (Neutral)
+		return "#9E9E9E"
 	}
 }
 
-// DecodeName takes a Thai name string and breaks it down into its constituent characters.
+// Helper functions for character classification
+func isThaiConsonant(r rune) bool { return r >= 'ก' && r <= 'ฮ' }
+func isLeadingVowel(r rune) bool {
+	return r == 'เ' || r == 'แ' || r == 'โ' || r == 'ใ' || r == 'ไ'
+}
+func isUpperLowerVowel(r rune) bool {
+	return r == '\u0E31' || (r >= '\u0E34' && r <= '\u0E37') || (r >= '\u0E38' && r <= '\u0E3A') || r == '\u0E47'
+}
+func isToneMark(r rune) bool      { return r >= '\u0E48' && r <= '\u0E4E' }
+func isThaiCharacter(r rune) bool { return r >= 'ก' && r <= '๛' }
+
+// DecodeName: Rewritten for accuracy
 func DecodeName(name string) []ThaiChar {
-	// Normalize and clean the input string
-	cleanedName := strings.ReplaceAll(name, " ", "") // Allow spaces between names but remove them for processing
-	cleanedName = strings.TrimSpace(cleanedName)
-
+	cleanedName := strings.TrimSpace(name)
 	var result []ThaiChar
-	var tempVowel string
-
 	runes := []rune(cleanedName)
-	for i := 0; i < len(runes); i++ {
+	i := 0
+	for i < len(runes) {
 		r := runes[i]
 		char := string(r)
 
-		// Check if it's a Thai character
-		if !isThaiCharacter(r) {
-			result = append(result, ThaiChar{Original: char, IsThai: false})
+		if r == ' ' {
+			result = append(result, ThaiChar{Original: " ", IsThai: false})
+			i++
 			continue
 		}
 
-		// Thai character processing
+		// Handle leading vowels as their own character
+		if isLeadingVowel(r) {
+			result = append(result, ThaiChar{Original: char, Vowel: char, IsThai: true})
+			i++
+			continue
+		}
+
+		// Handle consonants and their attached marks
 		if isThaiConsonant(r) {
-			// If there was a pending vowel, it means the previous character was a standalone vowel.
-			if tempVowel != "" {
-				result = append(result, ThaiChar{Original: tempVowel, Vowel: tempVowel, IsThai: true})
-				tempVowel = ""
-			}
-
-			// Look ahead for vowels and tone marks associated with this consonant
 			consonant := char
-			var vowel, tone string
+			original := char
+			vowel := ""
+			tone := ""
+			i++ // Consume consonant
 
-			// Lookahead for following vowels/tones
-			for j := i + 1; j < len(runes); j++ {
-				nextRune := runes[j]
-				if isThaiVowel(nextRune) || isThaiToneMark(nextRune) {
-					if isThaiVowel(nextRune) {
-						vowel += string(nextRune)
-					} else if isThaiToneMark(nextRune) {
-						tone += string(nextRune)
-					}
-					i++ // Consume this character
+			// Look ahead for upper/lower vowels and tones
+			for i < len(runes) {
+				nextRune := runes[i]
+				if isUpperLowerVowel(nextRune) {
+					vowel += string(nextRune)
+					original += string(nextRune)
+					i++
+				} else if isToneMark(nextRune) {
+					tone += string(nextRune)
+					original += string(nextRune)
+					i++
 				} else {
-					break // Not a following vowel/tone, stop lookahead
+					break // Not an attached mark, stop
 				}
 			}
-			result = append(result, ThaiChar{
-				Original:  consonant + vowel + tone,
-				Consonant: consonant,
-				Vowel:     vowel,
-				ToneMark:  tone,
-				IsThai:    true,
-			})
-		} else if isThaiVowel(r) {
-			// Could be a leading vowel like เ, แ, โ, ใ, ไ
-			tempVowel += char
-		} else {
-			// Other characters (like ฯ, ๏) - treat as standalone
-			if tempVowel != "" {
-				result = append(result, ThaiChar{Original: tempVowel, Vowel: tempVowel, IsThai: true})
-				tempVowel = ""
-			}
-			result = append(result, ThaiChar{Original: char, IsThai: true})
+			result = append(result, ThaiChar{Original: original, Consonant: consonant, Vowel: vowel, ToneMark: tone, IsThai: true})
+			continue
 		}
-	}
 
-	// If there's a trailing standalone vowel
-	if tempVowel != "" {
-		result = append(result, ThaiChar{Original: tempVowel, Vowel: tempVowel, IsThai: true})
-	}
+		// Handle other Thai characters (like standalone า, ะ, or special chars)
+		if isThaiCharacter(r) {
+			result = append(result, ThaiChar{Original: char, Vowel: char, IsThai: true})
+			i++
+			continue
+		}
 
+		// Handle non-Thai characters
+		result = append(result, ThaiChar{Original: char, IsThai: false})
+		i++
+	}
 	return result
-}
-
-func isThaiCharacter(r rune) bool {
-	return r >= 'ก' && r <= '๛'
-}
-
-func isThaiConsonant(r rune) bool {
-	return r >= 'ก' && r <= 'ฮ'
-}
-
-func isThaiVowel(r rune) bool {
-	// Includes vowels and some symbols that act like vowels
-	return (r >= '\u0E30' && r <= '\u0E3A') || (r >= '\u0E47' && r <= '\u0E4E')
-}
-
-func isThaiToneMark(r rune) bool {
-	return r >= '\u0E48' && r <= '\u0E4B'
 }

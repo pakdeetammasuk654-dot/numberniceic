@@ -4,23 +4,32 @@
 <form id="name-form">
     <div class="form-group">
         <label for="name">ชื่อ-นามสกุล</label>
-        <input type="text" id="name" name="name" required placeholder="เช่น สมชาย ใจดี">
+        <div class="input-wrapper">
+            <input type="text" id="name" name="name" required placeholder="เช่น สมชาย ใจดี" value="{{ .defaultName }}" oninput="toggleClearButton()">
+            <span id="clear-btn" class="clear-btn" onclick="clearName()">×</span>
+        </div>
     </div>
     <div class="form-group">
         <label for="day">วันเกิด</label>
-        <select id="day" name="day" required>
-            <option value="SUNDAY">วันอาทิตย์</option>
-            <option value="MONDAY">วันจันทร์</option>
-            <option value="TUESDAY">วันอังคาร</option>
-            <option value="WEDNESDAY1">วันพุธ (กลางวัน)</option>
-            <option value="WEDNESDAY2">วันพุธ (กลางคืน)</option>
-            <option value="THURSDAY">วันพฤหัสบดี</option>
-            <option value="FRIDAY">วันศุกร์</option>
-            <option value="SATURDAY">วันเสาร์</option>
+        <select id="day" name="day" required
+                hx-get="/decode"
+                hx-target="#results"
+                hx-include="#name-form"
+                hx-trigger="change"
+                hx-indicator="#spinner">
+            <option value="SUNDAY" {{if eq .defaultDay "SUNDAY"}}selected{{end}}>วันอาทิตย์</option>
+            <option value="MONDAY" {{if eq .defaultDay "MONDAY"}}selected{{end}}>วันจันทร์</option>
+            <option value="TUESDAY" {{if eq .defaultDay "TUESDAY"}}selected{{end}}>วันอังคาร</option>
+            <option value="WEDNESDAY1" {{if eq .defaultDay "WEDNESDAY1"}}selected{{end}}>วันพุธ (กลางวัน)</option>
+            <option value="WEDNESDAY2" {{if eq .defaultDay "WEDNESDAY2"}}selected{{end}}>วันพุธ (กลางคืน)</option>
+            <option value="THURSDAY" {{if eq .defaultDay "THURSDAY"}}selected{{end}}>วันพฤหัสบดี</option>
+            <option value="FRIDAY" {{if eq .defaultDay "FRIDAY"}}selected{{end}}>วันศุกร์</option>
+            <option value="SATURDAY" {{if eq .defaultDay "SATURDAY"}}selected{{end}}>วันเสาร์</option>
         </select>
     </div>
     <div class="button-group">
         <button
+            id="decode-button"
             hx-get="/decode"
             hx-target="#results"
             hx-include="#name-form"
@@ -44,10 +53,69 @@
     </div>
 </form>
 
+<hr class="content-divider">
+
+<!-- Sample Names Section -->
+<div class="sample-names-container">
+    <div class="avatars-grid">
+        {{range .sampleNames}}
+            <div class="avatar-card" onclick="selectName('{{.Name}}')">
+                <img src="{{.AvatarURL}}" alt="Avatar" class="avatar-img">
+                <div class="avatar-name">{{.Name}}</div>
+            </div>
+        {{end}}
+    </div>
+</div>
+
 <div id="spinner" class="htmx-indicator" style="margin-top: 1rem;">
     <p>กำลังประมวลผล...</p>
 </div>
 
-<div id="results">
-    <!-- ผลลัพธ์จะถูกแสดงที่นี่ -->
+<!-- Results Section -->
+<div id="results"
+     hx-get="/decode"
+     hx-trigger="load"
+     hx-include="#name-form">
+
+    <div id="spinner" style="margin-top: 1rem;">
+        <p>กำลังโหลดข้อมูลเริ่มต้น...</p>
+    </div>
 </div>
+
+<!-- JavaScript -->
+<script>
+    function selectName(name) {
+        const nameInput = document.getElementById('name');
+        nameInput.value = name;
+        toggleClearButton();
+
+        const decodeButton = document.getElementById('decode-button');
+        if (decodeButton) {
+            decodeButton.click();
+        }
+
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function toggleClearButton() {
+        const nameInput = document.getElementById('name');
+        const clearBtn = document.getElementById('clear-btn');
+        if (nameInput.value.length > 0) {
+            clearBtn.style.display = 'block';
+        } else {
+            clearBtn.style.display = 'none';
+        }
+    }
+
+    function clearName() {
+        const nameInput = document.getElementById('name');
+        nameInput.value = '';
+        toggleClearButton();
+        nameInput.focus();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleClearButton();
+    });
+</script>
