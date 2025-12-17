@@ -1,3 +1,11 @@
+<style>
+    .sun-name {
+        font-size: 1.2rem; /* Increased font size */
+    }
+    .score-analysis-grid {
+        margin-top: 0; /* Reduced top margin */
+    }
+</style>
 <!-- Solar System Animation -->
 <div class="solar-system-container">
     <div class="solar-system">
@@ -36,13 +44,13 @@
         <span class="highlighted-name">{{range .display_chars}}{{if .IsBad}}<span class="klakini-char">{{.Char}}</span>{{else}}<span>{{.Char}}</span>{{end}}{{end}}</span>
     </h2>
 
-    <!-- Sub-Header: Birthday, Klakini -->
+    <!-- Sub-Header: Birthday & Klakini -->
     <div class="info-grid">
         <div style="text-align: center;">
             <strong>วันเกิด:</strong> {{ .input_day }}
         </div>
         <div style="text-align: center;">
-            <strong>อักษรกาลกิณี:</strong>
+            <strong>กาลกิณี:</strong>
             {{if .klakini_characters}}
                 <span class="icon-bad">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -71,12 +79,6 @@
                 {{end}}
             </div>
             <h4>เลขศาสตร์ ({{ .total_numerology_value }})</h4>
-            <div class="score-summary">
-                <div class="score-values">
-                    <span class="score-good">ดี: +{{ .num_positive_score }}</span>
-                    <span class="score-bad">ร้าย: {{ .num_negative_score }}</span>
-                </div>
-            </div>
         </div>
 
         <!-- Shadow Section -->
@@ -89,22 +91,23 @@
                 {{end}}
             </div>
             <h4>เลขพลังเงา ({{ .total_shadow_value }})</h4>
-            <div class="score-summary">
-                <div class="score-values">
-                    <span class="score-good">ดี: +{{ .sha_positive_score }}</span>
-                    <span class="score-bad">ร้าย: {{ .sha_negative_score }}</span>
-                </div>
-            </div>
         </div>
     </div>
 
     <hr class="section-divider">
 
-    <!-- Grand Total (Moved to bottom) -->
-    <div class="grand-total-summary">
-        <strong>คะแนนรวมสุทธิ:</strong>
-        <span class="{{if lt .grand_total_score 0}}score-bad{{else}}score-good{{end}}">
-            {{if gt .grand_total_score 0}}+{{end}}{{.grand_total_score}}
-        </span>
+    <!-- Bottom Summary: Score Breakdown & Grand Total -->
+    <div class="info-grid" style="margin-top: 1rem; margin-bottom: 0;">
+        <div class="score-values">
+            <span class="score-good">ดี: +{{ add .num_positive_score .sha_positive_score }}</span>
+            <span class="score-bad">ร้าย: {{ add .num_negative_score .sha_negative_score }}</span>
+        </div>
+
+        <div class="grand-total-summary" style="margin-top: 0;">
+            <strong>คะแนนรวม:</strong>
+            <span class="{{if lt .grand_total_score 0}}score-bad{{else}}score-good{{end}}">
+                {{if gt .grand_total_score 0}}+{{end}}{{.grand_total_score}}
+            </span>
+        </div>
     </div>
 </div>

@@ -117,6 +117,7 @@ main {
 .highlighted-name {
     white-space: pre-wrap;
     font-family: 'Kanit', sans-serif;
+    font-weight: normal;
 }
 
 .highlighted-name > span {
@@ -133,8 +134,8 @@ main {
 }
 
 .grand-total-summary {
-    text-align: center;
-    font-size: 1.2rem;
+    text-align: left;
+    font-size: 1rem;
     margin-top: 1rem;
 }
 
@@ -203,7 +204,7 @@ main {
 .score-analysis-section h4 {
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
 }
 
 .score-summary {
@@ -221,7 +222,7 @@ main {
 .section-divider {
     border: none;
     border-top: 1px solid #eee;
-    margin: 1.5rem 0;
+    margin: 0.5rem 0;
 }
 
 .content-divider {
@@ -324,7 +325,7 @@ main {
 
 .sun-name {
     font-family: 'Kanit', sans-serif;
-    font-weight: bold;
+    font-weight: normal;
     white-space: pre-wrap;
     font-size: 0.8rem;
     line-height: 1.2;

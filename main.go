@@ -95,6 +95,14 @@ func main() {
 		}
 		return fa / fb, nil
 	})
+	engine.AddFunc("add", func(a, b interface{}) (float64, error) {
+		fa, errA := toFloat64(a)
+		fb, errB := toFloat64(b)
+		if errA != nil || errB != nil {
+			return 0, fmt.Errorf("add error")
+		}
+		return fa + fb, nil
+	})
 	engine.AddFunc("substr", func(s string, start, length int) string {
 		asRunes := []rune(s)
 		if start >= len(asRunes) {

@@ -105,8 +105,19 @@ func (h *NumerologyHandler) GetAuspiciousNames(c *fiber.Ctx) error {
 func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 	name := service.SanitizeInput(c.Query("name"))
 	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
-	if name == "" || day == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Query parameters 'name' and 'day' are required."})
+
+	// FIX: If name is empty, return empty success instead of error
+	// This allows HTMX to clear the result area without breaking
+	if name == "" {
+		if isHtmxRequest(c) {
+			return c.SendString("") // Return empty string to clear the target div
+		}
+		return c.JSON(fiber.Map{}) // Return empty JSON
+	}
+
+	if day == "" {
+		// Default to Sunday if day is missing (safety fallback)
+		day = "sunday"
 	}
 
 	var numerologyData, shadowData map[string]int

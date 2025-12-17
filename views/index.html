@@ -1,16 +1,25 @@
 <h1>วิเคราะห์ชื่อตามหลักเลขศาสตร์</h1>
 <p>กรอกชื่อและวันเกิดของคุณเพื่อเริ่มต้นการวิเคราะห์</p>
 
+<!-- The form is just a container, no HTMX attributes here -->
 <form id="name-form">
     <div class="form-group">
         <label for="name">ชื่อ-นามสกุล</label>
         <div class="input-wrapper">
-            <input type="text" id="name" name="name" required placeholder="เช่น สมชาย ใจดี" value="{{ .defaultName }}" oninput="toggleClearButton()">
+            <!-- Input has its own complete set of HTMX attributes -->
+            <input type="text" id="name" name="name" required placeholder="เช่น สมชาย ใจดี" value="{{ .defaultName }}"
+                   oninput="toggleClearButton()"
+                   hx-get="/decode"
+                   hx-target="#results"
+                   hx-include="#name-form"
+                   hx-trigger="input delay:500ms"
+                   hx-indicator="#spinner">
             <span id="clear-btn" class="clear-btn" onclick="clearName()">×</span>
         </div>
     </div>
     <div class="form-group">
         <label for="day">วันเกิด</label>
+        <!-- Select has its own complete set of HTMX attributes -->
         <select id="day" name="day" required
                 hx-get="/decode"
                 hx-target="#results"
@@ -28,8 +37,10 @@
         </select>
     </div>
     <div class="button-group">
+        <!-- Buttons also have their own complete set of attributes -->
         <button
             id="decode-button"
+            type="button"
             hx-get="/decode"
             hx-target="#results"
             hx-include="#name-form"
@@ -37,6 +48,7 @@
             วิเคราะห์ชื่อ
         </button>
         <button
+            type="button"
             hx-get="/similar-names"
             hx-target="#results"
             hx-include="#name-form"
@@ -44,6 +56,7 @@
             ค้นหาชื่อใกล้เคียง
         </button>
         <button
+            type="button"
             hx-get="/auspicious-names"
             hx-target="#results"
             hx-include="#name-form"
@@ -71,7 +84,7 @@
     <p>กำลังประมวลผล...</p>
 </div>
 
-<!-- Results Section -->
+<!-- Results Section for initial load and as a target -->
 <div id="results"
      hx-get="/decode"
      hx-trigger="load"
@@ -89,21 +102,21 @@
         nameInput.value = name;
         toggleClearButton();
 
-        const decodeButton = document.getElementById('decode-button');
-        if (decodeButton) {
-            decodeButton.click();
-        }
+        // Manually trigger the input event on the input field itself
+        htmx.trigger('#name', 'input');
 
         const resultsDiv = document.getElementById('results');
-        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (resultsDiv) {
+            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 
     function toggleClearButton() {
         const nameInput = document.getElementById('name');
         const clearBtn = document.getElementById('clear-btn');
-        if (nameInput.value.length > 0) {
+        if (nameInput && nameInput.value.length > 0) {
             clearBtn.style.display = 'block';
-        } else {
+        } else if (clearBtn) {
             clearBtn.style.display = 'none';
         }
     }
@@ -113,6 +126,8 @@
         nameInput.value = '';
         toggleClearButton();
         nameInput.focus();
+        // Manually trigger the input event to clear the results via HTMX
+        htmx.trigger('#name', 'input');
     }
 
     document.addEventListener('DOMContentLoaded', function() {
