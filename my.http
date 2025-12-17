@@ -1,6 +1,6 @@
-### Test Decode Name (Normal Case - Monday)
-# Should return numerology, shadow values, and check for Klakini (Monday bad chars: กขคฆง)
-GET http://localhost:3000/decode?name=สมชาย ใจดี&day=MONDAY
+### Test Decode Name (Normal Case - SUNDAY)
+# Should return numerology, shadow values, and check for Klakini (UNDAY bad chars: กขคฆง)
+GET http://localhost:3000/decode?name=อณัญญา ภักดีธรรมสุข&day=SUNDAY
 Accept: application/json
 
 ### Test Decode Name (Klakini Case - Sunday)
@@ -49,5 +49,5 @@ Accept: application/json
 ### Test Auspicious Names
 # Find names similar to "สมชาย" for Monday,
 # but only those with auspicious t_sat and t_sha values.
-GET http://localhost:3000/auspicious-names?name=อณัญญา&day=SUNDAY
+GET http://localhost:3000/auspicious-names?name=อณัญญา ภักดีธรรมสุข&day=SUNDAY
 Accept: application/json

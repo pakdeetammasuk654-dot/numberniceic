@@ -32,8 +32,8 @@ func (c *NumberPairCache) loadCache() error {
 
 		c.mu.Lock()
 		defer c.mu.Unlock()
+
 		for _, m := range meanings {
-			// Assuming PairNumber is unique and the primary key for the cache
 			c.cache[m.PairNumber] = m
 		}
 	})

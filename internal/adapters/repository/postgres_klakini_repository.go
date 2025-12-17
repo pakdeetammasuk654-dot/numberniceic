@@ -27,8 +27,8 @@ func (r *PostgresKlakiniRepository) GetAll() ([]domain.Klakini, error) {
 		if err := rows.Scan(&k.Day, &k.BadChars); err != nil {
 			return nil, err
 		}
-		// Normalize the day to uppercase for consistent matching
-		k.Day = strings.ToUpper(k.Day)
+		// Normalize the day to lowercase for consistent matching
+		k.Day = strings.ToLower(strings.TrimSpace(k.Day))
 		klakinis = append(klakinis, k)
 	}
 

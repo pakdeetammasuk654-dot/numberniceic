@@ -1,0 +1,22 @@
+<h2>รายชื่อที่ใกล้เคียง</h2>
+{{if .}}
+    {{range .}}
+        <div class="name-card">
+            <h3>{{.ThName}} (คะแนน: {{.TotalScore}})</h3>
+            <div class="pairs">
+                <strong>เลขศาสตร์:</strong>
+                {{range .TSat}}
+                    <span style="background-color: {{.Color}};">{{.Type}}</span>
+                {{end}}
+            </div>
+            <div class="pairs">
+                <strong>เลขพลังเงา:</strong>
+                {{range .TSha}}
+                    <span style="background-color: {{.Color}};">{{.Type}}</span>
+                {{end}}
+            </div>
+        </div>
+    {{end}}
+{{else}}
+    <p>ไม่พบรายชื่อที่ตรงตามเงื่อนไข</p>
+{{end}}

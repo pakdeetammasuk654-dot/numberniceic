@@ -1,0 +1,40 @@
+<div class="result-box">
+    <h2>
+        ผลการถอดรหัส:
+        <span class="highlighted-name">{{range .display_chars}}{{if .IsBad}}<span class="klakini-char">{{.Char}}</span>{{else}}<span>{{.Char}}</span>{{end}}{{end}}</span>
+    </h2>
+    <p><strong>วันเกิด:</strong> {{ .input_day }}</p>
+</div>
+
+<div class="result-box">
+    <h3>เลขศาสตร์ (Numerology)</h3>
+    <p>ผลรวม: {{ .total_numerology_value }}</p>
+    <div class="pairs">
+        {{range .numerology_pairs}}
+            <span style="background-color: {{.Meaning.Color}};" title="{{.Meaning.MiracleDesc}}">
+                {{.PairNumber}}
+            </span>
+        {{end}}
+    </div>
+</div>
+
+<div class="result-box">
+    <h3>เลขพลังเงา (Shadow)</h3>
+    <p>ผลรวม: {{ .total_shadow_value }}</p>
+    <div class="pairs">
+        {{range .shadow_pairs}}
+            <span style="background-color: {{.Meaning.Color}};" title="{{.Meaning.MiracleDesc}}">
+                {{.PairNumber}}
+            </span>
+        {{end}}
+    </div>
+</div>
+
+<div class="result-box">
+    <h3>อักษรกาลกิณีที่พบ</h3>
+    {{if .klakini_characters}}
+        <p class="klakini">{{range .klakini_characters}}{{.}} {{end}}</p>
+    {{else}}
+        <p>ไม่พบอักษรกาลกิณี</p>
+    {{end}}
+</div>

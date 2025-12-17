@@ -14,6 +14,25 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// Struct definitions
+type DecodedResult struct {
+	Character       string `json:"character"`
+	NumerologyValue int    `json:"numerology_value"`
+	ShadowValue     int    `json:"shadow_value"`
+	IsKlakini       bool   `json:"is_klakini"`
+}
+
+type PairMeaningResult struct {
+	PairNumber string                   `json:"pair_number"`
+	Meaning    domain.NumberPairMeaning `json:"meaning"`
+}
+
+// DisplayChar is used for rendering the name with highlighted klakini characters
+type DisplayChar struct {
+	Char  string
+	IsBad bool
+}
+
 type NumerologyHandler struct {
 	numerologyCache  *cache.NumerologyCache
 	shadowCache      *cache.NumerologyCache
@@ -37,27 +56,17 @@ func NewNumerologyHandler(
 	}
 }
 
-type DecodedResult struct {
-	Character       string `json:"character"`
-	NumerologyValue int    `json:"numerology_value"`
-	ShadowValue     int    `json:"shadow_value"`
-	IsKlakini       bool   `json:"is_klakini"`
-}
-
-type PairMeaningResult struct {
-	PairNumber string                   `json:"pair_number"`
-	Meaning    domain.NumberPairMeaning `json:"meaning"`
+// isHtmxRequest checks for the HX-Request header.
+func isHtmxRequest(c *fiber.Ctx) bool {
+	return c.Get("HX-Request") == "true"
 }
 
 func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
-	// Sanitize input name
 	name := service.SanitizeInput(c.Query("name"))
 	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
-
 	if name == "" || day == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Query parameters 'name' and 'day' are required."})
 	}
-
 	limit := 12
 	similarNames, err := h.namesMiracleRepo.GetSimilarNames(name, day, limit)
 	if err != nil {
@@ -65,18 +74,18 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve similar names."})
 	}
 
+	if isHtmxRequest(c) {
+		return c.Render("similar_names", similarNames)
+	}
 	return c.JSON(similarNames)
 }
 
 func (h *NumerologyHandler) GetAuspiciousNames(c *fiber.Ctx) error {
-	// Sanitize input name
 	name := service.SanitizeInput(c.Query("name"))
 	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
-
 	if name == "" || day == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Query parameters 'name' and 'day' are required."})
 	}
-
 	limit := 12
 	auspiciousNames, err := h.namesMiracleRepo.GetAuspiciousNames(name, day, limit)
 	if err != nil {
@@ -84,14 +93,15 @@ func (h *NumerologyHandler) GetAuspiciousNames(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve auspicious names."})
 	}
 
+	if isHtmxRequest(c) {
+		return c.Render("similar_names", auspiciousNames)
+	}
 	return c.JSON(auspiciousNames)
 }
 
 func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
-	// Sanitize input name
 	name := service.SanitizeInput(c.Query("name"))
-	day := strings.ToUpper(strings.TrimSpace(c.Query("day")))
-
+	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
 	if name == "" || day == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Query parameters 'name' and 'day' are required."})
 	}
@@ -119,33 +129,66 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 	var results []DecodedResult
 	var totalNumerologyValue, totalShadowValue int
 	var klakiniChars []string
+	var displayChars []DisplayChar
 
+	// Combined Logic: Calculation AND Display Preparation
+	// We iterate over the DECODED Thai characters (which group consonants with their vowels/tones)
 	for _, thaiChar := range decodedChars {
-		if !thaiChar.IsThai {
-			continue
-		}
-		processChar := func(charStr string) {
-			numVal := numerologyData[charStr]
-			shaVal := shadowData[charStr]
-			isKla := h.klakiniCache.IsKlakini(day, []rune(charStr)[0])
-			results = append(results, DecodedResult{
-				Character:       charStr,
-				NumerologyValue: numVal,
-				ShadowValue:     shaVal,
-				IsKlakini:       isKla,
-			})
-			totalNumerologyValue += numVal
-			totalShadowValue += shaVal
-			if isKla {
-				klakiniChars = append(klakiniChars, charStr)
+		// 1. Calculation Logic
+		if thaiChar.IsThai {
+			processChar := func(charStr string) {
+				numVal := numerologyData[charStr]
+				shaVal := shadowData[charStr]
+
+				isKla := false
+				for _, r := range charStr {
+					if h.klakiniCache.IsKlakini(day, r) {
+						isKla = true
+						// Add unique bad chars to the list
+						found := false
+						for _, existing := range klakiniChars {
+							if existing == string(r) {
+								found = true
+								break
+							}
+						}
+						if !found {
+							klakiniChars = append(klakiniChars, string(r))
+						}
+					}
+				}
+
+				results = append(results, DecodedResult{
+					Character:       charStr,
+					NumerologyValue: numVal,
+					ShadowValue:     shaVal,
+					IsKlakini:       isKla,
+				})
+				totalNumerologyValue += numVal
+				totalShadowValue += shaVal
+			}
+			if thaiChar.Consonant != "" {
+				processChar(thaiChar.Consonant)
+			}
+			for _, vowelRune := range thaiChar.Vowel {
+				processChar(string(vowelRune))
 			}
 		}
-		if thaiChar.Consonant != "" {
-			processChar(thaiChar.Consonant)
+
+		// 2. Display Logic
+		// Check if ANY part of this Thai character cluster is Klakini
+		isClusterBad := false
+		for _, r := range thaiChar.Original {
+			if h.klakiniCache.IsKlakini(day, r) {
+				isClusterBad = true
+				break
+			}
 		}
-		for _, vowelRune := range thaiChar.Vowel {
-			processChar(string(vowelRune))
-		}
+
+		displayChars = append(displayChars, DisplayChar{
+			Char:  thaiChar.Original, // This contains the full cluster (e.g., "กิ", "ป่")
+			IsBad: isClusterBad,
+		})
 	}
 
 	numerologyPairs := formatTotalValue(totalNumerologyValue)
@@ -161,16 +204,23 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 		return meanings
 	}
 
-	return c.JSON(fiber.Map{
+	responseData := fiber.Map{
 		"input_name":             c.Query("name"),
-		"cleaned_name":           name, // Return the sanitized name
+		"cleaned_name":           name,
+		"display_chars":          displayChars,
+		"input_day":              c.Query("day"),
 		"total_numerology_value": totalNumerologyValue,
 		"total_shadow_value":     totalShadowValue,
 		"numerology_pairs":       getMeanings(numerologyPairs),
 		"shadow_pairs":           getMeanings(shadowPairs),
 		"klakini_characters":     klakiniChars,
 		"decoded_parts":          results,
-	})
+	}
+
+	if isHtmxRequest(c) {
+		return c.Render("decode", responseData)
+	}
+	return c.JSON(responseData)
 }
 
 func formatTotalValue(total int) []string {

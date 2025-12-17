@@ -10,7 +10,8 @@ import (
 	"os"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/recover" // Import recover middleware
+	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/template/html/v2"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -21,6 +22,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
+
+	engine := html.New("./views", ".html")
+	engine.Reload(true)
 
 	db := setupDatabase()
 	defer db.Close()
@@ -34,13 +38,17 @@ func main() {
 	// Setup repositories
 	namesMiracleRepo := repository.NewPostgresNamesMiracleRepository(db)
 
-	// --- Setup Fiber App & Handlers ---
-	app := fiber.New()
+	// --- Setup Fiber App ---
+	app := fiber.New(fiber.Config{
+		Views: engine,
+	})
 
-	// Use Recover middleware to prevent crashes from panics
 	app.Use(recover.New())
 
-	// Create the handler and inject all dependencies
+	// Serve static files (CSS, JS, images)
+	app.Static("/", "./static")
+
+	// Create the handler
 	numerologyHandler := handler.NewNumerologyHandler(
 		numerologyCache,
 		shadowCache,
@@ -49,7 +57,13 @@ func main() {
 		namesMiracleRepo,
 	)
 
-	// Register the routes to the handler methods
+	// --- Routes ---
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.Render("index", fiber.Map{
+			"title": "หน้าหลัก",
+		}, "main")
+	})
+
 	app.Get("/decode", numerologyHandler.Decode)
 	app.Get("/similar-names", numerologyHandler.GetSimilarNames)
 	app.Get("/auspicious-names", numerologyHandler.GetAuspiciousNames)
@@ -59,6 +73,7 @@ func main() {
 	log.Fatal(app.Listen(":3000"))
 }
 
+// ... (setup functions remain the same) ...
 func setupDatabase() *sql.DB {
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable client_encoding=UTF8",
 		os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USER"),
