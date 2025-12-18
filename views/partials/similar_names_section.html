@@ -1,0 +1,82 @@
+<div class="similar-names-container" id="similar-names-section">
+    <div class="speech-bubble-header {{if .AnimateHeader}}bounce-in-animation{{end}}">
+        <div class="header-text-content">
+            <div class="header-main-line">
+                <span class="header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                </span>
+                <span>
+                    ชื่อคล้าย "{{range .display_chars}}{{if .IsBad}}<span class="klakini-char">{{.Char}}</span>{{else}}<span>{{.Char}}</span>{{end}}{{end}}"
+                </span>
+            </div>
+            <div class="header-sub-line">
+                <span class="icon-good" style="font-size: 0.8rem; font-weight: normal;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    ไม่มีกาลกิณี
+                </span>
+            </div>
+        </div>
+
+        <div class="toggle-switch-container">
+            <span style="font-size: 0.8rem; margin-right: 0.5rem; font-weight: normal;">เฉพาะชื่อมงคล</span>
+            <label class="toggle-switch">
+                <input type="checkbox" name="auspicious" value="true" {{if .is_auspicious}}checked{{end}}
+                       hx-get="/similar-names"
+                       hx-target="#similar-names-section"
+                       hx-swap="outerHTML"
+                       hx-include="#name-form, [name='auspicious']"
+                       hx-indicator="#spinner">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <table class="similar-names-table">
+        <thead>
+            <tr>
+                <th>ชื่อ</th>
+                <th>เลขศาสตร์</th>
+                <th>พลังเงา</th>
+                <th>คะแนนรวม</th>
+                <th></th> <!-- Action Column -->
+            </tr>
+        </thead>
+        <tbody>
+            {{range $i, $name := .similar_names}}
+            <tr class="{{if eq (mod $i 2) 0}}row-even{{else}}row-odd{{end}} clickable-row" onclick="selectName('{{$name.ThName}}')">
+                <td>{{$name.ThName}}</td>
+                <td>
+                    <div class="table-pairs-container">
+                        {{range $j, $pairInfo := $name.TSat}}
+                            {{$pairNumber := index $name.SatNum $j}}
+                            <span class="table-pair-circle" style="background-color: {{$pairInfo.Color}};">{{$pairNumber}}</span>
+                        {{end}}
+                    </div>
+                </td>
+                <td>
+                    <div class="table-pairs-container">
+                        {{range $j, $pairInfo := $name.TSha}}
+                            {{$pairNumber := index $name.ShaNum $j}}
+                            <span class="table-pair-circle" style="background-color: {{$pairInfo.Color}};">{{$pairNumber}}</span>
+                        {{end}}
+                    </div>
+                </td>
+                <td>
+                    <span class="{{if lt $name.TotalScore 0}}score-bad{{else}}score-good{{end}}">
+                        {{if gt $name.TotalScore 0}}+{{end}}{{$name.TotalScore}}
+                    </span>
+                </td>
+                <td style="text-align: center;">
+                    <span class="action-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </span>
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="5" style="text-align: center;">ไม่พบชื่อที่ใกล้เคียง</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>

@@ -102,51 +102,52 @@ func (h *NumerologyHandler) GetNumberMeanings(c *fiber.Ctx) error {
 	return c.Render("partials/number_meanings_modal", meanings)
 }
 
+// GetSimilarNames now handles both similar and auspicious names for the partial view
 func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 	name := service.SanitizeInput(c.Query("name"))
 	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
+	isAuspicious := c.Query("auspicious") == "true"
+
 	if name == "" || day == "" {
-		// Return empty content if params are missing for an HTMX request
-		if isHtmxRequest(c) {
-			return c.SendString("")
-		}
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Query parameters 'name' and 'day' are required."})
-	}
-	limit := 12
-	similarNames, err := h.namesMiracleRepo.GetSimilarNames(name, day, limit)
-	if err != nil {
-		log.Printf("Error getting similar names: %v", err)
-		// Return empty content on error for an HTMX request
-		if isHtmxRequest(c) {
-			return c.SendString("<div>เกิดข้อผิดพลาดในการค้นหาชื่อใกล้เคียง</div>")
-		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve similar names."})
+		return c.SendString("<!-- Missing parameters -->")
 	}
 
-	if isHtmxRequest(c) {
-		// Pass the slice directly as the data context for the template
-		return c.Render("similar_names", similarNames)
+	var similarNames []domain.SimilarNameResult
+	var err error
+	if isAuspicious {
+		similarNames, err = h.namesMiracleRepo.GetAuspiciousNames(name, day, 12)
+	} else {
+		similarNames, err = h.namesMiracleRepo.GetSimilarNames(name, day, 12)
 	}
-	return c.JSON(similarNames)
+
+	if err != nil {
+		log.Printf("Error getting names for partial: %v", err)
+		return c.SendString("<div>Error loading names.</div>")
+	}
+
+	// We need display_chars for the header, so we have to calculate it here too
+	decodedChars := service.DecodeName(name)
+	var displayChars []DisplayChar
+	for _, thaiChar := range decodedChars {
+		for _, r := range thaiChar.Original {
+			isBad := h.klakiniCache.IsKlakini(day, r)
+			displayChars = append(displayChars, DisplayChar{string(r), isBad})
+		}
+	}
+
+	return c.Render("partials/similar_names_section", fiber.Map{
+		"similar_names": similarNames,
+		"is_auspicious": isAuspicious,
+		"display_chars": displayChars,
+		"cleaned_name":  name,  // for modal IDs
+		"AnimateHeader": false, // Do not animate header on toggle
+	})
 }
 
+// This endpoint is now redundant, but we keep it for now to avoid breaking anything.
+// It can be removed later.
 func (h *NumerologyHandler) GetAuspiciousNames(c *fiber.Ctx) error {
-	name := service.SanitizeInput(c.Query("name"))
-	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
-	if name == "" || day == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Query parameters 'name' and 'day' are required."})
-	}
-	limit := 12
-	auspiciousNames, err := h.namesMiracleRepo.GetAuspiciousNames(name, day, limit)
-	if err != nil {
-		log.Printf("Error getting auspicious names: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve auspicious names."})
-	}
-
-	if isHtmxRequest(c) {
-		return c.Render("similar_names", auspiciousNames)
-	}
-	return c.JSON(auspiciousNames)
+	return h.GetSimilarNames(c)
 }
 
 func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
@@ -188,6 +189,7 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 	var analysisData fiber.Map
 	var analysisErr error
 	var allUniquePairs []PairMeaningResult
+	var displayChars []DisplayChar // Declare here to be available for responseData
 	go func() {
 		defer wg.Done()
 		numerologyData, numErr := h.numerologyCache.GetAll()
@@ -201,7 +203,7 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 		var results []DecodedResult
 		var totalNumerologyValue, totalShadowValue int
 		var klakiniChars []string
-		var displayChars []DisplayChar
+		// var displayChars []DisplayChar // Already declared outside
 
 		for _, thaiChar := range decodedChars {
 			if thaiChar.IsThai {
@@ -255,7 +257,6 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 		})
 
 		analysisData = fiber.Map{
-			"display_chars":          displayChars,
 			"total_numerology_value": totalNumerologyValue,
 			"total_shadow_value":     totalShadowValue,
 			"numerology_pairs":       numMeanings,
@@ -287,6 +288,8 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 		"similar_names":    similarNames,
 		"is_auspicious":    isAuspicious,
 		"all_unique_pairs": allUniquePairs,
+		"display_chars":    displayChars,
+		"AnimateHeader":    true, // Animate header on full decode
 	}
 	for k, v := range analysisData {
 		responseData[k] = v

@@ -12,7 +12,7 @@
                    hx-target="#results"
                    hx-include="#name-form"
                    hx-trigger="input changed delay:500ms, load"
-                   hx-indicator="#spinner">
+                   hx-indicator="#results .htmx-indicator">
             <span id="clear-btn" class="clear-btn" onclick="clearName()">×</span>
         </div>
         <small class="helper-text">ระบบจะวิเคราะห์ชื่อของคุณโดยอัตโนมัติขณะพิมพ์</small>
@@ -28,7 +28,7 @@
                     hx-target="#results"
                     hx-include="#name-form"
                     hx-trigger="change"
-                    hx-indicator="#spinner">
+                    hx-indicator="#results .htmx-indicator">
                 <option value="SUNDAY" {{if eq .defaultDay "SUNDAY"}}selected{{end}}>วันอาทิตย์</option>
                 <option value="MONDAY" {{if eq .defaultDay "MONDAY"}}selected{{end}}>วันจันทร์</option>
                 <option value="TUESDAY" {{if eq .defaultDay "TUESDAY"}}selected{{end}}>วันอังคาร</option>
@@ -54,13 +54,10 @@
     </div>
 </div>
 
-<div id="spinner" class="htmx-indicator" style="margin-top: 1rem;">
-    <p>กำลังประมวลผล...</p>
-</div>
-
 <!-- Results Section for initial load and as a target -->
 <div id="results">
     <!-- The initial load is now handled by the input field itself -->
+    <!-- The spinner will be loaded inside this container by the decode template -->
 </div>
 
 <!-- JavaScript -->

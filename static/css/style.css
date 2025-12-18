@@ -119,9 +119,8 @@ main {
 
 
 #results {
-    /* Reset everything */
-    margin-top: 0;
-    padding-top: 0;
+    margin-top: 1.5rem;
+    position: relative; /* Needed for absolute positioning of the spinner */
 }
 
 .result-box {
@@ -192,6 +191,16 @@ main {
     margin-bottom: 1rem;
 }
 
+.score-summary-line {
+    padding: 0.5rem 1rem;
+    border-top: 1px solid #eee;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
 .grand-total-summary {
     text-align: left;
     font-size: 1rem;
@@ -236,8 +245,24 @@ main {
     margin-top: 0;
 }
 
-#spinner {
-    margin-top: 1rem;
+/* --- HTMX Indicator (Spinner) --- */
+.htmx-indicator {
+    display: none;
+    opacity: 0;
+    transition: opacity 200ms ease-in;
+}
+
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+    display: block;
+    opacity: 1;
+}
+
+#results-spinner {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 210; /* Above solar system */
 }
 
 .score-good {
@@ -294,12 +319,10 @@ main {
 .sample-names-container {
     text-align: center;
     margin-top: 1rem;
-    margin-bottom: 0;
+    margin-bottom: 0.5rem;
     padding: 0;
     position: relative;
     z-index: 10;
-    /* Add padding bottom to create space for the solar bubble */
-    padding-bottom: 1.5rem;
 }
 
 .avatars-grid {
@@ -342,7 +365,7 @@ main {
     background-color: #ffffff;
     border-radius: 12px;
     padding: 1rem;
-    margin-top: 0; /* Ensure no top margin */
+    margin-top: 0;
     margin-bottom: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
     animation: bounce-in 0.6s ease-out;
@@ -367,7 +390,7 @@ main {
     justify-content: center;
     align-items: center;
     padding: 0; /* Reduced padding */
-    min-height: 300px; /* Reduced min-height */
+    min-height: 200px; /* Reduced min-height */
     overflow: visible;
     position: relative;
     z-index: 200;
@@ -516,8 +539,11 @@ main {
     align-items: center;
     justify-content: space-between; /* Pushes items to the edges */
     gap: 1rem;
-    animation: bounce-in 0.6s ease-out;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Added shadow */
+}
+
+.bounce-in-animation {
+    animation: bounce-in 0.6s ease-out;
 }
 
 .header-text-content {
@@ -554,7 +580,7 @@ main {
 .similar-names-table {
     width: 100%;
     border-collapse: collapse;
-    /* margin-top: 1rem; */ /* Removed to connect with bubble */
+    animation: bounce-in 0.6s ease-out; /* Added animation to table */
 }
 
 .similar-names-table th, .similar-names-table td {

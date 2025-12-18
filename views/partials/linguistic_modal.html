@@ -1,10 +1,8 @@
 <div class="modal-header">
-    <h2>วิเคราะห์ชื่อตามหลักภาษาศาสตร์</h2>
-    <button class="close-btn" onclick="document.getElementById('linguistic-modal-container').style.display='none'">&times;</button>
+    <h2>รากศัพท์: {{.Name}}</h2>
+    <button class="close-btn" onclick="document.getElementById('linguistic-modal-container-{{.Name}}').style.display='none'">&times;</button>
 </div>
 <div class="modal-body">
-    <h3>ชื่อ: {{.Name}}</h3>
-    <hr>
     <div class="gemini-content">
         {{.Analysis}}
     </div>
