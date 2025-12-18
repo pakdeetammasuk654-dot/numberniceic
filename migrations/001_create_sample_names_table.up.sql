@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS sample_names (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    avatar_url VARCHAR(255) NOT NULL
+);

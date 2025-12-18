@@ -83,16 +83,24 @@ func (r *PostgresNamesMiracleRepository) getNames(name, day string, limit int, f
 			res.TSha[i] = domain.PairTypeInfo{Type: t, Color: service.GetPairTypeColor(t)}
 		}
 
+		// Correctly calculate total score from both SatNum and ShaNum
+		var satScore, shaScore int
+		scoreQuery := `SELECT COALESCE(SUM(pairpoint), 0) FROM public.numbers WHERE pairnumber = ANY($1)`
+
 		if len(res.SatNum) > 0 {
-			scoreQuery := `SELECT COALESCE(SUM(pairpoint), 0) FROM public.numbers WHERE pairnumber = ANY($1)`
-			err := r.db.QueryRow(scoreQuery, pq.Array(res.SatNum)).Scan(&res.TotalScore)
+			err := r.db.QueryRow(scoreQuery, pq.Array(res.SatNum)).Scan(&satScore)
 			if err != nil {
-				fmt.Printf("Warning: could not calculate score for name %s: %v\n", res.ThName, err)
-				res.TotalScore = 0
+				fmt.Printf("Warning: could not calculate sat score for name %s: %v\n", res.ThName, err)
 			}
-		} else {
-			res.TotalScore = 0
 		}
+		if len(res.ShaNum) > 0 {
+			err := r.db.QueryRow(scoreQuery, pq.Array(res.ShaNum)).Scan(&shaScore)
+			if err != nil {
+				fmt.Printf("Warning: could not calculate sha score for name %s: %v\n", res.ThName, err)
+			}
+		}
+		res.TotalScore = satScore + shaScore
+
 		results = append(results, res)
 	}
 	if err = rows.Err(); err != nil {

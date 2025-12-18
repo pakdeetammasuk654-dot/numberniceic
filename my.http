@@ -1,53 +1,23 @@
-### Test Decode Name (Normal Case - SUNDAY)
-# Should return numerology, shadow values, and check for Klakini (UNDAY bad chars: กขคฆง)
-GET http://localhost:3000/decode?name=อณัญญา ภักดีธรรมสุข&day=SUNDAY
-Accept: application/json
+### Test Gemini API
+# @name TestGeminiAPI
+POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyBsS3i9clTUCZUYrBGTkBRfPfTuMeSSGRs
+Content-Type: application/json
 
-### Test Decode Name (Klakini Case - Sunday)
-# Sunday bad chars: ศษส
-# Name "สมชาย" contains 'ส', so is_klakini should be true for 'ส'
-GET http://localhost:3000/decode?name=เวฬา&day=SUNDAY
-Accept: application/json
+{
+  "contents": [
+    {
+      "parts": [
+        {
+          "text": "วิเคราะห์ชื่อ 'อณัญญา' ตามหลักภาษาศาสตร์ไทย"
+        }
+      ]
+    }
+  ]
+}
 
-### Test Decode Name (Wednesday Day - WEDNESDAY1)
-# พุธกลางวัน (06:00 - 17:59)
-GET http://localhost:3000/decode?name=กฤษฎา&day=WEDNESDAY1
-Accept: application/json
+### List Models
+# @name ListModels
+GET https://generativelanguage.googleapis.com/v1beta/models?key=AIzaSyBsS3i9clTUCZUYrBGTkBRfPfTuMeSSGRs
 
-### Test Decode Name (Wednesday Night - WEDNESDAY2)
-# พุธกลางคืน (18:00 - 05:59)
-GET http://localhost:3000/decode?name=ราหู&day=WEDNESDAY2
-Accept: application/json
+###
 
-### Test Decode Name (With Leading/Trailing Spaces)
-GET http://localhost:3000/decode?name=  จิตรา  &day=TUESDAY
-Accept: application/json
-
-### Test Error: Missing Day Parameter
-GET http://localhost:3000/decode?name=สมชาย&day=SUNDAY
-Accept: application/json
-
-### Test Error: Missing Name Parameter
-GET http://localhost:3000/decode?day=MONDAY
-Accept: application/json
-
-### Test Similar Names (Normal Case)
-# Find names similar to "สมชาย" that are auspicious for Monday
-GET http://localhost:3000/similar-names?name=สมชาย&day=MONDAY
-Accept: application/json
-
-### Test Similar Names (Wednesday Night)
-# Find names similar to "ราหู" for Wednesday Night
-GET http://localhost:3000/similar-names?name=อณัญญา&day=SUNDAY
-Accept: application/json
-
-### Test Similar Names (Error: Missing Parameters)
-GET http://localhost:3000/similar-names
-Accept: application/json
-
-
-### Test Auspicious Names
-# Find names similar to "สมชาย" for Monday,
-# but only those with auspicious t_sat and t_sha values.
-GET http://localhost:3000/auspicious-names?name=อณัญญา ภักดีธรรมสุข&day=SUNDAY
-Accept: application/json

@@ -2,14 +2,13 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"numberniceic/internal/adapters/cache"
 	"numberniceic/internal/adapters/handler"
 	"numberniceic/internal/adapters/repository"
+	"numberniceic/internal/core/service"
 	"os"
 	"reflect"
 
@@ -33,45 +32,20 @@ func toFloat64(v interface{}) (float64, error) {
 	}
 }
 
-// Struct to hold sample names from JSON
-type SampleNamesConfig struct {
-	SampleNames []string `json:"sampleNames"`
-}
-
-func loadSampleNames() []handler.SampleName {
-	var config SampleNamesConfig
-	var sampleNames []handler.SampleName
-
-	// Read the JSON file
-	file, err := ioutil.ReadFile("config/samples.json")
-	if err != nil {
-		log.Printf("Warning: Could not read config/samples.json: %v", err)
-		return sampleNames // Return empty list on error
-	}
-
-	// Parse the JSON
-	err = json.Unmarshal(file, &config)
-	if err != nil {
-		log.Printf("Warning: Could not parse config/samples.json: %v", err)
-		return sampleNames // Return empty list on error
-	}
-
-	// Create the final list with Avatar URLs
-	for i, name := range config.SampleNames {
-		sampleNames = append(sampleNames, handler.SampleName{
-			Name:      name,
-			AvatarURL: fmt.Sprintf("https://i.pravatar.cc/100?img=%d", i+1),
-		})
-	}
-	return sampleNames
-}
-
 func main() {
+	log.Println("--- STARTING APPLICATION (LOG) ---")
+
 	// --- Initialization ---
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+		log.Printf("Warning: Error loading .env file: %v", err)
+	} else {
+		log.Println("Successfully loaded .env file.")
 	}
+
+	// Use hardcoded API key for debugging, but keep loading .env for DB credentials
+	apiKey := "AIzaSyBsS3i9clTUCZUYrBGTkBRfPfTuMeSSGRs"
+	log.Println("DEBUG: Using hardcoded API Key for testing.")
 
 	engine := html.New("./views", ".html")
 	engine.Reload(true)
@@ -103,6 +77,10 @@ func main() {
 		}
 		return fa + fb, nil
 	})
+	engine.AddFunc("mod", func(a, b int) int {
+		return a % b
+	})
+	engine.AddFunc("printf", fmt.Sprintf)
 	engine.AddFunc("substr", func(s string, start, length int) string {
 		asRunes := []rune(s)
 		if start >= len(asRunes) {
@@ -120,11 +98,18 @@ func main() {
 	db := setupDatabase()
 	defer db.Close()
 
+	// Setup services
+	linguisticService, err := service.NewLinguisticService(apiKey)
+	if err != nil {
+		log.Printf("Failed to create linguistic service: %v", err)
+	}
+
 	// Setup components
 	numerologyCache := setupNumerologyCache(db, "sat_nums")
 	shadowCache := setupNumerologyCache(db, "sha_nums")
 	klakiniCache := setupKlakiniCache(db)
 	numberPairCache := setupNumberPairCache(db)
+	sampleNamesCache := setupSampleNamesCache(db)
 	namesMiracleRepo := repository.NewPostgresNamesMiracleRepository(db)
 
 	// --- Setup Fiber App ---
@@ -141,12 +126,15 @@ func main() {
 		klakiniCache,
 		numberPairCache,
 		namesMiracleRepo,
+		linguisticService,
 	)
 
 	// --- Routes ---
 	app.Get("/", func(c *fiber.Ctx) error {
-		// Load sample names from JSON file
-		sampleNames := loadSampleNames()
+		sampleNames, err := sampleNamesCache.GetAll()
+		if err != nil {
+			log.Printf("Warning: Could not load sample names from cache: %v", err)
+		}
 
 		return c.Render("index", fiber.Map{
 			"title":       "หน้าหลัก",
@@ -159,6 +147,8 @@ func main() {
 	app.Get("/decode", numerologyHandler.Decode)
 	app.Get("/similar-names", numerologyHandler.GetSimilarNames)
 	app.Get("/auspicious-names", numerologyHandler.GetAuspiciousNames)
+	app.Get("/number-meanings", numerologyHandler.GetNumberMeanings)
+	app.Get("/linguistic-analysis", numerologyHandler.AnalyzeLinguistically)
 
 	// --- Start Server ---
 	log.Println("Starting server on port 3000...")
@@ -211,5 +201,16 @@ func setupNumberPairCache(db *sql.DB) *cache.NumberPairCache {
 		log.Fatalf("Failed to warm up number pair meaning cache: %v", err)
 	}
 	fmt.Println("Number pair meaning cache is ready.")
+	return c
+}
+
+func setupSampleNamesCache(db *sql.DB) *cache.SampleNamesCache {
+	repo := repository.NewPostgresSampleNamesRepository(db)
+	c := cache.NewSampleNamesCache(repo)
+	fmt.Println("Warming up the sample names cache...")
+	if err := c.EnsureLoaded(); err != nil {
+		log.Fatalf("Failed to warm up sample names cache: %v", err)
+	}
+	fmt.Println("Sample names cache is ready.")
 	return c
 }

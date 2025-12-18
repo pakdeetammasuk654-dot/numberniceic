@@ -1,22 +1,23 @@
-<h2>รายชื่อที่ใกล้เคียง</h2>
-{{if .}}
-    {{range .}}
-        <div class="name-card">
-            <h3>{{.ThName}} (คะแนน: {{.TotalScore}})</h3>
-            <div class="pairs">
-                <strong>เลขศาสตร์:</strong>
-                {{range .TSat}}
-                    <span style="background-color: {{.Color}};">{{.Type}}</span>
-                {{end}}
-            </div>
-            <div class="pairs">
-                <strong>เลขพลังเงา:</strong>
-                {{range .TSha}}
-                    <span style="background-color: {{.Color}};">{{.Type}}</span>
-                {{end}}
-            </div>
-        </div>
-    {{end}}
-{{else}}
-    <p>ไม่พบรายชื่อที่ตรงตามเงื่อนไข</p>
-{{end}}
+<div class="similar-names-container">
+    <h3 style="text-align: center; margin-bottom: 1rem;">ชื่อใกล้เคียง</h3>
+    <table class="similar-names-table">
+        <thead>
+            <tr>
+                <th>ชื่อ</th>
+                <th>คะแนนรวม</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range $i, $name := .}}
+            <tr class="{{if eq (mod $i 2) 0}}row-even{{else}}row-odd{{end}}">
+                <td>{{$name.Name}}</td>
+                <td>{{$name.GrandTotal}}</td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="2" style="text-align: center;">ไม่พบชื่อที่ใกล้เคียง</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
