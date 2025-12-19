@@ -16,8 +16,66 @@
         justify-content: center;
         align-items: center;
     }
+    .toggle-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-left: 1rem;
+    }
+    .toggle-label {
+        font-size: 0.7rem;
+        font-weight: normal;
+        margin-top: 0.2rem;
+        color: #666;
+    }
+    .similar-names-table th {
+        font-size: 0.8rem; /* Reduced font size for table headers */
+    }
+
+    /* Simple Text Loader */
+    #similar-names-loader {
+        display: none;
+        position: absolute;
+        top: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #333;
+        color: #fff;
+        padding: 8px 20px;
+        border-radius: 20px;
+        z-index: 10000;
+        font-size: 1rem;
+        font-weight: bold;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        white-space: nowrap;
+    }
+    /* Show loader when parent has htmx-request class */
+    .htmx-request #similar-names-loader {
+        display: block;
+    }
+
+    /* Fade out content when loading */
+    .htmx-request.similar-names-container .speech-bubble-header,
+    .htmx-request.similar-names-container .similar-names-table {
+        opacity: 0.5;
+        pointer-events: none; /* Prevent clicks while loading */
+        transition: opacity 0.2s ease-in-out;
+    }
+
+    .score-good {
+        color: #2E7D32;
+        font-weight: normal; /* Changed from bold to normal */
+    }
+
+    .score-bad {
+        color: #C62828;
+        font-weight: normal; /* Changed from bold to normal */
+    }
 </style>
-<div class="similar-names-container" id="similar-names-section">
+<div class="similar-names-container" id="similar-names-section" style="position: relative; min-height: 200px;">
+    <!-- Simple Loader -->
+    <div id="similar-names-loader">กำลังโหลด....</div>
+
     <div class="speech-bubble-header {{if .AnimateHeader}}bounce-in-animation{{end}}">
         <div class="header-text-content">
             <div class="header-main-line">
@@ -32,6 +90,11 @@
                 <span style="font-size: 0.8rem; font-weight: normal; color: #C62828; margin-left: 0.5rem;">
                     (กาลกิณี: {{range .klakini_characters}}{{.}} {{end}})
                 </span>
+                {{else}}
+                <span style="margin-left: 0.5rem; display: inline-flex; align-items: center; font-size: 0.8rem; color: #2E7D32;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.2rem;"><polyline points="20 6 9 17 4 12"/></svg>
+                    ไร้กาลกิณี
+                </span>
                 {{end}}
             </div>
         </div>
@@ -41,23 +104,28 @@
              hx-target="#similar-names-section"
              hx-swap="outerHTML"
              hx-trigger="change"
-             hx-vals='js:{"name": document.getElementById("name").value, "day": document.getElementById("day").value, "auspicious": document.getElementById("auspicious-toggle").checked, "allow_klakini": document.getElementById("allow-klakini-toggle").checked}'>
+             hx-indicator="#similar-names-section"
+             hx-vals='js:{"name": (document.getElementById("name") ? document.getElementById("name").value : ""), "day": (document.getElementById("day") ? document.getElementById("day").value : ""), "auspicious": document.getElementById("auspicious-toggle").checked, "allow_klakini": document.getElementById("allow-klakini-toggle").checked}'>
 
             <!-- Auspicious Toggle -->
-            <span style="font-size: 0.8rem; margin-right: 0.5rem; font-weight: normal;">ชื่อดีเท่านั้น</span>
-            <label class="toggle-switch">
-                <input type="checkbox" id="auspicious-toggle" name="auspicious" {{if .is_auspicious}}checked{{end}}
-                       onchange="document.getElementById('main-auspicious').value = this.checked">
-                <span class="slider"></span>
-            </label>
+            <div class="toggle-item">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="auspicious-toggle" name="auspicious" {{if .is_auspicious}}checked{{end}}
+                           onchange="document.getElementById('main-auspicious').value = this.checked">
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label">ชื่อดีเท่านั้น</span>
+            </div>
 
             <!-- Allow Klakini Toggle -->
-            <span style="font-size: 0.8rem; margin-left: 1rem; margin-right: 0.5rem; font-weight: normal;">อนุญาตกาลกิณี</span>
-            <label class="toggle-switch">
-                <input type="checkbox" id="allow-klakini-toggle" name="allow_klakini" {{if .allow_klakini}}checked{{end}}
-                       onchange="document.getElementById('main-allow-klakini').value = this.checked">
-                <span class="slider"></span>
-            </label>
+            <div class="toggle-item">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="allow-klakini-toggle" name="allow_klakini" {{if .allow_klakini}}checked{{end}}
+                           onchange="document.getElementById('main-allow-klakini').value = this.checked">
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label">อนุโลมกาลกิณี</span>
+            </div>
         </div>
     </div>
 
@@ -65,7 +133,7 @@
         <thead>
             <tr>
                 <th>ชื่อ</th>
-                <th>กาลกิณี</th>
+                <th>ไร้กาลกิณี</th>
                 <th>เลขศาสตร์</th>
                 <th>พลังเงา</th>
                 <th>คะแนน</th>
@@ -86,7 +154,7 @@
                     {{if .KlakiniChars}}
                         <span class="klakini-char">{{range .KlakiniChars}}{{.}} {{end}}</span>
                     {{else}}
-                        -
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                     {{end}}
                 </td>
                 <td>

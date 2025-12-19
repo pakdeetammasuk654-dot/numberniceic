@@ -1,6 +1,7 @@
 ### Test Gemini API
 # @name TestGeminiAPI
-POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyB-jb5QOGiOkmaFCS2rkPkdH6F4hGCiUPQ
+# Ensure you have the GEMINI_API_KEY environment variable set in your http-client.env.json or run configuration
+POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={{GEMINI_API_KEY}}
 Content-Type: application/json
 
 {
@@ -17,7 +18,6 @@ Content-Type: application/json
 
 ### List Models
 # @name ListModels
-GET https://generativelanguage.googleapis.com/v1beta/models?key=AIzaSyBsS3i9clTUCZUYrBGTkBRfPfTuMeSSGRs
+GET https://generativelanguage.googleapis.com/v1beta/models?key={{GEMINI_API_KEY}}
 
 ###
-

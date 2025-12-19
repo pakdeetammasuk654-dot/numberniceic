@@ -67,27 +67,6 @@
 
 <!-- Single, Consolidated Result Card -->
 <div class="result-box" style="padding-top: 0.5rem; padding-bottom: 0.5rem;">
-    <!-- Sub-Header: Birthday & Klakini -->
-    <div class="info-grid" style="padding-bottom: 0.5rem; margin-bottom: 0;">
-        <div style="text-align: center;">
-            <strong>วันเกิด:</strong> {{ .input_day }}
-        </div>
-        <div style="text-align: center;">
-            <strong>กาลกิณี:</strong>
-            {{if and .klakini_characters (not .allow_klakini)}}
-                <span class="icon-bad">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                    <span class="klakini">{{range .klakini_characters}}{{.}} {{end}}</span>
-                </span>
-            {{else}}
-                <span class="icon-good">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                    ไม่พบ
-                </span>
-            {{end}}
-        </div>
-    </div>
-
     <!-- New Score Summary -->
     <div class="score-summary-line">
         <strong>(คะแนน)</strong>

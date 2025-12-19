@@ -397,6 +397,8 @@ main {
     position: relative;
 }
 
+/* Removed the triangle (speech bubble tail) */
+/*
 .solar-bubble::after {
     content: '';
     position: absolute;
@@ -409,6 +411,7 @@ main {
     border-right: 10px solid transparent;
     border-top: 10px solid #ffffff;
 }
+*/
 
 .solar-system-container {
     display: flex;
