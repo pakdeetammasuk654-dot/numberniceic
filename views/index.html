@@ -1,7 +1,29 @@
+<style>
+    /* Global Loading Indicator Style */
+    .global-loader {
+        padding: 1rem;
+        text-align: center;
+        background-color: #fffbe6;
+        border: 1px solid #ffe58f;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+        display: none; /* Hidden by default */
+    }
+    /* Show the loader when any htmx request is in flight */
+    .htmx-request .global-loader {
+        display: block;
+    }
+    /* Hide the results while loading */
+    .htmx-request #results {
+        display: none;
+    }
+</style>
+
 <!-- The form is just a container, no HTMX attributes here -->
 <form id="name-form">
-    <!-- Hidden input to store auspicious toggle state -->
+    <!-- Hidden inputs to store toggle states -->
     <input type="hidden" name="auspicious" id="main-auspicious" value="false">
+    <input type="hidden" name="allow_klakini" id="main-allow-klakini" value="false">
 
     <div class="form-group">
         <div class="label-row">
@@ -18,7 +40,7 @@
                    hx-target="#results"
                    hx-include="#name-form"
                    hx-trigger="input changed delay:500ms, load"
-                   hx-indicator="#results .htmx-indicator">
+                   hx-indicator="body">
             <span id="clear-btn" class="clear-btn" onclick="clearName()">×</span>
         </div>
     </div>
@@ -33,7 +55,7 @@
                     hx-target="#results"
                     hx-include="#name-form"
                     hx-trigger="change"
-                    hx-indicator="#results .htmx-indicator">
+                    hx-indicator="body">
                 <option value="SUNDAY" {{if eq .defaultDay "SUNDAY"}}selected{{end}}>วันอาทิตย์</option>
                 <option value="MONDAY" {{if eq .defaultDay "MONDAY"}}selected{{end}}>วันจันทร์</option>
                 <option value="TUESDAY" {{if eq .defaultDay "TUESDAY"}}selected{{end}}>วันอังคาร</option>
@@ -59,10 +81,14 @@
     </div>
 </div>
 
+<!-- Global Loading Indicator -->
+<div class="global-loader">
+    Loading....
+</div>
+
 <!-- Results Section for initial load and as a target -->
 <div id="results">
     <!-- The initial load is now handled by the input field itself -->
-    <!-- The spinner will be loaded inside this container by the decode template -->
 </div>
 
 <!-- JavaScript -->

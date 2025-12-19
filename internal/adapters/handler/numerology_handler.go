@@ -15,8 +15,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-const PageSize = 12
-const MaxSearchIterations = 10 // To prevent infinite loops, max 10 * 12 = 120 names to check
+const PageSize = 100
+const SearchBatchSize = 200
 
 // Struct definitions
 type DecodedResult struct {
@@ -29,11 +29,6 @@ type DecodedResult struct {
 type PairMeaningResult struct {
 	PairNumber string                   `json:"pair_number"`
 	Meaning    domain.NumberPairMeaning `json:"meaning"`
-}
-
-type DisplayChar struct {
-	Char  string
-	IsBad bool
 }
 
 type NumerologyHandler struct {
@@ -91,13 +86,11 @@ func (h *NumerologyHandler) GetNumberMeanings(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error loading meanings.")
 	}
 
-	// Convert map to slice for sorting
 	var meanings []domain.NumberPairMeaning
 	for _, meaning := range meaningsMap {
 		meanings = append(meanings, meaning)
 	}
 
-	// Sort by PairNumber
 	sort.Slice(meanings, func(i, j int) bool {
 		return meanings[i].PairNumber < meanings[j].PairNumber
 	})
@@ -105,88 +98,106 @@ func (h *NumerologyHandler) GetNumberMeanings(c *fiber.Ctx) error {
 	return c.Render("partials/number_meanings_modal", meanings)
 }
 
-// calculateScoresForSimilarNames calculates the total score and populates TSat/TSha for a list of similar names.
-func (h *NumerologyHandler) calculateScoresForSimilarNames(names []domain.SimilarNameResult) {
+// calculateScoresAndHighlights calculates scores and also generates the DisplayNameHTML for each name.
+func (h *NumerologyHandler) calculateScoresAndHighlights(names []domain.SimilarNameResult, day string) {
 	for i := range names {
 		satMeanings, satPos, satNeg := getMeaningsAndScores(names[i].SatNum, h.numberPairCache)
 		shaMeanings, shaPos, shaNeg := getMeaningsAndScores(names[i].ShaNum, h.numberPairCache)
-
 		names[i].TotalScore = satPos + satNeg + shaPos + shaNeg
+		names[i].IsTopTier = h.isAllPairsTopTier(names[i].ThName, names[i].SatNum, h.numberPairCache) &&
+			h.isAllPairsTopTier(names[i].ThName, names[i].ShaNum, h.numberPairCache)
 
-		// Convert and assign TSat
-		names[i].TSat = make([]domain.PairTypeInfo, len(satMeanings))
-		for j, meaning := range satMeanings {
-			names[i].TSat[j] = domain.PairTypeInfo{
-				Type:  meaning.Meaning.PairType,
-				Color: meaning.Meaning.Color,
+		// Generate display characters for the name, always as non-Klakini (black text).
+		var displayChars []domain.DisplayChar
+		for _, r := range names[i].ThName {
+			displayChars = append(displayChars, domain.DisplayChar{Char: string(r), IsBad: false})
+		}
+		names[i].DisplayNameHTML = displayChars
+
+		// Populate the KlakiniChars field with actual Klakini characters.
+		var klakiniChars []string
+		for _, r := range names[i].ThName {
+			if h.klakiniCache.IsKlakini(day, r) {
+				klakiniChars = append(klakiniChars, string(r))
 			}
 		}
+		names[i].KlakiniChars = klakiniChars
 
-		// Convert and assign TSha
+		names[i].TSat = make([]domain.PairTypeInfo, len(satMeanings))
+		for j, meaning := range satMeanings {
+			names[i].TSat[j] = domain.PairTypeInfo{Type: meaning.Meaning.PairType, Color: meaning.Meaning.Color}
+		}
 		names[i].TSha = make([]domain.PairTypeInfo, len(shaMeanings))
 		for j, meaning := range shaMeanings {
-			names[i].TSha[j] = domain.PairTypeInfo{
-				Type:  meaning.Meaning.PairType,
-				Color: meaning.Meaning.Color,
-			}
+			names[i].TSha[j] = domain.PairTypeInfo{Type: meaning.Meaning.PairType, Color: meaning.Meaning.Color}
 		}
 	}
 }
 
-// findAuspiciousNames iteratively fetches and filters names until it finds enough auspicious ones.
-func (h *NumerologyHandler) findAuspiciousNames(name, day string) ([]domain.SimilarNameResult, error) {
+func (h *NumerologyHandler) isAllPairsTopTier(name string, pairs []string, pairCache *cache.NumberPairCache) bool {
+	for _, p := range pairs {
+		if p == "" {
+			continue
+		}
+		if meaning, ok := pairCache.GetMeaning(p); ok {
+			switch meaning.PairType {
+			case "D10", "D8", "D5":
+			default:
+				return false
+			}
+		} else {
+			return false
+		}
+	}
+	return true
+}
+
+func (h *NumerologyHandler) findAuspiciousNames(name, day string, allowKlakini bool) ([]domain.SimilarNameResult, error) {
 	var auspiciousNames []domain.SimilarNameResult
 	offset := 0
-
-	for i := 0; i < MaxSearchIterations && len(auspiciousNames) < PageSize; i++ {
-		// Fetch a batch of names
-		candidates, err := h.namesMiracleRepo.GetAuspiciousNames(name, day, PageSize, offset)
+	for {
+		// Use GetAuspiciousNames which has the correct query logic (no similarity threshold)
+		candidates, err := h.namesMiracleRepo.GetAuspiciousNames(name, day, SearchBatchSize, offset, allowKlakini)
 		if err != nil {
-			return nil, fmt.Errorf("error fetching candidates on iteration %d: %w", i, err)
+			return nil, fmt.Errorf("error fetching candidates at offset %d: %w", offset, err)
 		}
-		// If no more candidates are found, break the loop
 		if len(candidates) == 0 {
 			break
 		}
-
-		// Calculate scores for the new candidates
-		h.calculateScoresForSimilarNames(candidates)
-
-		// Filter for names where ALL pairs are good (no negative scores in Sat or Sha)
 		for _, candidate := range candidates {
-			// Check Numerology (Sat) for any negative score
-			_, _, satNeg := getMeaningsAndScores(candidate.SatNum, h.numberPairCache)
-			// Check Shadow (Sha) for any negative score
-			_, _, shaNeg := getMeaningsAndScores(candidate.ShaNum, h.numberPairCache)
-
-			// Both must have 0 negative score to be considered "All Good" (Green)
-			if satNeg == 0 && shaNeg == 0 {
+			if h.isAllPairsTopTier(candidate.ThName, candidate.SatNum, h.numberPairCache) && h.isAllPairsTopTier(candidate.ThName, candidate.ShaNum, h.numberPairCache) {
 				auspiciousNames = append(auspiciousNames, candidate)
-				// If we have enough, we can stop early
-				if len(auspiciousNames) == PageSize {
+				if len(auspiciousNames) >= PageSize {
 					break
 				}
 			}
 		}
-
-		// Prepare for the next iteration
-		offset += PageSize
+		if len(auspiciousNames) >= PageSize {
+			break
+		}
+		offset += len(candidates)
 	}
-
-	// Note: We do NOT sort by score here.
-	// The names are appended in the order they were fetched from the DB (Similarity DESC).
-
 	return auspiciousNames, nil
 }
 
-// GetSimilarNames now handles both similar and auspicious names for the partial view
+// createDisplayChars generates display characters with true Klakini status.
+// It ALWAYS checks for Klakini characters based on the day, regardless of any search settings.
+// This ensures consistent display (red color) across the application.
+func (h *NumerologyHandler) createDisplayChars(name, day string) []domain.DisplayChar {
+	var displayChars []domain.DisplayChar
+	// Iterate over each rune (character) in the name
+	for _, r := range name {
+		isBad := h.klakiniCache.IsKlakini(day, r)
+		displayChars = append(displayChars, domain.DisplayChar{Char: string(r), IsBad: isBad})
+	}
+	return displayChars
+}
+
 func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 	name := service.SanitizeInput(c.Query("name"))
 	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
-
-	// Robust boolean parsing
-	auspiciousParam := c.Query("auspicious")
-	isAuspicious := auspiciousParam == "true" || auspiciousParam == "on" || auspiciousParam == "1"
+	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on" || c.Query("auspicious") == "1"
+	allowKlakini := c.Query("allow_klakini") == "true" || c.Query("allow_klakini") == "on" || c.Query("allow_klakini") == "1"
 
 	if name == "" || day == "" {
 		return c.SendString("<!-- Missing parameters -->")
@@ -194,13 +205,22 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 
 	var similarNames []domain.SimilarNameResult
 	var err error
-
 	if isAuspicious {
-		similarNames, err = h.findAuspiciousNames(name, day)
+		similarNames, err = h.findAuspiciousNames(name, day, allowKlakini)
 	} else {
-		similarNames, err = h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0)
-		if err == nil {
-			h.calculateScoresForSimilarNames(similarNames)
+		similarNames, err = h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0, allowKlakini)
+		if err == nil && len(similarNames) < PageSize {
+			needed := PageSize - len(similarNames)
+			excludedIDs := make([]int, len(similarNames))
+			for i, n := range similarNames {
+				excludedIDs[i] = n.NameID
+			}
+			fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, day, needed, allowKlakini, excludedIDs)
+			if fallbackErr == nil {
+				similarNames = append(similarNames, fallbackNames...)
+			} else {
+				log.Printf("Error getting fallback names: %v", fallbackErr)
+			}
 		}
 	}
 
@@ -209,23 +229,26 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 		return c.SendString("<div>Error loading names.</div>")
 	}
 
-	// We need display_chars for the header
-	decodedChars := service.DecodeName(name)
-	var displayChars []DisplayChar
-	for _, thaiChar := range decodedChars {
-		for _, r := range thaiChar.Original {
-			isBad := h.klakiniCache.IsKlakini(day, r)
-			displayChars = append(displayChars, DisplayChar{string(r), isBad})
+	h.calculateScoresAndHighlights(similarNames, day)
+
+	// Create display chars for the header (always true Klakini status)
+	displayNameHTML := h.createDisplayChars(name, day)
+	var klakiniChars []string
+	for _, dc := range displayNameHTML {
+		if dc.IsBad {
+			klakiniChars = append(klakiniChars, dc.Char)
 		}
 	}
 
-	// This now renders ONLY the partial, and HTMX will swap it into the right place.
 	return c.Render("partials/similar_names_section", fiber.Map{
-		"similar_names": similarNames,
-		"is_auspicious": isAuspicious,
-		"display_chars": displayChars,
-		"cleaned_name":  name,
-		"AnimateHeader": false, // We don't want to re-animate this partial
+		"similar_names":      similarNames,
+		"is_auspicious":      isAuspicious,
+		"allow_klakini":      allowKlakini,
+		"DisplayNameHTML":    displayNameHTML,
+		"klakini_characters": klakiniChars,
+		"cleaned_name":       name,
+		"input_day":          service.GetThaiDay(day),
+		"AnimateHeader":      false,
 	})
 }
 
@@ -236,10 +259,8 @@ func (h *NumerologyHandler) GetAuspiciousNames(c *fiber.Ctx) error {
 func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 	name := service.SanitizeInput(c.Query("name"))
 	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
-
-	// Robust boolean parsing
-	auspiciousParam := c.Query("auspicious")
-	isAuspicious := auspiciousParam == "true" || auspiciousParam == "on" || auspiciousParam == "1"
+	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on" || c.Query("auspicious") == "1"
+	allowKlakini := c.Query("allow_klakini") == "true" || c.Query("allow_klakini") == "on" || c.Query("allow_klakini") == "1"
 
 	if name == "" {
 		if isHtmxRequest(c) {
@@ -247,39 +268,49 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 		}
 		return c.JSON(fiber.Map{})
 	}
-
 	if day == "" {
 		day = "sunday"
 	}
 
-	// --- Fetch and Process Names (Synchronously) ---
+	var wg sync.WaitGroup
 	var similarNames []domain.SimilarNameResult
-	var err error
-
-	if isAuspicious {
-		similarNames, err = h.findAuspiciousNames(name, day)
-	} else {
-		similarNames, err = h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0)
-		if err == nil {
-			h.calculateScoresForSimilarNames(similarNames)
-		}
-	}
-
-	if err != nil {
-		log.Printf("Error in Decode (processNames): %v", err)
-		similarNames = []domain.SimilarNameResult{}
-	}
-
-	// --- Analyze Name (Numerology) ---
+	var similarNamesErr error
 	var analysisData fiber.Map
 	var analysisErr error
-	var allUniquePairs []PairMeaningResult
-	var displayChars []DisplayChar
 
-	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		if isAuspicious {
+			similarNames, similarNamesErr = h.findAuspiciousNames(name, day, allowKlakini)
+		} else {
+			similarNames, similarNamesErr = h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0, allowKlakini)
+			if similarNamesErr == nil && len(similarNames) < PageSize {
+				needed := PageSize - len(similarNames)
+				excludedIDs := make([]int, len(similarNames))
+				for i, n := range similarNames {
+					excludedIDs[i] = n.NameID
+				}
+				fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, day, needed, allowKlakini, excludedIDs)
+				if fallbackErr == nil {
+					similarNames = append(similarNames, fallbackNames...)
+				} else {
+					log.Printf("Error getting fallback names: %v", fallbackErr)
+				}
+			}
+		}
+		if similarNamesErr != nil {
+			log.Printf("Error in Decode (processNames): %v", similarNamesErr)
+			similarNames = []domain.SimilarNameResult{}
+			return
+		}
+		h.calculateScoresAndHighlights(similarNames, day)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		var allUniquePairs []PairMeaningResult
 		numerologyData, numErr := h.numerologyCache.GetAll()
 		shadowData, shaErr := h.shadowCache.GetAll()
 		if numErr != nil || shaErr != nil {
@@ -287,12 +318,13 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 			return
 		}
 
-		decodedChars := service.DecodeName(name)
+		// For decoded_parts table and klakini_characters summary, use service.DecodeName
+		decodedParts := service.DecodeName(name)
 		var results []DecodedResult
 		var totalNumerologyValue, totalShadowValue int
 		var klakiniChars []string
 
-		for _, thaiChar := range decodedChars {
+		for _, thaiChar := range decodedParts {
 			if thaiChar.IsThai {
 				processComponent := func(charStr string) {
 					if charStr == "" {
@@ -300,21 +332,27 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 					}
 					numVal := numerologyData[charStr]
 					shaVal := shadowData[charStr]
-					isKla := h.klakiniCache.IsKlakini(day, []rune(charStr)[0])
-					results = append(results, DecodedResult{charStr, numVal, shaVal, isKla})
+
+					isKlakini := false
+					for _, r := range charStr {
+						if h.klakiniCache.IsKlakini(day, r) {
+							isKlakini = true
+							break
+						}
+					}
+
+					results = append(results, DecodedResult{charStr, numVal, shaVal, isKlakini})
 					totalNumerologyValue += numVal
 					totalShadowValue += shaVal
+
+					if isKlakini && !contains(klakiniChars, charStr) {
+						klakiniChars = append(klakiniChars, charStr)
+					}
 				}
+
 				processComponent(thaiChar.Consonant)
 				processComponent(thaiChar.Vowel)
 				processComponent(thaiChar.ToneMark)
-			}
-			for _, r := range thaiChar.Original {
-				isBad := h.klakiniCache.IsKlakini(day, r)
-				displayChars = append(displayChars, DisplayChar{string(r), isBad})
-				if isBad && !contains(klakiniChars, string(r)) {
-					klakiniChars = append(klakiniChars, string(r))
-				}
 			}
 		}
 
@@ -354,6 +392,7 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 			"sha_negative_score":     shaNeg,
 			"grand_total_score":      grandTotalScore,
 			"is_sun_dead":            grandTotalScore < 0,
+			"all_unique_pairs":       allUniquePairs,
 		}
 	}()
 
@@ -364,16 +403,31 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not process request."})
 	}
 
+	// For the sun display, we want to show the name with klakini characters highlighted in red.
+	sunDisplayChars := h.createDisplayChars(name, day)
+
+	// For the header display, we want the name in black, and the klakini characters listed separately.
+	headerDisplayChars := make([]domain.DisplayChar, 0, len(name))
+	headerKlakiniChars := make([]string, 0)
+	for _, r := range name {
+		headerDisplayChars = append(headerDisplayChars, domain.DisplayChar{Char: string(r), IsBad: false})
+		if h.klakiniCache.IsKlakini(day, r) {
+			headerKlakiniChars = append(headerKlakiniChars, string(r))
+		}
+	}
+
 	responseData := fiber.Map{
-		"input_name":       c.Query("name"),
-		"cleaned_name":     name,
-		"input_day":        service.GetThaiDay(day),
-		"input_day_raw":    day,
-		"similar_names":    similarNames,
-		"is_auspicious":    isAuspicious,
-		"all_unique_pairs": allUniquePairs,
-		"display_chars":    displayChars,
-		"AnimateHeader":    true,
+		"input_name":         c.Query("name"),
+		"cleaned_name":       name,
+		"input_day":          service.GetThaiDay(day),
+		"input_day_raw":      day,
+		"similar_names":      similarNames,
+		"is_auspicious":      isAuspicious,
+		"allow_klakini":      allowKlakini,
+		"SunDisplayNameHTML": sunDisplayChars,
+		"DisplayNameHTML":    headerDisplayChars,
+		"klakini_characters": headerKlakiniChars,
+		"AnimateHeader":      true,
 	}
 	for k, v := range analysisData {
 		responseData[k] = v

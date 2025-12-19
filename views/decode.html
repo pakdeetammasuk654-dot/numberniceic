@@ -1,24 +1,46 @@
 <style>
-    .sun-name {
-        font-size: 1.2rem; /* Increased font size */
+    /* Reset to simple, working CSS */
+    .sun {
+        position: relative;
+        display: flex;           /* Use Flexbox on the container */
+        justify-content: center; /* Center horizontally */
+        align-items: center;     /* Center vertically */
     }
+
+    .sun-name {
+        font-size: 1.2rem;
+        text-align: center;
+        z-index: 1;
+        /* No absolute positioning, no width/height 100% */
+        /* Let Flexbox handle the centering naturally */
+    }
+
     .score-analysis-grid {
-        margin-top: 0; /* Reduced top margin */
+        margin-top: 0;
+    }
+
+    /* Flexbox container to force characters together */
+    .char-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 </style>
+
 <!-- Solar System Animation -->
 <div class="solar-system-container solar-bubble">
     <div class="solar-system">
         <div class="{{if .is_sun_dead}}sun sun-dead{{else}}sun{{end}}">
-            <!-- Spinner is now INSIDE the sun -->
-            <div id="results-spinner" class="htmx-indicator">
-                <svg class="spinner" width="50px" height="50px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
-                   <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
-                </svg>
-            </div>
+
+            <!-- Only the name remains here. No spinners, no overlays. -->
             <div class="sun-name">
-                {{range .display_chars}}{{if .IsBad}}<span class="klakini-char">{{.Char}}</span>{{else}}<span>{{.Char}}</span>{{end}}{{end}}
+                <div class="char-container">
+                    {{- range .SunDisplayNameHTML -}}
+                        {{- if .IsBad -}}<span class="klakini-char">{{.Char}}</span>{{- else -}}<span>{{.Char}}</span>{{- end -}}
+                    {{- end -}}
+                </div>
             </div>
+
         </div>
         <div class="orbit orbit-inner"></div>
         <div class="orbit orbit-outer"></div>
@@ -52,7 +74,7 @@
         </div>
         <div style="text-align: center;">
             <strong>กาลกิณี:</strong>
-            {{if .klakini_characters}}
+            {{if and .klakini_characters (not .allow_klakini)}}
                 <span class="icon-bad">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                     <span class="klakini">{{range .klakini_characters}}{{.}} {{end}}</span>
@@ -105,6 +127,34 @@
             <button class="close-btn" onclick="document.getElementById('meaning-modal-{{.cleaned_name}}').style.display='none'">&times;</button>
         </div>
         <div class="modal-body">
+            <h3>รายละเอียดตัวอักษร</h3>
+            <table class="similar-names-table">
+                <thead>
+                    <tr>
+                        <th>ตัวอักษร</th>
+                        <th>เลขศาสตร์</th>
+                        <th>พลังเงา</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{$allowKlakini := .allow_klakini}}
+                    {{range .decoded_parts}}
+                    <tr>
+                        <td>
+                            {{if and .IsKlakini (not $allowKlakini)}}
+                                <span class="klakini-char">{{.Character}}</span>
+                            {{else}}
+                                {{.Character}}
+                            {{end}}
+                        </td>
+                        <td>{{.NumerologyValue}}</td>
+                        <td>{{.ShadowValue}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+
+            <h3 style="margin-top: 1.5rem;">ความหมายคู่เลข</h3>
             {{range .all_unique_pairs}}
             <div class="meaning-item">
                 <div class="meaning-header">

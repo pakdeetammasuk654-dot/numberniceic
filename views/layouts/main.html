@@ -22,6 +22,12 @@
         }
         .button-group button:hover { background-color: #0056b3; }
         #results { margin-top: 2rem; }
+
+        /* --- The Definitive Klakini Rendering Fix --- */
+        .klakini-char {
+            color: #C62828 !important; /* Use a specific dark red and ensure it always applies */
+            display: inline-block;     /* Force the character into its own rendering block to prevent color bleeding */
+        }
     </style>
 </head>
 <body>

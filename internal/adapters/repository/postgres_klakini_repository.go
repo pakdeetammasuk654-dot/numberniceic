@@ -38,3 +38,17 @@ func (r *PostgresKlakiniRepository) GetAll() ([]domain.Klakini, error) {
 
 	return klakinis, nil
 }
+
+func (r *PostgresKlakiniRepository) GetByDay(day string) (domain.Klakini, error) {
+	var k domain.Klakini
+	query := "SELECT day, kakis FROM public.kakis_day WHERE lower(trim(day)) = $1"
+	err := r.db.QueryRow(query, strings.ToLower(strings.TrimSpace(day))).Scan(&k.Day, &k.BadChars)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return domain.Klakini{}, nil // Return empty struct and no error if not found
+		}
+		return domain.Klakini{}, err
+	}
+	k.Day = strings.ToLower(strings.TrimSpace(k.Day))
+	return k, nil
+}
