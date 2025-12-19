@@ -1,6 +1,6 @@
 ### Test Gemini API
 # @name TestGeminiAPI
-POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyBsS3i9clTUCZUYrBGTkBRfPfTuMeSSGRs
+POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyB-jb5QOGiOkmaFCS2rkPkdH6F4hGCiUPQ
 Content-Type: application/json
 
 {

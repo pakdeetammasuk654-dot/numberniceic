@@ -1,3 +1,4 @@
+{{define "partials/similar_names_section"}}
 <div class="similar-names-container" id="similar-names-section">
     <div class="speech-bubble-header {{if .AnimateHeader}}bounce-in-animation{{end}}">
         <div class="header-text-content">
@@ -12,7 +13,7 @@
             <div class="header-sub-line">
                 <span class="icon-good" style="font-size: 0.8rem; font-weight: normal;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                    ไม่มีกาลกิณี
+                    ชื่อในตารางไม่มีกาลกิณี
                 </span>
             </div>
         </div>
@@ -20,12 +21,17 @@
         <div class="toggle-switch-container">
             <span style="font-size: 0.8rem; margin-right: 0.5rem; font-weight: normal;">เฉพาะชื่อมงคล</span>
             <label class="toggle-switch">
-                <input type="checkbox" name="auspicious" value="true" {{if .is_auspicious}}checked{{end}}
+                <!--
+                    Updated hx-vals to use event.target.checked for reliability.
+                    Removed hx-include to avoid conflict with hidden input state.
+                    Added onchange to immediately sync with hidden input.
+                -->
+                <input type="checkbox" id="auspicious-toggle" name="auspicious" value="true" {{if .is_auspicious}}checked{{end}}
                        hx-get="/similar-names"
                        hx-target="#similar-names-section"
                        hx-swap="outerHTML"
-                       hx-include="#name-form, [name='auspicious']"
-                       hx-indicator="#spinner">
+                       hx-vals='js:{"name": document.getElementById("name").value, "day": document.getElementById("day").value, "auspicious": event.target.checked}'
+                       onchange="document.getElementById('main-auspicious').value = this.checked">
                 <span class="slider"></span>
             </label>
         </div>
@@ -44,7 +50,12 @@
         <tbody>
             {{range $i, $name := .similar_names}}
             <tr class="{{if eq (mod $i 2) 0}}row-even{{else}}row-odd{{end}} clickable-row" onclick="selectName('{{$name.ThName}}')">
-                <td>{{$name.ThName}}</td>
+                <td>
+                    <span class="icon-good" style="font-weight: normal; font-size: 1rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        <span class="{{if lt $name.TotalScore 0}}score-bad{{end}}">{{$name.ThName}}</span>
+                    </span>
+                </td>
                 <td>
                     <div class="table-pairs-container">
                         {{range $j, $pairInfo := $name.TSat}}
@@ -80,3 +91,17 @@
         </tbody>
     </table>
 </div>
+<script>
+    // Immediate execution to sync state when this partial is swapped in
+    (function() {
+        const mainAuspicious = document.getElementById('main-auspicious');
+        const toggle = document.getElementById('auspicious-toggle');
+
+        if (mainAuspicious && toggle) {
+            // If the toggle was just rendered by the server, it has the "truth" state.
+            // We update the hidden input to match it.
+            mainAuspicious.value = toggle.checked;
+        }
+    })();
+</script>
+{{end}}

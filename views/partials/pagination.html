@@ -1,0 +1,29 @@
+{{if gt .Pagination.TotalPages 1}}
+<div class="pagination-container">
+    <button
+        class="pagination-btn"
+        {{if not .Pagination.HasPrev}}disabled{{end}}
+        hx-get="/similar-names"
+        hx-target="#similar-names-section"
+        hx-swap="outerHTML"
+        hx-include="#name-form"
+        hx-vals='{"page": "{{.Pagination.PrevPage}}"}'>
+        &laquo; ก่อนหน้า
+    </button>
+
+    <span class="page-info">
+        หน้า {{.Pagination.CurrentPage}} / {{.Pagination.TotalPages}}
+    </span>
+
+    <button
+        class="pagination-btn"
+        {{if not .Pagination.HasNext}}disabled{{end}}
+        hx-get="/similar-names"
+        hx-target="#similar-names-section"
+        hx-swap="outerHTML"
+        hx-include="#name-form"
+        hx-vals='{"page": "{{.Pagination.NextPage}}"}'>
+        ถัดไป &raquo;
+    </button>
+</div>
+{{end}}

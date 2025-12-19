@@ -1,7 +1,13 @@
 <!-- The form is just a container, no HTMX attributes here -->
 <form id="name-form">
+    <!-- Hidden input to store auspicious toggle state -->
+    <input type="hidden" name="auspicious" id="main-auspicious" value="false">
+
     <div class="form-group">
-        <label for="name">ชื่อ-นามสกุล</label>
+        <div class="label-row">
+            <label for="name">ชื่อ-นามสกุล</label>
+            <small class="helper-text">ระบบจะวิเคราะห์ชื่อของคุณโดยอัตโนมัติขณะพิมพ์</small>
+        </div>
         <div class="input-wrapper">
             <span class="input-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -15,7 +21,6 @@
                    hx-indicator="#results .htmx-indicator">
             <span id="clear-btn" class="clear-btn" onclick="clearName()">×</span>
         </div>
-        <small class="helper-text">ระบบจะวิเคราะห์ชื่อของคุณโดยอัตโนมัติขณะพิมพ์</small>
     </div>
     <div class="form-group">
         <label for="day">วันเกิด</label>

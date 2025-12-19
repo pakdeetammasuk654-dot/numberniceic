@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 )
 
@@ -35,18 +37,28 @@ type Candidate struct {
 }
 
 func NewLinguisticService(apiKey string) (*LinguisticService, error) {
-	if apiKey == "" {
+	// Trim any whitespace from the API key
+	cleanKey := strings.TrimSpace(apiKey)
+
+	if cleanKey == "" {
 		return nil, fmt.Errorf("API key is empty")
 	}
+
 	return &LinguisticService{
-		apiKey: apiKey,
+		apiKey: cleanKey,
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			// Use the default transport which handles DNS, TLS, etc. correctly.
+			Transport: http.DefaultTransport,
+			Timeout:   60 * time.Second,
 		},
 	}, nil
 }
 
 func (s *LinguisticService) AnalyzeName(name string) (string, error) {
+	if s.apiKey == "" {
+		return "", fmt.Errorf("API key is missing in service struct")
+	}
+
 	prompt := fmt.Sprintf(
 		"วิเคราะห์ชื่อ '%s' ตามหลักภาษาศาสตร์ไทย โดยไม่ต้องสนใจเรื่องตัวเลขหรือเลขศาสตร์ ให้เน้นที่:\n"+
 			"1. รากศัพท์ของแต่ละพยางค์ (ถ้ามี)\n"+
@@ -72,13 +84,19 @@ func (s *LinguisticService) AnalyzeName(name string) (string, error) {
 		return "", fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
-	// Corrected URL: Removed duplicate "models/" prefix
-	// The model name from ListModels is "models/gemini-2.5-flash"
-	// The API endpoint format is ".../v1beta/{model_name}:generateContent"
-	// So it becomes ".../v1beta/models/gemini-2.5-flash:generateContent"
-	url := "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + s.apiKey
+	// Construct the URL safely using url.URL
+	baseURL := "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse base URL: %w", err)
+	}
+	q := u.Query()
+	q.Set("key", s.apiKey)
+	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequestWithContext(context.Background(), "POST", url, bytes.NewBuffer(reqBody))
+	finalURL := u.String()
+
+	req, err := http.NewRequestWithContext(context.Background(), "POST", finalURL, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return "", fmt.Errorf("failed to create http request: %w", err)
 	}

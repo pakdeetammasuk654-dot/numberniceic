@@ -33,22 +33,35 @@ func toFloat64(v interface{}) (float64, error) {
 }
 
 func main() {
-	log.Println("--- STARTING APPLICATION (LOG) ---")
+	log.Println("--- STARTING APPLICATION ---")
 
 	// --- Initialization ---
-	err := godotenv.Load()
+	// Use Overload to force overwrite existing environment variables with values from .env
+	// This fixes issues where an old/invalid key might be cached in the terminal session.
+	err := godotenv.Overload()
 	if err != nil {
-		log.Printf("Warning: Error loading .env file: %v", err)
+		log.Printf("Warning: Error loading .env file (this is fine in production if env vars are set): %v", err)
 	} else {
-		log.Println("Successfully loaded .env file.")
+		log.Println("Successfully loaded (overloaded) .env file.")
 	}
 
-	// Use hardcoded API key for debugging, but keep loading .env for DB credentials
-	apiKey := "AIzaSyBsS3i9clTUCZUYrBGTkBRfPfTuMeSSGRs"
-	log.Println("DEBUG: Using hardcoded API Key for testing.")
+	apiKey := os.Getenv("GEMINI_API_KEY")
 
+	// Debug log to verify the key is loaded (masked for security)
+	if apiKey == "" {
+		log.Println("CRITICAL WARNING: GEMINI_API_KEY is empty! The linguistic service will fail.")
+	} else {
+		maskedKey := apiKey
+		if len(apiKey) > 8 {
+			maskedKey = apiKey[:4] + "..." + apiKey[len(apiKey)-4:]
+		}
+		log.Printf("Loaded GEMINI_API_KEY: %s (Length: %d)", maskedKey, len(apiKey))
+	}
+
+	// Create a new engine for each request in development to ensure templates are reloaded.
 	engine := html.New("./views", ".html")
-	engine.Reload(true)
+	engine.Reload(true) // This should be enough, but we'll be extra sure.
+	// engine.Debug(true) // This is verbose and logs every template parse.
 
 	engine.AddFunc("mul", func(a, b interface{}) (float64, error) {
 		fa, errA := toFloat64(a)
