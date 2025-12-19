@@ -152,12 +152,47 @@ func (h *NumerologyHandler) isAllPairsTopTier(name string, pairs []string, pairC
 	return true
 }
 
+// findBestConsonant finds the first consonant in a name that is not a klakini for the given day.
+func (h *NumerologyHandler) findBestConsonant(name, day string) string {
+	firstConsonant := ""
+	for _, r := range name {
+		// Skip leading vowels
+		switch r {
+		case 'เ', 'แ', 'โ', 'ใ', 'ไ':
+			continue
+		}
+		// Check if the character is a klakini
+		if !h.klakiniCache.IsKlakini(day, r) {
+			return string(r) // Found a non-klakini consonant
+		}
+		// If it's a klakini but it's the first consonant we've seen, store it as a fallback
+		if firstConsonant == "" {
+			firstConsonant = string(r)
+		}
+	}
+	// If all consonants are klakini, return the first one found. If no consonants, return empty.
+	return firstConsonant
+}
+
 func (h *NumerologyHandler) findAuspiciousNames(name, day string, allowKlakini bool) ([]domain.SimilarNameResult, error) {
 	var auspiciousNames []domain.SimilarNameResult
 	offset := 0
+
+	// Determine the best consonant to use for sorting/prioritizing
+	preferredConsonant := h.findBestConsonant(name, day)
+	if allowKlakini {
+		// If klakini is allowed, just use the first consonant regardless
+		for _, r := range name {
+			if r != 'เ' && r != 'แ' && r != 'โ' && r != 'ใ' && r != 'ไ' {
+				preferredConsonant = string(r)
+				break
+			}
+		}
+	}
+
 	for {
 		// Use GetAuspiciousNames which has the correct query logic (no similarity threshold)
-		candidates, err := h.namesMiracleRepo.GetAuspiciousNames(name, day, SearchBatchSize, offset, allowKlakini)
+		candidates, err := h.namesMiracleRepo.GetAuspiciousNames(name, preferredConsonant, day, SearchBatchSize, offset, allowKlakini)
 		if err != nil {
 			return nil, fmt.Errorf("error fetching candidates at offset %d: %w", offset, err)
 		}
@@ -215,7 +250,18 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 			for i, n := range similarNames {
 				excludedIDs[i] = n.NameID
 			}
-			fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, day, needed, allowKlakini, excludedIDs)
+
+			preferredConsonant := h.findBestConsonant(name, day)
+			if allowKlakini {
+				for _, r := range name {
+					if r != 'เ' && r != 'แ' && r != 'โ' && r != 'ใ' && r != 'ไ' {
+						preferredConsonant = string(r)
+						break
+					}
+				}
+			}
+
+			fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, preferredConsonant, day, needed, allowKlakini, excludedIDs)
 			if fallbackErr == nil {
 				similarNames = append(similarNames, fallbackNames...)
 			} else {
@@ -291,7 +337,18 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 				for i, n := range similarNames {
 					excludedIDs[i] = n.NameID
 				}
-				fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, day, needed, allowKlakini, excludedIDs)
+
+				preferredConsonant := h.findBestConsonant(name, day)
+				if allowKlakini {
+					for _, r := range name {
+						if r != 'เ' && r != 'แ' && r != 'โ' && r != 'ใ' && r != 'ไ' {
+							preferredConsonant = string(r)
+							break
+						}
+					}
+				}
+
+				fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, preferredConsonant, day, needed, allowKlakini, excludedIDs)
 				if fallbackErr == nil {
 					similarNames = append(similarNames, fallbackNames...)
 				} else {

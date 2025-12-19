@@ -37,25 +37,6 @@ func getKlakiniColumn(day string) (string, error) {
 	return col, nil
 }
 
-// getFirstConsonant extracts the first consonant from a Thai name, skipping leading vowels.
-func getFirstConsonant(name string) string {
-	runes := []rune(name)
-	for _, r := range runes {
-		// Skip Thai leading vowels
-		switch r {
-		case 'เ', 'แ', 'โ', 'ใ', 'ไ':
-			continue
-		default:
-			return string(r)
-		}
-	}
-	// Fallback: if no consonant found (unlikely for valid names), return first char or empty
-	if len(runes) > 0 {
-		return string(runes[0])
-	}
-	return ""
-}
-
 // GetSimilarNames fetches up to a given limit of similar names with an offset.
 func (r *PostgresNamesMiracleRepository) GetSimilarNames(name, day string, limit, offset int, allowKlakini bool) ([]domain.SimilarNameResult, error) {
 	klakiniColumn, err := getKlakiniColumn(day)
@@ -101,7 +82,7 @@ func (r *PostgresNamesMiracleRepository) GetSimilarNames(name, day string, limit
 }
 
 // GetAuspiciousNames fetches names for the auspicious search, which has different filtering rules.
-func (r *PostgresNamesMiracleRepository) GetAuspiciousNames(name, day string, limit, offset int, allowKlakini bool) ([]domain.SimilarNameResult, error) {
+func (r *PostgresNamesMiracleRepository) GetAuspiciousNames(name, preferredConsonant, day string, limit, offset int, allowKlakini bool) ([]domain.SimilarNameResult, error) {
 	klakiniColumn, err := getKlakiniColumn(day)
 	if err != nil {
 		return nil, err
@@ -112,6 +93,40 @@ func (r *PostgresNamesMiracleRepository) GetAuspiciousNames(name, day string, li
 	if !allowKlakini {
 		klakiniWhereClause = fmt.Sprintf("AND %s = false", klakiniColumn)
 	}
+
+	orderBy := "ORDER BY sim DESC"
+	args := []interface{}{name} // $1
+	paramCount := 1
+
+	if preferredConsonant != "" {
+		p1 := preferredConsonant + "%"
+		p2 := "เ" + preferredConsonant + "%"
+		p3 := "แ" + preferredConsonant + "%"
+		p4 := "โ" + preferredConsonant + "%"
+		p5 := "ใ" + preferredConsonant + "%"
+		p6 := "ไ" + preferredConsonant + "%"
+
+		args = append(args, p1, p2, p3, p4, p5, p6)
+
+		// Prioritize names starting with the same consonant (including leading vowels)
+		orderBy = fmt.Sprintf(`ORDER BY (
+			CASE 
+				WHEN thname LIKE $%d THEN 1
+				WHEN thname LIKE $%d THEN 1
+				WHEN thname LIKE $%d THEN 1
+				WHEN thname LIKE $%d THEN 1
+				WHEN thname LIKE $%d THEN 1
+				WHEN thname LIKE $%d THEN 1
+				ELSE 0 
+			END
+		) DESC, sim DESC`, paramCount+1, paramCount+2, paramCount+3, paramCount+4, paramCount+5, paramCount+6)
+
+		paramCount += 6
+	}
+
+	args = append(args, limit, offset)
+	limitIdx := paramCount + 1
+	offsetIdx := paramCount + 2
 
 	// This query is for finding candidates for auspicious names. It does NOT filter by similarity > 0.1
 	// to ensure we can search the whole table if needed.
@@ -138,14 +153,14 @@ func (r *PostgresNamesMiracleRepository) GetAuspiciousNames(name, day string, li
             shanum,
             sim -- Return the similarity score
         FROM ranked_names
-        ORDER BY sim DESC
-        LIMIT $2 OFFSET $3;
-    `, klakiniWhereClause)
+        %s
+        LIMIT $%d OFFSET $%d;
+    `, klakiniWhereClause, orderBy, limitIdx, offsetIdx)
 
-	return r.executeNameQuery(query, name, limit, offset)
+	return r.executeNameQuery(query, args...)
 }
 
-func (r *PostgresNamesMiracleRepository) GetFallbackNames(name, day string, limit int, allowKlakini bool, excludedIDs []int) ([]domain.SimilarNameResult, error) {
+func (r *PostgresNamesMiracleRepository) GetFallbackNames(name, preferredConsonant, day string, limit int, allowKlakini bool, excludedIDs []int) ([]domain.SimilarNameResult, error) {
 	klakiniColumn, err := getKlakiniColumn(day)
 	if err != nil {
 		return nil, err
@@ -156,10 +171,7 @@ func (r *PostgresNamesMiracleRepository) GetFallbackNames(name, day string, limi
 		klakiniWhereClause = fmt.Sprintf("AND %s = false", klakiniColumn)
 	}
 
-	// Step 1: Try to find names starting with the same first consonant
-	firstConsonant := getFirstConsonant(name)
-
-	log.Printf("GetFallbackNames Step 1: name=%s, day=%s, limit=%d, consonant=%s", name, day, limit, firstConsonant)
+	log.Printf("GetFallbackNames Step 1: name=%s, day=%s, limit=%d, consonant=%s", name, day, limit, preferredConsonant)
 
 	var results []domain.SimilarNameResult
 	var step1Results []domain.SimilarNameResult
@@ -221,9 +233,9 @@ func (r *PostgresNamesMiracleRepository) GetFallbackNames(name, day string, limi
 	}
 
 	// Execute Step 1: Try with strict Klakini rules first
-	if firstConsonant != "" {
+	if preferredConsonant != "" {
 		var err error
-		step1Results, err = runQuery(firstConsonant, false, false, limit, excludedIDs)
+		step1Results, err = runQuery(preferredConsonant, false, false, limit, excludedIDs)
 		if err != nil {
 			return nil, err
 		}
@@ -234,12 +246,10 @@ func (r *PostgresNamesMiracleRepository) GetFallbackNames(name, day string, limi
 	// Step 1.5: If Step 1 found nothing AND we are in strict mode (allowKlakini=false),
 	// try to find names with the same consonant BUT ignore Klakini rules.
 	// This ensures we at least show some names starting with the correct letter.
-	if len(results) == 0 && !allowKlakini && firstConsonant != "" {
-		log.Printf("GetFallbackNames Step 1.5: Step 1 empty, trying to find names with consonant '%s' ignoring Klakini...", firstConsonant)
+	if len(results) == 0 && !allowKlakini && preferredConsonant != "" {
+		log.Printf("GetFallbackNames Step 1.5: Step 1 empty, trying to find names with consonant '%s' ignoring Klakini...", preferredConsonant)
 
-		// We limit this fallback to, say, 20 names, or the full limit, to avoid flooding if there are many.
-		// Let's use the full limit for now to fill the list.
-		step15Results, err := runQuery(firstConsonant, false, true, limit, excludedIDs) // ignoreKlakini=true
+		step15Results, err := runQuery(preferredConsonant, false, true, limit, excludedIDs) // ignoreKlakini=true
 		if err != nil {
 			return nil, err
 		}
