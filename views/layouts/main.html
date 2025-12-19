@@ -5,30 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .title }} - NumberNiceIC</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <style>
-        body { font-family: sans-serif; margin: 0; background-color: #f9f9f9; }
-        main { padding: 1rem; max-width: 960px; margin: 0 auto; }
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; }
-        .form-group input, .form-group select { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; }
-        .button-group button {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-right: 0.5rem;
-            background-color: #007bff;
-            color: white;
-        }
-        .button-group button:hover { background-color: #0056b3; }
-        #results { margin-top: 2rem; }
-
-        /* --- The Definitive Klakini Rendering Fix --- */
-        .klakini-char {
-            color: #C62828 !important; /* Use a specific dark red and ensure it always applies */
-            display: inline-block;     /* Force the character into its own rendering block to prevent color bleeding */
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     {{ template "partials/header" . }}

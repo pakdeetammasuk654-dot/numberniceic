@@ -1,7 +1,7 @@
 {{define "partials/similar_names_section"}}
 <style>
     .name-top-tier {
-        color: #2E7D32; /* Dark Green */
+        color: #F57F17; /* Darker Gold/Sun color (Material Yellow 900) */
         font-weight: bold;
     }
     .name-not-top-tier {
@@ -62,14 +62,15 @@
         transition: opacity 0.2s ease-in-out;
     }
 
+    /* Revert score colors to original state */
     .score-good {
         color: #2E7D32;
-        font-weight: normal; /* Changed from bold to normal */
+        font-weight: bold;
     }
 
     .score-bad {
         color: #C62828;
-        font-weight: normal; /* Changed from bold to normal */
+        font-weight: bold;
     }
 </style>
 <div class="similar-names-container" id="similar-names-section" style="position: relative; min-height: 200px;">
@@ -132,7 +133,7 @@
     <table class="similar-names-table">
         <thead>
             <tr>
-                <th>ชื่อ</th>
+                <th>ชื่อ/สกุล</th>
                 <th>ไร้กาลกิณี</th>
                 <th>เลขศาสตร์</th>
                 <th>พลังเงา</th>

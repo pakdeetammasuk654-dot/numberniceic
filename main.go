@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+
 	"html/template"
 	"log"
 	"numberniceic/internal/adapters/cache"
@@ -158,6 +159,8 @@ func main() {
 	})
 
 	app.Get("/decode", numerologyHandler.Decode)
+	app.Get("/solar-system", numerologyHandler.GetSolarSystem)
+	app.Get("/similar-names-initial", numerologyHandler.GetSimilarNamesInitial)
 	app.Get("/similar-names", numerologyHandler.GetSimilarNames)
 	app.Get("/auspicious-names", numerologyHandler.GetAuspiciousNames)
 	app.Get("/number-meanings", numerologyHandler.GetNumberMeanings)
