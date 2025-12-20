@@ -4,14 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .title }} - NumberNiceIC</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&family=Kanit:wght@400;700&display=swap" rel="stylesheet">
+
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <link rel="stylesheet" href="/static/css/style.css">
+
+    <!-- Corrected CSS Path -->
+    <link rel="stylesheet" href="/css/style.css">
+
+    <!-- Toastify JS CDN -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 </head>
 <body>
     {{ template "partials/header" . }}
     <main>
-        {{ embed }}
+        {{embed}}
     </main>
     {{ template "partials/footer" . }}
+
+    <!-- Toastify JS CDN -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <!-- Toast Trigger Partial -->
+    {{ template "partials/toast" . }}
+
+    <!-- Global HTMX Event Listeners -->
+    <script>
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            // Handle Saved Names Response
+            if (evt.detail.elt.getAttribute('hx-post') === '/saved-names') {
+                if (evt.detail.successful) {
+                    Toastify({
+                        text: "บันทึกชื่อเรียบร้อยแล้ว!",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "center",
+                        style: { background: "linear-gradient(to right, #00b09b, #96c93d)" }
+                    }).showToast();
+                } else {
+                    let errorMsg = "เกิดข้อผิดพลาดในการบันทึก";
+                    if (evt.detail.xhr.status === 401) {
+                        errorMsg = "กรุณาเข้าสู่ระบบก่อนบันทึกชื่อ";
+                        // Redirect to login after a delay
+                        setTimeout(() => window.location.href = "/login", 1500);
+                    }
+                    Toastify({
+                        text: errorMsg,
+                        duration: 3000,
+                        gravity: "top",
+                        position: "center",
+                        style: { background: "linear-gradient(to right, #ff5f6d, #ffc371)" }
+                    }).showToast();
+                }
+            }
+        });
+    </script>
 </body>
 </html>

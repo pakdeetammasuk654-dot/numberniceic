@@ -91,6 +91,11 @@
     <!-- The initial load is now handled by the input field itself -->
 </div>
 
+<!-- Back to Top Button -->
+<button id="back-to-top" onclick="scrollToTop()" title="Go to top">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+</button>
+
 <!-- JavaScript -->
 <script>
     function selectName(name) {
@@ -125,6 +130,21 @@
         nameInput.focus();
         // Manually trigger the input event to clear the results via HTMX
         htmx.trigger('#name', 'input');
+    }
+
+    // Back to Top functionality
+    const backToTopButton = document.getElementById("back-to-top");
+
+    window.onscroll = function() {
+        if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+            backToTopButton.style.display = "flex";
+        } else {
+            backToTopButton.style.display = "none";
+        }
+    };
+
+    function scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     document.addEventListener('DOMContentLoaded', function() {

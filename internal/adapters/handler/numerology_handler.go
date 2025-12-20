@@ -403,6 +403,7 @@ func (h *NumerologyHandler) GetSolarSystem(c *fiber.Ctx) error {
 	responseData := fiber.Map{
 		"cleaned_name":       name,
 		"input_day":          service.GetThaiDay(day),
+		"input_day_raw":      day,
 		"allow_klakini":      allowKlakini,
 		"SunDisplayNameHTML": sunDisplayChars,
 	}

@@ -29,7 +29,7 @@
 </style>
 
 <!-- Solar System Animation -->
-<div class="solar-system-container solar-bubble">
+<div class="solar-system-container solar-bubble fade-slide-in">
     <div class="solar-system">
         <div class="{{if .is_sun_dead}}sun sun-dead{{else}}sun{{end}}">
 
@@ -67,32 +67,43 @@
 </div>
 
 <!-- Single, Consolidated Result Card -->
-<div class="result-box" style="padding-top: 0.5rem; padding-bottom: 0.5rem;">
-    <!-- New Score Summary -->
-    <div class="score-summary-line">
-        <strong>(คะแนน)</strong>
-        <span class="score-good">ดี: +{{ add .num_positive_score .sha_positive_score }}</span>
-        <span class="score-bad">ร้าย: {{ add .num_negative_score .sha_negative_score }}</span>
-        <span>=</span>
-        <strong class="{{if lt .grand_total_score 0}}score-bad{{else}}score-good{{end}}">
-            {{if gt .grand_total_score 0}}+{{end}}{{.grand_total_score}}
-        </strong>
-    </div>
+<div class="result-box fade-slide-in" style="padding: 0.75rem; margin-top: 0;">
+    <div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
 
-    <div class="action-links-container">
-        <button type="button" class="link-button" onclick="document.getElementById('meaning-modal-{{.cleaned_name}}').style.display='flex'">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
-            เลขศาสตร์
-        </button>
-        <button type="button" class="link-button"
-                hx-get="/linguistic-analysis?name={{.cleaned_name}}"
-                hx-target="#linguistic-modal-content"
-                hx-swap="innerHTML"
-                hx-indicator="#linguistic-loading-{{.cleaned_name}}"
-                onclick="document.getElementById('linguistic-modal-container-{{.cleaned_name}}').style.display='flex'">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-            ภาษาศาสตร์
-        </button>
+        <!-- Score Summary -->
+        <div style="display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
+            <strong>(คะแนน)</strong>
+            <span class="score-good">ดี: +{{ add .num_positive_score .sha_positive_score }}</span>
+            <span class="score-bad">ร้าย: {{ add .num_negative_score .sha_negative_score }}</span>
+            <span>=</span>
+            <strong class="{{if lt .grand_total_score 0}}score-bad{{else}}score-good{{end}}">
+                {{if gt .grand_total_score 0}}+{{end}}{{.grand_total_score}}
+            </strong>
+        </div>
+
+        <!-- Action Links -->
+        <div style="display: flex; gap: 1rem;">
+            <button type="button" class="link-button" onclick="document.getElementById('meaning-modal-{{.cleaned_name}}').style.display='flex'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+                เลขศาสตร์
+            </button>
+            <button type="button" class="link-button"
+                    hx-get="/linguistic-analysis?name={{.cleaned_name}}"
+                    hx-target="#linguistic-modal-content"
+                    hx-swap="innerHTML"
+                    hx-indicator="#linguistic-loading-{{.cleaned_name}}"
+                    onclick="document.getElementById('linguistic-modal-container-{{.cleaned_name}}').style.display='flex'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                ภาษาศาสตร์
+            </button>
+            <button type="button" class="link-button"
+                    hx-post="/saved-names"
+                    hx-vals='{"name": "{{.cleaned_name}}", "birth_day": "{{.input_day_raw}}", "total_score": "{{.grand_total_score}}", "sat_sum": "{{.total_numerology_value}}", "sha_sum": "{{.total_shadow_value}}"}'
+                    hx-swap="none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                บันทึกชื่อนี้
+            </button>
+        </div>
     </div>
 </div>
 
@@ -100,7 +111,10 @@
 <div id="meaning-modal-{{.cleaned_name}}" class="modal-overlay" onclick="this.style.display='none'">
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header">
-            <h2>คู่เลขของ "{{.cleaned_name}}"</h2>
+            <h2 style="display: flex; align-items: center; gap: 0.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+                เลขศาสตร์ของ "{{.cleaned_name}}"
+            </h2>
             <button class="close-btn" onclick="document.getElementById('meaning-modal-{{.cleaned_name}}').style.display='none'">&times;</button>
         </div>
         <div class="modal-body">
