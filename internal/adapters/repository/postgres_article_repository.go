@@ -104,6 +104,43 @@ func (r *PostgresArticleRepository) GetByID(id int) (*domain.Article, error) {
 	return &a, nil
 }
 
+func (r *PostgresArticleRepository) GetWithPagination(page, limit int) ([]domain.Article, int64, error) {
+	offset := (page - 1) * limit
+	query := `
+		SELECT art_id, slug, title, excerpt, category, image_url, published_at, is_published, content, title_short, COALESCE(pin_order, 0)
+		FROM articles
+		ORDER BY 
+			CASE WHEN COALESCE(pin_order, 0) > 0 THEN pin_order ELSE 999 END ASC,
+			art_id DESC
+		LIMIT $1 OFFSET $2
+	`
+	rows, err := r.db.Query(query, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var articles []domain.Article
+	for rows.Next() {
+		var a domain.Article
+		err := rows.Scan(&a.ID, &a.Slug, &a.Title, &a.Excerpt, &a.Category, &a.ImageURL, &a.PublishedAt, &a.IsPublished, &a.Content, &a.TitleShort, &a.PinOrder)
+		if err != nil {
+			return nil, 0, err
+		}
+		articles = append(articles, a)
+	}
+
+	// Get total count
+	var totalCount int64
+	countQuery := `SELECT COUNT(*) FROM articles`
+	err = r.db.QueryRow(countQuery).Scan(&totalCount)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return articles, totalCount, nil
+}
+
 func (r *PostgresArticleRepository) Create(article *domain.Article) error {
 	query := `
 		INSERT INTO articles (slug, title, excerpt, category, image_url, published_at, is_published, content, title_short, pin_order)

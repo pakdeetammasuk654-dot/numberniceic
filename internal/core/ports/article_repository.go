@@ -9,6 +9,7 @@ type ArticleRepository interface {
 	// Admin methods
 	GetAll() ([]domain.Article, error)
 	GetByID(id int) (*domain.Article, error)
+	GetWithPagination(page, limit int) ([]domain.Article, int64, error)
 	Create(article *domain.Article) error
 	Update(article *domain.Article) error
 	Delete(id int) error

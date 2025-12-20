@@ -7,12 +7,15 @@
         border: 1px solid #ffe58f;
         border-radius: 4px;
         margin-bottom: 1rem;
-        display: none; /* Hidden by default */
+        display: none;
+        /* Hidden by default */
     }
+
     /* Show the loader when any htmx request is in flight */
     .htmx-request .global-loader {
         display: block;
     }
+
     /* Hide the results while loading */
     .htmx-request #results {
         display: none;
@@ -20,63 +23,82 @@
 </style>
 
 <!-- The form is just a container, no HTMX attributes here -->
-<form id="name-form">
-    <!-- Hidden inputs to store toggle states -->
-    <input type="hidden" name="auspicious" id="main-auspicious" value="false">
-    <input type="hidden" name="allow_klakini" id="main-allow-klakini" value="false">
+<!-- Analyzer Form Container -->
+<!-- Analyzer Form Container -->
+<div class="analyzer-container"
+    style="max-width: 600px; margin: 1rem auto; padding: 1.5rem; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 20px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15); border: 1px solid rgba(255, 255, 255, 0.18);">
 
-    <div class="form-group">
-        <div class="label-row">
-            <label for="name">ชื่อ-นามสกุล</label>
-            <small class="helper-text">ระบบจะวิเคราะห์ชื่อของคุณโดยอัตโนมัติขณะพิมพ์</small>
+    <form id="name-form">
+        <!-- Hidden inputs -->
+        <input type="hidden" name="auspicious" id="main-auspicious" value="false">
+        <input type="hidden" name="allow_klakini" id="main-allow-klakini" value="false">
+
+        <div class="form-group" style="margin-bottom: 0.8rem;">
+            <div class="label-row" style="margin-bottom: 0.25rem;">
+                <label for="name" style="font-weight: bold; color: #333;">ชื่อ</label>
+                <small class="helper-text" style="color: #667eea;">ระบบจะวิเคราะห์ชื่อของคุณโดยอัตโนมัติขณะพิมพ์</small>
+            </div>
+            <div class="input-wrapper"
+                style="box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 12px; transition: transform 0.2s;">
+                <span class="input-icon" style="color: #667eea;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                </span>
+                <input type="text" id="name" name="name" required placeholder="เช่น อณัญญา" value="{{ .defaultName }}"
+                    style="border: 2px solid #e0e0e0; border-radius: 12px; padding-left: 3rem; height: 50px; font-size: 1.1rem; transition: all 0.3s;"
+                    onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 4px rgba(102, 126, 234, 0.1)';"
+                    onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none';"
+                    oninput="toggleClearButton()" hx-get="/decode" hx-target="#results" hx-include="#name-form"
+                    hx-trigger="input changed delay:500ms, load" hx-indicator="body">
+                <span id="clear-btn" class="clear-btn" onclick="clearName()" style="right: 15px;">×</span>
+            </div>
         </div>
-        <div class="input-wrapper">
-            <span class="input-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </span>
-            <input type="text" id="name" name="name" required placeholder="พิมพ์ชื่อเพื่อวิเคราะห์ทันที..." value="{{ .defaultName }}"
-                   oninput="toggleClearButton()"
-                   hx-get="/decode"
-                   hx-target="#results"
-                   hx-include="#name-form"
-                   hx-trigger="input changed delay:500ms, load"
-                   hx-indicator="body">
-            <span id="clear-btn" class="clear-btn" onclick="clearName()">×</span>
+
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="day"
+                style="font-weight: bold; color: #333; margin-bottom: 0.25rem; display: block;">วันเกิด</label>
+            <div class="input-wrapper" style="box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 12px;">
+                <span class="input-icon" style="color: #667eea;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                        <line x1="16" x2="16" y1="2" y2="6" />
+                        <line x1="8" x2="8" y1="2" y2="6" />
+                        <line x1="3" x2="21" y1="10" y2="10" />
+                    </svg>
+                </span>
+                <select id="day" name="day" required
+                    style="border: 2px solid #e0e0e0; border-radius: 12px; padding-left: 3rem; height: 50px; font-size: 1rem; width: 100%; cursor: pointer; background-color: white; transition: all 0.3s;"
+                    onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 4px rgba(102, 126, 234, 0.1)';"
+                    onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none';" hx-get="/decode"
+                    hx-target="#results" hx-include="#name-form" hx-trigger="change" hx-indicator="body">
+                    <option value="SUNDAY" {{if eq .defaultDay "SUNDAY" }}selected{{end}}>วันอาทิตย์</option>
+                    <option value="MONDAY" {{if eq .defaultDay "MONDAY" }}selected{{end}}>วันจันทร์</option>
+                    <option value="TUESDAY" {{if eq .defaultDay "TUESDAY" }}selected{{end}}>วันอังคาร</option>
+                    <option value="WEDNESDAY1" {{if eq .defaultDay "WEDNESDAY1" }}selected{{end}}>วันพุธ (กลางวัน)
+                    </option>
+                    <option value="WEDNESDAY2" {{if eq .defaultDay "WEDNESDAY2" }}selected{{end}}>วันพุธ (กลางคืน)
+                    </option>
+                    <option value="THURSDAY" {{if eq .defaultDay "THURSDAY" }}selected{{end}}>วันพฤหัสบดี</option>
+                    <option value="FRIDAY" {{if eq .defaultDay "FRIDAY" }}selected{{end}}>วันศุกร์</option>
+                    <option value="SATURDAY" {{if eq .defaultDay "SATURDAY" }}selected{{end}}>วันเสาร์</option>
+                </select>
+            </div>
         </div>
-    </div>
-    <div class="form-group">
-        <label for="day">วันเกิด</label>
-        <div class="input-wrapper">
-            <span class="input-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-            </span>
-            <select id="day" name="day" required
-                    hx-get="/decode"
-                    hx-target="#results"
-                    hx-include="#name-form"
-                    hx-trigger="change"
-                    hx-indicator="body">
-                <option value="SUNDAY" {{if eq .defaultDay "SUNDAY"}}selected{{end}}>วันอาทิตย์</option>
-                <option value="MONDAY" {{if eq .defaultDay "MONDAY"}}selected{{end}}>วันจันทร์</option>
-                <option value="TUESDAY" {{if eq .defaultDay "TUESDAY"}}selected{{end}}>วันอังคาร</option>
-                <option value="WEDNESDAY1" {{if eq .defaultDay "WEDNESDAY1"}}selected{{end}}>วันพุธ (กลางวัน)</option>
-                <option value="WEDNESDAY2" {{if eq .defaultDay "WEDNESDAY2"}}selected{{end}}>วันพุธ (กลางคืน)</option>
-                <option value="THURSDAY" {{if eq .defaultDay "THURSDAY"}}selected{{end}}>วันพฤหัสบดี</option>
-                <option value="FRIDAY" {{if eq .defaultDay "FRIDAY"}}selected{{end}}>วันศุกร์</option>
-                <option value="SATURDAY" {{if eq .defaultDay "SATURDAY"}}selected{{end}}>วันเสาร์</option>
-            </select>
-        </div>
-    </div>
-</form>
+    </form>
+</div>
 
 <!-- Sample Names Section -->
 <div class="sample-names-container">
     <div class="avatars-grid">
         {{range .sampleNames}}
-            <div class="avatar-card" onclick="selectName('{{.Name}}')">
-                <img src="{{.AvatarURL}}" alt="Avatar" class="avatar-img">
-                <div class="avatar-name">{{.Name}}</div>
-            </div>
+        <div class="avatar-card" onclick="selectName('{{.Name}}')">
+            <img src="{{.AvatarURL}}" alt="Avatar" class="avatar-img">
+            <div class="avatar-name">{{.Name}}</div>
+        </div>
         {{end}}
     </div>
 </div>
@@ -93,7 +115,10 @@
 
 <!-- Back to Top Button -->
 <button id="back-to-top" onclick="scrollToTop()" title="Go to top">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 15l-6-6-6 6" />
+    </svg>
 </button>
 
 <!-- JavaScript -->
@@ -135,7 +160,7 @@
     // Back to Top functionality
     const backToTopButton = document.getElementById("back-to-top");
 
-    window.onscroll = function() {
+    window.onscroll = function () {
         if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
             backToTopButton.style.display = "flex";
         } else {
@@ -147,7 +172,7 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         toggleClearButton();
         // Trigger initial load from the input field
         htmx.trigger('#name', 'load');

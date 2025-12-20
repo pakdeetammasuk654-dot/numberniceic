@@ -106,12 +106,8 @@ func (h *NumerologyHandler) calculateScoresAndHighlights(names []domain.SimilarN
 		names[i].IsTopTier = h.isAllPairsTopTier(names[i].ThName, names[i].SatNum, h.numberPairCache) &&
 			h.isAllPairsTopTier(names[i].ThName, names[i].ShaNum, h.numberPairCache)
 
-		// Generate display characters for the name, always as non-Klakini (black text).
-		var displayChars []domain.DisplayChar
-		for _, r := range names[i].ThName {
-			displayChars = append(displayChars, domain.DisplayChar{Char: string(r), IsBad: false})
-		}
-		names[i].DisplayNameHTML = displayChars
+		// Generate display characters for the name with true Klakini status.
+		names[i].DisplayNameHTML = h.createDisplayChars(names[i].ThName, day)
 
 		// Populate the KlakiniChars field with actual Klakini characters.
 		var klakiniChars []string

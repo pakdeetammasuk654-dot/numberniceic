@@ -267,17 +267,72 @@ func (r *PostgresNamesMiracleRepository) GetFallbackNames(name, preferredConsona
 		}
 	}
 
-	// Step 2: If still not enough results, find other names (any consonant, strict Klakini)
+	// Step 2: Adaptive Wrap-Around Backfill
 	if len(results) < limit {
 		needed := limit - len(results)
-		log.Printf("GetFallbackNames Step 2: Found %d, Need %d more. Searching generic...", len(results), needed)
+		log.Printf("GetFallbackNames Step 2: Found %d, Need %d more. Starting wrap-around search from '%s'...", len(results), needed, preferredConsonant)
 
-		// Search generic (isGeneric=true), strict Klakini (ignoreKlakini=false)
-		step2Results, err := runQuery("", true, false, needed, excludedIDs)
+		// Prepare excluded IDs for SQL array
+		currentExcluded := make([]int, len(excludedIDs))
+		copy(currentExcluded, excludedIDs)
+		// Add currently found names to exclusion too, to be safe
+		for _, r := range results {
+			// Check if already in excluded to avoid dupes?
+			// Simpler to just let postgres handle "NOT IN" with a big array,
+			// or append new IDs to currentExcluded.
+			// Ideally excludedIDs is cumulative.
+			currentExcluded = append(currentExcluded, r.NameID)
+		}
+
+		pivot := preferredConsonant
+		if pivot == "" {
+			pivot = "ก"
+		}
+
+		// Helper to run raw query for Step 2a/2b
+		runRaw := func(compareOp string, currentLimit int) ([]domain.SimilarNameResult, error) {
+			// $1=name (for sim calc cache), $2=pivot, $3=limit, $4=excluded
+			q := fmt.Sprintf(`
+				SELECT 
+					name_id, thname, satnum, shanum, similarity(thname, $1) as sim
+				FROM names_miracle
+				WHERE thname %s $2
+				%s -- klakini check
+				AND name_id NOT IN (SELECT unnest($3::int[]))
+				ORDER BY thname ASC
+				LIMIT $4;
+			`, compareOp, klakiniWhereClause)
+
+			// Args: name, pivot, excluded, limit
+			// Wait, postgres driver args matching?
+			// SELECT... similarity(thname, $1) ... WHERE thname >= $2 ... unnest($3) ... LIMIT $4
+			return r.executeNameQuery(q, name, pivot, pq.Array(currentExcluded), currentLimit)
+		}
+
+		// Step 2a: From Pivot to End (thname >= pivot)
+		step2aResults, err := runRaw(">=", needed)
 		if err != nil {
 			return nil, err
 		}
-		results = append(results, step2Results...)
+		results = append(results, step2aResults...)
+
+		// Update needed count
+		needed -= len(step2aResults)
+
+		// Step 2b: From Start to Pivot (thname < pivot) - Wrap around
+		if needed > 0 {
+			// Update excluded IDs with Step 2a results
+			for _, res := range step2aResults {
+				currentExcluded = append(currentExcluded, res.NameID)
+			}
+
+			log.Printf("GetFallbackNames Step 2b: Wrapping around to start... Need %d more.", needed)
+			step2bResults, err := runRaw("<", needed)
+			if err != nil {
+				return nil, err
+			}
+			results = append(results, step2bResults...)
+		}
 	}
 
 	return results, nil

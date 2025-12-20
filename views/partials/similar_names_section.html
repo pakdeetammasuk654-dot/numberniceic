@@ -1,207 +1,503 @@
 {{define "partials/similar_names_section"}}
 <style>
-    .name-top-tier {
-        color: #F57F17; /* Darker Gold/Sun color (Material Yellow 900) */
-        font-weight: bold;
-    }
-    .name-not-top-tier {
-        color: #757575; /* Grey */
-        font-weight: normal;
-    }
-    .klakini-char {
-        color: #C62828 !important; /* Dark Red, use !important to ensure it overrides */
-    }
-    .char-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    .toggle-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-left: 1rem;
-    }
-    .toggle-label {
-        font-size: 0.7rem;
-        font-weight: normal;
-        margin-top: 0.2rem;
-        color: #666;
-    }
-    .similar-names-table th {
-        font-size: 0.8rem; /* Reduced font size for table headers */
+    /* ... Container & Header ... */
+    .similar-names-container {
+        /* Removed glassmorphism card background/shadow */
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin-top: 1rem;
     }
 
-    /* Simple Text Loader */
+    .speech-bubble-header {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        /* Aligns toggles with the title line */
+        flex-wrap: nowrap;
+        /* Keep on same level */
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        padding: 1.2rem 0.7rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        border: 1px solid #f1f3f5;
+        width: 100%;
+        box-sizing: border-box;
+        font-family: 'Kanit', sans-serif;
+    }
+
+    /* Speech Bubble Tail - Pointing Down */
+    .speech-bubble-header::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+        border-top: 10px solid white;
+        /* Matches header bg */
+        /* Optional: Drop shadow to match box if desired, but simple is often cleaner */
+        filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.05));
+    }
+
+    /* ... sticky ... */
+
+    /* Data Columns - Kanit Thin Small (Matches Header) */
+    .similar-names-table td {
+        padding: 1rem 0.8rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f5;
+        transition: background 0.2s;
+        font-family: 'Kanit', sans-serif;
+        /* Changed from Sarabun */
+        font-weight: 300;
+        /* Thin */
+        font-size: 0.9rem;
+        /* Small-ish */
+        color: #555;
+    }
+
+    /* Name formatting override for the first column */
+    .name-cell {
+        font-family: 'Sarabun', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 500;
+        /* Balanced weight for Sarabun */
+        color: #2c3e50;
+    }
+
+    /* Name Colors - Orange for Good Names */
+    .name-top-tier {
+        color: #FF9800;
+        /* Orange/Gold per request */
+        font-weight: 600;
+    }
+
+    /* ... Table Styling ... */
+    .table-responsive {
+        overflow-x: auto;
+        /* Keep scroll as fallback, but try to fit */
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        border: 1px solid #f1f3f5;
+    }
+
+    /* Table Header Font - Kanit Thin Small */
+    .similar-names-table th {
+        background: #f8f9fa;
+        color: #495057;
+        font-family: 'Kanit', sans-serif;
+        font-weight: 300;
+        font-size: 0.85rem;
+        padding: 0.5rem;
+        /* Reduced padding */
+        border-bottom: 2px solid #dee2e6;
+        white-space: nowrap;
+        text-align: center;
+        /* Center align headers by default for better space usage */
+    }
+
+    /* Left align Name header specifically */
+    .similar-names-table th:first-child {
+        text-align: left;
+        padding-left: 0.8rem;
+    }
+
+    /* Data Columns */
+    .similar-names-table td {
+        padding: 0.5rem 0.2rem;
+        /* Very tight horizontal padding */
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f5;
+        transition: background 0.2s;
+        font-family: 'Kanit', sans-serif;
+        font-weight: 300;
+        font-size: 0.8rem;
+        /* Smaller base size */
+        color: #555;
+        text-align: center;
+        /* Default center align */
+    }
+
+    /* Standard First Column (No Sticky) */
+    .similar-names-table th:first-child,
+    .similar-names-table td:first-child {
+        text-align: left;
+        padding-left: 0.8rem;
+    }
+
+    .similar-names-table th:first-child {
+        background: #f8f9fa;
+    }
+
+    /* Mobile Specific Optimizations to prevent scrolling */
+    @media (max-width: 480px) {
+
+        .similar-names-table th,
+        .similar-names-table td {
+            padding: 0.4rem 0.1rem;
+            /* Extremely tight */
+            font-size: 0.75rem;
+            /* Slightly adjusted for readability */
+        }
+
+        .name-cell {
+            font-size: 0.85rem;
+        }
+
+        /* Shrink internal elements */
+        .table-pair-circle {
+            width: 18px !important;
+            height: 18px !important;
+            font-size: 0.6rem !important;
+        }
+
+        .score-badge {
+            padding: 0.1rem 0.3rem !important;
+            min-width: 25px !important;
+            font-size: 0.7rem !important;
+        }
+
+        /* Tighten header for mobile and force toggles to the right edge */
+        .speech-bubble-header {
+            flex-wrap: nowrap;
+            padding: 0.8rem 1rem;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .toggle-switch-container {
+            align-items: flex-end;
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+            flex-shrink: 0;
+        }
+
+        .header-title {
+            font-size: 1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 160px;
+            /* Leave space for toggles on small screens */
+        }
+
+        .header-main-line {
+            margin-bottom: 0.3rem;
+        }
+
+        .header-sub-info {
+            font-size: 0.8rem;
+            gap: 0.6rem;
+        }
+    }
+
+    /* Toggles - Stacked vertically and pushed to the far right */
+    .toggle-switch-container {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.6rem;
+        flex-shrink: 0;
+        /* Don't shrink to protect toggle size */
+        margin-left: auto;
+        /* Push to the right */
+    }
+
+    .toggle-item {
+        display: flex;
+        align-items: center;
+        /* V-align within row */
+        justify-content: flex-end;
+        /* Align to the right edge */
+        gap: 0.8rem;
+        width: 100%;
+    }
+
+    .toggle-label {
+        font-family: 'Kanit', sans-serif;
+        font-weight: 300;
+        font-size: 0.9rem;
+        color: #555;
+    }
+
+    .header-main-line {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-family: 'Kanit', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 300;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .header-sub-info {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-family: 'Kanit', sans-serif;
+        font-weight: 300;
+        font-size: 0.95rem;
+        color: #7f8c8d;
+        margin-left: 0;
+        padding-left: 0;
+    }
+
+    .header-icon-box {
+        color: #FF9800;
+        background: rgba(255, 152, 0, 0.1);
+        padding: 4px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .header-title {
+        font-weight: 300;
+        font-size: 1.3rem;
+        color: #2c3e50;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .info-divider {
+        width: 1px;
+        height: 12px;
+        background: #ccc;
+    }
+
+    .klakini-status-bad {
+        color: #eb4d4b;
+        font-weight: 400;
+    }
+
+    .klakini-status-good {
+        color: #20bf6b;
+        font-weight: 400;
+    }
+
+    /* Loader & Animations */
     #similar-names-loader {
         display: none;
         position: absolute;
-        top: 15px;
+        top: 50%;
         left: 50%;
-        transform: translateX(-50%);
-        background-color: #333;
-        color: #fff;
-        padding: 8px 20px;
-        border-radius: 20px;
-        z-index: 10000;
-        font-size: 1rem;
-        font-weight: bold;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        white-space: nowrap;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 0.8rem 1.5rem;
+        border-radius: 30px;
+        z-index: 100;
+        font-size: 0.95rem;
+        backdrop-filter: blur(4px);
+        align-items: center;
+        gap: 0.8rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     }
-    /* Show loader when parent has htmx-request class */
+
     .htmx-request #similar-names-loader {
-        display: block;
+        display: flex;
     }
 
-    /* Fade out content when loading */
-    .htmx-request.similar-names-container .speech-bubble-header,
-    .htmx-request.similar-names-container .similar-names-table {
-        opacity: 0.5;
-        pointer-events: none; /* Prevent clicks while loading */
-        transition: opacity 0.2s ease-in-out;
+    .htmx-request .content-blur {
+        opacity: 0.4;
+        pointer-events: none;
+        transition: opacity 0.2s;
     }
 
-    /* Revert score colors to original state */
-    .score-good {
-        color: #2E7D32;
-        font-weight: bold;
+    #similar-names-loader .path {
+        stroke: white;
     }
 
-    .score-bad {
-        color: #C62828;
-        font-weight: bold;
+    tr.clickable-row {
+        cursor: pointer;
+    }
+
+    tr.clickable-row {
+        cursor: pointer;
+    }
+
+    /* Update Status Pill to be transparent/minimal for icon only */
+    .status-safe {
+        background: transparent;
+        color: #2e7d32;
+        padding: 0;
+    }
+
+    .table-pairs-container {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        /* Center aligned pairs */
     }
 </style>
-<div class="similar-names-container fade-slide-in" id="similar-names-section" style="position: relative; min-height: 200px;">
-    <!-- Simple Loader -->
-    <div id="similar-names-loader">กำลังโหลด....</div>
 
-    <div class="speech-bubble-header">
-        <div class="header-text-content">
-            <div class="header-main-line" style="flex-wrap: wrap;">
-                <span class="header-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                </span>
-                <span>ตารางชื่อคล้าย "{{- range .DisplayNameHTML -}}{{.Char}}{{- end -}}"</span>
-
-                <span class="header-sub-info">
-                    <span style="font-size: 0.8rem; font-weight: normal; color: #666;">({{.input_day}})</span>
-                    {{if .klakini_characters}}
-                    <span style="font-size: 0.8rem; font-weight: normal; color: #C62828; margin-left: 0.5rem;">
-                        (กาลกิณี: {{range .klakini_characters}}{{.}} {{end}})
-                    </span>
-                    {{else}}
-                    <span style="margin-left: 0.5rem; display: inline-flex; align-items: center; font-size: 0.8rem; color: #2E7D32;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.2rem;"><polyline points="20 6 9 17 4 12"/></svg>
-                        ไร้กาลกิณี
-                    </span>
-                    {{end}}
-                </span>
-            </div>
-        </div>
-
-        <div class="toggle-switch-container"
-             hx-get="/similar-names"
-             hx-target="#similar-names-section"
-             hx-swap="outerHTML"
-             hx-trigger="change"
-             hx-indicator="#similar-names-section"
-             hx-vals='js:{"name": (document.getElementById("name") ? document.getElementById("name").value : ""), "day": (document.getElementById("day") ? document.getElementById("day").value : ""), "auspicious": document.getElementById("auspicious-toggle").checked, "allow_klakini": document.getElementById("allow-klakini-toggle").checked}'>
-
-            <!-- Auspicious Toggle -->
-            <div class="toggle-item">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="auspicious-toggle" name="auspicious" {{if .is_auspicious}}checked{{end}}
-                           onchange="document.getElementById('main-auspicious').value = this.checked">
-                    <span class="slider"></span>
-                </label>
-                <span class="toggle-label">เลขดีเท่านั้น</span>
-            </div>
-
-            <!-- Allow Klakini Toggle -->
-            <div class="toggle-item">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="allow-klakini-toggle" name="allow_klakini" {{if .allow_klakini}}checked{{end}}
-                           onchange="document.getElementById('main-allow-klakini').value = this.checked">
-                    <span class="slider"></span>
-                </label>
-                <span class="toggle-label">อนุโลมกาลกิณี</span>
-            </div>
-        </div>
+<div class="similar-names-container fade-slide-in" id="similar-names-section">
+    <!-- Loader -->
+    <div id="similar-names-loader">
+        <svg class="spinner" width="16px" height="16px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+            <circle class="path" fill="none" stroke="white" stroke-width="6" stroke-linecap="round" cx="33" cy="33"
+                r="30"></circle>
+        </svg>
+        <span>กำลังโหลด...</span>
     </div>
 
-    <table class="similar-names-table">
-        <thead>
-            <tr>
-                <th>ชื่อ/สกุล</th>
-                <th>ไร้กาลกิณี</th>
-                <th>เลขศาสตร์</th>
-                <th>พลังเงา</th>
-                <th>คะแนน</th>
-                <th>คล้าย</th>
-                <th></th> <!-- Action Column -->
-            </tr>
-        </thead>
-        <tbody>
-            {{$allowKlakini := .allow_klakini}}
-            {{range $i, $name := .similar_names}}
-            <tr class="{{if eq (mod $i 2) 0}}row-even{{else}}row-odd{{end}} clickable-row" onclick="selectName('{{$name.ThName}}')">
-                <td>
-                    <span class="{{if .IsTopTier}}name-top-tier{{else}}name-not-top-tier{{end}}">
-                        {{- range .DisplayNameHTML -}}
-                            {{- if .IsBad -}}<span class="klakini-char">{{.Char}}</span>{{- else -}}<span>{{.Char}}</span>{{- end -}}
-                        {{- end -}}
+    <div class="content-blur">
+        <!-- Header Section -->
+        <div class="speech-bubble-header">
+            <div class="header-text-content">
+                <div class="header-main-line">
+                    <span class="header-title">"{{- range .DisplayNameHTML -}}{{.Char}}{{- end -}}"</span>
+                </div>
+                <div class="header-sub-info" style="margin-top: 0.2rem;">
+                    <span style="display: inline-block;">
+                        {{.input_day}}
                     </span>
-                </td>
-                <td>
-                    {{if .KlakiniChars}}
-                        <span class="klakini-char">{{range .KlakiniChars}}{{.}} {{end}}</span>
+                    <span class="info-divider" style="display:none;"></span>
+                    {{if .klakini_characters}}
+                    <span class="klakini-status-bad" style="margin-left: 0.8rem;">
+                        พบกาลกิณี: {{range .klakini_characters}}{{.}} {{end}}
+                    </span>
                     {{else}}
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span class="klakini-status-good" style="margin-left: 0.8rem;">
+                        ไม่พบกาลกิณี
+                    </span>
                     {{end}}
-                </td>
-                <td>
-                    <div class="table-pairs-container">
-                        {{range $j, $pairInfo := $name.TSat}}
-                            {{$pairNumber := index $name.SatNum $j}}
-                            <span class="table-pair-circle" style="background-color: {{$pairInfo.Color}};">{{$pairNumber}}</span>
-                        {{end}}
-                    </div>
-                </td>
-                <td>
-                    <div class="table-pairs-container">
-                        {{range $j, $pairInfo := $name.TSha}}
-                            {{$pairNumber := index $name.ShaNum $j}}
-                            <span class="table-pair-circle" style="background-color: {{$pairInfo.Color}};">{{$pairNumber}}</span>
-                        {{end}}
-                    </div>
-                </td>
-                <td>
-                    <span class="{{if lt $name.TotalScore 0}}score-bad{{else}}score-good{{end}}">
-                        {{if gt $name.TotalScore 0}}+{{end}}{{$name.TotalScore}}
-                    </span>
-                </td>
-                <td>
-                    <span style="font-size: 0.9rem;">{{printf "%.2f" $name.Similarity}}</span>
-                </td>
-                <td style="text-align: center;">
-                    <span class="action-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    </span>
-                </td>
-            </tr>
-            {{else}}
-            <tr>
-                <td colspan="7" style="text-align: center;">ไม่พบชื่อที่ใกล้เคียง</td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+                </div>
+            </div>
+
+            <div class="toggle-switch-container" hx-get="/similar-names" hx-target="#similar-names-section"
+                hx-swap="outerHTML" hx-trigger="change" hx-indicator="#similar-names-section"
+                hx-vals='js:{"name": (document.getElementById("name") ? document.getElementById("name").value : ""), "day": (document.getElementById("day") ? document.getElementById("day").value : ""), "auspicious": document.getElementById("auspicious-toggle").checked, "allow_klakini": document.getElementById("allow-klakini-toggle").checked}'>
+
+                <div class="toggle-item">
+                    <span class="toggle-label">เลขดีเท่านั้น</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="auspicious-toggle" name="auspicious" {{if
+                            .is_auspicious}}checked{{end}}
+                            onchange="document.getElementById('main-auspicious').value = this.checked">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-item">
+                    <span class="toggle-label">อนุโลมกาลกิณี</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="allow-klakini-toggle" name="allow_klakini" {{if
+                            .allow_klakini}}checked{{end}}
+                            onchange="document.getElementById('main-allow-klakini').value = this.checked">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="table-responsive">
+            <table class="similar-names-table">
+                <thead>
+                    <tr>
+                        <th style="padding-left: 1.5rem;">ชื่อดี</th>
+                        <th style="text-align: center;">ไม่มีกาลกิณี</th>
+                        <th style="text-align: center;">เลขศาสตร์</th>
+                        <th style="text-align: center;">พลังเงา</th>
+                        <th style="text-align: center;">คะแนน</th>
+                        <th style="text-align: center;">คล้าย</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{$allowKlakini := .allow_klakini}}
+                    {{range $i, $name := .similar_names}}
+                    <tr class="clickable-row" onclick="selectName('{{$name.ThName}}')">
+                        <td style="padding-left: 1.5rem;">
+                            <div class="name-cell {{if .IsTopTier}}name-top-tier{{end}}">
+                                {{- range .DisplayNameHTML -}}
+                                {{- if .IsBad -}}<span class="klakini-char">{{.Char}}</span>{{- else
+                                -}}<span>{{.Char}}</span>{{- end -}}
+                                {{- end -}}
+                            </div>
+                        </td>
+                        <td style="text-align: center;">
+                            {{if .KlakiniChars}}
+                            <span class="status-pill status-warning">{{range .KlakiniChars}}{{.}} {{end}}</span>
+                            {{else}}
+                            <span class="status-pill status-safe">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                            </span>
+                            {{end}}
+                        </td>
+                        <td>
+                            <div class="table-pairs-container">
+                                {{range $j, $pairInfo := $name.TSat}}
+                                {{$pairNumber := index $name.SatNum $j}}
+                                <span class="table-pair-circle"
+                                    style="background-color: {{$pairInfo.Color}};">{{$pairNumber}}</span>
+                                {{end}}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="table-pairs-container">
+                                {{range $j, $pairInfo := $name.TSha}}
+                                {{$pairNumber := index $name.ShaNum $j}}
+                                <span class="table-pair-circle"
+                                    style="background-color: {{$pairInfo.Color}};">{{$pairNumber}}</span>
+                                {{end}}
+                            </div>
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="score-badge {{if lt $name.TotalScore 0}}score-bad{{else}}score-good{{end}}">
+                                {{if gt $name.TotalScore 0}}+{{end}}{{$name.TotalScore}}
+                            </span>
+                        </td>
+                        <td style="text-align: center;">
+                            <span style="font-size: 0.85rem; color: #adb5bd;">{{printf "%.0f%%" (mul $name.Similarity
+                                100)}}</span>
+                        </td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 3rem; color: #999;">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24"
+                                    fill="none" stroke="#e0e0e0" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                <span>ไม่พบชื่อที่ใกล้เคียง</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
 <script>
-    // Immediate execution to sync state when this partial is swapped in
-    (function() {
+    (function () {
         const mainAuspicious = document.getElementById('main-auspicious');
         const auspiciousToggle = document.getElementById('auspicious-toggle');
         if (mainAuspicious && auspiciousToggle) {

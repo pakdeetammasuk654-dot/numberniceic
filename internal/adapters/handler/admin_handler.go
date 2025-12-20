@@ -81,16 +81,34 @@ func (h *AdminHandler) DeleteUser(c *fiber.Ctx) error {
 // --- Article Management ---
 
 func (h *AdminHandler) ShowArticlesPage(c *fiber.Ctx) error {
-	articles, err := h.service.GetAllArticles()
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	if page < 1 {
+		page = 1
+	}
+	limit := 10
+
+	articles, totalCount, err := h.service.GetArticlesPaginated(page, limit)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error loading articles")
 	}
+
+	totalPages := int(totalCount / int64(limit))
+	if totalCount%int64(limit) > 0 {
+		totalPages++
+	}
+
 	return c.Render("admin_articles", fiber.Map{
-		"title":      "Manage Articles",
-		"Articles":   articles,
-		"IsLoggedIn": c.Locals("IsLoggedIn"),
-		"IsAdmin":    c.Locals("IsAdmin"),
-		"ActivePage": "admin",
+		"title":       "Manage Articles",
+		"Articles":    articles,
+		"IsLoggedIn":  c.Locals("IsLoggedIn"),
+		"IsAdmin":     c.Locals("IsAdmin"),
+		"ActivePage":  "admin",
+		"CurrentPage": page,
+		"TotalPages":  totalPages,
+		"HasPrev":     page > 1,
+		"HasNext":     page < totalPages,
+		"PrevPage":    page - 1,
+		"NextPage":    page + 1,
 	}, "layouts/main")
 }
 

@@ -41,6 +41,10 @@ func (s *AdminService) GetAllArticles() ([]domain.Article, error) {
 	return s.articleRepo.GetAll()
 }
 
+func (s *AdminService) GetArticlesPaginated(page, limit int) ([]domain.Article, int64, error) {
+	return s.articleRepo.GetWithPagination(page, limit)
+}
+
 func (s *AdminService) GetArticleByID(id int) (*domain.Article, error) {
 	return s.articleRepo.GetByID(id)
 }

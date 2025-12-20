@@ -19,7 +19,8 @@ main {
     background-color: #333;
     color: white;
     padding: 1rem;
-    font-family: 'Kanit', sans-serif; /* Use Kanit for header */
+    font-family: 'Kanit', sans-serif;
+    /* Use Kanit for header */
 }
 
 .nav-container {
@@ -51,7 +52,8 @@ main {
 .auth-links {
     display: flex;
     align-items: center;
-    gap: 1.5rem; /* Increased gap for desktop */
+    gap: 1.5rem;
+    /* Increased gap for desktop */
 }
 
 .main-nav-row {
@@ -59,19 +61,30 @@ main {
     align-items: center;
     gap: 1.5rem;
     flex-wrap: wrap;
-    background-color: #444; /* Added background color for menu row */
-    padding: 0.5rem 1rem; /* Added padding */
-    border-radius: 4px; /* Optional: rounded corners */
-    margin-top: 0; /* Removed margin-top */
+    background-color: #444;
+    /* Added background color for menu row */
+    padding: 0.5rem 1rem;
+    /* Added padding */
+    border-radius: 4px;
+    /* Optional: rounded corners */
+    margin-top: 0;
+    /* Removed margin-top */
 
     /* Force full width within container if needed, or remove padding/margin to stick */
-    margin-left: -1rem; /* Negative margin to counteract header padding */
-    margin-right: -1rem; /* Negative margin to counteract header padding */
-    margin-bottom: -1rem; /* Stick to bottom of header */
-    padding: 0.75rem 1rem; /* Adjust padding */
-    border-radius: 0; /* Remove border radius for full width look */
-    width: calc(100% + 2rem); /* Ensure it covers the full width */
-    box-sizing: border-box; /* Include padding in width */
+    margin-left: -1rem;
+    /* Negative margin to counteract header padding */
+    margin-right: -1rem;
+    /* Negative margin to counteract header padding */
+    margin-bottom: -1rem;
+    /* Stick to bottom of header */
+    padding: 0.75rem 1rem;
+    /* Adjust padding */
+    border-radius: 0;
+    /* Remove border radius for full width look */
+    width: calc(100% + 2rem);
+    /* Ensure it covers the full width */
+    box-sizing: border-box;
+    /* Include padding in width */
 }
 
 .nav-item {
@@ -90,14 +103,16 @@ main {
 
 /* Active Menu Style */
 .nav-item.active {
-    color: #FFD700; /* Gold color */
+    color: #FFD700;
+    /* Gold color */
     font-weight: bold;
 }
 
 /* Responsive Header */
 @media (max-width: 600px) {
     .top-nav-row {
-        flex-direction: row; /* Keep row layout on mobile */
+        flex-direction: row;
+        /* Keep row layout on mobile */
         align-items: center;
         justify-content: space-between;
         gap: 0.5rem;
@@ -108,19 +123,22 @@ main {
         text-align: left;
         display: flex;
         justify-content: flex-start;
-        font-size: 1.2rem; /* Slightly smaller logo on mobile */
+        font-size: 1.2rem;
+        /* Slightly smaller logo on mobile */
     }
 
     .auth-links {
         width: auto;
         justify-content: flex-end;
-        gap: 0.5rem; /* Smaller gap on mobile */
+        gap: 0.5rem;
+        /* Smaller gap on mobile */
     }
 
     .main-nav-row {
         justify-content: center;
         gap: 0.5rem;
-        background-color: #444; /* Ensure background on mobile too */
+        background-color: #444;
+        /* Ensure background on mobile too */
         padding: 0.5rem;
 
         /* Adjust negative margins for mobile if header padding changes */
@@ -134,7 +152,8 @@ main {
         padding: 0.4rem;
         /* background-color: rgba(255, 255, 255, 0.1); REMOVED background */
         border-radius: 4px;
-        font-size: 0.85rem; /* Slightly smaller text on mobile */
+        font-size: 0.85rem;
+        /* Slightly smaller text on mobile */
     }
 
     .menu-text {
@@ -156,7 +175,8 @@ main {
 
 .form-group label {
     display: block;
-    margin-bottom: 0; /* Removed margin */
+    margin-bottom: 0;
+    /* Removed margin */
 }
 
 .input-wrapper {
@@ -171,10 +191,12 @@ main {
     top: 50%;
     transform: translateY(-50%);
     color: #999;
-    pointer-events: none; /* Make icon non-interactive */
+    pointer-events: none;
+    /* Make icon non-interactive */
 }
 
-.form-group input, .form-group select {
+.form-group input,
+.form-group select {
     width: 100%;
     padding: 0.5rem;
     border: 1px solid #ccc;
@@ -183,8 +205,10 @@ main {
     font-family: 'Sarabun', sans-serif;
 }
 
-.input-wrapper input, .input-wrapper select {
-    padding-left: 2.5rem; /* Add space for the icon */
+.input-wrapper input,
+.input-wrapper select {
+    padding-left: 2.5rem;
+    /* Add space for the icon */
 }
 
 .input-wrapper input {
@@ -209,7 +233,8 @@ main {
 .helper-text {
     font-size: 0.8rem;
     color: #6c757d;
-    margin-top: 0; /* Removed margin */
+    margin-top: 0;
+    /* Removed margin */
     display: block;
 }
 
@@ -262,8 +287,10 @@ main {
 
 
 #results {
-    margin-top: 0.5rem; /* Reduced margin-top to bring it closer */
-    position: relative; /* Needed for absolute positioning of the spinner */
+    margin-top: 0.5rem;
+    /* Reduced margin-top to bring it closer */
+    position: relative;
+    /* Needed for absolute positioning of the spinner */
 }
 
 .result-box {
@@ -321,7 +348,7 @@ main {
     font-weight: normal;
 }
 
-.highlighted-name > span {
+.highlighted-name>span {
     display: inline-block;
 }
 
@@ -337,10 +364,12 @@ main {
 .score-summary-line {
     padding: 0.5rem 1rem;
     border-top: 1px solid #eee;
-    text-align: center; /* Center text */
+    text-align: center;
+    /* Center text */
     display: flex;
     align-items: center;
-    justify-content: center; /* Center flex items */
+    justify-content: center;
+    /* Center flex items */
     gap: 0.75rem;
     flex-wrap: wrap;
 }
@@ -396,13 +425,16 @@ main {
     transition: opacity 200ms ease-in;
 }
 
-.htmx-request .htmx-indicator {
-    display: flex; /* Use flex to center content */
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+    display: flex;
+    /* Use flex to center content */
     opacity: 1;
 }
 
 .htmx-request .sun-name {
-    opacity: 0; /* Hide sun name while spinner is active */
+    opacity: 0;
+    /* Hide sun name while spinner is active */
 }
 
 #results-spinner {
@@ -410,13 +442,15 @@ main {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 15; /* Above sun, below planets */
+    z-index: 15;
+    /* Above sun, below planets */
     justify-content: center;
     align-items: center;
 }
 
 #spinner {
-    margin: 1rem 0; /* Add margin only when visible */
+    margin: 1rem 0;
+    /* Add margin only when visible */
     text-align: center;
 }
 
@@ -484,11 +518,23 @@ main {
 }
 
 .avatars-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 0.5rem;
-    max-width: 800px;
+    display: flex;
+    overflow-x: auto;
+    gap: 1rem;
+    padding: 0.5rem;
+    /* Add padding for scroll/shadow visibility */
+    max-width: 100%;
     margin: 0 auto;
+    /* Hide scrollbar for cleaner look but keep functionality */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+}
+
+.avatars-grid::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari, Opera */
 }
 
 .avatar-card {
@@ -507,9 +553,11 @@ main {
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    border: 2px dashed #FFD700; /* Changed to dashed Gold */
+    border: 2px dashed #FFD700;
+    /* Changed to dashed Gold */
     object-fit: cover;
-    padding: 2px; /* Added padding to make dashes visible */
+    padding: 2px;
+    /* Added padding to make dashes visible */
 }
 
 .avatar-name {
@@ -547,15 +595,18 @@ main {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0; /* Reduced padding */
-    min-height: 200px; /* Reduced min-height */
+    padding: 0;
+    /* Reduced padding */
+    min-height: 200px;
+    /* Reduced min-height */
     overflow: visible;
     position: relative;
     z-index: 200;
 }
 
 .solar-system {
-    position: relative; /* This is the key */
+    position: relative;
+    /* This is the key */
     width: 300px;
     height: 300px;
     display: flex;
@@ -564,8 +615,10 @@ main {
 }
 
 .sun {
-    width: 140px; /* Increased from 100px */
-    height: 140px; /* Increased from 100px */
+    width: 140px;
+    /* Increased from 100px */
+    height: 140px;
+    /* Increased from 100px */
     background-color: #FFD700;
     border-radius: 50%;
     display: flex;
@@ -580,7 +633,8 @@ main {
     box-sizing: border-box;
     z-index: 10;
     transition: background-color 0.5s, box-shadow 0.5s;
-    position: relative; /* Needed for spinner positioning */
+    position: relative;
+    /* Needed for spinner positioning */
 }
 
 .sun-dead {
@@ -594,7 +648,8 @@ main {
     font-family: 'Kanit', sans-serif;
     font-weight: normal;
     white-space: pre-wrap;
-    font-size: 1rem; /* Increased from 0.8rem */
+    font-size: 1rem;
+    /* Increased from 0.8rem */
     line-height: 1.2;
     display: flex;
     flex-wrap: wrap;
@@ -606,7 +661,7 @@ main {
     transition: opacity 150ms ease-in;
 }
 
-.sun-name > span {
+.sun-name>span {
     display: inline-block;
 }
 
@@ -672,7 +727,7 @@ main {
     justify-content: center;
     align-items: center;
     animation: solar-anti-spin 1s linear infinite;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .planet-container.orbit-inner .planet {
@@ -685,61 +740,19 @@ main {
 
 /* --- Similar Names Table --- */
 .similar-names-container {
-    margin-top: 0.5rem; /* Reduced from 2rem */
+    margin-top: 0.5rem;
+    /* Reduced from 2rem */
 }
 
-.speech-bubble-header {
-    position: relative;
-    background-color: #fff3cd; /* Light yellow */
-    color: #664d03; /* Dark yellow text */
-    padding: 1rem;
-    border-radius: 8px;
-    margin-bottom: 20px; /* Space for the triangle */
-    display: flex;
-    align-items: center;
-    justify-content: space-between; /* Pushes items to the edges */
-    gap: 1rem;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Added shadow */
-}
 
-.header-text-content {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start; /* Align text to the left */
-    gap: 0.25rem;
-}
-
-.header-main-line {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: bold;
-    flex-wrap: wrap;
-}
-
-.header-sub-line {
-    font-weight: normal;
-}
-
-.speech-bubble-header::after {
-    content: '';
-    position: absolute;
-    bottom: -10px; /* Position the triangle at the bottom */
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-top: 10px solid #fff3cd; /* Same color as the bubble */
-}
 
 .similar-names-table {
     width: 100%;
     border-collapse: collapse;
 }
 
-.similar-names-table th, .similar-names-table td {
+.similar-names-table th,
+.similar-names-table td {
     padding: 0.75rem;
     text-align: left;
     border-bottom: 1px solid #eee;
@@ -787,11 +800,13 @@ main {
 }
 
 .clickable-row:hover {
-    background-color: #f0f0f0; /* Light hover effect */
+    background-color: #f0f0f0;
+    /* Light hover effect */
 }
 
 .clickable-row:hover .action-icon {
-    color: #007bff; /* Highlight icon on row hover */
+    color: #007bff;
+    /* Highlight icon on row hover */
 }
 
 /* --- Toggle Switch --- */
@@ -838,17 +853,19 @@ main {
     border-radius: 50%;
 }
 
-input:checked + .slider {
-    background-color: #28a745; /* Green for auspicious */
+input:checked+.slider {
+    background-color: #28a745;
+    /* Green for auspicious */
 }
 
-input:checked + .slider:before {
+input:checked+.slider:before {
     transform: translateX(22px);
 }
 
 /* --- Modal Styles --- */
 .modal-overlay {
-    display: none; /* Hidden by default */
+    display: none;
+    /* Hidden by default */
     position: fixed;
     z-index: 1000;
     left: 0;
@@ -856,7 +873,7 @@ input:checked + .slider:before {
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0,0,0,0.5);
+    background-color: rgba(0, 0, 0, 0.5);
     justify-content: center;
     align-items: center;
 }
@@ -910,6 +927,7 @@ input:checked + .slider:before {
     border-bottom: 1px solid #eee;
     padding: 1rem 0;
 }
+
 .meaning-item:last-child {
     border-bottom: none;
 }
@@ -922,10 +940,12 @@ input:checked + .slider:before {
 
 .meaning-content {
     padding-top: 0.75rem;
-    padding-left: calc(36px + 1rem); /* Align with text, not badge */
+    padding-left: calc(36px + 1rem);
+    /* Align with text, not badge */
     color: #555;
     font-size: 0.9rem;
 }
+
 .meaning-content p {
     margin: 0;
 }
@@ -950,10 +970,14 @@ input:checked + .slider:before {
 .gemini-content {
     line-height: 1.6;
 }
-.gemini-content h1, .gemini-content h2, .gemini-content h3 {
+
+.gemini-content h1,
+.gemini-content h2,
+.gemini-content h3 {
     margin-top: 1.5rem;
     margin-bottom: 0.5rem;
 }
+
 .gemini-content ul {
     padding-left: 20px;
 }
@@ -992,8 +1016,13 @@ input:checked + .slider:before {
 }
 
 @keyframes rotator {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(270deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(270deg);
+    }
 }
 
 .path {
@@ -1006,22 +1035,40 @@ input:checked + .slider:before {
 }
 
 @keyframes colors {
-    0% { stroke: #4285F4; }
-    25% { stroke: #DE3E35; }
-    50% { stroke: #F7C223; }
-    75% { stroke: #1B9A59; }
-    100% { stroke: #4285F4; }
+    0% {
+        stroke: #4285F4;
+    }
+
+    25% {
+        stroke: #DE3E35;
+    }
+
+    50% {
+        stroke: #F7C223;
+    }
+
+    75% {
+        stroke: #1B9A59;
+    }
+
+    100% {
+        stroke: #4285F4;
+    }
 }
 
 @keyframes dash {
-    0% { stroke-dashoffset: 187; }
+    0% {
+        stroke-dashoffset: 187;
+    }
+
     50% {
         stroke-dashoffset: 46.75;
-        transform:rotate(135deg);
+        transform: rotate(135deg);
     }
+
     100% {
         stroke-dashoffset: 187;
-        transform:rotate(450deg);
+        transform: rotate(450deg);
     }
 }
 
@@ -1030,7 +1077,8 @@ input:checked + .slider:before {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    display: none; /* Hidden by default */
+    display: none;
+    /* Hidden by default */
     background-color: #007bff;
     color: white;
     border: none;
@@ -1038,7 +1086,7 @@ input:checked + .slider:before {
     width: 50px;
     height: 50px;
     cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     justify-content: center;
     align-items: center;
@@ -1072,13 +1120,16 @@ input:checked + .slider:before {
         opacity: 0;
         transform: scale(0.3);
     }
+
     50% {
         opacity: 1;
         transform: scale(1.05);
     }
+
     70% {
         transform: scale(0.9);
     }
+
     100% {
         transform: scale(1);
     }
@@ -1089,6 +1140,7 @@ input:checked + .slider:before {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1101,7 +1153,8 @@ input:checked + .slider:before {
         width: 100%;
         margin-left: 0;
         margin-top: 0.25rem;
-        padding-left: 32px; /* Indent to align with text */
+        padding-left: 32px;
+        /* Indent to align with text */
     }
 
     /* Ensure menu text is visible on small screens */
@@ -1112,13 +1165,23 @@ input:checked + .slider:before {
 
 /* --- Solar System Keyframes (Renamed to avoid conflicts) --- */
 @keyframes solar-spin {
-    from { transform: translate(-50%, -50%) rotate(0deg); }
-    to { transform: translate(-50%, -50%) rotate(360deg); }
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
 }
 
 @keyframes solar-anti-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(-360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(-360deg);
+    }
 }
 
 /* --- Dashboard Saved Names Table --- */
@@ -1176,7 +1239,8 @@ input:checked + .slider:before {
 }
 
 .dashboard-table tr:hover {
-    background-color: #fffbe6; /* Light yellow hover */
+    background-color: #fffbe6;
+    /* Light yellow hover */
 }
 
 /* --- Full Width Hero Section --- */
@@ -1187,6 +1251,44 @@ input:checked + .slider:before {
     right: 50%;
     margin-left: -50vw;
     margin-right: -50vw;
-    margin-top: -1rem; /* Counteract main padding */
+    margin-top: -1rem;
+    /* Counteract main padding */
     margin-bottom: 2rem;
+}
+
+/* --- Global Spinner & Loading Animations --- */
+.spinner {
+    animation: rotate 2s linear infinite;
+    width: 24px;
+    height: 24px;
+}
+
+.spinner .path {
+    stroke-linecap: round;
+    animation: dash 1.5s ease-in-out infinite;
+    stroke: #667eea;
+    /* Default theme color */
+}
+
+@keyframes rotate {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes dash {
+    0% {
+        stroke-dasharray: 1, 150;
+        stroke-dashoffset: 0;
+    }
+
+    50% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -35;
+    }
+
+    100% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -124;
+    }
 }
