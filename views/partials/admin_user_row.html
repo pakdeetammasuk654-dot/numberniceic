@@ -1,0 +1,27 @@
+<tr class="{{if eq .Status 9}}admin-row{{end}}">
+    <td>{{.ID}}</td>
+    <td>{{.Username}}</td>
+    <td>{{.Email}}</td>
+    <td>{{.Tel}}</td>
+    <td>
+        <select name="status"
+                hx-post="/admin/users/{{.ID}}/status"
+                hx-trigger="change"
+                hx-swap="outerHTML"
+                hx-target="closest tr"
+                style="padding: 0.25rem; border-radius: 4px; border: 1px solid #ccc;">
+            <option value="1" {{if eq .Status 1}}selected{{end}}>User</option>
+            <option value="9" {{if eq .Status 9}}selected{{end}}>Admin</option>
+        </select>
+    </td>
+    <td>
+        <button class="link-button" style="color: #dc3545;"
+                hx-delete="/admin/users/{{.ID}}"
+                hx-target="closest tr"
+                hx-swap="outerHTML"
+                hx-confirm="คุณต้องการลบผู้ใช้งานนี้ใช่หรือไม่?">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            ลบ
+        </button>
+    </td>
+</tr>

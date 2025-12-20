@@ -1,0 +1,56 @@
+<div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1 style="font-family: 'Kanit', sans-serif;">จัดการบทความ</h1>
+        <a href="/admin" class="link-button">&larr; กลับไปหน้า Dashboard</a>
+    </div>
+    <a href="/admin/articles/create" class="button-group">
+        <button type="button" style="background-color: #28a745;">+ สร้างบทความใหม่</button>
+    </a>
+</div>
+
+<div class="dashboard-table-container">
+    <table class="dashboard-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Published</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Articles}}
+            <tr class="clickable-row" onclick="window.location.href='/articles/{{.Slug}}'">
+                <td>{{.ID}}</td>
+                <td>
+                    <div style="font-weight: bold;">{{.Title}}</div>
+                    <small style="color: #666;">/articles/{{.Slug}}</small>
+                </td>
+                <td><span style="background-color: #eee; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">{{.Category}}</span></td>
+                <td>
+                    {{if .IsPublished}}
+                        <span style="color: #28a745;">&#10004; Yes</span>
+                    {{else}}
+                        <span style="color: #dc3545;">&#10008; No</span>
+                    {{end}}
+                </td>
+                <td onclick="event.stopPropagation()">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <a href="/admin/articles/edit/{{.ID}}" class="link-button" style="color: #007bff;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </a>
+                        <button class="link-button" style="color: #dc3545;"
+                                hx-delete="/admin/articles/{{.ID}}"
+                                hx-target="closest tr"
+                                hx-swap="outerHTML"
+                                hx-confirm="คุณต้องการลบบทความนี้ใช่หรือไม่?">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>

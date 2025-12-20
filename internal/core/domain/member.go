@@ -1,11 +1,15 @@
 package domain
 
-// Member represents a user in the system.
+import "time"
+
 type Member struct {
-	ID       int    `json:"id"`
-	Username string `json:"username"`
-	Password string `json:"-"` // The password should not be exposed in JSON responses.
-	Email    string `json:"email,omitempty"`
-	Tel      string `json:"tel,omitempty"`
-	Status   int    `json:"status"`
+	ID        int        `json:"id"`
+	Username  string     `json:"username"`
+	Password  string     `json:"-"`
+	Email     string     `json:"email"`
+	Tel       string     `json:"tel"`
+	Status    int        `json:"status"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at"`
 }

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type MemberService struct {
@@ -19,7 +17,7 @@ func NewMemberService(repo ports.MemberRepository) *MemberService {
 
 func (s *MemberService) Register(username, password, email, tel string) error {
 	// 1. Check if username already exists
-	existingMember, err := s.repo.FindByUsername(username)
+	existingMember, err := s.repo.GetByUsername(username)
 	if err != nil {
 		return fmt.Errorf("error checking existing user: %w", err)
 	}
@@ -27,16 +25,32 @@ func (s *MemberService) Register(username, password, email, tel string) error {
 		return errors.New("username already exists")
 	}
 
-	// 2. Hash the password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return fmt.Errorf("failed to hash password: %w", err)
-	}
+	// 2. Hash the password (Note: Repository Create method already hashes password,
+	// but let's keep it consistent with previous logic or adjust repo.
+	// Looking at PostgresMemberRepository.Create, it hashes the password again!
+	// We should pass the raw password to Create if repo hashes it, OR hash it here and pass hashed.
+	// Let's check PostgresMemberRepository again. It does hash it.
+	// So we should pass the raw password to Create.
 
-	// 3. Create the member
+	// Wait, if I pass raw password to Create, and Create hashes it, that's fine.
+	// But here I was hashing it too. Let's remove hashing here and let repo handle it
+	// OR remove hashing from repo and handle it here.
+	// Usually service handles business logic (hashing).
+	// Let's check PostgresMemberRepository.Create again.
+
+	/*
+		func (r *PostgresMemberRepository) Create(member *domain.Member) error {
+			hashedPassword, err := bcrypt.GenerateFromPassword([]byte(member.Password), bcrypt.DefaultCost)
+			// ...
+		}
+	*/
+
+	// Okay, the repo hashes it. So I should NOT hash it here in service if I want to avoid double hashing.
+	// However, to be clean, I will just pass the raw password to repo.Create.
+
 	newMember := &domain.Member{
 		Username: username,
-		Password: string(hashedPassword),
+		Password: password, // Pass raw password, repo will hash it
 		Email:    email,
 		Tel:      tel,
 		Status:   1, // Active by default
@@ -47,7 +61,7 @@ func (s *MemberService) Register(username, password, email, tel string) error {
 
 func (s *MemberService) Login(username, password string) (*domain.Member, error) {
 	// 1. Find the user
-	member, err := s.repo.FindByUsername(username)
+	member, err := s.repo.GetByUsername(username)
 	if err != nil {
 		return nil, fmt.Errorf("error finding user: %w", err)
 	}
@@ -56,7 +70,9 @@ func (s *MemberService) Login(username, password string) (*domain.Member, error)
 	}
 
 	// 2. Compare passwords
-	err = bcrypt.CompareHashAndPassword([]byte(member.Password), []byte(password))
+	// Use the repo's CheckPassword method if available, or do it here.
+	// The repo has CheckPassword method.
+	err = s.repo.CheckPassword(member.Password, password)
 	if err != nil {
 		return nil, errors.New("invalid username or password")
 	}
@@ -65,5 +81,5 @@ func (s *MemberService) Login(username, password string) (*domain.Member, error)
 }
 
 func (s *MemberService) GetMemberByID(id int) (*domain.Member, error) {
-	return s.repo.FindByID(id)
+	return s.repo.GetByID(id)
 }

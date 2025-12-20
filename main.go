@@ -91,6 +91,9 @@ func main() {
 	memberService := service.NewMemberService(memberRepo)
 	savedNameRepo := repository.NewPostgresSavedNameRepository(db)
 	savedNameService := service.NewSavedNameService(savedNameRepo)
+	articleRepo := repository.NewPostgresArticleRepository(db)
+	articleService := service.NewArticleService(articleRepo)
+	adminService := service.NewAdminService(memberRepo, articleRepo)
 
 	// --- Session Store ---
 	store := session.New(session.Config{
@@ -109,6 +112,7 @@ func main() {
 
 		// Set login status
 		c.Locals("IsLoggedIn", sess.Get("member_id") != nil)
+		c.Locals("IsAdmin", sess.Get("is_admin") == true)
 
 		// Handle toast messages
 		if success := sess.Get("toast_success"); success != nil {
@@ -131,6 +135,8 @@ func main() {
 	numerologyHandler := handler.NewNumerologyHandler(numerologyCache, shadowCache, klakiniCache, numberPairCache, namesMiracleRepo, linguisticService)
 	memberHandler := handler.NewMemberHandler(memberService, savedNameService, klakiniCache, numberPairCache, store)
 	savedNameHandler := handler.NewSavedNameHandler(savedNameService, store)
+	articleHandler := handler.NewArticleHandler(articleService, store)
+	adminHandler := handler.NewAdminHandler(adminService)
 
 	// --- Middleware for Auth ---
 	authMiddleware := func(c *fiber.Ctx) error {
@@ -143,6 +149,17 @@ func main() {
 		return c.Next()
 	}
 
+	// --- Middleware for Admin ---
+	adminMiddleware := func(c *fiber.Ctx) error {
+		if c.Locals("IsAdmin") != true {
+			sess, _ := store.Get(c)
+			sess.Set("toast_error", "Access denied. Admin only.")
+			sess.Save()
+			return c.Redirect("/dashboard")
+		}
+		return c.Next()
+	}
+
 	// --- Routes ---
 
 	// Landing Page
@@ -150,9 +167,22 @@ func main() {
 		return c.Render("landing", fiber.Map{
 			"title":         "ยินดีต้อนรับ",
 			"IsLoggedIn":    c.Locals("IsLoggedIn"),
+			"IsAdmin":       c.Locals("IsAdmin"),
 			"toast_success": c.Locals("toast_success"),
 			"toast_error":   c.Locals("toast_error"),
 			"ActivePage":    "home",
+		}, "layouts/main")
+	})
+
+	// About Us Page
+	app.Get("/about", func(c *fiber.Ctx) error {
+		return c.Render("about", fiber.Map{
+			"title":         "เกี่ยวกับเรา",
+			"IsLoggedIn":    c.Locals("IsLoggedIn"),
+			"IsAdmin":       c.Locals("IsAdmin"),
+			"toast_success": c.Locals("toast_success"),
+			"toast_error":   c.Locals("toast_error"),
+			"ActivePage":    "about",
 		}, "layouts/main")
 	})
 
@@ -178,6 +208,7 @@ func main() {
 			"defaultDay":    day,
 			"sampleNames":   sampleNames,
 			"IsLoggedIn":    c.Locals("IsLoggedIn"),
+			"IsAdmin":       c.Locals("IsAdmin"),
 			"toast_success": c.Locals("toast_success"),
 			"toast_error":   c.Locals("toast_error"),
 			"ActivePage":    "analyzer",
@@ -190,6 +221,10 @@ func main() {
 	app.Get("/similar-names", numerologyHandler.GetSimilarNames)
 	app.Get("/number-meanings", numerologyHandler.GetNumberMeanings)
 	app.Get("/linguistic-analysis", numerologyHandler.AnalyzeLinguistically)
+
+	// Article Routes
+	app.Get("/articles", articleHandler.ShowArticlesPage)
+	app.Get("/articles/:slug", articleHandler.ShowArticleDetailPage)
 
 	// Auth routes
 	app.Get("/login", memberHandler.ShowLoginPage)
@@ -210,6 +245,25 @@ func main() {
 	savedNames := app.Group("/saved-names", authMiddleware)
 	savedNames.Get("/", savedNameHandler.GetSavedNames)
 	savedNames.Delete("/:id", savedNameHandler.DeleteSavedName)
+
+	// Admin Routes
+	admin := app.Group("/admin", authMiddleware, adminMiddleware)
+	admin.Get("/", adminHandler.ShowDashboard)
+	admin.Get("/users", adminHandler.ShowUsersPage)
+	admin.Post("/users/:id/status", adminHandler.UpdateUserStatus)
+	admin.Delete("/users/:id", adminHandler.DeleteUser)
+	admin.Get("/articles", adminHandler.ShowArticlesPage)
+	admin.Get("/articles/create", adminHandler.ShowCreateArticlePage)
+	admin.Post("/articles/create", adminHandler.CreateArticle)
+	admin.Get("/articles/edit/:id", adminHandler.ShowEditArticlePage)
+	admin.Post("/articles/edit/:id", adminHandler.UpdateArticle)
+	admin.Delete("/articles/:id", adminHandler.DeleteArticle)
+
+	// Image Management Routes
+	admin.Get("/images", adminHandler.ShowImagesPage)
+	admin.Post("/images", adminHandler.UploadImage)
+	admin.Delete("/images/:filename", adminHandler.DeleteImage)
+	admin.Get("/api/images", adminHandler.GetImagesJSON) // New API endpoint
 
 	log.Println("Starting server on port 3000...")
 	log.Fatal(app.Listen(":3000"))

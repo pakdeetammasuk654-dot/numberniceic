@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"numberniceic/internal/adapters/cache"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/service"
@@ -73,7 +74,8 @@ func (h *MemberHandler) HandleRegister(c *fiber.Ctx) error {
 
 	err := h.service.Register(username, password, email, tel)
 	if err != nil {
-		sess.Set("toast_error", err.Error())
+		log.Printf("Register Error: %v", err) // Log the error
+		sess.Set("toast_error", "เกิดข้อผิดพลาดในการลงทะเบียน: "+err.Error())
 		sess.Save()
 		return c.Redirect("/register")
 	}
@@ -103,12 +105,20 @@ func (h *MemberHandler) HandleLogin(c *fiber.Ctx) error {
 
 	member, err := h.service.Login(username, password)
 	if err != nil {
+		log.Printf("Login Error: %v", err) // Log the error
 		sess.Set("toast_error", "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง")
 		sess.Save()
 		return c.Redirect("/login")
 	}
 
 	sess.Set("member_id", member.ID)
+	// Admin logic restored
+	if member.Status == 9 {
+		sess.Set("is_admin", true)
+	} else {
+		sess.Set("is_admin", false)
+	}
+
 	sess.Set("toast_success", "ยินดีต้อนรับกลับ, "+member.Username+"!")
 	sess.Save()
 
@@ -141,6 +151,7 @@ func (h *MemberHandler) ShowDashboard(c *fiber.Ctx) error {
 		"Email":         member.Email,
 		"Tel":           member.Tel,
 		"IsLoggedIn":    c.Locals("IsLoggedIn"),
+		"IsAdmin":       c.Locals("IsAdmin"),
 		"toast_success": c.Locals("toast_success"),
 		"toast_error":   c.Locals("toast_error"),
 		"ActivePage":    "dashboard",
@@ -152,9 +163,12 @@ func (h *MemberHandler) ShowDashboard(c *fiber.Ctx) error {
 func (h *MemberHandler) HandleLogout(c *fiber.Ctx) error {
 	sess, _ := h.store.Get(c)
 
-	sess.Delete("member_id")
-	sess.Set("toast_success", "ออกจากระบบเรียบร้อยแล้ว")
-	sess.Save()
+	sess.Destroy() // Destroy the entire session on logout
+
+	// Create a new session to store the logout message
+	newSess, _ := h.store.Get(c)
+	newSess.Set("toast_success", "ออกจากระบบเรียบร้อยแล้ว")
+	newSess.Save()
 
 	return c.Redirect("/login")
 }

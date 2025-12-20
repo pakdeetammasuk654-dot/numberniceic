@@ -2,9 +2,15 @@ package ports
 
 import "numberniceic/internal/core/domain"
 
-// MemberRepository defines the interface for interacting with member data.
 type MemberRepository interface {
 	Create(member *domain.Member) error
-	FindByUsername(username string) (*domain.Member, error)
-	FindByID(id int) (*domain.Member, error)
+	GetByUsername(username string) (*domain.Member, error)
+	GetByID(id int) (*domain.Member, error)
+	Update(member *domain.Member) error
+	Delete(id int) error
+	CheckPassword(hashedPassword, password string) error
+
+	// Admin methods
+	GetAllMembers() ([]domain.Member, error)
+	UpdateStatus(id int, status int) error
 }

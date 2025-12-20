@@ -1,0 +1,31 @@
+<div style="margin-bottom: 2rem;">
+    <h1 style="font-family: 'Kanit', sans-serif; text-align: center;">บทความน่ารู้</h1>
+    <p style="text-align: center; color: #666;">รวมบทความเกี่ยวกับศาสตร์ตัวเลขและเรื่องราวที่น่าสนใจ</p>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2rem;">
+    {{range .Articles}}
+    <div class="article-card" style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: transform 0.2s;">
+        <a href="/articles/{{.Slug}}" style="text-decoration: none; color: inherit; display: block;">
+            <div style="height: 200px; overflow: hidden;">
+                <img src="{{.ImageURL}}" alt="{{.Title}}" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div style="padding: 1.5rem;">
+                <span style="background-color: #FFD700; color: #333; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; display: inline-block; margin-bottom: 0.5rem;">{{.Category}}</span>
+                <h2 style="font-family: 'Kanit', sans-serif; font-size: 1.2rem; margin: 0.5rem 0; line-height: 1.4;">{{.Title}}</h2>
+                <p style="color: #666; font-size: 0.9rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">{{.Excerpt}}</p>
+                <div style="margin-top: 1rem; color: #999; font-size: 0.8rem;">
+                    {{.PublishedAt.Format "02 Jan 2006"}}
+                </div>
+            </div>
+        </a>
+    </div>
+    {{end}}
+</div>
+
+<style>
+    .article-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+    }
+</style>

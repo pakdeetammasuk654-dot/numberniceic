@@ -1,0 +1,33 @@
+<div style="margin-bottom: 2rem;">
+    <h1 style="font-family: 'Kanit', sans-serif;">จัดการผู้ใช้งาน</h1>
+    <a href="/admin" class="link-button">&larr; กลับไปหน้า Dashboard</a>
+</div>
+
+<div class="dashboard-table-container">
+    <table class="dashboard-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Tel</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Users}}
+                {{template "partials/admin_user_row" .}}
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .admin-row {
+        background-color: #e8f5e9 !important; /* Light green for admin */
+    }
+    .admin-row:hover {
+        background-color: #d4edda !important;
+    }
+</style>

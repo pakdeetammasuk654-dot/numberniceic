@@ -2,10 +2,11 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
+	"errors"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
-	"strings"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type PostgresMemberRepository struct {
@@ -17,98 +18,122 @@ func NewPostgresMemberRepository(db *sql.DB) ports.MemberRepository {
 }
 
 func (r *PostgresMemberRepository) Create(member *domain.Member) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(member.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	// Use 'status' but skip timestamps for now
 	query := `
-		INSERT INTO public.member (username, password, email, tel, status)
+		INSERT INTO member (username, password, email, tel, status)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id
 	`
-	// Trim spaces from char(n) fields if necessary, though Postgres usually handles varchar better.
-	// Since the schema uses char(30), we should be mindful of padding, but for insertion, it's fine.
-	err := r.db.QueryRow(query,
-		strings.TrimSpace(member.Username),
-		member.Password,
-		strings.TrimSpace(member.Email),
-		strings.TrimSpace(member.Tel),
-		member.Status,
-	).Scan(&member.ID)
-
-	if err != nil {
-		return fmt.Errorf("failed to create member: %w", err)
+	// Default status to 1 (Normal User) if not specified
+	status := 1
+	if member.Status != 0 {
+		status = member.Status
 	}
+
+	err = r.db.QueryRow(query, member.Username, string(hashedPassword), member.Email, member.Tel, status).Scan(&member.ID)
+	if err != nil {
+		return err
+	}
+	member.Password = "" // Don't return password
 	return nil
 }
 
-func (r *PostgresMemberRepository) FindByUsername(username string) (*domain.Member, error) {
+func (r *PostgresMemberRepository) GetByUsername(username string) (*domain.Member, error) {
+	// Use 'status' but skip timestamps for now
 	query := `
 		SELECT id, username, password, email, tel, status
-		FROM public.member
-		WHERE trim(username) = $1
+		FROM member
+		WHERE username = $1
 	`
-	var member domain.Member
-	var email, tel sql.NullString // Handle potential NULLs
-
-	err := r.db.QueryRow(query, strings.TrimSpace(username)).Scan(
-		&member.ID,
-		&member.Username,
-		&member.Password,
-		&email,
-		&tel,
-		&member.Status,
-	)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil // Not found
-		}
-		return nil, fmt.Errorf("failed to find member by username: %w", err)
-	}
-
-	// Clean up the retrieved data (remove padding from char types)
-	member.Username = strings.TrimSpace(member.Username)
-	member.Password = strings.TrimSpace(member.Password)
-	if email.Valid {
-		member.Email = strings.TrimSpace(email.String)
-	}
-	if tel.Valid {
-		member.Tel = strings.TrimSpace(tel.String)
-	}
-
-	return &member, nil
-}
-
-func (r *PostgresMemberRepository) FindByID(id int) (*domain.Member, error) {
-	query := `
-		SELECT id, username, password, email, tel, status
-		FROM public.member
-		WHERE id = $1
-	`
-	var member domain.Member
-	var email, tel sql.NullString
-
-	err := r.db.QueryRow(query, id).Scan(
-		&member.ID,
-		&member.Username,
-		&member.Password,
-		&email,
-		&tel,
-		&member.Status,
-	)
-
+	var m domain.Member
+	err := r.db.QueryRow(query, username).Scan(&m.ID, &m.Username, &m.Password, &m.Email, &m.Tel, &m.Status)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to find member by id: %w", err)
+		return nil, err
 	}
+	return &m, nil
+}
 
-	member.Username = strings.TrimSpace(member.Username)
-	member.Password = strings.TrimSpace(member.Password)
-	if email.Valid {
-		member.Email = strings.TrimSpace(email.String)
+func (r *PostgresMemberRepository) GetByID(id int) (*domain.Member, error) {
+	// Use 'status' but skip timestamps for now
+	query := `
+		SELECT id, username, password, email, tel, status
+		FROM member
+		WHERE id = $1
+	`
+	var m domain.Member
+	err := r.db.QueryRow(query, id).Scan(&m.ID, &m.Username, &m.Password, &m.Email, &m.Tel, &m.Status)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
 	}
-	if tel.Valid {
-		member.Tel = strings.TrimSpace(tel.String)
-	}
+	return &m, nil
+}
 
-	return &member, nil
+func (r *PostgresMemberRepository) Update(member *domain.Member) error {
+	// Implement update logic if needed
+	return nil
+}
+
+func (r *PostgresMemberRepository) Delete(id int) error {
+	query := `DELETE FROM member WHERE id = $1`
+	_, err := r.db.Exec(query, id)
+	return err
+}
+
+func (r *PostgresMemberRepository) CheckPassword(hashedPassword, password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+}
+
+// GetAllMembers retrieves all members (for admin)
+func (r *PostgresMemberRepository) GetAllMembers() ([]domain.Member, error) {
+	// Use 'status' but skip timestamps for now
+	// ORDER BY id DESC (Latest first)
+	query := `
+		SELECT id, username, email, tel, status
+		FROM member
+		ORDER BY id DESC
+	`
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var members []domain.Member
+	for rows.Next() {
+		var m domain.Member
+		err := rows.Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status)
+		if err != nil {
+			return nil, err
+		}
+		members = append(members, m)
+	}
+	return members, nil
+}
+
+// UpdateStatus updates the status of a member (for admin)
+func (r *PostgresMemberRepository) UpdateStatus(id int, status int) error {
+	query := `UPDATE member SET status = $1 WHERE id = $2`
+	result, err := r.db.Exec(query, status, id)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("member not found")
+	}
+	return nil
 }

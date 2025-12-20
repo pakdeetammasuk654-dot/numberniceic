@@ -5,11 +5,17 @@
             <div class="brand-logo">
                 <a href="/" class="brand-link">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-                    NumberNiceIC
+                    ชื่อดี.com
                 </a>
             </div>
             <div class="auth-links">
                 {{if .IsLoggedIn}}
+                    {{if .IsAdmin}}
+                        <a href="/admin" class="nav-item {{if eq .ActivePage "admin"}}active{{end}}" title="Admin Dashboard">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            <span class="menu-text">ผู้ดูแลระบบ <small style="font-weight: normal; font-size: 0.8em;">(Admin)</small></span>
+                        </a>
+                    {{end}}
                     <a href="/dashboard" class="nav-item {{if eq .ActivePage "dashboard"}}active{{end}}" title="Dashboard">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         <span class="menu-text">แดชบอร์ด <small style="font-weight: normal; font-size: 0.8em;">(Dashboard)</small></span>
@@ -37,11 +43,11 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <span class="menu-text">วิเคราะห์ชื่อ</span>
             </a>
-            <a href="#" class="nav-item {{if eq .ActivePage "articles"}}active{{end}}">
+            <a href="/articles" class="nav-item {{if eq .ActivePage "articles"}}active{{end}}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                 <span class="menu-text">บทความ</span>
             </a>
-            <a href="#" class="nav-item {{if eq .ActivePage "about"}}active{{end}}">
+            <a href="/about" class="nav-item {{if eq .ActivePage "about"}}active{{end}}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                 <span class="menu-text">เกี่ยวกับเรา</span>
             </a>
