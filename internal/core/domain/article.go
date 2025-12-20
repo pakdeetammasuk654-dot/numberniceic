@@ -13,4 +13,5 @@ type Article struct {
 	IsPublished bool      `json:"is_published"`
 	Content     string    `json:"content"`
 	TitleShort  string    `json:"title_short"`
+	PinOrder    int       `json:"pin_order"` // 0 = not pinned, 1-10 = pinned order
 }

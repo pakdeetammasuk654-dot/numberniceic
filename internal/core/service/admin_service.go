@@ -38,10 +38,6 @@ func (s *AdminService) GetMemberByID(id int) (*domain.Member, error) {
 // --- Article Management ---
 
 func (s *AdminService) GetAllArticles() ([]domain.Article, error) {
-	// In admin, we want to see all articles, published or not.
-	// Assuming repo has GetAll() or similar. If not, we might need to add it.
-	// For now, let's use GetAllPublished or add a new method to repo.
-	// Let's assume we added GetAll() to repo.
 	return s.articleRepo.GetAll()
 }
 
@@ -59,4 +55,8 @@ func (s *AdminService) UpdateArticle(article *domain.Article) error {
 
 func (s *AdminService) DeleteArticle(id int) error {
 	return s.articleRepo.Delete(id)
+}
+
+func (s *AdminService) UpdateArticlePinOrder(id int, order int) error {
+	return s.articleRepo.UpdatePinOrder(id, order)
 }

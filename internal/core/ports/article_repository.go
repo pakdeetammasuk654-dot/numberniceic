@@ -12,4 +12,5 @@ type ArticleRepository interface {
 	Create(article *domain.Article) error
 	Update(article *domain.Article) error
 	Delete(id int) error
+	UpdatePinOrder(id int, order int) error
 }

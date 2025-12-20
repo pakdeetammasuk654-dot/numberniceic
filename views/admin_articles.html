@@ -12,6 +12,7 @@
     <table class="dashboard-table">
         <thead>
             <tr>
+                <th>Pin</th>
                 <th>ID</th>
                 <th>Title</th>
                 <th>Category</th>
@@ -22,6 +23,13 @@
         <tbody>
             {{range .Articles}}
             <tr class="clickable-row" onclick="window.location.href='/articles/{{.Slug}}'">
+                <td>
+                    {{if gt .PinOrder 0}}
+                        <span style="background-color: #FFD700; color: #333; padding: 2px 8px; border-radius: 50%; font-weight: bold; font-size: 0.9rem; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;">{{.PinOrder}}</span>
+                    {{else}}
+                        <span style="color: #ccc;">-</span>
+                    {{end}}
+                </td>
                 <td>{{.ID}}</td>
                 <td>
                     <div style="font-weight: bold;">{{.Title}}</div>

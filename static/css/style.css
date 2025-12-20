@@ -59,6 +59,19 @@ main {
     align-items: center;
     gap: 1.5rem;
     flex-wrap: wrap;
+    background-color: #444; /* Added background color for menu row */
+    padding: 0.5rem 1rem; /* Added padding */
+    border-radius: 4px; /* Optional: rounded corners */
+    margin-top: 0; /* Removed margin-top */
+
+    /* Force full width within container if needed, or remove padding/margin to stick */
+    margin-left: -1rem; /* Negative margin to counteract header padding */
+    margin-right: -1rem; /* Negative margin to counteract header padding */
+    margin-bottom: -1rem; /* Stick to bottom of header */
+    padding: 0.75rem 1rem; /* Adjust padding */
+    border-radius: 0; /* Remove border radius for full width look */
+    width: calc(100% + 2rem); /* Ensure it covers the full width */
+    box-sizing: border-box; /* Include padding in width */
 }
 
 .nav-item {
@@ -107,6 +120,14 @@ main {
     .main-nav-row {
         justify-content: center;
         gap: 0.5rem;
+        background-color: #444; /* Ensure background on mobile too */
+        padding: 0.5rem;
+
+        /* Adjust negative margins for mobile if header padding changes */
+        margin-left: -1rem;
+        margin-right: -1rem;
+        margin-bottom: -1rem;
+        width: calc(100% + 2rem);
     }
 
     .nav-item {
@@ -1156,4 +1177,16 @@ input:checked + .slider:before {
 
 .dashboard-table tr:hover {
     background-color: #fffbe6; /* Light yellow hover */
+}
+
+/* --- Full Width Hero Section --- */
+.full-width-hero {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    margin-top: -1rem; /* Counteract main padding */
+    margin-bottom: 2rem;
 }

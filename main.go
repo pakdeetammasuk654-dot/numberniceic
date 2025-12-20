@@ -164,13 +164,25 @@ func main() {
 
 	// Landing Page
 	app.Get("/", func(c *fiber.Ctx) error {
+		// Fetch pinned articles
+		articles, err := articleService.GetAllArticles()
+		var pinnedArticles []interface{} // Use interface{} or domain.Article if imported
+		if err == nil {
+			for _, a := range articles {
+				if a.PinOrder > 0 && a.PinOrder <= 10 {
+					pinnedArticles = append(pinnedArticles, a)
+				}
+			}
+		}
+
 		return c.Render("landing", fiber.Map{
-			"title":         "ยินดีต้อนรับ",
-			"IsLoggedIn":    c.Locals("IsLoggedIn"),
-			"IsAdmin":       c.Locals("IsAdmin"),
-			"toast_success": c.Locals("toast_success"),
-			"toast_error":   c.Locals("toast_error"),
-			"ActivePage":    "home",
+			"title":          "ยินดีต้อนรับ",
+			"IsLoggedIn":     c.Locals("IsLoggedIn"),
+			"IsAdmin":        c.Locals("IsAdmin"),
+			"toast_success":  c.Locals("toast_success"),
+			"toast_error":    c.Locals("toast_error"),
+			"ActivePage":     "home",
+			"PinnedArticles": pinnedArticles,
 		}, "layouts/main")
 	})
 

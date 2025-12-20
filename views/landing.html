@@ -1,9 +1,212 @@
-<div style="text-align: center; padding: 4rem 1rem; background-color: #fff; border-radius: 8px;">
-    <h1 style="font-size: 2.5rem; color: #333;">ยินดีต้อนรับสู่ NumberNiceIC</h1>
-    <p style="font-size: 1.2rem; color: #666;">เครื่องมือวิเคราะห์ชื่อตามหลักเลขศาสตร์และภาษาศาสตร์</p>
-    <div style="margin-top: 2rem;">
-        <a href="/analyzer" class="button-group">
-            <button type="button">ไปที่หน้าวิเคราะห์ชื่อ</button>
+{{if .PinnedArticles}}
+<div class="hero-grid">
+    <!-- Left Side: 1st Article (Big) -->
+    {{if ge (len .PinnedArticles) 1}}
+        {{with index .PinnedArticles 0}}
+        <a href="/articles/{{.Slug}}" class="hero-main">
+            <img src="{{.ImageURL}}" alt="{{.Title}}">
+            <div class="hero-overlay">
+                <div style="width: 100%; overflow: hidden;">
+                    <span class="hero-category">{{.Category}}</span>
+                    <h3>{{.Title}}</h3>
+                    <p class="hero-excerpt">{{.Excerpt}}</p>
+                </div>
+            </div>
         </a>
+        {{end}}
+    {{end}}
+
+    <!-- Right Side: Next 4 Articles (Grid) -->
+    <div class="hero-sub">
+        {{range $i, $e := .PinnedArticles}}
+            {{if and (gt $i 0) (lt $i 5)}}
+            <a href="/articles/{{.Slug}}" class="hero-sub-item">
+                <img src="{{.ImageURL}}" alt="{{.TitleShort}}">
+                <div class="hero-overlay">
+                    <h4>{{.TitleShort}}</h4>
+                </div>
+            </a>
+            {{end}}
+        {{end}}
     </div>
 </div>
+{{else}}
+<div style="text-align: center; padding: 4rem;">
+    <p>ยังไม่มีบทความแนะนำ</p>
+</div>
+{{end}}
+
+<style>
+    /* Force remove top padding from main container for this page only */
+    main {
+        padding-top: 0 !important;
+    }
+
+    .hero-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 50% Left, 50% Right */
+        height: 500px; /* Fixed height for desktop */
+        width: 100%;
+        gap: 0; /* No gap */
+        margin-bottom: 2rem;
+        margin-top: 0; /* Ensure no top margin */
+    }
+
+    .hero-main {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: block;
+        overflow: hidden;
+    }
+
+    .hero-sub {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        width: 100%;
+        height: 100%;
+        gap: 0; /* No gap */
+    }
+
+    .hero-sub-item {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: block;
+        overflow: hidden;
+    }
+
+    .hero-main img, .hero-sub-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+        display: block;
+    }
+
+    .hero-main:hover img, .hero-sub-item:hover img {
+        transform: scale(1.05);
+    }
+
+    /* Common Overlay Styles */
+    .hero-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 1.5rem;
+        box-sizing: border-box;
+        pointer-events: none;
+        display: flex;
+        align-items: flex-end;
+    }
+
+    /* --- Main Article Styles (Left) --- */
+    .hero-main .hero-overlay {
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 1.25rem;
+
+        /* Text Box Margins relative to Image */
+        width: auto !important;
+        left: 0 !important;
+        right: 1.5rem !important;
+        bottom: 0.75rem !important;
+        border-radius: 0 !important;
+    }
+
+    .hero-category {
+        display: block;
+        color: #dc3545; /* Red color */
+        font-family: 'Kanit', sans-serif;
+        font-size: 0.9rem;
+        font-weight: 400 !important; /* Normal/thin weight */
+        text-transform: uppercase;
+        margin-bottom: -0.25rem !important; /* Negative margin to pull closer */
+        position: relative;
+        z-index: 3;
+    }
+
+    .hero-main .hero-overlay h3 {
+        color: #222;
+        margin: 0;
+        font-family: 'Kanit', sans-serif;
+        font-weight: 300;
+        font-size: 1.5rem;
+        line-height: 1.4 !important; /* Increased line-height significantly */
+        text-shadow: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-bottom: 0.1rem; /* Add small padding to ensure descenders are visible */
+        position: relative; /* Ensure z-index works */
+        z-index: 2; /* Place above excerpt */
+    }
+
+    .hero-excerpt {
+        color: #555;
+        font-size: 1rem;
+        margin: 0; /* Remove margin */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.4;
+        letter-spacing: 0.03em;
+        font-family: 'Kanit', sans-serif;
+        text-shadow: none;
+        position: relative; /* Ensure z-index works */
+        z-index: 1; /* Place below title */
+    }
+
+    /* --- Sub Articles Styles (Right) --- */
+    .hero-sub-item .hero-overlay {
+        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        justify-content: center; /* Center horizontally (flex item) */
+        align-items: flex-end; /* Align to bottom */
+        text-align: center; /* Center text inside */
+    }
+
+    .hero-sub-item .hero-overlay h4 {
+        color: white;
+        margin: 0;
+        font-family: 'Kanit', sans-serif;
+        font-size: 1.2rem;
+        line-height: 1.2;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        font-weight: 300 !important; /* Thin font forced */
+        width: 100%; /* Ensure text takes full width for centering */
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .hero-grid {
+            grid-template-columns: 1fr;
+            height: auto;
+        }
+        .hero-main {
+            height: 300px;
+        }
+        .hero-sub {
+            height: auto;
+            grid-template-columns: 1fr 1fr;
+        }
+        .hero-sub-item {
+            height: 200px;
+        }
+        .hero-main .hero-overlay h3 {
+            font-size: 1.25rem;
+        }
+        .hero-excerpt {
+            font-size: 0.9rem;
+            line-height: 1.3;
+        }
+        .hero-main .hero-overlay {
+            left: 0 !important;
+            right: 1rem !important;
+            bottom: 0.5rem !important; /* Reduced for mobile too */
+            padding: 1rem;
+        }
+    }
+</style>

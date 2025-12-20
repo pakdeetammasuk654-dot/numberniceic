@@ -27,6 +27,12 @@
     </div>
 
     <div class="form-group">
+        <label for="pin_order">ลำดับการปักหมุด (Pin Order)</label>
+        <input type="number" id="pin_order" name="pin_order" min="0" max="10" value="{{if .IsEdit}}{{.Article.PinOrder}}{{else}}0{{end}}">
+        <small class="helper-text">ใส่เลข 1-10 เพื่อปักหมุดบทความ (0 = ไม่ปักหมุด)</small>
+    </div>
+
+    <div class="form-group">
         <label for="image_file">รูปภาพปก (Image)</label>
         {{if .IsEdit}}
             <div style="margin-bottom: 1rem;">

@@ -125,6 +125,8 @@ func (h *AdminHandler) CreateArticle(c *fiber.Ctx) error {
 		imageURL = c.FormValue("image_url")
 	}
 
+	pinOrder, _ := strconv.Atoi(c.FormValue("pin_order"))
+
 	article := &domain.Article{
 		Title:       c.FormValue("title"),
 		Slug:        c.FormValue("slug"),
@@ -135,6 +137,7 @@ func (h *AdminHandler) CreateArticle(c *fiber.Ctx) error {
 		TitleShort:  c.FormValue("title_short"),
 		IsPublished: c.FormValue("is_published") == "on",
 		PublishedAt: time.Now(),
+		PinOrder:    pinOrder,
 	}
 
 	err = h.service.CreateArticle(article)
@@ -188,6 +191,8 @@ func (h *AdminHandler) UpdateArticle(c *fiber.Ctx) error {
 		imageURL = url
 	}
 
+	pinOrder, _ := strconv.Atoi(c.FormValue("pin_order"))
+
 	article := &domain.Article{
 		ID:          id,
 		Title:       c.FormValue("title"),
@@ -198,6 +203,7 @@ func (h *AdminHandler) UpdateArticle(c *fiber.Ctx) error {
 		Content:     c.FormValue("content"),
 		TitleShort:  c.FormValue("title_short"),
 		IsPublished: c.FormValue("is_published") == "on",
+		PinOrder:    pinOrder,
 	}
 
 	err = h.service.UpdateArticle(article)
@@ -215,6 +221,19 @@ func (h *AdminHandler) DeleteArticle(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error deleting article")
 	}
 	return c.SendString("") // Remove row from DOM
+}
+
+func (h *AdminHandler) UpdateArticlePinOrder(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	order, _ := strconv.Atoi(c.FormValue("pin_order"))
+
+	err := h.service.UpdateArticlePinOrder(id, order)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error updating pin order")
+	}
+
+	c.Set("HX-Trigger", "show-toast")
+	return c.SendString("") // Or return updated row if needed
 }
 
 // --- Image Management ---
