@@ -103,7 +103,7 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 							if dc.IsBad {
 								<span class="klakini-char" style="color: #ff4757;">{ dc.Char }</span>
 							} else {
-								<span>{ dc.Char }</span>
+								{ dc.Char }
 							}
 						}
 						"
@@ -199,7 +199,7 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 											if dc.IsBad {
 												<span class="klakini-char">{ dc.Char }</span>
 											} else {
-												<span>{ dc.Char }</span>
+												{ dc.Char }
 											}
 										}
 									</div>

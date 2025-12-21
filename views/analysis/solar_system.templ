@@ -100,7 +100,7 @@ templ SolarSystem(props SolarSystemProps) {
 								if dc.IsBad {
 									<span class="klakini-char">{ dc.Char }</span>
 								} else {
-									<span>{ dc.Char }</span>
+									{ dc.Char }
 								}
 							}
 						} else {
@@ -246,7 +246,7 @@ templ SolarSystem(props SolarSystemProps) {
 						if dc.IsBad {
 							<span class="klakini-char" style="color: #ff4757;">{ dc.Char }</span>
 						} else {
-							<span>{ dc.Char }</span>
+							{ dc.Char }
 						}
 					}
 					"
