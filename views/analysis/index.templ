@@ -41,7 +41,7 @@ templ Index(props IndexProps) {
 								<circle cx="12" cy="7" r="4"></circle>
 							</svg>
 						</span>
-						<input type="text" id="name" name="name" required placeholder="เช่น อณัญญา" value={ props.DefaultName }
+						<input type="text" id="name" name="name" required placeholder="เช่น อณัญญา" value={ props.DefaultName } maxlength="30"
 							style="border: 2px solid #e0e0e0; border-radius: 12px; padding-left: 3rem; height: 50px; font-size: 1.1rem; transition: all 0.3s;"
 							onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 4px rgba(102, 126, 234, 0.1)';"
 							onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none';"
