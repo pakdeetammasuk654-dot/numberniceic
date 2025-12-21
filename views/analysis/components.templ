@@ -100,9 +100,9 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 					<h2 class="header-title" style="margin: 0; font-family: 'Sarabun', sans-serif; font-size: 1.8rem; font-weight: bold; color: #333; line-height: 1.2; white-space: nowrap;">
 						for _, dc := range props.DisplayNameHTML {
 							if dc.IsBad {
-								<span class="klakini-char" style="color: #ff4757 !important; display: inline; position: relative;">{ dc.Char }</span>
+								<span class="klakini-char" style="color: #ff4757 !important;">{ dc.Char }</span>
 							} else {
-								<span style="display: inline; position: relative;">{ dc.Char }</span>
+								{ dc.Char }
 							}
 						}
 					</h2>
@@ -195,9 +195,9 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 									<div class={ "name-cell", templ.KV("name-top-tier", name.IsTopTier) }>
 										for _, dc := range name.DisplayNameHTML {
 											if dc.IsBad {
-												<span class="klakini-char" style="color: #ff4757 !important; display: inline; position: relative;">{ dc.Char }</span>
+												<span class="klakini-char" style="color: #ff4757 !important;">{ dc.Char }</span>
 											} else {
-												<span style="display: inline; position: relative;">{ dc.Char }</span>
+												{ dc.Char }
 											}
 										}
 									</div>

@@ -379,22 +379,10 @@ func (h *NumerologyHandler) findAuspiciousNames(name, day string, repoAllowKlaki
 // This ensures consistent display (red color) across the application.
 func (h *NumerologyHandler) createDisplayChars(name, day string) []domain.DisplayChar {
 	var displayChars []domain.DisplayChar
-	decodedUnits := service.DecodeName(name)
-
-	for _, unit := range decodedUnits {
-		isBad := false
-		// If ANY part of this Thai cluster is Klakini, the whole cluster is marked as bad
-		// for consistent rendering and correct stacking in the UI.
-		for _, r := range unit.Original {
-			if h.klakiniCache.IsKlakini(day, r) {
-				isBad = true
-				break
-			}
-		}
-		displayChars = append(displayChars, domain.DisplayChar{
-			Char:  unit.Original,
-			IsBad: isBad,
-		})
+	// Iterate over each rune (character) in the name independently as per user's logic
+	for _, r := range name {
+		isBad := h.klakiniCache.IsKlakini(day, r)
+		displayChars = append(displayChars, domain.DisplayChar{Char: string(r), IsBad: isBad})
 	}
 	return displayChars
 }
