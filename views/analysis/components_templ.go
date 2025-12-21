@@ -121,7 +121,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"similar-names-container fade-slide-in\" id=\"similar-names-section\"><div class=\"content-blur\"><!-- Header Section --><!-- Header Section --><!-- Header Section --><div class=\"speech-bubble-header\"><!-- Name, Status and Toggles grouped for single row cohesion --><div class=\"header-content-group\"><h2 class=\"header-title\" style=\"margin: 0; font-family: 'Sarabun', sans-serif; font-size: 1.4rem; font-weight: bold; color: #333; line-height: 1.2; white-space: nowrap;\">\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"similar-names-container fade-slide-in\" id=\"similar-names-section\"><div class=\"content-blur\"><!-- Header Section --><!-- Header Section --><!-- Header Section --><div class=\"speech-bubble-header\"><!-- Name, Status and Toggles grouped for single row cohesion --><div class=\"header-content-group\"><h2 class=\"header-title\" style=\"margin: 0; font-family: 'Sarabun', sans-serif; font-size: 1.8rem; font-weight: bold; color: #333; line-height: 1.2; white-space: nowrap;\">\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
