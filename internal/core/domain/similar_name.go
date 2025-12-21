@@ -13,18 +13,19 @@ type DisplayChar struct {
 }
 
 type SimilarNameResult struct {
-	NameID          int            `json:"name_id"`
-	ThName          string         `json:"th_name"`
-	DisplayNameHTML []DisplayChar  `json:"display_name_html"` // Changed to a slice of DisplayChar
-	KlakiniChars    []string       `json:"klakini_chars"`     // New field for Klakini characters
-	SatNum          []string       `json:"sat_num"`
-	ShaNum          []string       `json:"sha_num"`
-	TSat            []PairTypeInfo `json:"t_sat"`
-	TSha            []PairTypeInfo `json:"t_sha"`
-	Distance        float64        `json:"distance"`
-	TotalScore      int            `json:"total_score"`
-	Similarity      float64        `json:"similarity"`
-	IsTopTier       bool           `json:"is_top_tier"`
+	HeaderDisplayNameHTML []DisplayChar  // New field for header rendering with combined consonant+vowel
+	NameID                int            `json:"name_id"`
+	ThName                string         `json:"th_name"`
+	DisplayNameHTML       []DisplayChar  `json:"display_name_html"` // Changed to a slice of DisplayChar
+	KlakiniChars          []string       `json:"klakini_chars"`     // New field for Klakini characters
+	SatNum                []string       `json:"sat_num"`
+	ShaNum                []string       `json:"sha_num"`
+	TSat                  []PairTypeInfo `json:"t_sat"`
+	TSha                  []PairTypeInfo `json:"t_sha"`
+	Distance              float64        `json:"distance"`
+	TotalScore            int            `json:"total_score"`
+	Similarity            float64        `json:"similarity"`
+	IsTopTier             bool           `json:"is_top_tier"`
 
 	// Klakini flags
 	KSunday     bool `json:"k_sunday"`

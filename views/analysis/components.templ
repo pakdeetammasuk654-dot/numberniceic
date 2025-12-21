@@ -12,16 +12,17 @@ func mul(a, b float64) float64 {
 }
 
 type SimilarNamesProps struct {
-    SimilarNames     []domain.SimilarNameResult
-    IsAuspicious     bool
-    AllowKlakini     bool
-    DisplayNameHTML  []domain.DisplayChar
-    KlakiniChars     []string
-    CleanedName      string
-    InputDay         string
-    AnimateHeader    bool
-    DisableKlakini   bool
-    IsVIP            bool
+    SimilarNames        []domain.SimilarNameResult
+    IsAuspicious        bool
+    AllowKlakini        bool
+    HeaderDisplayNameHTML []domain.DisplayChar
+    DisplayNameHTML     []domain.DisplayChar
+    KlakiniChars        []string
+    CleanedName         string
+    InputDay            string
+    AnimateHeader       bool
+    DisableKlakini      bool
+    IsVIP               bool
 }
 
 templ Skeleton() {
@@ -41,7 +42,6 @@ templ Skeleton() {
                 <thead>
                     <tr>
                          <th style="padding-left: 1.5rem;">ชื่อดี</th>
-                        <th style="text-align: center;">ไม่มีกาลกิณี</th>
                         <th style="text-align: center;">เลขศาสตร์</th>
                         <th style="text-align: center;">พลังเงา</th>
                         <th style="text-align: center;">คะแนน</th>
@@ -51,7 +51,7 @@ templ Skeleton() {
                 <tbody>
                     for i := 0; i < 5; i++ {
                         <tr>
-                            <td colspan="6" style="padding: 1rem;">
+                            <td colspan="5" style="padding: 1rem;">
                                 <div style="height: 1.5rem; background: #f5f5f5; border-radius: 4px; width: 100%; animation: pulse 1.5s infinite;"></div>
                             </td>
                         </tr>
@@ -97,15 +97,15 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 			<div class="speech-bubble-header">
 				<!-- Name, Status and Toggles grouped for single row cohesion -->
 				<div class="header-content-group">
-					<h2 class="header-title" style="margin: 0; font-family: 'Sarabun', sans-serif; font-size: 1.8rem; font-weight: bold; color: #333; line-height: 1.2; white-space: nowrap;">
-						for _, dc := range props.DisplayNameHTML {
-							if dc.IsBad {
-								<span class="klakini-char" style="color: #ff4757 !important;">{ dc.Char }</span>
-							} else {
-								{ dc.Char }
-							}
-						}
-					</h2>
+					<h2 class="header-title" style="margin: 0; font-family: 'Sarabun', sans-serif; font-size: 1.8rem !important; font-weight: normal; color: #333; line-height: 1.6;">
+    {{ range $dc := props.HeaderDisplayNameHTML }}
+        {{ if $dc.IsBad }}
+            <span class="klakini-char" style="color: #ff4757 !important;">{{ $dc.Char }}</span>
+        {{ else }}
+            {{ $dc.Char }}
+        {{ end }}
+    {{ end }}
+</h2>
 					
 					<div class="header-sub-info">
 						<span style="background: white; padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: 500; display: flex; align-items: center; gap: 0.3rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #eee;">
@@ -180,7 +180,6 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 					<thead>
 						<tr>
 							<th style="padding-left: 1.5rem;">ชื่อดี</th>
-							<th style="text-align: center;">ไม่มีกาลกิณี</th>
 							<th style="text-align: center;">เลขศาสตร์</th>
 							<th style="text-align: center;">พลังเงา</th>
 							<th style="text-align: center;">คะแนน</th>
@@ -202,25 +201,8 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 										}
 									</div>
 								</td>
-								<td style="text-align: center;">
-									if len(name.KlakiniChars) > 0 {
-										<span class="status-pill status-warning">
-											for _, k := range name.KlakiniChars {
-												{ k } 
-											}
-										</span>
-									} else {
-										<span class="status-pill status-safe">
-											<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-												fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
-												stroke-linejoin="round">
-												<polyline points="20 6 9 17 4 12"></polyline>
-											</svg>
-										</span>
-									}
-								</td>
 								<td style="position: relative;">
-									<div class="table-pairs-container">
+									<div class="table-pairs-container" style="justify-content: center;">
 										for i, pairInfo := range name.TSat {
 											<span class="table-pair-circle"
 												style={ "background-color: " + pairInfo.Color }>{ name.SatNum[i] }</span>
@@ -228,7 +210,7 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 									</div>
 								</td>
 								<td style="position: relative;">
-									<div class="table-pairs-container">
+									<div class="table-pairs-container" style="justify-content: center;">
 										for i, pairInfo := range name.TSha {
 											<span class="table-pair-circle"
 												style={ "background-color: " + pairInfo.Color }>{ name.ShaNum[i] }</span>
@@ -250,7 +232,7 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 							</tr>
 						} else if !props.IsVIP && i == 3 {
 							<tr>
-								<td colspan="6" style="padding: 2rem; text-align: center; background: #fffde7; border: 1px dashed #fbc02d; border-radius: 8px;">
+								<td colspan="5" style="padding: 2rem; text-align: center; background: #fffde7; border: 1px dashed #fbc02d; border-radius: 8px;">
 									<div style="display: flex; flex-direction: column; align-items: center; gap: 0.8rem; color: #f57f17;">
 										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
 										<span style="font-weight: bold; font-family: 'Sarabun', sans-serif;">ชื่อดีถูกล็อกแสดงแค่ 3 รายชื่อเท่านั้น</span>
@@ -262,7 +244,7 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 						}
 						if len(props.SimilarNames) == 0 {
 							<tr>
-								<td colspan="6" style="text-align: center; padding: 3rem; color: #999;">
+								<td colspan="5" style="text-align: center; padding: 3rem; color: #999;">
 									<div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
 										<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24"
 											fill="none" stroke="#e0e0e0" stroke-width="1.5" stroke-linecap="round"

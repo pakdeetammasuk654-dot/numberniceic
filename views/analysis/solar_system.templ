@@ -35,6 +35,10 @@ func div(a, b float64) float64 {
 	return a / b
 }
 
+func mul(a, b float64) float64 {
+	return a * b
+}
+
 templ SolarSystem(props SolarSystemProps) {
 	<style>
 		/* Ensure the solar system container is visible and handled correctly */
@@ -241,13 +245,13 @@ templ SolarSystem(props SolarSystemProps) {
 						<path d="M8 11h.01"></path>
 						<path d="M8 16h.01"></path>
 					</svg>
-					เลขศาสตร์ของ for _, dc := range props.SunDisplayNameHTML {
-						if dc.IsBad {
-							<span class="klakini-char" style="color: #ff4757 !important;">{ dc.Char }</span>
-						} else {
-							{ dc.Char }
-						}
-					}
+					เลขศาสตร์ของ {{ range $i, $dc := props.SunDisplayNameHTML }}
+    {{ if $dc.IsBad }}
+        <span class="klakini-char" style="color: #ff4757 !important;">{{ $dc.Char }}</span>
+    {{ else }}
+        {{ $dc.Char }}
+    {{ end }}
+{{ end }}
 				</h2>
 				<button class="close-btn" { templ.Attributes{"onclick": fmt.Sprintf("closeMeaningModal('%s')", props.CleanedName)}... }>&times;</button>
 			</div>

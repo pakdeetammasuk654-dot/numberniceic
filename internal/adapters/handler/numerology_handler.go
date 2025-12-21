@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"bufio"
 	"context"
@@ -92,11 +93,12 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 			ToastSuccess: c.Locals("toast_success"),
 			ToastError:   c.Locals("toast_error"),
 		},
-		DefaultName: name,
-		DefaultDay:  day,
-		SampleNames: samples,
-		SolarSystem: solarProps,
-		IsVIP:       isVIP,
+		DefaultName:           name,
+		DefaultDay:            day,
+		SampleNames:           samples,
+		SolarSystem:           solarProps,
+		IsVIP:                 isVIP,
+		HeaderDisplayNameHTML: h.createHeaderDisplayChars(name, day),
 	}
 
 	// 1. Set Headers for Streaming
@@ -181,15 +183,16 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 
 			// E. Render Actual Table
 			tableProps := analysis.SimilarNamesProps{
-				SimilarNames:    similarNames,
-				IsAuspicious:    isAuspicious,
-				DisableKlakini:  disableKlakini,
-				DisplayNameHTML: displayNameHTML,
-				KlakiniChars:    klakiniChars,
-				CleanedName:     name,
-				InputDay:        service.GetThaiDay(day),
-				AnimateHeader:   true,
-				IsVIP:           isVIP,
+				SimilarNames:          similarNames,
+				IsAuspicious:          isAuspicious,
+				DisableKlakini:        disableKlakini,
+				DisplayNameHTML:       displayNameHTML,
+				HeaderDisplayNameHTML: h.createHeaderDisplayChars(name, day), // Add this line
+				KlakiniChars:          klakiniChars,
+				CleanedName:           name,
+				InputDay:              service.GetThaiDay(day),
+				AnimateHeader:         true,
+				IsVIP:                 isVIP,
 			}
 
 			// F. Render the "Swapping" Logic
@@ -378,13 +381,41 @@ func (h *NumerologyHandler) findAuspiciousNames(name, day string, repoAllowKlaki
 // It ALWAYS checks for Klakini characters based on the day, regardless of any search settings.
 // This ensures consistent display (red color) across the application.
 func (h *NumerologyHandler) createDisplayChars(name, day string) []domain.DisplayChar {
-	var displayChars []domain.DisplayChar
-	// Iterate over each rune (character) in the name independently as per user's logic
-	for _, r := range name {
+	var result []domain.DisplayChar
+	runes := []rune(name)
+
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
+		char := string(r)
 		isBad := h.klakiniCache.IsKlakini(day, r)
-		displayChars = append(displayChars, domain.DisplayChar{Char: string(r), IsBad: isBad})
+
+		// Check if the next character is a combining mark
+		if i+1 < len(runes) && unicode.Is(unicode.Mn, runes[i+1]) {
+			combiningChar := runes[i+1]
+			isCombiningBad := h.klakiniCache.IsKlakini(day, combiningChar)
+
+			// If the base is not bad, but the combining mark is
+			if !isBad && isCombiningBad {
+				// Add the base character as good
+				result = append(result, domain.DisplayChar{Char: char, IsBad: false})
+				// Add the combining mark as bad
+				result = append(result, domain.DisplayChar{Char: string(combiningChar), IsBad: true})
+				i++ // Skip the combining mark in the next iteration
+				continue
+			}
+		}
+
+		// Default behavior: add the character with its own klakini status
+		result = append(result, domain.DisplayChar{Char: char, IsBad: isBad})
 	}
-	return displayChars
+
+	return result
+}
+
+// createHeaderDisplayChars returns characters for the header where a Klakini combining mark
+// is merged with its preceding base consonant so that the span wraps both characters.
+func (h *NumerologyHandler) createHeaderDisplayChars(name, day string) []domain.DisplayChar {
+	return h.createDisplayChars(name, day) // Use the same logic for now
 }
 
 func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
@@ -449,15 +480,16 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 	// Use Templ Component
 	isVIP := c.Locals("IsVIP") == true
 	props := analysis.SimilarNamesProps{
-		SimilarNames:    similarNames,
-		IsAuspicious:    isAuspicious,
-		DisableKlakini:  disableKlakini,
-		DisplayNameHTML: displayNameHTML,
-		KlakiniChars:    klakiniChars,
-		CleanedName:     name,
-		InputDay:        service.GetThaiDay(day),
-		AnimateHeader:   false,
-		IsVIP:           isVIP,
+		SimilarNames:          similarNames,
+		IsAuspicious:          isAuspicious,
+		DisableKlakini:        disableKlakini,
+		DisplayNameHTML:       displayNameHTML,
+		HeaderDisplayNameHTML: h.createHeaderDisplayChars(name, day), // Add this line
+		KlakiniChars:          klakiniChars,
+		CleanedName:           name,
+		InputDay:              service.GetThaiDay(day),
+		AnimateHeader:         false,
+		IsVIP:                 isVIP,
 	}
 
 	c.Set("Content-Type", "text/html")
@@ -654,15 +686,16 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 	}
 
 	tableProps := analysis.SimilarNamesProps{
-		SimilarNames:    similarNames,
-		IsAuspicious:    isAuspicious,
-		DisableKlakini:  disableKlakini,
-		DisplayNameHTML: displayNameHTML,
-		KlakiniChars:    klakiniChars,
-		CleanedName:     name,
-		InputDay:        service.GetThaiDay(day),
-		AnimateHeader:   false,
-		IsVIP:           isVIP,
+		SimilarNames:          similarNames,
+		IsAuspicious:          isAuspicious,
+		DisableKlakini:        disableKlakini,
+		DisplayNameHTML:       displayNameHTML,
+		HeaderDisplayNameHTML: h.createHeaderDisplayChars(name, day), // Add this line
+		KlakiniChars:          klakiniChars,
+		CleanedName:           name,
+		InputDay:              service.GetThaiDay(day),
+		AnimateHeader:         false,
+		IsVIP:                 isVIP,
 	}
 
 	// Render Both Components
