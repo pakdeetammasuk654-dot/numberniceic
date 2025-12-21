@@ -1,4 +1,4 @@
-<tr class="{{if eq .Status 9}}admin-row{{end}}">
+<tr class="{{if eq .Status 9}}admin-row{{else if eq .Status 2}}vip-row{{end}}">
     <td>{{.ID}}</td>
     <td>{{.Username}}</td>
     <td>{{.Email}}</td>
@@ -11,6 +11,7 @@
                 hx-target="closest tr"
                 style="padding: 0.25rem; border-radius: 4px; border: 1px solid #ccc;">
             <option value="1" {{if eq .Status 1}}selected{{end}}>User</option>
+            <option value="2" {{if eq .Status 2}}selected{{end}}>VIP</option>
             <option value="9" {{if eq .Status 9}}selected{{end}}>Admin</option>
         </select>
     </td>

@@ -17,7 +17,7 @@
         </thead>
         <tbody>
             {{range .Users}}
-                {{template "partials/admin_user_row" .}}
+            {{template "partials/admin_user_row" .}}
             {{end}}
         </tbody>
     </table>
@@ -25,9 +25,20 @@
 
 <style>
     .admin-row {
-        background-color: #e8f5e9 !important; /* Light green for admin */
+        background-color: #e8f5e9 !important;
+        /* Light green for admin */
     }
+
     .admin-row:hover {
         background-color: #d4edda !important;
+    }
+
+    .vip-row {
+        background-color: #fff9c4 !important;
+        /* Light yellow/gold for VIP */
+    }
+
+    .vip-row:hover {
+        background-color: #fff59d !important;
     }
 </style>
