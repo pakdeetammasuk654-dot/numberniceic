@@ -1332,9 +1332,11 @@ input:checked+.slider:before {
 
 .header-text-content {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
     flex: 1;
-    /* Take available space */
 }
 
 .header-main-line {
