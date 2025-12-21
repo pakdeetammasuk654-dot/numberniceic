@@ -1301,12 +1301,12 @@ input:checked+.slider:before {
     position: relative;
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding: 0.8rem 1.2rem;
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+    padding: 0.6rem 1rem;
     background: white;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
@@ -1350,11 +1350,19 @@ input:checked+.slider:before {
     margin-bottom: 0.5rem;
 }
 
+.header-content-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
 .toggle-switch-container {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 1rem;
+    gap: 0.8rem;
     flex-wrap: wrap;
 }
 
