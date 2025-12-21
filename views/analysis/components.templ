@@ -98,7 +98,15 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 				<!-- Name, Status and Toggles grouped for single row cohesion -->
 				<div class="header-content-group">
 					<h2 class="header-title" style="margin: 0; font-family: 'Sarabun', sans-serif; font-size: 1.8rem; font-weight: bold; color: #333; line-height: 1.2; white-space: nowrap;">
-						"{ props.CleanedName }"
+						"
+						for _, dc := range props.DisplayNameHTML {
+							if dc.IsBad {
+								<span class="klakini-char" style="color: #ff4757;">{ dc.Char }</span>
+							} else {
+								<span>{ dc.Char }</span>
+							}
+						}
+						"
 					</h2>
 					
 					<div class="header-sub-info">
