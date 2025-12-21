@@ -90,14 +90,14 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 			<!-- Header Section -->
 			<!-- Header Section -->
 			<!-- Header Section -->
-			<div class="speech-bubble-header" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 2rem; padding: 1.5rem 2rem;">
+			<div class="speech-bubble-header">
 				<!-- Name and Status (Left) -->
-				<div class="header-text-content" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; flex: 1;">
+				<div class="header-text-content">
 					<h2 class="header-title" style="margin: 0; font-family: 'Sarabun', sans-serif; font-size: 1.8rem; font-weight: bold; color: #333; line-height: 1.2;">
 						"{ props.CleanedName }"
 					</h2>
 					
-					<div class="header-sub-info" style="display: flex; align-items: center; gap: 0.8rem; font-size: 0.95rem; color: #666;">
+					<div class="header-sub-info">
 						<span style="background: white; padding: 0.3rem 1rem; border-radius: 20px; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee;">
 							@DayIcon(props.InputDay)
 							{ props.InputDay }
@@ -121,7 +121,6 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 					hx-get="/similar-names" hx-target="#similar-names-section"
 					hx-swap="outerHTML" hx-trigger="change" hx-indicator="body"
 					hx-vals='js:{"name": (document.getElementById("name") ? document.getElementById("name").value : ""), "day": (document.getElementById("day") ? document.getElementById("day").value : ""), "auspicious": document.getElementById("auspicious-toggle").checked, "disable_klakini": document.getElementById("disable-klakini-toggle").checked}'
-					style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.8rem; min-width: 140px;"
 				>
 					<div class="toggle-item" style="display: flex; align-items: center; gap: 0.8rem; justify-content: flex-end; width: 100%;">
 						<span class="toggle-label" style="font-size: 0.85rem; color: #888;">เลขดีเท่านั้น</span>
