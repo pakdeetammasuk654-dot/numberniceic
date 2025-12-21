@@ -134,14 +134,18 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"</h2><div class=\"header-sub-info\" style=\"display: flex; align-items: center; gap: 0.8rem; font-size: 0.95rem; color: #666;\"><span style=\"background: #f0f2f5; padding: 0.2rem 0.8rem; border-radius: 20px; font-weight: 500;\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"</h2><div class=\"header-sub-info\" style=\"display: flex; align-items: center; gap: 0.8rem; font-size: 0.95rem; color: #666;\"><span style=\"background: white; padding: 0.3rem 1rem; border-radius: 20px; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee;\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = DayIcon(props.InputDay).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(props.InputDay)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 102, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 103, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -152,14 +156,14 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if len(props.KlakiniChars) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span class=\"klakini-status-bad\" style=\"background: rgba(235, 77, 75, 0.1); color: #eb4d4b; padding: 0.2rem 0.8rem; border-radius: 20px; font-weight: 500;\">กาลกิณี: ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span class=\"klakini-status-bad\" style=\"background: rgba(235, 77, 75, 0.1); color: #eb4d4b; padding: 0.3rem 1rem; border-radius: 20px; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z\"></path><line x1=\"12\" y1=\"9\" x2=\"12\" y2=\"13\"></line><line x1=\"12\" y1=\"17\" x2=\"12.01\" y2=\"17\"></line></svg> กาลกิณี: ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(strings.Join(props.KlakiniChars, " "))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 106, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 108, Col: 70}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -170,7 +174,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<span class=\"klakini-status-good\" style=\"background: rgba(32, 191, 107, 0.1); color: #20bf6b; padding: 0.2rem 0.8rem; border-radius: 20px; font-weight: 500;\">ไม่พบกาลกิณี</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<span class=\"klakini-status-good\" style=\"background: rgba(32, 191, 107, 0.1); color: #20bf6b; padding: 0.3rem 1rem; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 10px rgba(32, 191, 107, 0.15); border: 1px solid rgba(32, 191, 107, 0.2);\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"filter: drop-shadow(0 0 2px rgba(32, 191, 107, 0.3));\"><path d=\"M22 11.08V12a10 10 0 1 1-5.93-9.14\"></path><polyline points=\"22 4 12 14.01 9 11.01\"></polyline></svg> ไม่พบกาลกิณี</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -254,7 +258,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 						var templ_7745c5c3_Var9 string
 						templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 186, Col: 48}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 189, Col: 48}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 						if templ_7745c5c3_Err != nil {
@@ -272,7 +276,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 						var templ_7745c5c3_Var10 string
 						templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 188, Col: 27}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 191, Col: 27}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 						if templ_7745c5c3_Err != nil {
@@ -297,7 +301,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 						var templ_7745c5c3_Var11 string
 						templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(k)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 197, Col: 15}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 200, Col: 15}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 						if templ_7745c5c3_Err != nil {
@@ -326,7 +330,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pairInfo.Color)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 214, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 217, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -339,7 +343,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var13 string
 					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(name.SatNum[i])
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 214, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 217, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 					if templ_7745c5c3_Err != nil {
@@ -362,7 +366,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pairInfo.Color)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 222, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 225, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -375,7 +379,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var15 string
 					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(name.ShaNum[i])
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 222, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 225, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
@@ -420,7 +424,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var18 string
 					templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", name.TotalScore))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 229, Col: 48}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 232, Col: 48}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 					if templ_7745c5c3_Err != nil {
@@ -430,7 +434,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var19 string
 					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", name.TotalScore))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 231, Col: 47}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 234, Col: 47}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 					if templ_7745c5c3_Err != nil {
@@ -444,7 +448,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 				var templ_7745c5c3_Var20 string
 				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", mul(name.Similarity, 100)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 236, Col: 109}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 239, Col: 109}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 				if templ_7745c5c3_Err != nil {
@@ -470,6 +474,72 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</tbody></table></div></div></div><script>\n\t    (function () {\n\t        const mainAuspicious = document.getElementById('main-auspicious');\n\t        const auspiciousToggle = document.getElementById('auspicious-toggle');\n\t        if (mainAuspicious && auspiciousToggle) {\n\t            mainAuspicious.value = auspiciousToggle.checked;\n\t        }\n\t\n\t        const mainDisableKlakini = document.getElementById('main-disable-klakini');\n\t        const disableKlakiniToggle = document.getElementById('disable-klakini-toggle');\n\t        if (mainDisableKlakini && disableKlakiniToggle) {\n\t            mainDisableKlakini.value = disableKlakiniToggle.checked;\n\t        }\n\t    })();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func DayIcon(day string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var21 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var21 == nil {
+			templ_7745c5c3_Var21 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		if strings.Contains(day, "อาทิตย์") {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<!-- Sunday: Red/Orange Sun --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#ff4d4d\" stroke=\"#ff4d4d\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"filter: drop-shadow(0 0 3px rgba(255, 77, 77, 0.4));\"><circle cx=\"12\" cy=\"12\" r=\"5\"></circle> <line x1=\"12\" y1=\"1\" x2=\"12\" y2=\"3\"></line> <line x1=\"12\" y1=\"21\" x2=\"12\" y2=\"23\"></line> <line x1=\"4.22\" y1=\"4.22\" x2=\"5.64\" y2=\"5.64\"></line> <line x1=\"18.36\" y1=\"18.36\" x2=\"19.78\" y2=\"19.78\"></line> <line x1=\"1\" y1=\"12\" x2=\"3\" y2=\"12\"></line> <line x1=\"21\" y1=\"12\" x2=\"23\" y2=\"12\"></line> <line x1=\"4.22\" y1=\"19.78\" x2=\"5.64\" y2=\"18.36\"></line> <line x1=\"18.36\" y1=\"5.64\" x2=\"19.78\" y2=\"4.22\"></line></svg>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else if strings.Contains(day, "จันทร์") {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<!-- Monday: Yellow Moon --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#f1c40f\" stroke=\"#f1c40f\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"filter: drop-shadow(0 0 3px rgba(241, 196, 15, 0.4));\"><path d=\"M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z\"></path></svg>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else if strings.Contains(day, "อังคาร") {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<!-- Tuesday: Pink Mars-like --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#ff80ab\" stroke=\"#ff80ab\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"filter: drop-shadow(0 0 3px rgba(255, 128, 171, 0.4));\"><circle cx=\"12\" cy=\"12\" r=\"7\"></circle> <circle cx=\"12\" cy=\"12\" r=\"3\"></circle></svg>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else if strings.Contains(day, "พุธ") {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<!-- Wednesday: Green Mercury-like --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#20bf6b\" stroke=\"#20bf6b\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"filter: drop-shadow(0 0 3px rgba(32, 191, 107, 0.4));\"><path d=\"M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z\"></path> <path d=\"M12 8a4 4 0 1 0 4 4 4 4 0 0 0-4-4z\"></path></svg>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else if strings.Contains(day, "พฤหัส") {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<!-- Thursday: Orange Jupiter-like --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#f39c12\" stroke=\"#f39c12\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"filter: drop-shadow(0 0 3px rgba(243, 156, 18, 0.4));\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle> <line x1=\"2\" y1=\"12\" x2=\"22\" y2=\"12\"></line> <path d=\"M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z\"></path></svg>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else if strings.Contains(day, "ศุกร์") {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<!-- Friday: Blue Venus-like --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#45aaf2\" stroke=\"#45aaf2\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"filter: drop-shadow(0 0 3px rgba(69, 170, 242, 0.4));\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle> <path d=\"M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83M16.62 12l-5.74 9.94\"></path></svg>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else if strings.Contains(day, "เสาร์") {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<!-- Saturday: Purple Saturn-like --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#a55eea\" stroke=\"#a55eea\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"filter: drop-shadow(0 0 3px rgba(165, 94, 234, 0.4));\"><circle cx=\"12\" cy=\"12\" r=\"6\"></circle> <path d=\"M2 12h20M7 7l10 10M7 17l10-10\"></path></svg>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\" ry=\"2\"></rect><line x1=\"16\" x2=\"16\" y1=\"2\" y2=\"6\"></line><line x1=\"8\" x2=\"8\" y1=\"2\" y2=\"6\"></line><line x1=\"3\" x2=\"21\" y1=\"10\" y2=\"10\"></line></svg>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
 		return nil
 	})
