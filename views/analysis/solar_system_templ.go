@@ -17,7 +17,7 @@ type SolarSystemProps struct {
 	CleanedName          string
 	InputDay             string
 	InputDayRaw          string
-	AllowKlakini         bool
+	DisableKlakini       bool
 	IsVIP                bool
 	SunDisplayNameHTML   []domain.DisplayChar
 	NumerologyPairs      []domain.PairMeaningResult
@@ -429,7 +429,7 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if part.IsKlakini && !props.AllowKlakini {
+			if part.IsKlakini {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<span class=\"klakini-char\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err

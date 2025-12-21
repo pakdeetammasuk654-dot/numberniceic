@@ -9,7 +9,7 @@ type SolarSystemProps struct {
 	CleanedName          string
 	InputDay             string
 	InputDayRaw          string
-	AllowKlakini         bool
+	DisableKlakini       bool
 	IsVIP                bool
 	SunDisplayNameHTML   []domain.DisplayChar
 	NumerologyPairs      []domain.PairMeaningResult
@@ -259,7 +259,7 @@ templ SolarSystem(props SolarSystemProps) {
 						for _, part := range props.DecodedParts {
 							<tr>
 								<td>
-									if part.IsKlakini && !props.AllowKlakini {
+									if part.IsKlakini {
 										<span class="klakini-char">{ part.Character }</span>
 									} else {
 										{ part.Character }

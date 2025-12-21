@@ -70,7 +70,8 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 		day = "SUNDAY"
 	}
 	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on"
-	allowKlakini := c.Query("allow_klakini") == "true" || c.Query("allow_klakini") == "on"
+	disableKlakini := c.Query("disable_klakini") == "true" || c.Query("disable_klakini") == "on"
+	repoAllowKlakini := !disableKlakini
 
 	// Get Sample Names
 	samples, _ := h.sampleNamesCache.GetAll()
@@ -78,7 +79,8 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 	isVIP := c.Locals("IsVIP") == true
 
 	// Prepare Solar System Data (Synchronous/Fast)
-	solarProps, _ := h.getSolarSystemProps(name, day, allowKlakini, isVIP)
+	solarProps, _ := h.getSolarSystemProps(name, day, repoAllowKlakini, isVIP)
+	solarProps.DisableKlakini = disableKlakini
 
 	// Prepare Props for Index
 	indexProps := analysis.IndexProps{
@@ -136,9 +138,9 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 			var similarNames []domain.SimilarNameResult
 			var err error
 			if isAuspicious {
-				similarNames, err = h.findAuspiciousNames(name, day, allowKlakini)
+				similarNames, err = h.findAuspiciousNames(name, day, repoAllowKlakini)
 			} else {
-				similarNames, err = h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0, allowKlakini)
+				similarNames, err = h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0, repoAllowKlakini)
 				if err == nil && len(similarNames) < PageSize {
 					needed := PageSize - len(similarNames)
 					excludedIDs := make([]int, len(similarNames))
@@ -147,7 +149,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 					}
 
 					preferredConsonant := h.findBestConsonant(name, day)
-					if allowKlakini {
+					if repoAllowKlakini {
 						for _, r := range name {
 							if r != 'เ' && r != 'แ' && r != 'โ' && r != 'ใ' && r != 'ไ' {
 								preferredConsonant = string(r)
@@ -155,7 +157,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 							}
 						}
 					}
-					fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, preferredConsonant, day, needed, allowKlakini, excludedIDs)
+					fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, preferredConsonant, day, needed, repoAllowKlakini, excludedIDs)
 					if fallbackErr == nil {
 						similarNames = append(similarNames, fallbackNames...)
 					}
@@ -181,7 +183,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 			tableProps := analysis.SimilarNamesProps{
 				SimilarNames:    similarNames,
 				IsAuspicious:    isAuspicious,
-				AllowKlakini:    allowKlakini,
+				DisableKlakini:  disableKlakini,
 				DisplayNameHTML: displayNameHTML,
 				KlakiniChars:    klakiniChars,
 				CleanedName:     name,
@@ -331,13 +333,13 @@ func (h *NumerologyHandler) findBestConsonant(name, day string) string {
 	return firstConsonant
 }
 
-func (h *NumerologyHandler) findAuspiciousNames(name, day string, allowKlakini bool) ([]domain.SimilarNameResult, error) {
+func (h *NumerologyHandler) findAuspiciousNames(name, day string, repoAllowKlakini bool) ([]domain.SimilarNameResult, error) {
 	var auspiciousNames []domain.SimilarNameResult
 	offset := 0
 
 	// Determine the best consonant to use for sorting/prioritizing
 	preferredConsonant := h.findBestConsonant(name, day)
-	if allowKlakini {
+	if repoAllowKlakini {
 		// If klakini is allowed, just use the first consonant regardless
 		for _, r := range name {
 			if r != 'เ' && r != 'แ' && r != 'โ' && r != 'ใ' && r != 'ไ' {
@@ -349,7 +351,7 @@ func (h *NumerologyHandler) findAuspiciousNames(name, day string, allowKlakini b
 
 	for {
 		// Use GetAuspiciousNames which has the correct query logic (no similarity threshold)
-		candidates, err := h.namesMiracleRepo.GetAuspiciousNames(name, preferredConsonant, day, SearchBatchSize, offset, allowKlakini)
+		candidates, err := h.namesMiracleRepo.GetAuspiciousNames(name, preferredConsonant, day, SearchBatchSize, offset, repoAllowKlakini)
 		if err != nil {
 			return nil, fmt.Errorf("error fetching candidates at offset %d: %w", offset, err)
 		}
@@ -389,7 +391,8 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 	name := service.SanitizeInput(c.Query("name"))
 	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
 	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on" || c.Query("auspicious") == "1"
-	allowKlakini := c.Query("allow_klakini") == "true" || c.Query("allow_klakini") == "on" || c.Query("allow_klakini") == "1"
+	disableKlakini := c.Query("disable_klakini") == "true" || c.Query("disable_klakini") == "on" || c.Query("disable_klakini") == "1"
+	repoAllowKlakini := !disableKlakini
 
 	if name == "" || day == "" {
 		return c.SendString("<!-- Missing parameters -->")
@@ -398,9 +401,9 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 	var similarNames []domain.SimilarNameResult
 	var err error
 	if isAuspicious {
-		similarNames, err = h.findAuspiciousNames(name, day, allowKlakini)
+		similarNames, err = h.findAuspiciousNames(name, day, repoAllowKlakini)
 	} else {
-		similarNames, err = h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0, allowKlakini)
+		similarNames, err = h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0, repoAllowKlakini)
 		if err == nil && len(similarNames) < PageSize {
 			needed := PageSize - len(similarNames)
 			excludedIDs := make([]int, len(similarNames))
@@ -409,7 +412,7 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 			}
 
 			preferredConsonant := h.findBestConsonant(name, day)
-			if allowKlakini {
+			if repoAllowKlakini {
 				for _, r := range name {
 					if r != 'เ' && r != 'แ' && r != 'โ' && r != 'ใ' && r != 'ไ' {
 						preferredConsonant = string(r)
@@ -418,7 +421,7 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 				}
 			}
 
-			fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, preferredConsonant, day, needed, allowKlakini, excludedIDs)
+			fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, preferredConsonant, day, needed, repoAllowKlakini, excludedIDs)
 			if fallbackErr == nil {
 				similarNames = append(similarNames, fallbackNames...)
 			} else {
@@ -448,7 +451,7 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 	props := analysis.SimilarNamesProps{
 		SimilarNames:    similarNames,
 		IsAuspicious:    isAuspicious,
-		AllowKlakini:    allowKlakini,
+		DisableKlakini:  disableKlakini,
 		DisplayNameHTML: displayNameHTML,
 		KlakiniChars:    klakiniChars,
 		CleanedName:     name,
@@ -468,7 +471,7 @@ func (h *NumerologyHandler) GetAuspiciousNames(c *fiber.Ctx) error {
 func (h *NumerologyHandler) GetSolarSystem(c *fiber.Ctx) error {
 	name := service.SanitizeInput(c.Query("name"))
 	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
-	allowKlakini := c.Query("allow_klakini") == "true" || c.Query("allow_klakini") == "on" || c.Query("allow_klakini") == "1"
+	disableKlakini := c.Query("disable_klakini") == "true" || c.Query("disable_klakini") == "on" || c.Query("disable_klakini") == "1"
 
 	if name == "" || day == "" {
 		return c.SendString("<!-- Missing parameters -->")
@@ -568,7 +571,7 @@ func (h *NumerologyHandler) GetSolarSystem(c *fiber.Ctx) error {
 		"cleaned_name":       name,
 		"input_day":          service.GetThaiDay(day),
 		"input_day_raw":      day,
-		"allow_klakini":      allowKlakini,
+		"DisableKlakini":     disableKlakini,
 		"SunDisplayNameHTML": sunDisplayChars,
 	}
 	for k, v := range analysisData {
@@ -586,7 +589,8 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 	name := service.SanitizeInput(c.Query("name"))
 	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
 	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on" || c.Query("auspicious") == "1"
-	allowKlakini := c.Query("allow_klakini") == "true" || c.Query("allow_klakini") == "on" || c.Query("allow_klakini") == "1"
+	disableKlakini := c.Query("disable_klakini") == "true" || c.Query("disable_klakini") == "on" || c.Query("disable_klakini") == "1"
+	repoAllowKlakini := !disableKlakini
 
 	if name == "" {
 		if isHtmxRequest(c) {
@@ -600,7 +604,7 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 
 	// Calculate Solar System Props
 	isVIP := c.Locals("IsVIP") == true
-	solarProps, err := h.getSolarSystemProps(name, day, allowKlakini, isVIP)
+	solarProps, err := h.getSolarSystemProps(name, day, repoAllowKlakini, isVIP)
 	if err != nil {
 		log.Printf("Error getting solar system props: %v", err)
 		return c.Status(fiber.StatusInternalServerError).SendString("Error loading data")
@@ -610,9 +614,9 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 	// Ideally refactor this logic into a helper method later.
 	var similarNames []domain.SimilarNameResult
 	if isAuspicious {
-		similarNames, err = h.findAuspiciousNames(name, day, allowKlakini)
+		similarNames, err = h.findAuspiciousNames(name, day, repoAllowKlakini)
 	} else {
-		similarNames, err = h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0, allowKlakini)
+		similarNames, err = h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0, repoAllowKlakini)
 		if err == nil && len(similarNames) < PageSize {
 			needed := PageSize - len(similarNames)
 			excludedIDs := make([]int, len(similarNames))
@@ -620,7 +624,7 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 				excludedIDs[i] = n.NameID
 			}
 			preferredConsonant := h.findBestConsonant(name, day)
-			if allowKlakini {
+			if repoAllowKlakini {
 				for _, r := range name {
 					if r != 'เ' && r != 'แ' && r != 'โ' && r != 'ใ' && r != 'ไ' {
 						preferredConsonant = string(r)
@@ -628,7 +632,7 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 					}
 				}
 			}
-			fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, preferredConsonant, day, needed, allowKlakini, excludedIDs)
+			fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, preferredConsonant, day, needed, repoAllowKlakini, excludedIDs)
 			if fallbackErr == nil {
 				similarNames = append(similarNames, fallbackNames...)
 			}
@@ -652,7 +656,7 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 	tableProps := analysis.SimilarNamesProps{
 		SimilarNames:    similarNames,
 		IsAuspicious:    isAuspicious,
-		AllowKlakini:    allowKlakini,
+		DisableKlakini:  disableKlakini,
 		DisplayNameHTML: displayNameHTML,
 		KlakiniChars:    klakiniChars,
 		CleanedName:     name,
@@ -740,7 +744,7 @@ func contains(slice []string, item string) bool {
 }
 
 // Helper to calculate Solar System Props
-func (h *NumerologyHandler) getSolarSystemProps(name, day string, allowKlakini bool, isVIP bool) (analysis.SolarSystemProps, error) {
+func (h *NumerologyHandler) getSolarSystemProps(name, day string, repoAllowKlakini bool, isVIP bool) (analysis.SolarSystemProps, error) {
 	numerologyData, numErr := h.numerologyCache.GetAll()
 	shadowData, shaErr := h.shadowCache.GetAll()
 	if numErr != nil || shaErr != nil {
@@ -811,7 +815,7 @@ func (h *NumerologyHandler) getSolarSystemProps(name, day string, allowKlakini b
 		CleanedName:          name,
 		InputDay:             service.GetThaiDay(day),
 		InputDayRaw:          day,
-		AllowKlakini:         allowKlakini,
+		DisableKlakini:       !repoAllowKlakini,
 		SunDisplayNameHTML:   h.createDisplayChars(name, day),
 		NumerologyPairs:      numMeanings,
 		ShadowPairs:          shaMeanings,
