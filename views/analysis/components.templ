@@ -98,15 +98,13 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 				<!-- Name, Status and Toggles grouped for single row cohesion -->
 				<div class="header-content-group">
 					<h2 class="header-title" style="margin: 0; font-family: 'Sarabun', sans-serif; font-size: 1.8rem; font-weight: bold; color: #333; line-height: 1.2; white-space: nowrap;">
-						"
 						for _, dc := range props.DisplayNameHTML {
 							if dc.IsBad {
-								<span class="klakini-char" style="color: #ff4757;">{ dc.Char }</span>
+								<span class="klakini-char" style="color: #ff4757 !important; display: inline; position: relative;">{ dc.Char }</span>
 							} else {
-								{ dc.Char }
+								<span style="display: inline; position: relative;">{ dc.Char }</span>
 							}
 						}
-						"
 					</h2>
 					
 					<div class="header-sub-info">
@@ -197,9 +195,9 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 									<div class={ "name-cell", templ.KV("name-top-tier", name.IsTopTier) }>
 										for _, dc := range name.DisplayNameHTML {
 											if dc.IsBad {
-												<span class="klakini-char">{ dc.Char }</span>
+												<span class="klakini-char" style="color: #ff4757 !important; display: inline; position: relative;">{ dc.Char }</span>
 											} else {
-												{ dc.Char }
+												<span style="display: inline; position: relative;">{ dc.Char }</span>
 											}
 										}
 									</div>
