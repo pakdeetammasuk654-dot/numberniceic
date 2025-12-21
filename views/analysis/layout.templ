@@ -28,7 +28,7 @@ templ Layout(props LayoutProps) {
 			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
 			
 			<!-- Corrected CSS Path -->
-			<link rel="stylesheet" href="/css/style.css?v=5"/>
+			<link rel="stylesheet" href="/css/style.css?v=6"/>
 			<link rel="stylesheet" href="/css/auth.css"/>
 			
 			<!-- Toastify JS CDN -->
@@ -39,6 +39,16 @@ templ Layout(props LayoutProps) {
 			<main>
 				{ children... }
 			</main>
+
+			<!-- Global Loader -->
+			<div id="global-loader" class="htmx-indicator">
+				<div class="loader-content">
+					<svg class="spinner" width="24px" height="24px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+						<circle class="path" fill="none" stroke="#667eea" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
+					</svg>
+					<span>กำลังโหลด....</span>
+				</div>
+			</div>
 			@Footer()
 			
 			<!-- Toastify JS CDN -->

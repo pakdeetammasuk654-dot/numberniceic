@@ -120,14 +120,14 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"similar-names-container fade-slide-in\" id=\"similar-names-section\"><!-- Loader --><div id=\"similar-names-loader\" class=\"htmx-indicator\"><svg class=\"spinner\" width=\"16px\" height=\"16px\" viewBox=\"0 0 66 66\" xmlns=\"http://www.w3.org/2000/svg\"><circle class=\"path\" fill=\"none\" stroke=\"white\" stroke-width=\"6\" stroke-linecap=\"round\" cx=\"33\" cy=\"33\" r=\"30\"></circle></svg> <span>กำลังโหลด...</span></div><div class=\"content-blur\"><!-- Header Section --><!-- Header Section --><!-- Header Section --><div class=\"speech-bubble-header\" style=\"display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 2rem; padding: 1.5rem 2rem;\"><!-- Name and Status (Left) --><div class=\"header-text-content\" style=\"display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; flex: 1;\"><h2 class=\"header-title\" style=\"margin: 0; font-family: 'Sarabun', sans-serif; font-size: 1.8rem; font-weight: bold; color: #333; line-height: 1.2;\">\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"similar-names-container fade-slide-in\" id=\"similar-names-section\"><div class=\"content-blur\"><!-- Header Section --><!-- Header Section --><!-- Header Section --><div class=\"speech-bubble-header\" style=\"display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 2rem; padding: 1.5rem 2rem;\"><!-- Name and Status (Left) --><div class=\"header-text-content\" style=\"display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; flex: 1;\"><h2 class=\"header-title\" style=\"margin: 0; font-family: 'Sarabun', sans-serif; font-size: 1.8rem; font-weight: bold; color: #333; line-height: 1.2;\">\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(props.CleanedName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 103, Col: 26}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 96, Col: 26}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -140,7 +140,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(props.InputDay)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 108, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 101, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -158,7 +158,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(strings.Join(props.KlakiniChars, " "))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 112, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 105, Col: 70}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -174,7 +174,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div></div><!-- Toggles (Right - Stacked) --><div class=\"toggle-switch-container\" hx-get=\"/similar-names\" hx-target=\"#similar-names-section\" hx-swap=\"outerHTML\" hx-trigger=\"change\" hx-indicator=\"#similar-names-section\" hx-vals='js:{\"name\": (document.getElementById(\"name\") ? document.getElementById(\"name\").value : \"\"), \"day\": (document.getElementById(\"day\") ? document.getElementById(\"day\").value : \"\"), \"auspicious\": document.getElementById(\"auspicious-toggle\").checked, \"allow_klakini\": document.getElementById(\"allow-klakini-toggle\").checked}' style=\"display: flex; flex-direction: column; align-items: flex-end; gap: 0.8rem; min-width: 140px;\"><div class=\"toggle-item\" style=\"display: flex; align-items: center; gap: 0.8rem; justify-content: flex-end; width: 100%;\"><span class=\"toggle-label\" style=\"font-size: 0.85rem; color: #888;\">เลขดีเท่านั้น</span> <label class=\"toggle-switch\"><input type=\"checkbox\" id=\"auspicious-toggle\" name=\"auspicious\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div></div><!-- Toggles (Right - Stacked) --><div class=\"toggle-switch-container\" hx-get=\"/similar-names\" hx-target=\"#similar-names-section\" hx-swap=\"outerHTML\" hx-trigger=\"change\" hx-indicator=\"body\" hx-vals='js:{\"name\": (document.getElementById(\"name\") ? document.getElementById(\"name\").value : \"\"), \"day\": (document.getElementById(\"day\") ? document.getElementById(\"day\").value : \"\"), \"auspicious\": document.getElementById(\"auspicious-toggle\").checked, \"allow_klakini\": document.getElementById(\"allow-klakini-toggle\").checked}' style=\"display: flex; flex-direction: column; align-items: flex-end; gap: 0.8rem; min-width: 140px;\"><div class=\"toggle-item\" style=\"display: flex; align-items: center; gap: 0.8rem; justify-content: flex-end; width: 100%;\"><span class=\"toggle-label\" style=\"font-size: 0.85rem; color: #888;\">เลขดีเท่านั้น</span> <label class=\"toggle-switch\"><input type=\"checkbox\" id=\"auspicious-toggle\" name=\"auspicious\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -253,7 +253,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 						var templ_7745c5c3_Var9 string
 						templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 192, Col: 48}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 185, Col: 48}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 						if templ_7745c5c3_Err != nil {
@@ -271,7 +271,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 						var templ_7745c5c3_Var10 string
 						templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 194, Col: 27}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 187, Col: 27}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 						if templ_7745c5c3_Err != nil {
@@ -296,7 +296,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 						var templ_7745c5c3_Var11 string
 						templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(k)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 203, Col: 15}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 196, Col: 15}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 						if templ_7745c5c3_Err != nil {
@@ -325,7 +325,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pairInfo.Color)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 220, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 213, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -338,7 +338,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var13 string
 					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(name.SatNum[i])
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 220, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 213, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 					if templ_7745c5c3_Err != nil {
@@ -361,7 +361,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pairInfo.Color)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 228, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 221, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -374,7 +374,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var15 string
 					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(name.ShaNum[i])
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 228, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 221, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
@@ -419,7 +419,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var18 string
 					templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", name.TotalScore))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 235, Col: 48}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 228, Col: 48}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 					if templ_7745c5c3_Err != nil {
@@ -429,7 +429,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var19 string
 					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", name.TotalScore))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 237, Col: 47}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 230, Col: 47}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 					if templ_7745c5c3_Err != nil {
@@ -443,7 +443,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 				var templ_7745c5c3_Var20 string
 				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", mul(name.Similarity, 100)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 242, Col: 109}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 235, Col: 109}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 				if templ_7745c5c3_Err != nil {

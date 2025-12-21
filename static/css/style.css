@@ -1518,53 +1518,48 @@ input:checked+.slider:before {
     /* Tighten up blurry items */
 }
 
-/* Loader Overlay Styles - Refined Case */
-.similar-names-container {
-    position: relative;
-    min-height: 200px;
-}
-
-#similar-names-loader {
+/* Global Loader Overlay - Fixed Position Center of Screen */
+#global-loader {
     display: none;
     /* Hidden by default */
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(255, 255, 255, 0.85);
-    /* Slightly more transparent */
+    background: rgba(255, 255, 255, 0.9);
     padding: 1.5rem 2.5rem;
     border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    z-index: 2000;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    /* Highest priority */
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 0.8rem;
     color: #333;
     font-family: 'Kanit', sans-serif;
-    font-size: 1rem;
+    font-size: 1.1rem;
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.4);
-    min-width: 180px;
+    min-width: 200px;
 }
 
-/* Show loader when section is requesting */
-.htmx-request #similar-names-loader,
-#similar-names-loader.htmx-request {
+/* Show global loader when body or loader itself has htmx-request class */
+body.htmx-request #global-loader,
+#global-loader.htmx-request {
     display: flex !important;
 }
 
-/* Blur content when section is requesting */
-.htmx-request .content-blur {
+/* Blur content globally during any request */
+body.htmx-request .similar-names-container,
+body.htmx-request .solar-system-container {
     filter: blur(4px);
-    opacity: 0.4;
+    opacity: 0.5;
     pointer-events: none;
     transition: all 0.3s ease;
 }
 
-/* Ensure spinner is visible and aesthetic */
-#similar-names-loader .spinner {
+/* Spinner styling */
+.spinner .path {
     stroke: #667eea;
-    /* Theme primary color */
 }
