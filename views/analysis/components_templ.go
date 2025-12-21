@@ -134,7 +134,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"</h2><div class=\"header-sub-info\"><span style=\"background: white; padding: 0.3rem 1rem; border-radius: 20px; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee;\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"</h2><div class=\"header-sub-info\"><span style=\"background: white; padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: 500; display: flex; align-items: center; gap: 0.3rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #eee;\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -156,7 +156,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if len(props.KlakiniChars) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span class=\"klakini-status-bad\" style=\"background: rgba(235, 77, 75, 0.1); color: #eb4d4b; padding: 0.3rem 1rem; border-radius: 20px; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z\"></path><line x1=\"12\" y1=\"9\" x2=\"12\" y2=\"13\"></line><line x1=\"12\" y1=\"17\" x2=\"12.01\" y2=\"17\"></line></svg> กาลกิณี: ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span class=\"klakini-status-bad\" style=\"background: rgba(235, 77, 75, 0.1); color: #eb4d4b; padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: 500; display: flex; align-items: center; gap: 0.3rem;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z\"></path><line x1=\"12\" y1=\"9\" x2=\"12\" y2=\"13\"></line><line x1=\"12\" y1=\"17\" x2=\"12.01\" y2=\"17\"></line></svg> กาลกิณี: ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -174,12 +174,12 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<span class=\"klakini-status-good\" style=\"background: rgba(32, 191, 107, 0.1); color: #20bf6b; padding: 0.3rem 1rem; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 10px rgba(32, 191, 107, 0.15); border: 1px solid rgba(32, 191, 107, 0.2);\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"filter: drop-shadow(0 0 2px rgba(32, 191, 107, 0.3));\"><path d=\"M22 11.08V12a10 10 0 1 1-5.93-9.14\"></path><polyline points=\"22 4 12 14.01 9 11.01\"></polyline></svg> ไม่พบกาลกิณี</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<span class=\"klakini-status-good\" style=\"background: rgba(32, 191, 107, 0.1); color: #20bf6b; padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 0.3rem; border: 1px solid rgba(32, 191, 107, 0.2);\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 11.08V12a10 10 0 1 1-5.93-9.14\"></path><polyline points=\"22 4 12 14.01 9 11.01\"></polyline></svg> ไม่พบกาลกิณี</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div></div><!-- Toggles (Right - Stacked) --><div class=\"toggle-switch-container\" hx-get=\"/similar-names\" hx-target=\"#similar-names-section\" hx-swap=\"outerHTML\" hx-trigger=\"change\" hx-indicator=\"body\" hx-vals='js:{\"name\": (document.getElementById(\"name\") ? document.getElementById(\"name\").value : \"\"), \"day\": (document.getElementById(\"day\") ? document.getElementById(\"day\").value : \"\"), \"auspicious\": document.getElementById(\"auspicious-toggle\").checked, \"disable_klakini\": document.getElementById(\"disable-klakini-toggle\").checked}'><div class=\"toggle-item\" style=\"display: flex; align-items: center; gap: 0.8rem; justify-content: flex-end; width: 100%;\"><span class=\"toggle-label\" style=\"font-size: 0.85rem; color: #888;\">เลขดีเท่านั้น</span> <label class=\"toggle-switch\"><input type=\"checkbox\" id=\"auspicious-toggle\" name=\"auspicious\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div></div><!-- Toggles (Right - Stacked) --><div class=\"toggle-switch-container\" hx-get=\"/similar-names\" hx-target=\"#similar-names-section\" hx-swap=\"outerHTML\" hx-trigger=\"change\" hx-indicator=\"body\" hx-vals='js:{\"name\": (document.getElementById(\"name\") ? document.getElementById(\"name\").value : \"\"), \"day\": (document.getElementById(\"day\") ? document.getElementById(\"day\").value : \"\"), \"auspicious\": document.getElementById(\"auspicious-toggle\").checked, \"disable_klakini\": document.getElementById(\"disable-klakini-toggle\").checked}'><div class=\"toggle-item\"><span class=\"toggle-label\" style=\"font-size: 0.8rem; color: #888; white-space: nowrap;\">เลขดีเท่านั้น</span> <label class=\"toggle-switch\"><input type=\"checkbox\" id=\"auspicious-toggle\" name=\"auspicious\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -189,7 +189,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, " onchange=\"document.getElementById('main-auspicious').value = this.checked\"> <span class=\"slider\"></span></label></div><div class=\"toggle-item\" style=\"display: flex; align-items: center; gap: 0.8rem; justify-content: flex-end; width: 100%;\"><span class=\"toggle-label\" style=\"font-size: 0.85rem; color: #888;\">ปิดกาลกิณี</span> <label class=\"toggle-switch\"><input type=\"checkbox\" id=\"disable-klakini-toggle\" name=\"disable_klakini\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, " onchange=\"document.getElementById('main-auspicious').value = this.checked\"> <span class=\"slider\"></span></label></div><div class=\"toggle-item\"><span class=\"toggle-label\" style=\"font-size: 0.8rem; color: #888; white-space: nowrap;\">ปิดกาลกิณี</span> <label class=\"toggle-switch\"><input type=\"checkbox\" id=\"disable-klakini-toggle\" name=\"disable_klakini\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

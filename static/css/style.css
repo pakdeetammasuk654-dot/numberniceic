@@ -1304,9 +1304,9 @@ input:checked+.slider:before {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-    padding: 1.5rem 2rem;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 0.8rem 1.2rem;
     background: white;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
@@ -1350,22 +1350,27 @@ input:checked+.slider:before {
 
 .toggle-switch-container {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.8rem;
-    min-width: 140px;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .header-sub-info {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
+    gap: 0.6rem;
     font-family: 'Kanit', sans-serif;
     font-weight: 300;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: #7f8c8d;
-    margin-left: 0;
-    padding-left: 0;
+    flex-wrap: wrap;
 }
 
 .header-title {
@@ -1440,37 +1445,30 @@ input:checked+.slider:before {
 /* Mobile Optimizations */
 @media (max-width: 600px) {
     .speech-bubble-header {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        padding: 1.2rem 1rem;
-        gap: 1.2rem;
-    }
-
-    .header-text-content {
-        align-items: center;
+        padding: 0.6rem 0.8rem;
+        gap: 0.8rem;
+        justify-content: center;
     }
 
     .header-title {
-        font-size: 1.5rem;
+        font-size: 1.2rem !important;
         text-align: center;
     }
 
     .header-sub-info {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         gap: 0.4rem;
         justify-content: center;
-        flex-wrap: wrap;
     }
 
     .toggle-switch-container {
-        align-items: center;
+        justify-content: center;
         width: 100%;
-        min-width: auto;
+        gap: 0.8rem;
     }
 
-    .toggle-item {
-        justify-content: center !important;
+    .toggle-label {
+        font-size: 0.75rem !important;
     }
 }
 
