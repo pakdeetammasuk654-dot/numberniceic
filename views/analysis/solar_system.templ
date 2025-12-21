@@ -1,0 +1,332 @@
+package analysis
+
+import (
+	"numberniceic/internal/core/domain"
+	"fmt"
+)
+
+type SolarSystemProps struct {
+	CleanedName          string
+	InputDay             string
+	InputDayRaw          string
+	AllowKlakini         bool
+	IsVIP                bool
+	SunDisplayNameHTML   []domain.DisplayChar
+	NumerologyPairs      []domain.PairMeaningResult
+	ShadowPairs          []domain.PairMeaningResult
+	NumPositiveScore     int
+	NumNegativeScore     int
+	ShaPositiveScore     int
+	ShaNegativeScore     int
+	GrandTotalScore      int
+	IsSunDead            bool
+	AllUniquePairs       []domain.PairMeaningResult
+	DecodedParts         []domain.DecodedResult // Type needs to be known or redefined
+	TotalNumerologyValue int
+	TotalShadowValue     int
+}
+
+// Helper for arithmetic
+func add(a, b int) int {
+	return a + b
+}
+func div(a, b float64) float64 {
+	if b == 0 { return 0 }
+	return a / b
+}
+
+templ SolarSystem(props SolarSystemProps) {
+	<style>
+		/* Ensure the solar system container is visible and handled correctly */
+		.solar-system-container {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			padding: 0;
+			min-height: 290px;
+			position: relative;
+			z-index: 10;
+			background-color: transparent !important;
+			overflow: visible;
+			box-shadow: none !important;
+		}
+
+		.sun {
+			position: relative;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.char-container {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.orbit {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			border-radius: 50%;
+			border-style: dashed;
+			border-width: 1px;
+			pointer-events: none;
+		}
+
+		.orbit-inner {
+			width: 180px;
+			height: 180px;
+			border-color: #FF9800;
+			z-index: 0;
+		}
+
+		.orbit-outer {
+			width: 280px;
+			height: 280px;
+			border-color: #FF9800;
+			z-index: 0;
+		}
+	</style>
+
+	<div class="solar-system-container fade-slide-in">
+		<div class="solar-system">
+			<div class={ "sun", templ.KV("sun-dead", props.IsSunDead) }>
+				<div class="sun-name">
+					<div class="char-container">
+						if len(props.SunDisplayNameHTML) > 0 {
+							for _, dc := range props.SunDisplayNameHTML {
+								if dc.IsBad {
+									<span class="klakini-char">{ dc.Char }</span>
+								} else {
+									<span>{ dc.Char }</span>
+								}
+							}
+						} else {
+							<span>?</span>
+						}
+					</div>
+				</div>
+			</div>
+
+			<!-- Orbits -->
+			<div class="orbit orbit-inner"></div>
+			<div class="orbit orbit-outer"></div>
+
+			<!-- Planets (Numerology) -->
+			if len(props.NumerologyPairs) > 0 {
+				for i, pair := range props.NumerologyPairs {
+					<div class="planet-container orbit-inner" style={ fmt.Sprintf("animation-delay: -%.2fs;", mul(float64(i), div(20.0, float64(len(props.NumerologyPairs))))) }>
+						<div class="planet"
+							style={ fmt.Sprintf("background-color: %s; animation-delay: -%.2fs;", pair.Meaning.Color, mul(float64(i), div(20.0, float64(len(props.NumerologyPairs))))) }
+							title={ pair.Meaning.MiracleDesc }>
+							{ pair.PairNumber }
+						</div>
+					</div>
+				}
+			}
+
+			<!-- Planets (Shadow) -->
+			if len(props.ShadowPairs) > 0 {
+				for i, pair := range props.ShadowPairs {
+					<div class="planet-container orbit-outer" style={ fmt.Sprintf("animation-delay: -%.2fs;", mul(float64(i), div(30.0, float64(len(props.ShadowPairs))))) }>
+						<div class="planet"
+							style={ fmt.Sprintf("background-color: %s; animation-delay: -%.2fs;", pair.Meaning.Color, mul(float64(i), div(30.0, float64(len(props.ShadowPairs))))) }
+							title={ pair.Meaning.MiracleDesc }>
+							{ pair.PairNumber }
+						</div>
+					</div>
+				}
+			}
+		</div>
+	</div>
+
+	<!-- Compact Result & Action Card -->
+	<div class="result-box fade-slide-in"
+		style="padding: 1rem; margin-top: 0.5rem; position: relative; z-index: 5; background: rgba(255,255,255,0.95); border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+
+		<!-- Score Breakdown -->
+		<div style="display: flex; justify-content: center; align-items: center; gap: 1.5rem; margin-bottom: 0.8rem;">
+			<div style="display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-end;">
+				<div
+					style="font-size: 0.8rem; padding: 0.2rem 0.6rem; background: rgba(32, 191, 107, 0.1); color: #20bf6b; border-radius: 12px; font-weight: 500; min-width: 70px; text-align: center;">
+					ดี 
+					if (props.NumPositiveScore + props.ShaPositiveScore) > 0 {
+						+{ fmt.Sprintf("%d", props.NumPositiveScore + props.ShaPositiveScore) }
+					} else {
+						{ fmt.Sprintf("%d", props.NumPositiveScore + props.ShaPositiveScore) }
+					}
+				</div>
+				<div
+					style="font-size: 0.8rem; padding: 0.2rem 0.6rem; background: rgba(235, 77, 75, 0.1); color: #eb4d4b; border-radius: 12px; font-weight: 500; min-width: 70px; text-align: center;">
+					ร้าย { fmt.Sprintf("%d", props.NumNegativeScore + props.ShaNegativeScore) }
+				</div>
+			</div>
+
+			<div style="text-align: left;">
+				<div style="font-family: 'Kanit', sans-serif; color: #888; font-size: 0.8rem;">คะแนนรวม</div>
+				<div style={ "font-family: 'Kanit', sans-serif; font-size: 2.5rem; line-height: 1; font-weight: bold;", 
+					templ.KV("color: #ee5253;", props.GrandTotalScore < 0),
+					templ.KV("color: #26de81;", props.GrandTotalScore >= 0) }>
+					if props.GrandTotalScore > 0 {
+						+{ fmt.Sprintf("%d", props.GrandTotalScore) }
+					} else {
+						{ fmt.Sprintf("%d", props.GrandTotalScore) }
+					}
+				</div>
+			</div>
+		</div>
+
+		<!-- Action Buttons -->
+		<div style="display: flex; gap: 0.5rem;">
+			<!-- Numerology Button -->
+			<button type="button" { templ.Attributes{"onclick": fmt.Sprintf("openMeaningModal('%s')", props.CleanedName)}... }
+				style="flex: 1; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 10px; padding: 0.6rem 0.3rem; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 0.4rem; color: #555;">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+					stroke="#2196f3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+					<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+					<path d="M12 11h4"></path>
+					<path d="M12 16h4"></path>
+					<path d="M8 11h.01"></path>
+					<path d="M8 16h.01"></path>
+				</svg>
+				<span style="font-family: 'Kanit', sans-serif; font-size: 0.85rem;">เลขศาสตร์</span>
+			</button>
+
+			<!-- Linguistic Button -->
+			<!-- Linguistic Button -->
+			<button type="button" 
+				hx-get={ string(templ.SafeURL(fmt.Sprintf("/linguistic-analysis?name=%s", props.CleanedName))) } 
+				hx-target="#linguistic-modal-content"
+				hx-swap="innerHTML" hx-indicator="#linguistic-loader"
+				onclick="document.getElementById('linguistic-modal-container').style.display='flex'"
+				style="flex: 1; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 10px; padding: 0.6rem 0.3rem; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 0.4rem; color: #555;">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+					stroke="#4caf50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+					<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+				</svg>
+				<span style="font-family: 'Kanit', sans-serif; font-size: 0.85rem;">ภาษาศาสตร์</span>
+			</button>
+
+			<!-- Save Button -->
+			<button type="button" hx-post="/saved-names"
+				hx-vals={ fmt.Sprintf(`{"name": "%s", "birth_day": "%s", "total_score": "%d", "sat_sum": "%d", "sha_sum": "%d"}`, props.CleanedName, props.InputDayRaw, props.GrandTotalScore, props.TotalNumerologyValue, props.TotalShadowValue) }
+				hx-swap="none"
+				style="flex: 1; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 10px; padding: 0.6rem 0.3rem; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 0.4rem; color: #555;">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+					stroke="#ff9800" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+					<polyline points="17 21 17 13 7 13 7 21"></polyline>
+					<polyline points="7 3 7 8 15 8"></polyline>
+				</svg>
+				<span style="font-family: 'Kanit', sans-serif; font-size: 0.85rem;">บันทึก</span>
+			</button>
+		</div>
+	</div>
+
+	<!-- Modals -->
+	<div id={ "meaning-modal-" + props.CleanedName } class="modal-overlay" onclick="this.style.display='none'">
+		<div class="modal-content" onclick="event.stopPropagation()">
+			<div class="modal-header">
+				<h2 style="display: flex; align-items: center; gap: 0.5rem;">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+						stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+						<rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+						<path d="M12 11h4"></path>
+						<path d="M12 16h4"></path>
+						<path d="M8 11h.01"></path>
+						<path d="M8 16h.01"></path>
+					</svg>
+					เลขศาสตร์ของ "{ props.CleanedName }"
+				</h2>
+				<button class="close-btn" { templ.Attributes{"onclick": fmt.Sprintf("closeMeaningModal('%s')", props.CleanedName)}... }>&times;</button>
+			</div>
+			<div class="modal-body">
+				<h3>รายละเอียดตัวอักษร</h3>
+				<table class="similar-names-table">
+					<thead>
+						<tr>
+							<th>ตัวอักษร</th>
+							<th>เลขศาสตร์</th>
+							<th>พลังเงา</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, part := range props.DecodedParts {
+							<tr>
+								<td>
+									if part.IsKlakini && !props.AllowKlakini {
+										<span class="klakini-char">{ part.Character }</span>
+									} else {
+										{ part.Character }
+									}
+								</td>
+								<td>{ fmt.Sprintf("%d", part.NumerologyValue) }</td>
+								<td>{ fmt.Sprintf("%d", part.ShadowValue) }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+
+				<h3 style="margin-top: 1.5rem;">ความหมายคู่เลข</h3>
+				if len(props.AllUniquePairs) > 0 {
+					for i, pair := range props.AllUniquePairs {
+						if props.IsVIP || i <= 2 {
+						<div class="meaning-item">
+							<div class="meaning-header">
+								<span class="pair-number-badge" style={ "background-color: " + pair.Meaning.Color + ";" }>{ pair.PairNumber }</span>
+								<span class="pair-desc">{ pair.Meaning.MiracleDesc }</span>
+							</div>
+							<div class={ "meaning-content", templ.KV("blur-content", !props.IsVIP && i >= 2) }
+								if !props.IsVIP && i >= 2 {
+									style="user-select: none;"
+								}
+							>
+								<p>{ pair.Meaning.MiracleDetail }</p>
+							</div>
+						</div>
+						}
+					}
+					if !props.IsVIP && len(props.AllUniquePairs) > 2 {
+						<div class="vip-upgrade-overlay" style="margin-top: -100px; position: relative; z-index: 10; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1) 40%); padding-top: 60px; padding-bottom: 20px; text-align: center;">
+							<div style="background: #FFF9C4; color: #F57F17; display: inline-block; padding: 10px 20px; border-radius: 20px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+								🔒 เนื้อหานี้สำหรับสมาชิก VIP
+							</div>
+							<div style="margin-top: 10px;">
+								<a href="#" style="color: #1565C0; text-decoration: underline; font-family: 'Kanit', sans-serif;">สมัครสมาชิก VIP เพื่ออ่านต่อ</a>
+							</div>
+						</div>
+					}
+				} else {
+					<p>ไม่พบข้อมูล</p>
+				}
+			</div>
+		</div>
+	</div>
+
+	<div id="linguistic-modal-container" class="modal-overlay" onclick="this.style.display='none'">
+		<div id="linguistic-modal-content" class="modal-content" onclick="event.stopPropagation()">
+			<div id="linguistic-loader" class="htmx-indicator"
+				style="flex-direction: column; align-items: center; justify-content: center; height: 200px;">
+				<svg class="spinner" width="40px" height="40px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+					<circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"
+						style="stroke: #667eea;"></circle>
+				</svg>
+				<p style="margin-top: 1rem; color: #666; font-family: 'Kanit', sans-serif;">กำลังค้นหาข้อมูลภาษาศาสตร์...</p>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		function openMeaningModal(name) {
+			document.getElementById('meaning-modal-' + name).style.display = 'flex';
+		}
+		function closeMeaningModal(name) {
+			document.getElementById('meaning-modal-' + name).style.display = 'none';
+		}
+	</script>
+}

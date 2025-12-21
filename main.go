@@ -113,6 +113,7 @@ func main() {
 		// Set login status
 		c.Locals("IsLoggedIn", sess.Get("member_id") != nil)
 		c.Locals("IsAdmin", sess.Get("is_admin") == true)
+		c.Locals("IsVIP", sess.Get("is_vip") == true)
 
 		// Handle toast messages
 		if success := sess.Get("toast_success"); success != nil {
@@ -132,7 +133,7 @@ func main() {
 	})
 
 	// --- Handlers ---
-	numerologyHandler := handler.NewNumerologyHandler(numerologyCache, shadowCache, klakiniCache, numberPairCache, namesMiracleRepo, linguisticService)
+	numerologyHandler := handler.NewNumerologyHandler(numerologyCache, shadowCache, klakiniCache, numberPairCache, namesMiracleRepo, linguisticService, sampleNamesCache)
 	memberHandler := handler.NewMemberHandler(memberService, savedNameService, klakiniCache, numberPairCache, store)
 	savedNameHandler := handler.NewSavedNameHandler(savedNameService, store)
 	articleHandler := handler.NewArticleHandler(articleService, store)
@@ -199,33 +200,7 @@ func main() {
 	})
 
 	// Analyzer Page
-	app.Get("/analyzer", func(c *fiber.Ctx) error {
-		sampleNames, _ := sampleNamesCache.GetAll()
-
-		// Get name and day from query parameters
-		name := c.Query("name")
-		day := c.Query("day")
-
-		// Set default values if parameters are empty
-		if name == "" {
-			name = "อณัญญา"
-		}
-		if day == "" {
-			day = "SUNDAY"
-		}
-
-		return c.Render("index", fiber.Map{
-			"title":         "วิเคราะห์ชื่อ",
-			"defaultName":   name,
-			"defaultDay":    day,
-			"sampleNames":   sampleNames,
-			"IsLoggedIn":    c.Locals("IsLoggedIn"),
-			"IsAdmin":       c.Locals("IsAdmin"),
-			"toast_success": c.Locals("toast_success"),
-			"toast_error":   c.Locals("toast_error"),
-			"ActivePage":    "analyzer",
-		}, "layouts/main")
-	})
+	app.Get("/analyzer", numerologyHandler.AnalyzeStreaming)
 
 	app.Get("/decode", numerologyHandler.Decode)
 	app.Get("/solar-system", numerologyHandler.GetSolarSystem)

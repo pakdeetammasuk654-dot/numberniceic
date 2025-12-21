@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"numberniceic/internal/adapters/cache"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
@@ -11,6 +12,12 @@ import (
 	"strconv"
 	"strings"
 
+	"bufio"
+	"context"
+	"io"
+	"numberniceic/views/analysis"
+
+	"github.com/a-h/templ"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -18,17 +25,6 @@ const PageSize = 100
 const SearchBatchSize = 200
 
 // Struct definitions
-type DecodedResult struct {
-	Character       string `json:"character"`
-	NumerologyValue int    `json:"numerology_value"`
-	ShadowValue     int    `json:"shadow_value"`
-	IsKlakini       bool   `json:"is_klakini"`
-}
-
-type PairMeaningResult struct {
-	PairNumber string                   `json:"pair_number"`
-	Meaning    domain.NumberPairMeaning `json:"meaning"`
-}
 
 type NumerologyHandler struct {
 	numerologyCache   *cache.NumerologyCache
@@ -37,6 +33,7 @@ type NumerologyHandler struct {
 	numberPairCache   *cache.NumberPairCache
 	namesMiracleRepo  ports.NamesMiracleRepository
 	linguisticService *service.LinguisticService
+	sampleNamesCache  *cache.SampleNamesCache
 }
 
 func NewNumerologyHandler(
@@ -45,6 +42,7 @@ func NewNumerologyHandler(
 	pairCache *cache.NumberPairCache,
 	namesRepo ports.NamesMiracleRepository,
 	lingoService *service.LinguisticService,
+	sampleCache *cache.SampleNamesCache,
 ) *NumerologyHandler {
 	return &NumerologyHandler{
 		numerologyCache:   numCache,
@@ -53,6 +51,7 @@ func NewNumerologyHandler(
 		numberPairCache:   pairCache,
 		namesMiracleRepo:  namesRepo,
 		linguisticService: lingoService,
+		sampleNamesCache:  sampleCache,
 	}
 }
 
@@ -60,6 +59,169 @@ func isHtmxRequest(c *fiber.Ctx) bool {
 	return c.Get("HX-Request") == "true"
 }
 
+func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
+	// Parse query params
+	name := c.Query("name")
+	day := c.Query("day")
+	if name == "" {
+		name = "อณัญญา"
+	}
+	if day == "" {
+		day = "SUNDAY"
+	}
+	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on"
+	allowKlakini := c.Query("allow_klakini") == "true" || c.Query("allow_klakini") == "on"
+
+	// Get Sample Names
+	samples, _ := h.sampleNamesCache.GetAll()
+
+	isVIP := c.Locals("IsVIP") == true
+
+	// Prepare Solar System Data (Synchronous/Fast)
+	solarProps, _ := h.getSolarSystemProps(name, day, allowKlakini, isVIP)
+
+	// Prepare Props for Index
+	indexProps := analysis.IndexProps{
+		Layout: analysis.LayoutProps{
+			Title:        "วิเคราะห์ชื่อ (Streaming)",
+			IsLoggedIn:   c.Locals("IsLoggedIn") == true,
+			IsAdmin:      c.Locals("IsAdmin") == true,
+			ActivePage:   "analyzer",
+			ToastSuccess: c.Locals("toast_success"),
+			ToastError:   c.Locals("toast_error"),
+		},
+		DefaultName: name,
+		DefaultDay:  day,
+		SampleNames: samples,
+		SolarSystem: solarProps,
+		IsVIP:       isVIP,
+	}
+
+	// 1. Set Headers for Streaming
+	c.Set("Content-Type", "text/html; charset=utf-8")
+	c.Set("Transfer-Encoding", "chunked")
+	c.Set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
+	c.Set("Pragma", "no-cache")
+	c.Set("Expires", "0")
+	c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
+		// Create a "Lazy Component" that acts as the Results prop
+		lazyResults := templ.ComponentFunc(func(ctx context.Context, w2 io.Writer) error {
+			// A. Render Skeleton first
+			if err := analysis.Skeleton().Render(ctx, w2); err != nil {
+				return err
+			}
+
+			// B. Flush to send Skeleton to client
+			if f, ok := w2.(http.Flusher); ok {
+				f.Flush()
+			} else {
+				// Try flushing the underlying writer if possible,
+				// but w2 here is passed from templ.Render.
+				// In this context, w2 IS the bufio.Writer from Fiber (wrapped).
+				// We can try to cast w2 back to *bufio.Writer or flush it if it's a flusher.
+				// Since we are inside BodyStreamWriter, 'w' is the bufio writer.
+				// 'w2' should be wrapping it.
+				// We can just flush 'w' directly if we are sure content is written to it.
+				w.Flush()
+			}
+
+			// C. Simulate Delay / Computation
+			// time.Sleep(1 * time.Second) // Optional: Simulate lag to see skeleton
+
+			// D. Fetch Actual Data (Logic from GetSimilarNames)
+			// Reuse logic from GetSimilarNames... refactor if possible, but for now duplicate/inline
+			// to ensure we have access to context.
+
+			// --- Logic Start ---
+			var similarNames []domain.SimilarNameResult
+			var err error
+			if isAuspicious {
+				similarNames, err = h.findAuspiciousNames(name, day, allowKlakini)
+			} else {
+				similarNames, err = h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0, allowKlakini)
+				if err == nil && len(similarNames) < PageSize {
+					needed := PageSize - len(similarNames)
+					excludedIDs := make([]int, len(similarNames))
+					for i, n := range similarNames {
+						excludedIDs[i] = n.NameID
+					}
+
+					preferredConsonant := h.findBestConsonant(name, day)
+					if allowKlakini {
+						for _, r := range name {
+							if r != 'เ' && r != 'แ' && r != 'โ' && r != 'ใ' && r != 'ไ' {
+								preferredConsonant = string(r)
+								break
+							}
+						}
+					}
+					fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, preferredConsonant, day, needed, allowKlakini, excludedIDs)
+					if fallbackErr == nil {
+						similarNames = append(similarNames, fallbackNames...)
+					}
+				}
+			}
+
+			if err != nil {
+				// Render Error
+				return nil
+			}
+
+			h.calculateScoresAndHighlights(similarNames, day)
+			displayNameHTML := h.createDisplayChars(name, day)
+			var klakiniChars []string
+			for _, dc := range displayNameHTML {
+				if dc.IsBad {
+					klakiniChars = append(klakiniChars, dc.Char)
+				}
+			}
+			// --- Logic End ---
+
+			// E. Render Actual Table
+			tableProps := analysis.SimilarNamesProps{
+				SimilarNames:    similarNames,
+				IsAuspicious:    isAuspicious,
+				AllowKlakini:    allowKlakini,
+				DisplayNameHTML: displayNameHTML,
+				KlakiniChars:    klakiniChars,
+				CleanedName:     name,
+				InputDay:        service.GetThaiDay(day),
+				AnimateHeader:   true,
+				IsVIP:           isVIP,
+			}
+
+			// F. Render the "Swapping" Logic
+			// We have rendered the Skeleton. Now we append the Table AND a script to replace the Skeleton.
+			// Actually, if we just append the table, it appears below.
+			// We want to replace #results content or #similar-names-skeleton.
+			// My StreamScript removes the skeleton.
+			// And the Table renders a div with id="similar-names-section".
+			// Visual: [Skeleton] ... [Table]
+			// Script: removes Skeleton.
+			// Result: [Table]
+
+			if err := analysis.SimilarNamesTable(tableProps).Render(ctx, w2); err != nil {
+				return err
+			}
+			if err := analysis.StreamScript("results").Render(ctx, w2); err != nil {
+				return err
+			}
+
+			w.Flush()
+			return nil
+		})
+
+		indexProps.Results = lazyResults
+
+		// Render the whole page. When it hits 'Results', it executes the lazy component.
+		analysis.Index(indexProps).Render(context.Background(), w)
+		w.Flush()
+	})
+
+	return nil
+}
+
+// Placeholder for now
 func (h *NumerologyHandler) AnalyzeLinguistically(c *fiber.Ctx) error {
 	name := service.SanitizeInput(c.Query("name"))
 	if name == "" {
@@ -281,16 +443,22 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.Render("partials/similar_names_section", fiber.Map{
-		"similar_names":      similarNames,
-		"is_auspicious":      isAuspicious,
-		"allow_klakini":      allowKlakini,
-		"DisplayNameHTML":    displayNameHTML,
-		"klakini_characters": klakiniChars,
-		"cleaned_name":       name,
-		"input_day":          service.GetThaiDay(day),
-		"AnimateHeader":      false,
-	})
+	// Use Templ Component
+	isVIP := c.Locals("IsVIP") == true
+	props := analysis.SimilarNamesProps{
+		SimilarNames:    similarNames,
+		IsAuspicious:    isAuspicious,
+		AllowKlakini:    allowKlakini,
+		DisplayNameHTML: displayNameHTML,
+		KlakiniChars:    klakiniChars,
+		CleanedName:     name,
+		InputDay:        service.GetThaiDay(day),
+		AnimateHeader:   false,
+		IsVIP:           isVIP,
+	}
+
+	c.Set("Content-Type", "text/html")
+	return analysis.SimilarNamesTable(props).Render(c.Context(), c.Response().BodyWriter())
 }
 
 func (h *NumerologyHandler) GetAuspiciousNames(c *fiber.Ctx) error {
@@ -309,7 +477,7 @@ func (h *NumerologyHandler) GetSolarSystem(c *fiber.Ctx) error {
 	var analysisData fiber.Map
 	var analysisErr error
 
-	var allUniquePairs []PairMeaningResult
+	var allUniquePairs []domain.PairMeaningResult
 	numerologyData, numErr := h.numerologyCache.GetAll()
 	shadowData, shaErr := h.shadowCache.GetAll()
 	if numErr != nil || shaErr != nil {
@@ -319,7 +487,7 @@ func (h *NumerologyHandler) GetSolarSystem(c *fiber.Ctx) error {
 	}
 
 	decodedParts := service.DecodeName(name)
-	var results []DecodedResult
+	var results []domain.DecodedResult
 	var totalNumerologyValue, totalShadowValue int
 	var klakiniChars []string
 
@@ -340,7 +508,7 @@ func (h *NumerologyHandler) GetSolarSystem(c *fiber.Ctx) error {
 					}
 				}
 
-				results = append(results, DecodedResult{charStr, numVal, shaVal, isKlakini})
+				results = append(results, domain.DecodedResult{Character: charStr, NumerologyValue: numVal, ShadowValue: shaVal, IsKlakini: isKlakini})
 				totalNumerologyValue += numVal
 				totalShadowValue += shaVal
 
@@ -430,22 +598,103 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 		day = "sunday"
 	}
 
-	responseData := fiber.Map{
-		"cleaned_name":  name,
-		"input_day_raw": day,
-		"is_auspicious": isAuspicious,
-		"allow_klakini": allowKlakini,
+	// Calculate Solar System Props
+	isVIP := c.Locals("IsVIP") == true
+	solarProps, err := h.getSolarSystemProps(name, day, allowKlakini, isVIP)
+	if err != nil {
+		log.Printf("Error getting solar system props: %v", err)
+		return c.Status(fiber.StatusInternalServerError).SendString("Error loading data")
 	}
 
-	return c.Render("decode", responseData)
+	// Calculate Similar Names Props (Reuse logic from GetSimilarNames - partially duplicated for now to ensure correctness)
+	// Ideally refactor this logic into a helper method later.
+	var similarNames []domain.SimilarNameResult
+	if isAuspicious {
+		similarNames, err = h.findAuspiciousNames(name, day, allowKlakini)
+	} else {
+		similarNames, err = h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0, allowKlakini)
+		if err == nil && len(similarNames) < PageSize {
+			needed := PageSize - len(similarNames)
+			excludedIDs := make([]int, len(similarNames))
+			for i, n := range similarNames {
+				excludedIDs[i] = n.NameID
+			}
+			preferredConsonant := h.findBestConsonant(name, day)
+			if allowKlakini {
+				for _, r := range name {
+					if r != 'เ' && r != 'แ' && r != 'โ' && r != 'ใ' && r != 'ไ' {
+						preferredConsonant = string(r)
+						break
+					}
+				}
+			}
+			fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, preferredConsonant, day, needed, allowKlakini, excludedIDs)
+			if fallbackErr == nil {
+				similarNames = append(similarNames, fallbackNames...)
+			}
+		}
+	}
+
+	if err != nil {
+		log.Printf("Error getting names: %v", err)
+		return c.SendString("Error loading names")
+	}
+
+	h.calculateScoresAndHighlights(similarNames, day)
+	displayNameHTML := h.createDisplayChars(name, day)
+	var klakiniChars []string
+	for _, dc := range displayNameHTML {
+		if dc.IsBad {
+			klakiniChars = append(klakiniChars, dc.Char)
+		}
+	}
+
+	tableProps := analysis.SimilarNamesProps{
+		SimilarNames:    similarNames,
+		IsAuspicious:    isAuspicious,
+		AllowKlakini:    allowKlakini,
+		DisplayNameHTML: displayNameHTML,
+		KlakiniChars:    klakiniChars,
+		CleanedName:     name,
+		InputDay:        service.GetThaiDay(day),
+		AnimateHeader:   false,
+		IsVIP:           isVIP,
+	}
+
+	// Render Both Components
+	// 1. Solar System (OOB)
+	// 2. Similar Names Table (Main Response)
+	c.Set("Content-Type", "text/html")
+
+	// Create a component that renders the SolarSystem wrapped in OOB div, AND the table
+	combined := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		// OOB Swap for Solar System
+		if _, err := io.WriteString(w, `<div id="solar-system-wrapper" hx-swap-oob="true">`); err != nil {
+			return err
+		}
+		if err := analysis.SolarSystem(solarProps).Render(ctx, w); err != nil {
+			return err
+		}
+		if _, err := io.WriteString(w, `</div>`); err != nil {
+			return err
+		}
+
+		// Main Content (Table)
+		if err := analysis.SimilarNamesTable(tableProps).Render(ctx, w); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	return combined.Render(c.Context(), c.Response().BodyWriter())
 }
 
-func getMeaningsAndScores(pairs []string, pairCache *cache.NumberPairCache) ([]PairMeaningResult, int, int) {
-	var meanings []PairMeaningResult
+func getMeaningsAndScores(pairs []string, pairCache *cache.NumberPairCache) ([]domain.PairMeaningResult, int, int) {
+	var meanings []domain.PairMeaningResult
 	var posScore, negScore int
 	for _, p := range pairs {
 		if meaning, ok := pairCache.GetMeaning(p); ok {
-			meanings = append(meanings, PairMeaningResult{PairNumber: p, Meaning: meaning})
+			meanings = append(meanings, domain.PairMeaningResult{PairNumber: p, Meaning: meaning})
 			if meaning.PairPoint > 0 {
 				posScore += meaning.PairPoint
 			} else {
@@ -488,4 +737,94 @@ func contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+// Helper to calculate Solar System Props
+func (h *NumerologyHandler) getSolarSystemProps(name, day string, allowKlakini bool, isVIP bool) (analysis.SolarSystemProps, error) {
+	numerologyData, numErr := h.numerologyCache.GetAll()
+	shadowData, shaErr := h.shadowCache.GetAll()
+	if numErr != nil || shaErr != nil {
+		return analysis.SolarSystemProps{}, fmt.Errorf("cache error")
+	}
+
+	decodedParts := service.DecodeName(name)
+	var results []domain.DecodedResult
+	var totalNumerologyValue, totalShadowValue int
+	var klakiniChars []string
+
+	for _, thaiChar := range decodedParts {
+		if thaiChar.IsThai {
+			processComponent := func(charStr string) {
+				if charStr == "" {
+					return
+				}
+				numVal := numerologyData[charStr]
+				shaVal := shadowData[charStr]
+
+				isKlakini := false
+				for _, r := range charStr {
+					if h.klakiniCache.IsKlakini(day, r) {
+						isKlakini = true
+						break
+					}
+				}
+
+				results = append(results, domain.DecodedResult{Character: charStr, NumerologyValue: numVal, ShadowValue: shaVal, IsKlakini: isKlakini})
+				totalNumerologyValue += numVal
+				totalShadowValue += shaVal
+
+				if isKlakini && !contains(klakiniChars, charStr) {
+					klakiniChars = append(klakiniChars, charStr)
+				}
+			}
+			processComponent(thaiChar.Consonant)
+			processComponent(thaiChar.Vowel)
+			processComponent(thaiChar.ToneMark)
+		}
+	}
+
+	numerologyPairs := formatTotalValue(totalNumerologyValue)
+	shadowPairs := formatTotalValue(totalShadowValue)
+	numMeanings, numPos, numNeg := getMeaningsAndScores(numerologyPairs, h.numberPairCache)
+	shaMeanings, shaPos, shaNeg := getMeaningsAndScores(shadowPairs, h.numberPairCache)
+	grandTotalScore := numPos + numNeg + shaPos + shaNeg
+
+	var allUniquePairs []domain.PairMeaningResult
+	seenPairs := make(map[string]bool)
+	for _, pair := range numMeanings {
+		if !seenPairs[pair.PairNumber] {
+			allUniquePairs = append(allUniquePairs, pair)
+			seenPairs[pair.PairNumber] = true
+		}
+	}
+	for _, pair := range shaMeanings {
+		if !seenPairs[pair.PairNumber] {
+			allUniquePairs = append(allUniquePairs, pair)
+			seenPairs[pair.PairNumber] = true
+		}
+	}
+	sort.Slice(allUniquePairs, func(i, j int) bool {
+		return allUniquePairs[i].Meaning.PairPoint > allUniquePairs[j].Meaning.PairPoint
+	})
+
+	return analysis.SolarSystemProps{
+		CleanedName:          name,
+		InputDay:             service.GetThaiDay(day),
+		InputDayRaw:          day,
+		AllowKlakini:         allowKlakini,
+		SunDisplayNameHTML:   h.createDisplayChars(name, day),
+		NumerologyPairs:      numMeanings,
+		ShadowPairs:          shaMeanings,
+		NumPositiveScore:     numPos,
+		NumNegativeScore:     numNeg,
+		ShaPositiveScore:     shaPos,
+		ShaNegativeScore:     shaNeg,
+		GrandTotalScore:      grandTotalScore,
+		IsSunDead:            grandTotalScore < 0,
+		AllUniquePairs:       allUniquePairs,
+		DecodedParts:         results,
+		TotalNumerologyValue: totalNumerologyValue,
+		TotalShadowValue:     totalShadowValue,
+		IsVIP:                isVIP,
+	}, nil
 }

@@ -1,0 +1,178 @@
+package analysis
+
+import (
+	"numberniceic/internal/core/domain"
+)
+
+type IndexProps struct {
+    Layout      LayoutProps
+    DefaultName string
+    DefaultDay  string
+    SampleNames []domain.SampleName
+	SolarSystem SolarSystemProps
+	IsVIP       bool
+    Results     templ.Component
+}
+
+templ Index(props IndexProps) {
+	@Layout(props.Layout) {
+
+		
+		<!-- Analyzer Form Container -->
+		<div class="analyzer-container"
+			style="max-width: 600px; margin: 1rem auto; padding: 1.5rem; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 20px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15); border: 1px solid rgba(255, 255, 255, 0.18);">
+		
+			<form id="name-form">
+				<!-- Hidden inputs -->
+				<input type="hidden" name="auspicious" id="main-auspicious" value="false"/>
+				<input type="hidden" name="allow_klakini" id="main-allow-klakini" value="false"/>
+		
+				<div class="form-group" style="margin-bottom: 0.8rem;">
+					<div class="label-row" style="margin-bottom: 0.25rem;">
+						<label for="name" style="font-weight: bold; color: #333;">ชื่อ</label>
+						<small class="helper-text" style="color: #667eea;">ระบบจะวิเคราะห์ชื่อของคุณโดยอัตโนมัติขณะพิมพ์</small>
+					</div>
+					<div class="input-wrapper"
+						style="box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 12px; transition: transform 0.2s;">
+						<span class="input-icon" style="color: #667eea;">
+							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+								<circle cx="12" cy="7" r="4"></circle>
+							</svg>
+						</span>
+						<input type="text" id="name" name="name" required placeholder="เช่น อณัญญา" value={ props.DefaultName }
+							style="border: 2px solid #e0e0e0; border-radius: 12px; padding-left: 3rem; height: 50px; font-size: 1.1rem; transition: all 0.3s;"
+							onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 4px rgba(102, 126, 234, 0.1)';"
+							onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none';"
+							oninput="toggleClearButton()" hx-get="/decode" hx-target="#results" hx-include="#name-form"
+							hx-trigger="input changed delay:500ms, load" hx-indicator="body"/>
+						<span id="clear-btn" class="clear-btn" onclick="clearName()" style="right: 15px;">×</span>
+					</div>
+				</div>
+		
+				<div class="form-group" style="margin-bottom: 0;">
+					<label for="day"
+						style="font-weight: bold; color: #333; margin-bottom: 0.25rem; display: block;">วันเกิด</label>
+					<div class="input-wrapper" style="box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 12px;">
+						<span class="input-icon" style="color: #667eea;">
+							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+								stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+								<line x1="16" x2="16" y1="2" y2="6"></line>
+								<line x1="8" x2="8" y1="2" y2="6"></line>
+								<line x1="3" x2="21" y1="10" y2="10"></line>
+							</svg>
+						</span>
+						<select id="day" name="day" required
+							style="border: 2px solid #e0e0e0; border-radius: 12px; padding-left: 3rem; height: 50px; font-size: 1rem; width: 100%; cursor: pointer; background-color: white; transition: all 0.3s;"
+							onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 4px rgba(102, 126, 234, 0.1)';"
+							onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none';" hx-get="/decode"
+							hx-target="#results" hx-include="#name-form" hx-trigger="change" hx-indicator="body">
+							<option value="SUNDAY" if props.DefaultDay == "SUNDAY" { selected }>วันอาทิตย์</option>
+							<option value="MONDAY" if props.DefaultDay == "MONDAY" { selected }>วันจันทร์</option>
+							<option value="TUESDAY" if props.DefaultDay == "TUESDAY" { selected }>วันอังคาร</option>
+							<option value="WEDNESDAY1" if props.DefaultDay == "WEDNESDAY1" { selected }>วันพุธ (กลางวัน)</option>
+							<option value="WEDNESDAY2" if props.DefaultDay == "WEDNESDAY2" { selected }>วันพุธ (กลางคืน)</option>
+							<option value="THURSDAY" if props.DefaultDay == "THURSDAY" { selected }>วันพฤหัสบดี</option>
+							<option value="FRIDAY" if props.DefaultDay == "FRIDAY" { selected }>วันศุกร์</option>
+							<option value="SATURDAY" if props.DefaultDay == "SATURDAY" { selected }>วันเสาร์</option>
+						</select>
+					</div>
+				</div>
+			</form>
+		</div>
+
+		
+		<!-- Sample Names Section -->
+		<div class="sample-names-container">
+			<div class="avatars-grid">
+				for _, sample := range props.SampleNames {
+					<div class="avatar-card" { templ.Attributes{"onclick": "selectName('" + sample.Name + "')" }... }>
+						<img src={ sample.AvatarURL } alt="Avatar" class="avatar-img"/>
+						<div class="avatar-name">{ sample.Name }</div>
+					</div>
+				}
+			</div>
+		</div>
+		
+
+		
+		<!-- Results Section for initial load and as a target -->
+		<div id="results-container">
+			<div id="solar-system-wrapper">
+				@SolarSystem(props.SolarSystem)
+			</div>
+			<div id="results">
+				<!-- This is where the streaming data will be injected -->
+				@props.Results
+			</div>
+		</div>
+		
+		<!-- Back to Top Button -->
+		<button id="back-to-top" onclick="scrollToTop()" title="Go to top">
+			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+				stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M18 15l-6-6-6 6"></path>
+			</svg>
+		</button>
+		
+		<!-- JavaScript -->
+		<script>
+			function selectName(name) {
+				const nameInput = document.getElementById('name');
+				nameInput.value = name;
+				toggleClearButton();
+		
+				// Manually trigger the input event on the input field itself
+				htmx.trigger('#name', 'input');
+		
+				// Scroll to the top of the form for better UX
+				const form = document.getElementById('name-form');
+				if (form) {
+					form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				}
+			}
+		
+			function toggleClearButton() {
+				const nameInput = document.getElementById('name');
+				const clearBtn = document.getElementById('clear-btn');
+				if (nameInput && nameInput.value.length > 0) {
+					clearBtn.style.display = 'block';
+				} else if (clearBtn) {
+					clearBtn.style.display = 'none';
+				}
+			}
+		
+			function clearName() {
+				const nameInput = document.getElementById('name');
+				nameInput.value = '';
+				toggleClearButton();
+				nameInput.focus();
+				// Manually trigger the input event to clear the results via HTMX
+				htmx.trigger('#name', 'input');
+			}
+		
+			// Back to Top functionality
+			const backToTopButton = document.getElementById("back-to-top");
+		
+			window.onscroll = function () {
+				if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+					backToTopButton.style.display = "flex";
+				} else {
+					backToTopButton.style.display = "none";
+				}
+			};
+		
+			function scrollToTop() {
+				window.scrollTo({ top: 0, behavior: 'smooth' });
+			}
+		
+			document.addEventListener('DOMContentLoaded', function () {
+				toggleClearButton();
+				// Trigger initial load from the input field
+				// htmx.trigger('#name', 'load'); // REMOVED: Managed by streaming
+			});
+		</script>
+	}
+}

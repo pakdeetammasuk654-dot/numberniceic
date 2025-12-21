@@ -1,0 +1,294 @@
+package analysis
+
+import (
+    "numberniceic/internal/core/domain"
+    "fmt"
+    "strings"
+)
+
+// Helper function to simulate 'mul' from templates
+func mul(a, b float64) float64 {
+    return a * b
+}
+
+type SimilarNamesProps struct {
+    SimilarNames     []domain.SimilarNameResult
+    IsAuspicious     bool
+    AllowKlakini     bool
+    DisplayNameHTML  []domain.DisplayChar
+    KlakiniChars     []string
+    CleanedName      string
+    InputDay         string
+    AnimateHeader    bool
+    IsVIP            bool
+}
+
+templ Skeleton() {
+    <div id="similar-names-skeleton" class="similar-names-container fade-slide-in" style="margin-top: 1rem;">
+        <div class="speech-bubble-header">
+            <div class="header-text-content" style="width: 50%;">
+                <div class="header-main-line" style="background: #e0e0e0; height: 1.5rem; width: 60%; border-radius: 4px; animation: pulse 1.5s infinite;"></div>
+                <div class="header-sub-info" style="margin-top: 0.5rem; background: #f0f0f0; height: 1rem; width: 40%; border-radius: 4px; animation: pulse 1.5s infinite;"></div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="similar-names-table">
+                <thead>
+                    <tr>
+                         <th style="padding-left: 1.5rem;">ชื่อดี</th>
+                        <th style="text-align: center;">ไม่มีกาลกิณี</th>
+                        <th style="text-align: center;">เลขศาสตร์</th>
+                        <th style="text-align: center;">พลังเงา</th>
+                        <th style="text-align: center;">คะแนน</th>
+                        <th style="text-align: center;">คล้าย</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    for i := 0; i < 5; i++ {
+                        <tr>
+                            <td colspan="6" style="padding: 1rem;">
+                                <div style="height: 1.5rem; background: #f5f5f5; border-radius: 4px; width: 100%; animation: pulse 1.5s infinite;"></div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <style>
+        	@keyframes pulse {
+        		0% { opacity: 0.6; }
+        		50% { opacity: 1; }
+        		100% { opacity: 0.6; }
+        	}
+        </style>
+    </div>
+}
+
+templ StreamScript(targetID string) {
+    <script>
+        (function() {
+            var target = document.getElementById( { fmt.Sprintf("%q", targetID) } );
+            var skeleton = document.getElementById("similar-names-skeleton");
+            if (target && skeleton && target.innerHTML.trim() !== "") {
+                skeleton.remove(); // Remove skeleton
+                // Use htmx to process the content if needed, or just let it be.
+                // If the new content contains HTMX attributes, we might want to tell HTMX to process it.
+                if (typeof htmx !== 'undefined') {
+                    htmx.process(target);
+                }
+            }
+        })();
+    </script>
+}
+
+templ SimilarNamesTable(props SimilarNamesProps) {
+	<div class="similar-names-container fade-slide-in" id="similar-names-section">
+		<!-- Loader -->
+		<div id="similar-names-loader" class="htmx-indicator">
+			<svg class="spinner" width="16px" height="16px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+				<circle class="path" fill="none" stroke="white" stroke-width="6" stroke-linecap="round" cx="33" cy="33"
+					r="30"></circle>
+			</svg>
+			<span>กำลังโหลด...</span>
+		</div>
+	
+		<div class="content-blur">
+			<!-- Header Section -->
+			<!-- Header Section -->
+			<!-- Header Section -->
+			<div class="speech-bubble-header" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 2rem; padding: 1.5rem 2rem;">
+				<!-- Name and Status (Left) -->
+				<div class="header-text-content" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; flex: 1;">
+					<h2 class="header-title" style="margin: 0; font-family: 'Sarabun', sans-serif; font-size: 1.8rem; font-weight: bold; color: #333; line-height: 1.2;">
+						"{ props.CleanedName }"
+					</h2>
+					
+					<div class="header-sub-info" style="display: flex; align-items: center; gap: 0.8rem; font-size: 0.95rem; color: #666;">
+						<span style="background: #f0f2f5; padding: 0.2rem 0.8rem; border-radius: 20px; font-weight: 500;">
+							{ props.InputDay }
+						</span>
+						if len(props.KlakiniChars) > 0 {
+							<span class="klakini-status-bad" style="background: rgba(235, 77, 75, 0.1); color: #eb4d4b; padding: 0.2rem 0.8rem; border-radius: 20px; font-weight: 500;">
+								กาลกิณี: { strings.Join(props.KlakiniChars, " ") }
+							</span>
+						} else {
+							<span class="klakini-status-good" style="background: rgba(32, 191, 107, 0.1); color: #20bf6b; padding: 0.2rem 0.8rem; border-radius: 20px; font-weight: 500;">
+								ไม่พบกาลกิณี
+							</span>
+						}
+					</div>
+				</div>
+	
+				<!-- Toggles (Right - Stacked) -->
+				<div class="toggle-switch-container" 
+					hx-get="/similar-names" hx-target="#similar-names-section"
+					hx-swap="outerHTML" hx-trigger="change" hx-indicator="#similar-names-section"
+					hx-vals='js:{"name": (document.getElementById("name") ? document.getElementById("name").value : ""), "day": (document.getElementById("day") ? document.getElementById("day").value : ""), "auspicious": document.getElementById("auspicious-toggle").checked, "allow_klakini": document.getElementById("allow-klakini-toggle").checked}'
+					style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.8rem; min-width: 140px;"
+				>
+					<div class="toggle-item" style="display: flex; align-items: center; gap: 0.8rem; justify-content: flex-end; width: 100%;">
+						<span class="toggle-label" style="font-size: 0.85rem; color: #888;">เลขดีเท่านั้น</span>
+						<label class="toggle-switch">
+							<input type="checkbox" id="auspicious-toggle" name="auspicious" 
+								if props.IsAuspicious {
+									checked
+								}
+								onchange="document.getElementById('main-auspicious').value = this.checked"/>
+							<span class="slider"></span>
+						</label>
+					</div>
+	
+					<div class="toggle-item" style="display: flex; align-items: center; gap: 0.8rem; justify-content: flex-end; width: 100%;">
+						<span class="toggle-label" style="font-size: 0.85rem; color: #888;">อนุโลมกาลกิณี</span>
+						<label class="toggle-switch">
+							<input type="checkbox" id="allow-klakini-toggle" name="allow_klakini"
+								if props.AllowKlakini {
+									checked
+								}
+								onchange="document.getElementById('main-allow-klakini').value = this.checked"/>
+							<span class="slider"></span>
+						</label>
+					</div>
+				</div>
+			</div>
+	
+			<!-- VIP Upgrade Banner -->
+			if !props.IsVIP {
+				<div class="vip-banner" style="background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; color: #4a3b00; box-shadow: 0 4px 15px rgba(253, 185, 49, 0.3);">
+					<div style="display: flex; align-items: center; gap: 1rem;">
+						<div class="vip-icon" style="background: rgba(255,255,255,0.3); padding: 0.5rem; border-radius: 50%;">
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+						</div>
+						<div>
+							<h3 style="margin: 0; font-family: 'Kanit', sans-serif; font-size: 1.1rem;">VIP ผลการวิเคราะห์จากชื่อที่ใช้ได้จริง</h3>
+							<p style="margin: 0; font-family: 'Kanit', sans-serif; font-size: 0.9rem; opacity: 0.9;">ปลดล็อกการวิเคราะห์จากชื่อจริงกว่า 3 แสนรายชื่อ</p>
+						</div>
+					</div>
+					<a href="#" style="background: #2c3e50; color: white; padding: 0.5rem 1.2rem; border-radius: 8px; text-decoration: none; font-family: 'Kanit', sans-serif; font-size: 0.9rem; font-weight: 500;">สมัครเลย</a>
+				</div>
+			}
+
+			<!-- Table Section -->
+			<div class="table-responsive">
+				<table class="similar-names-table">
+					<thead>
+						<tr>
+							<th style="padding-left: 1.5rem;">ชื่อดี</th>
+							<th style="text-align: center;">ไม่มีกาลกิณี</th>
+							<th style="text-align: center;">เลขศาสตร์</th>
+							<th style="text-align: center;">พลังเงา</th>
+							<th style="text-align: center;">คะแนน</th>
+							<th style="text-align: center;">คล้าย</th>
+						</tr>
+					</thead>
+					<tbody>
+						for i, name := range props.SimilarNames {
+						if props.IsVIP || i < 3 {
+							<tr class="clickable-row" { templ.Attributes{"onclick": "selectName('" + name.ThName + "')" }... }>
+								<td style="padding-left: 1.5rem;">
+									<div class={ "name-cell", templ.KV("name-top-tier", name.IsTopTier) }>
+										for _, dc := range name.DisplayNameHTML {
+											if dc.IsBad {
+												<span class="klakini-char">{ dc.Char }</span>
+											} else {
+												<span>{ dc.Char }</span>
+											}
+										}
+									</div>
+								</td>
+								<td style="text-align: center;">
+									if len(name.KlakiniChars) > 0 {
+										<span class="status-pill status-warning">
+											for _, k := range name.KlakiniChars {
+												{ k } 
+											}
+										</span>
+									} else {
+										<span class="status-pill status-safe">
+											<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+												fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+												stroke-linejoin="round">
+												<polyline points="20 6 9 17 4 12"></polyline>
+											</svg>
+										</span>
+									}
+								</td>
+								<td style="position: relative;">
+									<div class="table-pairs-container">
+										for i, pairInfo := range name.TSat {
+											<span class="table-pair-circle"
+												style={ "background-color: " + pairInfo.Color }>{ name.SatNum[i] }</span>
+										}
+									</div>
+								</td>
+								<td style="position: relative;">
+									<div class="table-pairs-container">
+										for i, pairInfo := range name.TSha {
+											<span class="table-pair-circle"
+												style={ "background-color: " + pairInfo.Color }>{ name.ShaNum[i] }</span>
+										}
+									</div>
+								</td>
+								<td style="text-align: center;">
+									<span class={ "score-badge", templ.KV("score-bad", name.TotalScore < 0), templ.KV("score-good", name.TotalScore >= 0) }>
+										if name.TotalScore > 0 {
+											+{ fmt.Sprintf("%d", name.TotalScore) }
+										} else {
+											{ fmt.Sprintf("%d", name.TotalScore) }
+										}
+									</span>
+								</td>
+								<td style="text-align: center;">
+									<span style="font-size: 0.85rem; color: #adb5bd;">{ fmt.Sprintf("%.0f%%", mul(name.Similarity, 100)) }</span>
+								</td>
+							</tr>
+						} else if !props.IsVIP && i == 3 {
+							<tr>
+								<td colspan="6" style="padding: 2rem; text-align: center; background: #fffde7; border: 1px dashed #fbc02d; border-radius: 8px;">
+									<div style="display: flex; flex-direction: column; align-items: center; gap: 0.8rem; color: #f57f17;">
+										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+										<span style="font-weight: bold; font-family: 'Sarabun', sans-serif;">ชื่อดีถูกล็อกแสดงแค่ 3 รายชื่อเท่านั้น</span>
+										<a href="#" style="background: #2c3e50; color: white; padding: 0.4rem 1rem; border-radius: 6px; font-size: 0.9rem; text-decoration: none;">สมัครสมาชิกเพื่อดูทั้งหมด</a>
+									</div>
+								</td>
+							</tr>
+						}
+						}
+						if len(props.SimilarNames) == 0 {
+							<tr>
+								<td colspan="6" style="text-align: center; padding: 3rem; color: #999;">
+									<div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+										<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24"
+											fill="none" stroke="#e0e0e0" stroke-width="1.5" stroke-linecap="round"
+											stroke-linejoin="round">
+											<circle cx="12" cy="12" r="10"></circle>
+											<line x1="12" y1="8" x2="12" y2="12"></line>
+											<line x1="12" y1="16" x2="12.01" y2="16"></line>
+										</svg>
+										<span>ไม่พบชื่อที่ใกล้เคียง</span>
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	
+	<script>
+	    (function () {
+	        const mainAuspicious = document.getElementById('main-auspicious');
+	        const auspiciousToggle = document.getElementById('auspicious-toggle');
+	        if (mainAuspicious && auspiciousToggle) {
+	            mainAuspicious.value = auspiciousToggle.checked;
+	        }
+	
+	        const mainAllowKlakini = document.getElementById('main-allow-klakini');
+	        const allowKlakiniToggle = document.getElementById('allow-klakini-toggle');
+	        if (mainAllowKlakini && allowKlakiniToggle) {
+	            mainAllowKlakini.value = allowKlakiniToggle.checked;
+	        }
+	    })();
+	</script>
+}

@@ -13,3 +13,13 @@ type Member struct {
 	UpdatedAt time.Time  `json:"updated_at"`
 	DeletedAt *time.Time `json:"deleted_at"`
 }
+
+const (
+	// Status Constants
+	StatusMember = 1
+	StatusVIP    = 2
+)
+
+func (m *Member) IsVIP() bool {
+	return m.Status == StatusVIP || m.Status == 9
+}

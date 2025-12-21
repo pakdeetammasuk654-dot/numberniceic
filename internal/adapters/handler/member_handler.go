@@ -119,6 +119,12 @@ func (h *MemberHandler) HandleLogin(c *fiber.Ctx) error {
 		sess.Set("is_admin", false)
 	}
 
+	if member.IsVIP() {
+		sess.Set("is_vip", true)
+	} else {
+		sess.Set("is_vip", false)
+	}
+
 	sess.Set("toast_success", "ยินดีต้อนรับกลับ, "+member.Username+"!")
 	sess.Save()
 
