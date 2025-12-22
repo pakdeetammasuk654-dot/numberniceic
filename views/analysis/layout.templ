@@ -11,6 +11,7 @@ type LayoutProps struct {
 	ActivePage   string
 	ToastSuccess interface{}
 	ToastError   interface{}
+	IsVIP        bool
 }
 
 templ Layout(props LayoutProps) {
@@ -20,6 +21,9 @@ templ Layout(props LayoutProps) {
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>{ props.Title } - NumberNiceIC</title>
+			<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2"/>
+			<link rel="icon" type="image/png" href="/favicon.png?v=2"/>
+			<link rel="shortcut icon" href="/favicon.ico?v=2"/>
 			<!-- Google Fonts -->
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
@@ -108,13 +112,32 @@ templ Header(props LayoutProps) {
 		<nav class="nav-container">
 			<!-- Row 1: Logo and Auth -->
 			<div class="top-nav-row">
-				<div class="brand-logo">
+				<div class="brand-logo" style="display: flex; align-items: center; gap: 0.5rem;">
 					<a href="/" class="brand-link">
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
 						ชื่อดี.com
 					</a>
+					if props.IsVIP {
+						<span class="vip-badge" style="background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #4a3b00; font-size: 0.7rem; font-weight: bold; padding: 0.2rem 0.5rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 0.2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+							<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M2 20h20v2H2v-2zm2-8l4.5 5L12 6l3.5 11 4.5-5V2H4v10z"></path></svg>
+							VIP
+						</span>
+					}
 				</div>
-				<div class="auth-links">
+				<div class="auth-links" style="display: flex; align-items: center; gap: 1rem;">
+					<!-- Persistent Status Indicator -->
+					<div class="user-status-indicator" style="display: flex; align-items: center; font-size: 0.8rem; font-family: 'Kanit', sans-serif;">
+						if props.IsLoggedIn {
+							if props.IsVIP {
+								<span style="background: linear-gradient(135deg, #FFD700 0%, #DAA520 100%); color: #fff; padding: 2px 8px; border-radius: 20px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2);">สมาชิก VIP</span>
+							} else {
+								<span style="background: #eef2f7; color: #4a5568; padding: 2px 8px; border-radius: 20px; font-weight: 500; border: 1px solid #cbd5e0;">สมาชิกทั่วไป</span>
+							}
+						} else {
+							<span style="background: #f7fafc; color: #a0aec0; padding: 2px 8px; border-radius: 20px; font-weight: 400; border: 1px solid #edf2f7; font-style: italic;">บุคคลทั่วไป</span>
+						}
+					</div>
+
 					if props.IsLoggedIn {
 						if props.IsAdmin {
 							<a href="/admin" class={ "nav-item", templ.KV("active", props.ActivePage == "admin") } title="Admin Dashboard">

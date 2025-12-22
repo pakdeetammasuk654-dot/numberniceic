@@ -13,4 +13,5 @@ type MemberRepository interface {
 	// Admin methods
 	GetAllMembers() ([]domain.Member, error)
 	UpdateStatus(id int, status int) error
+	SetVIP(id int, isVIP bool) error
 }

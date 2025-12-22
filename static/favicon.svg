@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <radialGradient id="auraGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="60%" stop-color="#ff9800" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#ff9800" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  
+  <!-- Outer Dashed Ring -->
+  <circle cx="50" cy="50" r="46" fill="none" stroke="#ff9800" stroke-width="1.5" stroke-dasharray="3 2" />
+  
+  <!-- Soft Aura Glow -->
+  <circle cx="50" cy="50" r="40" fill="url(#auraGradient)" />
+  
+  <!-- Main Solid Yellow Circle -->
+  <circle cx="50" cy="50" r="32" fill="#ffd600" />
+</svg>

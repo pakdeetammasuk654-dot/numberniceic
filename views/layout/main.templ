@@ -2,13 +2,16 @@ package layout
 
 import "numberniceic/views/components"
 
-templ Main(title string, isLoggedIn bool, isAdmin bool, activePage string, toastSuccess string, toastError string, content templ.Component) {
+templ Main(title string, isLoggedIn bool, isAdmin bool, isVIP bool, activePage string, toastSuccess string, toastError string, content templ.Component) {
 	<!DOCTYPE html>
 	<html lang="th">
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>{ title } - NumberNiceIC</title>
+			<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2"/>
+			<link rel="icon" type="image/png" href="/favicon.png?v=2"/>
+			<link rel="shortcut icon" href="/favicon.ico?v=2"/>
 			<!-- Google Fonts -->
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -21,7 +24,11 @@ templ Main(title string, isLoggedIn bool, isAdmin bool, activePage string, toast
 			<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"/>
 		</head>
 		<body>
-			@components.Navbar(isLoggedIn, isAdmin, activePage)
+			<!-- Global Upgrade Modal Container -->
+			<div id="upgrade-modal-container" class="modal-overlay" style="display: none; z-index: 9999;">
+				<!-- HTMX will inject content here -->
+			</div>
+			@components.Navbar(isLoggedIn, isAdmin, isVIP, activePage)
 			<main>
 				@content
 			</main>

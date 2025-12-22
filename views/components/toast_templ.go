@@ -30,13 +30,13 @@ func Toast(success string, errorMsg string) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if success != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script>\n            Toastify({\n                text: { success },\n                duration: 3000,\n                gravity: \"top\",\n                position: \"center\",\n                style: {\n                    background: \"linear-gradient(to right, #00b09b, #96c93d)\",\n                },\n                stopOnFocus: true,\n            }).showToast();\n        </script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script>\n            Toastify({\n                text: \"{ success }\",\n                duration: 3000,\n                gravity: \"top\",\n                position: \"center\",\n                style: {\n                    background: \"linear-gradient(to right, #00b09b, #96c93d)\",\n                },\n                stopOnFocus: true,\n            }).showToast();\n        </script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if errorMsg != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<script>\n            Toastify({\n                text: { errorMsg },\n                duration: 3000,\n                gravity: \"top\",\n                position: \"center\",\n                style: {\n                    background: \"linear-gradient(to right, #ff5f6d, #ffc371)\",\n                },\n                stopOnFocus: true,\n            }).showToast();\n        </script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<script>\n            Toastify({\n                text: \"{ errorMsg }\",\n                duration: 3000,\n                gravity: \"top\",\n                position: \"center\",\n                style: {\n                    background: \"linear-gradient(to right, #ff5f6d, #ffc371)\",\n                },\n                stopOnFocus: true,\n            }).showToast();\n        </script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

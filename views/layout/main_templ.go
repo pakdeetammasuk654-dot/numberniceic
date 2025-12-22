@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import "numberniceic/views/components"
 
-func Main(title string, isLoggedIn bool, isAdmin bool, activePage string, toastSuccess string, toastError string, content templ.Component) templ.Component {
+func Main(title string, isLoggedIn bool, isAdmin bool, isVIP bool, activePage string, toastSuccess string, toastError string, content templ.Component) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -44,11 +44,11 @@ func Main(title string, isLoggedIn bool, isAdmin bool, activePage string, toastS
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " - NumberNiceIC</title><!-- Google Fonts --><link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin><link href=\"https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&family=Kanit:wght@400;700&display=swap\" rel=\"stylesheet\"><script src=\"https://unpkg.com/htmx.org@1.9.10\"></script><!-- Corrected CSS Path --><link rel=\"stylesheet\" href=\"/css/style.css\"><link rel=\"stylesheet\" href=\"/css/auth.css\"><!-- Toastify JS CDN --><link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css\"></head><body>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " - NumberNiceIC</title><link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg?v=2\"><link rel=\"icon\" type=\"image/png\" href=\"/favicon.png?v=2\"><link rel=\"shortcut icon\" href=\"/favicon.ico?v=2\"><!-- Google Fonts --><link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin><link href=\"https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&family=Kanit:wght@400;700&display=swap\" rel=\"stylesheet\"><script src=\"https://unpkg.com/htmx.org@1.9.10\"></script><!-- Corrected CSS Path --><link rel=\"stylesheet\" href=\"/css/style.css\"><link rel=\"stylesheet\" href=\"/css/auth.css\"><!-- Toastify JS CDN --><link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css\"></head><body><!-- Global Upgrade Modal Container --><div id=\"upgrade-modal-container\" class=\"modal-overlay\" style=\"display: none; z-index: 9999;\"><!-- HTMX will inject content here --></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = components.Navbar(isLoggedIn, isAdmin, activePage).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.Navbar(isLoggedIn, isAdmin, isVIP, activePage).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

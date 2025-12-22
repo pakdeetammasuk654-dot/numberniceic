@@ -48,6 +48,7 @@ func (h *MemberHandler) ShowRegisterPage(c *fiber.Ctx) error {
 		"ลงทะเบียน",
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
 		"register",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -97,6 +98,7 @@ func (h *MemberHandler) ShowLoginPage(c *fiber.Ctx) error {
 		"เข้าสู่ระบบ",
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
 		"login",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -112,6 +114,9 @@ func (h *MemberHandler) HandleLogin(c *fiber.Ctx) error {
 	sess, _ := h.store.Get(c)
 
 	member, err := h.service.Login(username, password)
+	if err == nil {
+		fmt.Printf("DEBUG: Login Success for %s. DB Status=%d. IsVIP=%v\n", member.Username, member.Status, member.IsVIP())
+	}
 	if err != nil {
 		log.Printf("Login Error: %v", err) // Log the error
 		sess.Set("toast_error", "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง")
@@ -170,6 +175,7 @@ func (h *MemberHandler) ShowDashboard(c *fiber.Ctx) error {
 		"แดชบอร์ด",
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
 		"dashboard",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -181,7 +187,8 @@ func (h *MemberHandler) ShowDashboard(c *fiber.Ctx) error {
 func (h *MemberHandler) HandleLogout(c *fiber.Ctx) error {
 	sess, _ := h.store.Get(c)
 
-	sess.Destroy() // Destroy the entire session on logout
+	sess.Destroy()              // Destroy the entire session on logout
+	c.ClearCookie("vip_status") // Clear VIP cookie from mock/legacy testing
 
 	// Create a new session to store the logout message
 	newSess, _ := h.store.Get(c)

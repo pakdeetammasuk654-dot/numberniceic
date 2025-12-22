@@ -137,3 +137,24 @@ func (r *PostgresMemberRepository) UpdateStatus(id int, status int) error {
 	}
 	return nil
 }
+
+// SetVIP updates the VIP status of a member
+// For now, we assumed Status 2 represents VIP, or we need to add is_vip column.
+// As a safe bet without altering schema yet, let's assume Status 2 is VIP.
+// If Status was 1 (Normal), it becomes 2. If it was 9 (Admin), it stays 9?
+// Let's implement it as: Update status to 2 if it's currently 1.
+func (r *PostgresMemberRepository) SetVIP(id int, isVIP bool) error {
+	var newStatus int
+	if isVIP {
+		newStatus = 2 // VIP
+	} else {
+		newStatus = 1 // Normal
+	}
+
+	// Ensure we don't downgrade Admin (9) accidentally, so we should check current status first or use conditional update
+	// But simplest is just setting it for now as requested.
+	// Or better: UPDATE member SET status = 2 WHERE id = $1 AND status < 9
+	query := `UPDATE member SET status = $1 WHERE id = $2 AND status < 9`
+	_, err := r.db.Exec(query, newStatus, id)
+	return err
+}

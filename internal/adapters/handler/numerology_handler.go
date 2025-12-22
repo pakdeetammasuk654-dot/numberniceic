@@ -93,6 +93,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 			ActivePage:   "analyzer",
 			ToastSuccess: c.Locals("toast_success"),
 			ToastError:   c.Locals("toast_error"),
+			IsVIP:        isVIP,
 		},
 		DefaultName:           name,
 		DefaultDay:            day,

@@ -1,0 +1,124 @@
+package payment
+
+
+
+templ UpgradeModal(qrCodeBase64 string, refNo string) {
+	<div id="upgrade-modal-content" class="modal-content" style="max-width: 500px; padding: 0;"
+		if refNo != "" {
+			hx-get={ "/api/payment/status/" + refNo }
+			hx-trigger="every 2s"
+			hx-swap="outerHTML"
+		}
+	>
+		<!-- Header -->
+		<div class="modal-header" style="background: linear-gradient(135deg, #2c3e50 0%, #000000 100%); color: #FFD700; padding: 1.5rem; border-top-left-radius: 12px; border-top-right-radius: 12px; position: relative;">
+			<h2 style="margin: 0; font-family: 'Kanit', sans-serif; display: flex; align-items: center; gap: 0.5rem; font-size: 1.5rem;">
+				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+				VIP Upgrade
+			</h2>
+			<button class="close-btn" onclick="document.getElementById('upgrade-modal-container').style.display='none'" style="color: #fff; position: absolute; right: 1.5rem; top: 1.5rem; font-size: 1.5rem;">&times;</button>
+		</div>
+
+		<!-- Body -->
+		<div class="modal-body" style="padding: 2rem;">
+			<div class="vip-benefits" style="margin-bottom: 2rem;">
+				<h3 style="font-family: 'Kanit', sans-serif; color: #333; margin-bottom: 1rem;">ปลดล็อกความสามารถเต็มรูปแบบ</h3>
+				<ul style="list-style: none; padding: 0; margin: 0; color: #555; font-size: 1rem; line-height: 1.6;">
+					<li style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+						วิเคราะห์ความหมายคู่เลขครบทุกคู่ (ไม่จำกัด)
+					</li>
+					<li style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+						ดูรายการชื่อมงคลทั้งหมด (ไม่จำกัด 3 ชื่อ)
+					</li>
+					<li style="display: flex; gap: 0.5rem; align-items: center;">
+						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+						วิเคราะห์เชิงลึกกราฟพลังเงา
+					</li>
+				</ul>
+			</div>
+
+			<div class="payment-section" style="text-align: center; border-top: 1px solid #eee; padding-top: 2rem;">
+				<div style="font-size: 1.2rem; font-weight: bold; color: #333; margin-bottom: 1rem;">
+					ราคา <span style="color: #e74c3c; font-size: 1.5rem;">1</span> บาท / ตลอดชีพ
+				</div>
+				
+				<!-- QR Code Display -->
+				<div class="qr-container" style="background: #fff; padding: 1rem; border-radius: 12px; display: inline-block; border: 2px dashed #ccc; margin-bottom: 1.5rem;">
+					if qrCodeBase64 != "" {
+						<img src={ qrCodeBase64 } alt="PromptPay QR" style="width: 200px; height: 200px; display: block;" />
+						<div style="margin-top: 0.5rem; font-size: 0.8rem; color: #333;">SCAN TO PAY VIA PROMPTPAY</div>
+						<div style="margin-top: 0.2rem; font-size: 0.8rem; color: #e74c3c; font-weight: bold;">(QR Code นี้มีอายุ 10 นาที)</div>
+					} else {
+						<!-- Fallback/Mock SVG -->
+						<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<rect x="3" y="3" width="7" height="7"></rect>
+							<rect x="14" y="3" width="7" height="7"></rect>
+							<rect x="14" y="14" width="7" height="7"></rect>
+							<rect x="3" y="14" width="7" height="7"></rect>
+							<path d="M10 3v4"></path>
+							<path d="M3 10h4"></path>
+							<path d="M14 10h.01"></path>
+							<path d="M10 14v.01"></path>
+							<path d="M17 10h4"></path>
+							<path d="M21 17h.01"></path>
+							<path d="M14 21h4"></path>
+							<path d="M10 21h-3"></path>
+						</svg>
+						<div style="margin-top: 0.5rem; font-size: 0.8rem; color: #888;">กำลังสร้าง QR CODE...</div>
+					}
+				</div>
+
+				<!-- Waiting Feedback Section -->
+				<div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 12px; border: 1px solid #eef2f7; text-align: left;">
+					<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+						<div class="loader-mini"></div>
+						<span style="font-family: 'Kanit', sans-serif; font-size: 0.95rem; color: #2c3e50; font-weight: 500;">ระบบกำลังตรวจสอบการชำระเงิน...</span>
+					</div>
+					<div style="font-family: 'Kanit', sans-serif; font-size: 0.85rem; color: #666; line-height: 1.5;">
+						<p style="margin: 0;">• เมื่อคุณโอนเงินเสร็จแล้ว ระบบจะได้รับสัญญาณยืนยันจากธนาคารโดยอัตโนมัติ</p>
+						<p style="margin: 5px 0;">• ขั้นตอนนี้อาจใช้เวลา <strong>10 ถึง 60 วินาที</strong> ขึ้นอยู่กับคิวการส่งข้อมูลของธนาคาร</p>
+						<p style="margin: 5px 0; color: #2980b9; background: #e3f2fd; padding: 5px; border-radius: 4px;">📱 <strong>ชำระในเครื่องนี้?</strong> แคปหน้าจอ/บันทึกรูป และนำไปสแกนในแอปธนาคารได้เลย เมื่อจ่ายเสร็จกลับมาที่เว็บ ระบบจะอัปเดตให้ทันทีครับ</p>
+						<p style="margin: 0; color: #e74c3c; font-weight: bold;">⚠️ กรุณาอย่าปิดหรือรีเฟรชหน้านี้ จนกว่าจะขึ้นข้อความสำเร็จ (หรือกลับมาดูใหม่ได้ที่แดชบอร์ด)</p>
+					</div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	<style type="text/css">
+		.loader-mini {
+			width: 18px;
+			height: 18px;
+			border: 2px solid #ddd;
+			border-top: 2px solid #2c3e50;
+			border-radius: 50%;
+			animation: spin 1s linear infinite;
+			display: inline-block;
+			vertical-align: middle;
+		}
+		@keyframes spin {
+			0% { transform: rotate(0deg); }
+			100% { transform: rotate(360deg); }
+		}
+	</style>
+}
+
+templ PaymentSuccess() {
+	<div id="upgrade-modal-content" class="modal-content" style="max-width: 500px; padding: 2rem; text-align: center;">
+		<div style="margin-bottom: 1.5rem;">
+			<div style="width: 80px; height: 80px; background: #27ae60; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);">
+				<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+			</div>
+		</div>
+		<h2 style="font-family: 'Kanit', sans-serif; color: #333; margin-bottom: 1rem;">ชำระเงินสำเร็จ!</h2>
+		<p style="color: #666; margin-bottom: 2rem; font-size: 1.1rem;">
+			ยินดีต้อนรับสู่สถานะ <span style="color: #FFD700; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">VIP Member</span><br>
+			คุณสามารถเข้าถึงข้อมูลเชิงลึกได้ทั้งหมดแล้ว
+		</p>
+		<button onclick="window.location.reload()" style="background: #2c3e50; color: white; border: none; padding: 0.8rem 2rem; border-radius: 30px; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); transition: transform 0.2s;">
+			เริ่มใช้งาน VIP Class
+		</button>
+	</div>
+}

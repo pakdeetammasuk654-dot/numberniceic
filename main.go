@@ -71,9 +71,43 @@ func main() {
 		sess, _ := store.Get(c)
 
 		// Set login status
-		c.Locals("IsLoggedIn", sess.Get("member_id") != nil)
+		var memberID int
+		if uid, ok := sess.Get("member_id").(int); ok {
+			memberID = uid
+			c.Locals("IsLoggedIn", true)
+		} else {
+			c.Locals("IsLoggedIn", false)
+		}
+
 		c.Locals("IsAdmin", sess.Get("is_admin") == true)
-		c.Locals("IsVIP", sess.Get("is_vip") == true)
+
+		// Check VIP Status Logic
+		isVipSession := sess.Get("is_vip") == true
+
+		// If Logged In, FORCE FETCH LATEST STATUS FROM DB to ensure real-time update after payment
+		if c.Locals("IsLoggedIn").(bool) {
+			// Fetch Member from DB to get real-time status
+			member, err := memberRepo.GetByID(memberID)
+			if err == nil && member != nil {
+				isRealTimeVIP := member.IsVIP()
+				c.Locals("IsVIP", isRealTimeVIP)
+
+				// Optional: Sync session if changed
+				if isRealTimeVIP != isVipSession {
+					sess.Set("is_vip", isRealTimeVIP)
+					sess.Save()
+				}
+				fmt.Printf("DEBUG: Users Logged In. DB Status=%d. RealTime IsVIP=%v\n", member.Status, isRealTimeVIP)
+			} else {
+				// Fallback to session if DB fail
+				c.Locals("IsVIP", isVipSession)
+				fmt.Printf("DEBUG: Users Logged In (DB Fail). Session IsVIP=%v\n", isVipSession)
+			}
+		} else {
+			// GUESTS ARE NEVER VIP. Force set to false to prevent unauthorized access via legacy cookies.
+			c.Locals("IsVIP", false)
+			fmt.Printf("DEBUG: Guest Access. Forcing IsVIP = false\n")
+		}
 
 		// Handle toast messages
 		if success := sess.Get("toast_success"); success != nil {
@@ -93,11 +127,17 @@ func main() {
 	})
 
 	// --- Handlers ---
+	// --- Handlers ---
 	numerologyHandler := handler.NewNumerologyHandler(numerologyCache, shadowCache, klakiniCache, numberPairCache, namesMiracleRepo, linguisticService, sampleNamesCache)
 	memberHandler := handler.NewMemberHandler(memberService, savedNameService, klakiniCache, numberPairCache, store)
 	savedNameHandler := handler.NewSavedNameHandler(savedNameService, klakiniCache, numberPairCache, store)
 	articleHandler := handler.NewArticleHandler(articleService, store)
 	adminHandler := handler.NewAdminHandler(adminService)
+
+	orderRepo := repository.NewPostgresOrderRepository(db)
+	paymentService := service.NewPaymentService(orderRepo, memberRepo)
+	// We need to pass store to paymentHandler if we want to read session user_id
+	paymentHandler := handler.NewPaymentHandler(paymentService, store)
 
 	// --- Middleware for Auth ---
 	authMiddleware := func(c *fiber.Ctx) error {
@@ -127,13 +167,18 @@ func main() {
 	app.Get("/", func(c *fiber.Ctx) error {
 		// Fetch pinned articles
 		articles, err := articleService.GetAllArticles()
+		if err != nil {
+			log.Printf("ERROR: Failed to fetch articles: %v", err)
+		}
 		var pinnedArticles []domain.Article
 		if err == nil {
+			log.Printf("DEBUG: Fetched %d articles total", len(articles))
 			for _, a := range articles {
 				if a.PinOrder > 0 && a.PinOrder <= 10 {
 					pinnedArticles = append(pinnedArticles, a)
 				}
 			}
+			log.Printf("DEBUG: Found %d pinned articles", len(pinnedArticles))
 		}
 
 		// Helper to get string from Locals safely
@@ -150,6 +195,7 @@ func main() {
 			"ยินดีต้อนรับ",
 			c.Locals("IsLoggedIn").(bool),
 			c.Locals("IsAdmin").(bool),
+			c.Locals("IsVIP").(bool),
 			"home",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
@@ -172,6 +218,7 @@ func main() {
 			"เกี่ยวกับเรา",
 			c.Locals("IsLoggedIn").(bool),
 			c.Locals("IsAdmin").(bool),
+			c.Locals("IsVIP").(bool),
 			"about",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
@@ -231,6 +278,13 @@ func main() {
 	admin.Post("/images", adminHandler.UploadImage)
 	admin.Delete("/images/:filename", adminHandler.DeleteImage)
 	admin.Get("/api/images", adminHandler.GetImagesJSON) // New API endpoint
+
+	// Payment Routes
+	app.Get("/payment/upgrade", paymentHandler.GetUpgradeModal)
+	app.Post("/api/mock-payment/success", paymentHandler.SimulatePaymentSuccess)
+	app.Get("/payment/reset", paymentHandler.ResetPayment)
+	app.Post("/api/pay/willback", paymentHandler.HandlePaymentWebhook)       // PaySolutions Webhook
+	app.Get("/api/payment/status/:refNo", paymentHandler.CheckPaymentStatus) // Polling Endpoint
 
 	log.Println("Starting server on port 3000...")
 	log.Fatal(app.Listen(":3000"))

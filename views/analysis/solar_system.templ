@@ -298,7 +298,12 @@ templ SolarSystem(props SolarSystemProps) {
 								🔒 เนื้อหานี้สำหรับสมาชิก VIP
 							</div>
 							<div style="margin-top: 10px;">
-								<a href="#" style="color: #1565C0; text-decoration: underline; font-family: 'Kanit', sans-serif;">สมัครสมาชิก VIP เพื่ออ่านต่อ</a>
+								<a href="#" 
+								   hx-get="/payment/upgrade" 
+								   hx-target="#upgrade-modal-container" 
+								   hx-swap="innerHTML"
+								   onclick="event.preventDefault(); document.getElementById('upgrade-modal-container').style.display='flex'"
+								   style="color: #1565C0; text-decoration: underline; font-family: 'Kanit', sans-serif;">สมัครสมาชิก VIP เพื่ออ่านต่อ</a>
 							</div>
 						</div>
 					}

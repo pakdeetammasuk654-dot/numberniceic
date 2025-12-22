@@ -4,7 +4,7 @@ templ Toast(success string, errorMsg string) {
 	if success != "" {
 		<script>
             Toastify({
-                text: { success },
+                text: "{ success }",
                 duration: 3000,
                 gravity: "top",
                 position: "center",
@@ -18,7 +18,7 @@ templ Toast(success string, errorMsg string) {
 	if errorMsg != "" {
 		<script>
             Toastify({
-                text: { errorMsg },
+                text: "{ errorMsg }",
                 duration: 3000,
                 gravity: "top",
                 position: "center",
