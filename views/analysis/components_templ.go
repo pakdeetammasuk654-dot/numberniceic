@@ -117,7 +117,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"similar-names-container fade-slide-in\" id=\"similar-names-section\"><div class=\"content-blur\"><!-- Header Section --><!-- Header Section --><!-- Header Section --><div class=\"speech-bubble-header\"><!-- Name, Status and Toggles grouped for single row cohesion --><div class=\"header-content-group\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"similar-names-container fade-slide-in\" id=\"similar-names-section\"><div class=\"content-blur\"><!-- Header Section --><!-- Header Section --><!-- Header Section --><div class=\"speech-bubble-header\"><!-- Name, Status and Toggles grouped for single row cohesion --><div class=\"header-content-group\"><div class=\"highlighted-name\" style=\"font-size: 1.5rem; line-height: 1.2;\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -130,7 +130,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 98, Col: 79}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 99, Col: 79}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -144,7 +144,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 100, Col: 17}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 101, Col: 17}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -152,7 +152,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"header-sub-info\"><span style=\"background: white; padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: 500; display: flex; align-items: center; gap: 0.3rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #eee;\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><div class=\"header-sub-info\"><span style=\"background: white; padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: 500; display: flex; align-items: center; gap: 0.3rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #eee;\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -163,7 +163,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(props.InputDay)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 107, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 109, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -181,7 +181,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(strings.Join(props.KlakiniChars, " "))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 112, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 114, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -276,7 +276,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 						var templ_7745c5c3_Var10 string
 						templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 191, Col: 83}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 193, Col: 83}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 						if templ_7745c5c3_Err != nil {
@@ -290,7 +290,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 						var templ_7745c5c3_Var11 string
 						templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 193, Col: 21}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 195, Col: 21}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 						if templ_7745c5c3_Err != nil {
@@ -310,7 +310,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pairInfo.Color)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 202, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 204, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -323,7 +323,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var13 string
 					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(name.SatNum[i])
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 202, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 204, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 					if templ_7745c5c3_Err != nil {
@@ -346,7 +346,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pairInfo.Color)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 210, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 212, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -359,7 +359,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var15 string
 					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(name.ShaNum[i])
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 210, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 212, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
@@ -404,7 +404,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var18 string
 					templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", name.TotalScore))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 217, Col: 48}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 219, Col: 48}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 					if templ_7745c5c3_Err != nil {
@@ -414,7 +414,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var19 string
 					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", name.TotalScore))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 219, Col: 47}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 221, Col: 47}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 					if templ_7745c5c3_Err != nil {
@@ -428,7 +428,7 @@ func SimilarNamesTable(props SimilarNamesProps) templ.Component {
 				var templ_7745c5c3_Var20 string
 				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", mul(name.Similarity, 100)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 224, Col: 109}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 226, Col: 109}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 				if templ_7745c5c3_Err != nil {

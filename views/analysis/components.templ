@@ -93,6 +93,7 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 			<div class="speech-bubble-header">
 				<!-- Name, Status and Toggles grouped for single row cohesion -->
 				<div class="header-content-group">
+					<div class="highlighted-name" style="font-size: 1.5rem; line-height: 1.2;">
 						for _, dc := range props.HeaderDisplayNameHTML {
 							if dc.IsBad {
 								<span class="klakini-char" style="color: #ff4757 !important;">{ dc.Char }</span>
@@ -100,6 +101,7 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 								{ dc.Char }
 							}
 						}
+					</div>
 					
 					<div class="header-sub-info">
 						<span style="background: white; padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: 500; display: flex; align-items: center; gap: 0.3rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #eee;">

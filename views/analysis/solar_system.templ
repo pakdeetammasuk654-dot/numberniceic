@@ -86,8 +86,9 @@ templ SolarSystem(props SolarSystemProps) {
 		<div class="solar-system">
 			<div class={ "sun", templ.KV("sun-dead", props.IsSunDead) }>
 				<div class="sun-name">
-					<div class="char-container">
+					<div class="char-container" style="display: block; text-align: center; width: 100%;">
 						if len(props.SunDisplayNameHTML) > 0 {
+							<div style="display: inline-block;">
 							for _, dc := range props.SunDisplayNameHTML {
 								if dc.IsBad {
 									<span class="klakini-char" style="color: #ff4757 !important;">{ dc.Char }</span>
@@ -95,6 +96,7 @@ templ SolarSystem(props SolarSystemProps) {
 									{ dc.Char }
 								}
 							}
+							</div>
 						} else {
 							<span>?</span>
 						}
