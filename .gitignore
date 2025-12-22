@@ -23,3 +23,5 @@ go.work
 
 # Secrets
 secrets.txt
+
+run_dev.sh
