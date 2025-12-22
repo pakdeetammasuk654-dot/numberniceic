@@ -1,8 +1,12 @@
 package handler
 
 import (
+	"fmt"
 	"net/url"
+	"numberniceic/internal/adapters/handler/templ_render"
 	"numberniceic/internal/core/service"
+	"numberniceic/views/layout"
+	"numberniceic/views/pages"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -26,12 +30,24 @@ func (h *ArticleHandler) ShowArticlesPage(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error loading articles")
 	}
 
-	return c.Render("articles", fiber.Map{
-		"title":      "บทความ",
-		"Articles":   articles,
-		"IsLoggedIn": c.Locals("IsLoggedIn"),
-		"ActivePage": "articles",
-	}, "layouts/main")
+	// Helper to get string from Locals safely
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		"บทความ",
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		"articles",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		pages.Articles(articles),
+	))
 }
 
 func (h *ArticleHandler) ShowArticleDetailPage(c *fiber.Ctx) error {
@@ -51,10 +67,22 @@ func (h *ArticleHandler) ShowArticleDetailPage(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).SendString("Article not found")
 	}
 
-	return c.Render("article_detail", fiber.Map{
-		"title":      article.Title,
-		"Article":    article,
-		"IsLoggedIn": c.Locals("IsLoggedIn"),
-		"ActivePage": "articles",
-	}, "layouts/main")
+	// Helper to get string from Locals safely
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		article.Title,
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		"articles",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		pages.ArticleDetail(article),
+	))
 }

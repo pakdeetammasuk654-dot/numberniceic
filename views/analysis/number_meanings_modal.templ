@@ -1,0 +1,26 @@
+package analysis
+
+import "numberniceic/internal/core/domain"
+
+templ NumberMeaningsModal(meanings []domain.NumberPairMeaning) {
+	<div class="modal-header">
+		<h2>ความหมายคู่เลข</h2>
+		<button class="close-btn" onclick="document.getElementById('modal-container').style.display='none'">&times;</button>
+	</div>
+	<div class="modal-body">
+		for _, m := range meanings {
+			<details class="accordion-item">
+				<summary class="accordion-header">
+					<span class="pair-number-badge" style={ "background-color: " + m.Color + ";" }>{ m.PairNumber }</span>
+					<span class="pair-desc">{ m.MiracleDesc }</span>
+				</summary>
+				<div class="accordion-content">
+					<p>{ m.MiracleDetail }</p>
+				</div>
+			</details>
+		}
+		if len(meanings) == 0 {
+			<p>ไม่พบข้อมูลความหมายของคู่เลข</p>
+		}
+	</div>
+}

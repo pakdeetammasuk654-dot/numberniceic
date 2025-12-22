@@ -3,36 +3,24 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"html/template"
 	"log"
 	"numberniceic/internal/adapters/cache"
 	"numberniceic/internal/adapters/handler"
+	"numberniceic/internal/adapters/handler/templ_render"
 	"numberniceic/internal/adapters/repository"
+	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/service"
+	"numberniceic/views/layout"
+	"numberniceic/views/pages"
 	"os"
-	"reflect"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/session"
-	"github.com/gofiber/template/html/v2"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
-
-// toFloat64 helper
-func toFloat64(v interface{}) (float64, error) {
-	val := reflect.ValueOf(v)
-	switch val.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return float64(val.Int()), nil
-	case reflect.Float32, reflect.Float64:
-		return val.Float(), nil
-	default:
-		return 0, fmt.Errorf("unable to convert %T to float64", v)
-	}
-}
 
 func main() {
 	log.Println("--- STARTING APPLICATION ---")
@@ -47,34 +35,6 @@ func main() {
 	if apiKey == "" {
 		log.Println("CRITICAL WARNING: GEMINI_API_KEY is empty!")
 	}
-
-	// Explicitly define the layout for the template engine
-	engine := html.New("./views", ".html")
-	engine.Reload(true)
-	// engine.Layout("main") // REMOVED: This causes recursive layout calls when templates also define it.
-
-	// --- Template Functions ---
-	engine.AddFunc("mul", func(a, b interface{}) (float64, error) {
-		fa, _ := toFloat64(a)
-		fb, _ := toFloat64(b)
-		return fa * fb, nil
-	})
-	engine.AddFunc("div", func(a, b interface{}) (float64, error) {
-		fa, _ := toFloat64(a)
-		fb, _ := toFloat64(b)
-		if fb == 0 {
-			return 0, nil
-		}
-		return fa / fb, nil
-	})
-	engine.AddFunc("add", func(a, b interface{}) (float64, error) {
-		fa, _ := toFloat64(a)
-		fb, _ := toFloat64(b)
-		return fa + fb, nil
-	})
-	engine.AddFunc("mod", func(a, b int) int { return a % b })
-	engine.AddFunc("printf", fmt.Sprintf)
-	engine.AddFunc("HTML", func(s string) template.HTML { return template.HTML(s) })
 
 	db := setupDatabase()
 	defer db.Close()
@@ -102,7 +62,7 @@ func main() {
 	})
 
 	// --- Fiber App ---
-	app := fiber.New(fiber.Config{Views: engine})
+	app := fiber.New()
 	app.Use(recover.New())
 	app.Static("/", "./static")
 
@@ -135,7 +95,7 @@ func main() {
 	// --- Handlers ---
 	numerologyHandler := handler.NewNumerologyHandler(numerologyCache, shadowCache, klakiniCache, numberPairCache, namesMiracleRepo, linguisticService, sampleNamesCache)
 	memberHandler := handler.NewMemberHandler(memberService, savedNameService, klakiniCache, numberPairCache, store)
-	savedNameHandler := handler.NewSavedNameHandler(savedNameService, store)
+	savedNameHandler := handler.NewSavedNameHandler(savedNameService, klakiniCache, numberPairCache, store)
 	articleHandler := handler.NewArticleHandler(articleService, store)
 	adminHandler := handler.NewAdminHandler(adminService)
 
@@ -167,7 +127,7 @@ func main() {
 	app.Get("/", func(c *fiber.Ctx) error {
 		// Fetch pinned articles
 		articles, err := articleService.GetAllArticles()
-		var pinnedArticles []interface{} // Use interface{} or domain.Article if imported
+		var pinnedArticles []domain.Article
 		if err == nil {
 			for _, a := range articles {
 				if a.PinOrder > 0 && a.PinOrder <= 10 {
@@ -176,27 +136,47 @@ func main() {
 			}
 		}
 
-		return c.Render("landing", fiber.Map{
-			"title":          "ยินดีต้อนรับ",
-			"IsLoggedIn":     c.Locals("IsLoggedIn"),
-			"IsAdmin":        c.Locals("IsAdmin"),
-			"toast_success":  c.Locals("toast_success"),
-			"toast_error":    c.Locals("toast_error"),
-			"ActivePage":     "home",
-			"PinnedArticles": pinnedArticles,
-		}, "layouts/main")
+		// Helper to get string from Locals safely
+		getLocStr := func(key string) string {
+			v := c.Locals(key)
+			if v == nil || v == "<nil>" {
+				return ""
+			}
+			return fmt.Sprintf("%v", v)
+		}
+
+		// Use Templ for rendering
+		return templ_render.Render(c, layout.Main(
+			"ยินดีต้อนรับ",
+			c.Locals("IsLoggedIn").(bool),
+			c.Locals("IsAdmin").(bool),
+			"home",
+			getLocStr("toast_success"),
+			getLocStr("toast_error"),
+			pages.Landing(pinnedArticles),
+		))
 	})
 
 	// About Us Page
 	app.Get("/about", func(c *fiber.Ctx) error {
-		return c.Render("about", fiber.Map{
-			"title":         "เกี่ยวกับเรา",
-			"IsLoggedIn":    c.Locals("IsLoggedIn"),
-			"IsAdmin":       c.Locals("IsAdmin"),
-			"toast_success": c.Locals("toast_success"),
-			"toast_error":   c.Locals("toast_error"),
-			"ActivePage":    "about",
-		}, "layouts/main")
+		// Helper to get string from Locals safely
+		getLocStr := func(key string) string {
+			v := c.Locals(key)
+			if v == nil || v == "<nil>" {
+				return ""
+			}
+			return fmt.Sprintf("%v", v)
+		}
+
+		return templ_render.Render(c, layout.Main(
+			"เกี่ยวกับเรา",
+			c.Locals("IsLoggedIn").(bool),
+			c.Locals("IsAdmin").(bool),
+			"about",
+			getLocStr("toast_success"),
+			getLocStr("toast_error"),
+			pages.About(),
+		))
 	})
 
 	// Analyzer Page

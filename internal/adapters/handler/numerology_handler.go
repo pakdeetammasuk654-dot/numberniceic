@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"numberniceic/internal/adapters/cache"
+	"numberniceic/internal/adapters/handler/templ_render"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
 	"numberniceic/internal/core/service"
@@ -226,23 +227,20 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 	return nil
 }
 
-// Placeholder for now
+// AnalyzeLinguistically analyzes the name using the linguistic service and renders the result.
 func (h *NumerologyHandler) AnalyzeLinguistically(c *fiber.Ctx) error {
 	name := service.SanitizeInput(c.Query("name"))
 	if name == "" {
 		return c.Status(fiber.StatusBadRequest).SendString("Name parameter is required.")
 	}
 
-	analysis, err := h.linguisticService.AnalyzeName(name)
+	analysisRes, err := h.linguisticService.AnalyzeName(name)
 	if err != nil {
 		log.Printf("Error from linguistic service: %v", err)
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to analyze name linguistically.")
 	}
 
-	return c.Render("partials/linguistic_modal", fiber.Map{
-		"Name":     name,
-		"Analysis": analysis,
-	})
+	return templ_render.Render(c, analysis.LinguisticModal(name, analysisRes))
 }
 
 func (h *NumerologyHandler) GetNumberMeanings(c *fiber.Ctx) error {
@@ -261,7 +259,7 @@ func (h *NumerologyHandler) GetNumberMeanings(c *fiber.Ctx) error {
 		return meanings[i].PairNumber < meanings[j].PairNumber
 	})
 
-	return c.Render("partials/number_meanings_modal", meanings)
+	return templ_render.Render(c, analysis.NumberMeaningsModal(meanings))
 }
 
 // calculateScoresAndHighlights calculates scores and also generates the DisplayNameHTML for each name.
@@ -505,112 +503,14 @@ func (h *NumerologyHandler) GetSolarSystem(c *fiber.Ctx) error {
 	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
 	disableKlakini := c.Query("disable_klakini") == "true" || c.Query("disable_klakini") == "on" || c.Query("disable_klakini") == "1"
 
-	if name == "" || day == "" {
-		return c.SendString("<!-- Missing parameters -->")
+	isVIP := c.Locals("IsVIP") == true
+	repoAllowKlakini := !disableKlakini
+	props, err := h.getSolarSystemProps(name, day, repoAllowKlakini, isVIP)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error loading data")
 	}
 
-	var analysisData fiber.Map
-	var analysisErr error
-
-	var allUniquePairs []domain.PairMeaningResult
-	numerologyData, numErr := h.numerologyCache.GetAll()
-	shadowData, shaErr := h.shadowCache.GetAll()
-	if numErr != nil || shaErr != nil {
-		analysisErr = fmt.Errorf("cache error: numErr=%v, shaErr=%v", numErr, shaErr)
-		log.Printf("Error in GetSolarSystem (Analysis): %v", analysisErr)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not process request."})
-	}
-
-	decodedParts := service.DecodeName(name)
-	var results []domain.DecodedResult
-	var totalNumerologyValue, totalShadowValue int
-	var klakiniChars []string
-
-	for _, thaiChar := range decodedParts {
-		if thaiChar.IsThai {
-			processComponent := func(charStr string) {
-				if charStr == "" {
-					return
-				}
-				numVal := numerologyData[charStr]
-				shaVal := shadowData[charStr]
-
-				isKlakini := false
-				for _, r := range charStr {
-					if h.klakiniCache.IsKlakini(day, r) {
-						isKlakini = true
-						break
-					}
-				}
-
-				results = append(results, domain.DecodedResult{Character: charStr, NumerologyValue: numVal, ShadowValue: shaVal, IsKlakini: isKlakini})
-				totalNumerologyValue += numVal
-				totalShadowValue += shaVal
-
-				if isKlakini && !contains(klakiniChars, charStr) {
-					klakiniChars = append(klakiniChars, charStr)
-				}
-			}
-
-			processComponent(thaiChar.Consonant)
-			processComponent(thaiChar.Vowel)
-			processComponent(thaiChar.ToneMark)
-		}
-	}
-
-	numerologyPairs := formatTotalValue(totalNumerologyValue)
-	shadowPairs := formatTotalValue(totalShadowValue)
-	numMeanings, numPos, numNeg := getMeaningsAndScores(numerologyPairs, h.numberPairCache)
-	shaMeanings, shaPos, shaNeg := getMeaningsAndScores(shadowPairs, h.numberPairCache)
-	grandTotalScore := numPos + numNeg + shaPos + shaNeg
-
-	seenPairs := make(map[string]bool)
-	for _, pair := range numMeanings {
-		if !seenPairs[pair.PairNumber] {
-			allUniquePairs = append(allUniquePairs, pair)
-			seenPairs[pair.PairNumber] = true
-		}
-	}
-	for _, pair := range shaMeanings {
-		if !seenPairs[pair.PairNumber] {
-			allUniquePairs = append(allUniquePairs, pair)
-			seenPairs[pair.PairNumber] = true
-		}
-	}
-	sort.Slice(allUniquePairs, func(i, j int) bool {
-		return allUniquePairs[i].Meaning.PairPoint > allUniquePairs[j].Meaning.PairPoint
-	})
-
-	analysisData = fiber.Map{
-		"total_numerology_value": totalNumerologyValue,
-		"total_shadow_value":     totalShadowValue,
-		"numerology_pairs":       numMeanings,
-		"shadow_pairs":           shaMeanings,
-		"klakini_characters":     klakiniChars,
-		"decoded_parts":          results,
-		"num_positive_score":     numPos,
-		"num_negative_score":     numNeg,
-		"sha_positive_score":     shaPos,
-		"sha_negative_score":     shaNeg,
-		"grand_total_score":      grandTotalScore,
-		"is_sun_dead":            grandTotalScore < 0,
-		"all_unique_pairs":       allUniquePairs,
-	}
-
-	sunDisplayChars := h.createDisplayChars(name, day)
-
-	responseData := fiber.Map{
-		"cleaned_name":       name,
-		"input_day":          service.GetThaiDay(day),
-		"input_day_raw":      day,
-		"DisableKlakini":     disableKlakini,
-		"SunDisplayNameHTML": sunDisplayChars,
-	}
-	for k, v := range analysisData {
-		responseData[k] = v
-	}
-
-	return c.Render("partials/solar_system", responseData)
+	return templ_render.Render(c, analysis.SolarSystem(props))
 }
 
 func (h *NumerologyHandler) GetSimilarNamesInitial(c *fiber.Ctx) error {

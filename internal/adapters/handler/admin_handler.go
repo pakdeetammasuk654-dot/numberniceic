@@ -3,8 +3,11 @@ package handler
 import (
 	"fmt"
 	"io/ioutil"
+	"numberniceic/internal/adapters/handler/templ_render"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/service"
+	"numberniceic/views/layout"
+	"numberniceic/views/pages/admin"
 	"os"
 	"path/filepath"
 	"sort"
@@ -25,12 +28,23 @@ func NewAdminHandler(service *service.AdminService) *AdminHandler {
 
 // --- Dashboard ---
 func (h *AdminHandler) ShowDashboard(c *fiber.Ctx) error {
-	return c.Render("admin_dashboard", fiber.Map{
-		"title":      "Admin Dashboard",
-		"IsLoggedIn": c.Locals("IsLoggedIn"),
-		"IsAdmin":    c.Locals("IsAdmin"),
-		"ActivePage": "admin",
-	}, "layouts/main")
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		"Admin Dashboard",
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.Dashboard(),
+	))
 }
 
 // --- User Management ---
@@ -39,13 +53,24 @@ func (h *AdminHandler) ShowUsersPage(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error loading users")
 	}
-	return c.Render("admin_users", fiber.Map{
-		"title":      "Manage Users",
-		"Users":      users,
-		"IsLoggedIn": c.Locals("IsLoggedIn"),
-		"IsAdmin":    c.Locals("IsAdmin"),
-		"ActivePage": "admin",
-	}, "layouts/main")
+
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		"Manage Users",
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.Users(users),
+	))
 }
 
 func (h *AdminHandler) UpdateUserStatus(c *fiber.Ctx) error {
@@ -65,8 +90,8 @@ func (h *AdminHandler) UpdateUserStatus(c *fiber.Ctx) error {
 
 	// Set a header to trigger a toast message on the client-side
 	c.Set("HX-Trigger", "show-toast")
-	// Render only the row partial
-	return c.Render("partials/admin_user_row", user)
+	// Render only the row partial (using Templ sub-component)
+	return templ_render.Render(c, admin.UserRow(*user))
 }
 
 func (h *AdminHandler) DeleteUser(c *fiber.Ctx) error {
@@ -97,30 +122,43 @@ func (h *AdminHandler) ShowArticlesPage(c *fiber.Ctx) error {
 		totalPages++
 	}
 
-	return c.Render("admin_articles", fiber.Map{
-		"title":       "Manage Articles",
-		"Articles":    articles,
-		"IsLoggedIn":  c.Locals("IsLoggedIn"),
-		"IsAdmin":     c.Locals("IsAdmin"),
-		"ActivePage":  "admin",
-		"CurrentPage": page,
-		"TotalPages":  totalPages,
-		"HasPrev":     page > 1,
-		"HasNext":     page < totalPages,
-		"PrevPage":    page - 1,
-		"NextPage":    page + 1,
-	}, "layouts/main")
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		"Manage Articles",
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.Articles(articles, page, totalPages, page > 1, page < totalPages, page-1, page+1),
+	))
 }
 
 func (h *AdminHandler) ShowCreateArticlePage(c *fiber.Ctx) error {
-	return c.Render("admin_article_form", fiber.Map{
-		"title":      "Create Article",
-		"IsLoggedIn": c.Locals("IsLoggedIn"),
-		"IsAdmin":    c.Locals("IsAdmin"),
-		"ActivePage": "admin",
-		"IsEdit":     false,
-		"TinyMCEKey": os.Getenv("TINY_MCE_KEY"),
-	}, "layouts/main")
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		"Create Article",
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.ArticleForm(false, nil, os.Getenv("TINY_MCE_KEY")),
+	))
 }
 
 func (h *AdminHandler) CreateArticle(c *fiber.Ctx) error {
@@ -176,15 +214,23 @@ func (h *AdminHandler) ShowEditArticlePage(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).SendString("Article not found")
 	}
 
-	return c.Render("admin_article_form", fiber.Map{
-		"title":      "Edit Article",
-		"IsLoggedIn": c.Locals("IsLoggedIn"),
-		"IsAdmin":    c.Locals("IsAdmin"),
-		"ActivePage": "admin",
-		"IsEdit":     true,
-		"Article":    article,
-		"TinyMCEKey": os.Getenv("TINY_MCE_KEY"),
-	}, "layouts/main")
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		"Edit Article",
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.ArticleForm(true, article, os.Getenv("TINY_MCE_KEY")),
+	))
 }
 
 func (h *AdminHandler) UpdateArticle(c *fiber.Ctx) error {
@@ -276,13 +322,23 @@ func (h *AdminHandler) ShowImagesPage(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.Render("admin_images", fiber.Map{
-		"title":      "Manage Images",
-		"Images":     images,
-		"IsLoggedIn": c.Locals("IsLoggedIn"),
-		"IsAdmin":    c.Locals("IsAdmin"),
-		"ActivePage": "admin",
-	}, "layouts/main")
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		"Manage Images",
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.Images(images),
+	))
 }
 
 func (h *AdminHandler) GetImagesJSON(c *fiber.Ctx) error {

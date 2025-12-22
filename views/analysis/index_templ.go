@@ -222,3 +222,5 @@ func Index(props IndexProps) templ.Component {
 		return nil
 	})
 }
+
+var _ = templruntime.GeneratedTemplate

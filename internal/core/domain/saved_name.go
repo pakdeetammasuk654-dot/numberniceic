@@ -14,3 +14,19 @@ type SavedName struct {
 	SatSum     int        `json:"sat_sum"`
 	ShaSum     int        `json:"sha_sum"`
 }
+
+type SavedNameDisplay struct {
+	SavedName
+	BirthDayThai    string
+	BirthDayRaw     string
+	KlakiniChars    []string
+	SatPairs        []PairInfo
+	ShaPairs        []PairInfo
+	DisplayNameHTML []DisplayChar
+	IsTopTier       bool
+}
+
+type PairInfo struct {
+	Number string
+	Color  string
+}

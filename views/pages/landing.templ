@@ -1,0 +1,348 @@
+package pages
+
+import "numberniceic/internal/core/domain"
+
+templ Landing(pinnedArticles []domain.Article) {
+	if len(pinnedArticles) > 0 {
+		<div class="hero-grid">
+			<!-- Left Side: 1st Article (Big) -->
+			if len(pinnedArticles) >= 1 {
+				<a href={ templ.SafeURL("/articles/" + pinnedArticles[0].Slug) } class="hero-main">
+					<img src={ pinnedArticles[0].ImageURL } alt={ pinnedArticles[0].Title }/>
+					<div class="hero-overlay">
+						<div style="width: 100%; overflow: hidden;">
+							<span class="hero-category">{ pinnedArticles[0].Category }</span>
+							<h3>{ pinnedArticles[0].Title }</h3>
+							<p class="hero-excerpt">{ pinnedArticles[0].Excerpt }</p>
+						</div>
+					</div>
+				</a>
+			}
+			<!-- Right Side: Next 3 Articles (Grid) + 1 List Block -->
+			<div class="hero-sub">
+				<!-- Item 1 (Image) -->
+				if len(pinnedArticles) >= 2 {
+					<a href={ templ.SafeURL("/articles/" + pinnedArticles[1].Slug) } class="hero-sub-item">
+						<img src={ pinnedArticles[1].ImageURL } alt={ pinnedArticles[1].TitleShort }/>
+						<div class="hero-overlay">
+							<h4>{ pinnedArticles[1].TitleShort }</h4>
+						</div>
+					</a>
+				}
+				<!-- Item 2 (Image) -->
+				if len(pinnedArticles) >= 3 {
+					<a href={ templ.SafeURL("/articles/" + pinnedArticles[2].Slug) } class="hero-sub-item">
+						<img src={ pinnedArticles[2].ImageURL } alt={ pinnedArticles[2].TitleShort }/>
+						<div class="hero-overlay">
+							<h4>{ pinnedArticles[2].TitleShort }</h4>
+						</div>
+					</a>
+				}
+				<!-- Item 3 (Image) -->
+				if len(pinnedArticles) >= 4 {
+					<a href={ templ.SafeURL("/articles/" + pinnedArticles[3].Slug) } class="hero-sub-item">
+						<img src={ pinnedArticles[3].ImageURL } alt={ pinnedArticles[3].TitleShort }/>
+						<div class="hero-overlay">
+							<h4>{ pinnedArticles[3].TitleShort }</h4>
+						</div>
+					</a>
+				}
+				<!-- Item 4 (List) -->
+				<div class="hero-sub-item article-list-slot">
+					for i, a := range pinnedArticles {
+						if i >= 4 && i < 7 {
+							<a href={ templ.SafeURL("/articles/" + a.Slug) } class="hero-list-item">
+								<span class="list-bullet">•</span> { a.TitleShort }
+							</a>
+						}
+					}
+					<a href="/articles" class="hero-list-item see-all-item">
+						ดูบทความทั้งหมด 
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							style="margin-left: 5px;"
+						>
+							<line x1="5" y1="12" x2="19" y2="12"></line>
+							<polyline points="12 5 19 12 12 19"></polyline>
+						</svg>
+					</a>
+				</div>
+			</div>
+		</div>
+	} else {
+		<div style="text-align: center; padding: 4rem;">
+			<p>ยังไม่มีบทความแนะนำ</p>
+		</div>
+	}
+	<style type="text/css">
+        /* Force remove top padding from main container for this page only */
+        main {
+            padding-top: 0 !important;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            /* 50% Left, 50% Right */
+            height: 500px;
+            /* Fixed height for desktop */
+            width: 100%;
+            gap: 0;
+            /* No gap */
+            margin-bottom: 2rem;
+            margin-top: 0;
+            /* Ensure no top margin */
+        }
+
+        .hero-main {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: block;
+            overflow: hidden;
+        }
+
+        .hero-sub {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            width: 100%;
+            height: 100%;
+            gap: 0;
+            /* No gap */
+        }
+
+        .hero-sub-item {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: block;
+            overflow: hidden;
+        }
+
+        .hero-main img,
+        .hero-sub-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+            display: block;
+        }
+
+        .hero-main:hover img,
+        .hero-sub-item:hover img {
+            transform: scale(1.05);
+        }
+
+        /* Common Overlay Styles */
+        .hero-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            pointer-events: none;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        /* --- Main Article Styles (Left) --- */
+        .hero-main .hero-overlay {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 1.25rem;
+
+            /* Text Box Margins relative to Image */
+            width: auto !important;
+            left: 0 !important;
+            right: 1.5rem !important;
+            bottom: 0.75rem !important;
+            border-radius: 0 !important;
+        }
+
+        .hero-category {
+            display: block;
+            color: #dc3545;
+            /* Red color */
+            font-family: 'Kanit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 400 !important;
+            /* Normal/thin weight */
+            text-transform: uppercase;
+            margin-bottom: -0.25rem !important;
+            /* Negative margin to pull closer */
+            position: relative;
+            z-index: 3;
+        }
+
+        .hero-main .hero-overlay h3 {
+            color: #222;
+            margin: 0;
+            font-family: 'Kanit', sans-serif;
+            font-weight: 300;
+            font-size: 1.5rem;
+            line-height: 1.4 !important;
+            /* Increased line-height significantly */
+            text-shadow: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-bottom: 0.1rem;
+            /* Add small padding to ensure descenders are visible */
+            position: relative;
+            /* Ensure z-index works */
+            z-index: 2;
+            /* Place above excerpt */
+        }
+
+        .hero-excerpt {
+            color: #555;
+            font-size: 1rem;
+            margin: 0;
+            /* Remove margin */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.4;
+            letter-spacing: 0.03em;
+            font-family: 'Kanit', sans-serif;
+            text-shadow: none;
+            position: relative;
+            /* Ensure z-index works */
+            z-index: 1;
+            /* Place below title */
+        }
+
+        /* --- Sub Articles Styles (Right) --- */
+        .hero-sub-item .hero-overlay {
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+            justify-content: center;
+            /* Center horizontally (flex item) */
+            align-items: flex-end;
+            /* Align to bottom */
+            text-align: center;
+            /* Center text inside */
+        }
+
+        .hero-sub-item .hero-overlay h4 {
+            color: white;
+            margin: 0;
+            font-family: 'Kanit', sans-serif;
+            font-size: 1.2rem;
+            line-height: 1.2;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            font-weight: 300 !important;
+            /* Thin font forced */
+            width: 100%;
+            /* Ensure text takes full width for centering */
+        }
+
+
+        /* --- List Slot Styles (Bottom Right) --- */
+        .article-list-slot {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0;
+            /* Remove padding to let items fill edge-to-edge */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hero-list-item {
+            flex: 1;
+            /* Distribute height equally (25% each) */
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            /* Horizontal padding */
+            color: white;
+            text-decoration: none;
+            font-family: 'Kanit', sans-serif;
+            font-size: 1rem;
+            font-weight: 300;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background-color 0.2s ease, padding-left 0.2s ease;
+            gap: 0.75rem;
+        }
+
+        .hero-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .hero-list-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding-left: 2rem;
+            /* Slide effect */
+            color: white;
+            /* Keep white on hover */
+        }
+
+        .list-bullet {
+            color: #FFD700;
+            font-size: 1.5rem;
+            line-height: 0;
+        }
+
+        .see-all-item {
+            font-weight: 500;
+            color: #FFD700 !important;
+            /* Gold color for distinction */
+        }
+
+        .see-all-item svg {
+            transition: transform 0.2s ease;
+        }
+
+        .see-all-item:hover svg {
+            transform: translateX(5px);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .hero-main {
+                height: 300px;
+            }
+
+            .hero-sub {
+                height: auto;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .hero-sub-item {
+                height: 200px;
+            }
+
+            .hero-main .hero-overlay h3 {
+                font-size: 1.25rem;
+            }
+
+            .hero-excerpt {
+                font-size: 0.9rem;
+                line-height: 1.3;
+            }
+
+            .hero-main .hero-overlay {
+                left: 0 !important;
+                right: 1rem !important;
+                bottom: 0.5rem !important;
+                /* Reduced for mobile too */
+                padding: 1rem;
+            }
+        }
+    </style>
+}

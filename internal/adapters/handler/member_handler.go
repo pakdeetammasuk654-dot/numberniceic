@@ -1,10 +1,14 @@
 package handler
 
 import (
+	"fmt"
 	"log"
 	"numberniceic/internal/adapters/cache"
+	"numberniceic/internal/adapters/handler/templ_render"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/service"
+	"numberniceic/views/layout"
+	"numberniceic/views/pages"
 	"strconv"
 	"strings"
 
@@ -20,22 +24,6 @@ type MemberHandler struct {
 	store            *session.Store
 }
 
-type SavedNameDisplay struct {
-	domain.SavedName
-	BirthDayThai    string
-	BirthDayRaw     string
-	KlakiniChars    []string
-	SatPairs        []PairInfo
-	ShaPairs        []PairInfo
-	DisplayNameHTML []domain.DisplayChar
-	IsTopTier       bool
-}
-
-type PairInfo struct {
-	Number string
-	Color  string
-}
-
 func NewMemberHandler(service *service.MemberService, savedNameService *service.SavedNameService, klakiniCache *cache.KlakiniCache, numberPairCache *cache.NumberPairCache, store *session.Store) *MemberHandler {
 	return &MemberHandler{
 		service:          service,
@@ -48,13 +36,23 @@ func NewMemberHandler(service *service.MemberService, savedNameService *service.
 
 // ShowRegisterPage renders the registration page.
 func (h *MemberHandler) ShowRegisterPage(c *fiber.Ctx) error {
-	return c.Render("register", fiber.Map{
-		"title":         "Register",
-		"IsLoggedIn":    c.Locals("IsLoggedIn"),
-		"toast_success": c.Locals("toast_success"),
-		"toast_error":   c.Locals("toast_error"),
-		"ActivePage":    "register",
-	}, "layouts/main")
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		"ลงทะเบียน",
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		"register",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		pages.Register(),
+	))
 }
 
 // HandleRegister handles the form submission from the registration page.
@@ -87,13 +85,23 @@ func (h *MemberHandler) HandleRegister(c *fiber.Ctx) error {
 
 // ShowLoginPage renders the login page.
 func (h *MemberHandler) ShowLoginPage(c *fiber.Ctx) error {
-	return c.Render("login", fiber.Map{
-		"title":         "Login",
-		"IsLoggedIn":    c.Locals("IsLoggedIn"),
-		"toast_success": c.Locals("toast_success"),
-		"toast_error":   c.Locals("toast_error"),
-		"ActivePage":    "login",
-	}, "layouts/main")
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		"เข้าสู่ระบบ",
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		"login",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		pages.Login(),
+	))
 }
 
 // HandleLogin handles the form submission from the login page.
@@ -146,23 +154,27 @@ func (h *MemberHandler) ShowDashboard(c *fiber.Ctx) error {
 	savedNames, err := h.savedNameService.GetSavedNames(memberID)
 	if err != nil {
 		// Log error but continue rendering dashboard without saved names
-		// log.Printf("Error getting saved names: %v", err)
 	}
 
 	displayNames := h.prepareDisplayNames(savedNames)
 
-	return c.Render("dashboard", fiber.Map{
-		"title":         "Dashboard",
-		"Username":      member.Username,
-		"Email":         member.Email,
-		"Tel":           member.Tel,
-		"IsLoggedIn":    c.Locals("IsLoggedIn"),
-		"IsAdmin":       c.Locals("IsAdmin"),
-		"toast_success": c.Locals("toast_success"),
-		"toast_error":   c.Locals("toast_error"),
-		"ActivePage":    "dashboard",
-		"SavedNames":    displayNames,
-	}, "layouts/main")
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		"แดชบอร์ด",
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		"dashboard",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		pages.Dashboard(member.Username, member.Email, member.Tel, displayNames),
+	))
 }
 
 // HandleLogout logs the user out.
@@ -179,8 +191,8 @@ func (h *MemberHandler) HandleLogout(c *fiber.Ctx) error {
 	return c.Redirect("/login")
 }
 
-func (h *MemberHandler) prepareDisplayNames(savedNames []domain.SavedName) []SavedNameDisplay {
-	displayNames := make([]SavedNameDisplay, len(savedNames))
+func (h *MemberHandler) prepareDisplayNames(savedNames []domain.SavedName) []domain.SavedNameDisplay {
+	displayNames := make([]domain.SavedNameDisplay, len(savedNames))
 	for i, sn := range savedNames {
 		satPairs := h.getPairsWithColors(sn.SatSum)
 		shaPairs := h.getPairsWithColors(sn.ShaSum)
@@ -194,7 +206,7 @@ func (h *MemberHandler) prepareDisplayNames(savedNames []domain.SavedName) []Sav
 			displayChars = append(displayChars, domain.DisplayChar{Char: string(r), IsBad: false})
 		}
 
-		displayNames[i] = SavedNameDisplay{
+		displayNames[i] = domain.SavedNameDisplay{
 			SavedName:       sn,
 			BirthDayThai:    service.GetThaiDay(sn.BirthDay),
 			BirthDayRaw:     strings.ToUpper(sn.BirthDay),
@@ -208,7 +220,7 @@ func (h *MemberHandler) prepareDisplayNames(savedNames []domain.SavedName) []Sav
 	return displayNames
 }
 
-func (h *MemberHandler) isAllPairsTopTier(pairs []PairInfo) bool {
+func (h *MemberHandler) isAllPairsTopTier(pairs []domain.PairInfo) bool {
 	for _, p := range pairs {
 		if meaning, ok := h.numberPairCache.GetMeaning(p.Number); ok {
 			switch meaning.PairType {
@@ -233,7 +245,7 @@ func (h *MemberHandler) getKlakiniChars(name, day string) []string {
 	return klakiniChars
 }
 
-func (h *MemberHandler) getPairsWithColors(sum int) []PairInfo {
+func (h *MemberHandler) getPairsWithColors(sum int) []domain.PairInfo {
 	s := strconv.Itoa(sum)
 	var pairs []string
 	if sum < 0 {
@@ -254,14 +266,14 @@ func (h *MemberHandler) getPairsWithColors(sum int) []PairInfo {
 		}
 	}
 
-	var pairInfos []PairInfo
+	var pairInfos []domain.PairInfo
 	for _, p := range pairs {
 		meaning, ok := h.numberPairCache.GetMeaning(p)
 		color := "#ccc" // Default color
 		if ok {
 			color = meaning.Color
 		}
-		pairInfos = append(pairInfos, PairInfo{Number: p, Color: color})
+		pairInfos = append(pairInfos, domain.PairInfo{Number: p, Color: color})
 	}
 	return pairInfos
 }
