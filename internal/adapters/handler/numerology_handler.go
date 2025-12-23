@@ -84,6 +84,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 	// Prepare Solar System Data (Synchronous/Fast)
 	solarProps, _ := h.getSolarSystemProps(name, day, repoAllowKlakini, isVIP)
 	solarProps.DisableKlakini = disableKlakini
+	solarProps.SkipTrigger = true
 
 	// Prepare Props for Index
 	indexProps := analysis.IndexProps{
@@ -119,7 +120,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 		// Create a "Lazy Component" that acts as the Results prop
 		lazyResults := templ.ComponentFunc(func(ctx context.Context, w2 io.Writer) error {
 			// A. Render Skeleton first
-			if err := analysis.Skeleton().Render(ctx, w2); err != nil {
+			if err := analysis.Skeleton("streaming-skeleton").Render(ctx, w2); err != nil {
 				return err
 			}
 
@@ -140,39 +141,8 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 			// C. Simulate Delay / Computation
 			// time.Sleep(1 * time.Second) // Optional: Simulate lag to see skeleton
 
-			// D. Fetch Actual Data (Logic from GetSimilarNames)
-			// Reuse logic from GetSimilarNames... refactor if possible, but for now duplicate/inline
-			// to ensure we have access to context.
-
-			// --- Logic Start ---
-			var similarNames []domain.SimilarNameResult
-			var err error
-			if isAuspicious {
-				similarNames, err = h.findAuspiciousNames(name, day, repoAllowKlakini)
-			} else {
-				similarNames, err = h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0, repoAllowKlakini)
-				if err == nil && len(similarNames) < PageSize {
-					needed := PageSize - len(similarNames)
-					excludedIDs := make([]int, len(similarNames))
-					for i, n := range similarNames {
-						excludedIDs[i] = n.NameID
-					}
-
-					preferredConsonant := h.findBestConsonant(name, day)
-					if repoAllowKlakini {
-						for _, r := range name {
-							if r != 'เ' && r != 'แ' && r != 'โ' && r != 'ใ' && r != 'ไ' {
-								preferredConsonant = string(r)
-								break
-							}
-						}
-					}
-					fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, preferredConsonant, day, needed, repoAllowKlakini, excludedIDs)
-					if fallbackErr == nil {
-						similarNames = append(similarNames, fallbackNames...)
-					}
-				}
-			}
+			// D. Fetch Actual Data
+			similarNames, err := h.fetchSimilarNames(name, day, isAuspicious, repoAllowKlakini)
 
 			if err != nil {
 				// Render Error
@@ -527,9 +497,7 @@ func (h *NumerologyHandler) GetSimilarNamesInitial(c *fiber.Ctx) error {
 func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 	name := service.SanitizeInput(c.Query("name"))
 	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
-	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on" || c.Query("auspicious") == "1"
 	disableKlakini := c.Query("disable_klakini") == "true" || c.Query("disable_klakini") == "on" || c.Query("disable_klakini") == "1"
-	repoAllowKlakini := !disableKlakini
 
 	if name == "" {
 		if isHtmxRequest(c) {
@@ -541,96 +509,47 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 		day = "sunday"
 	}
 
-	// Calculate Solar System Props
 	isVIP := c.Locals("IsVIP") == true
-	solarProps, err := h.getSolarSystemProps(name, day, repoAllowKlakini, isVIP)
-	if err != nil {
-		log.Printf("Error getting solar system props: %v", err)
-		return c.Status(fiber.StatusInternalServerError).SendString("Error loading data")
+
+	// Calculate Solar System Props (Fast)
+	solarProps, _ := h.getSolarSystemProps(name, day, !disableKlakini, isVIP)
+	solarProps.DisableKlakini = disableKlakini
+
+	return templ_render.Render(c, analysis.SolarSystem(solarProps))
+}
+
+func (h *NumerologyHandler) fetchSimilarNames(name, day string, isAuspicious, repoAllowKlakini bool) ([]domain.SimilarNameResult, error) {
+	if isAuspicious {
+		return h.findAuspiciousNames(name, day, repoAllowKlakini)
 	}
 
-	// Calculate Similar Names Props (Reuse logic from GetSimilarNames - partially duplicated for now to ensure correctness)
-	// Ideally refactor this logic into a helper method later.
-	var similarNames []domain.SimilarNameResult
-	if isAuspicious {
-		similarNames, err = h.findAuspiciousNames(name, day, repoAllowKlakini)
-	} else {
-		similarNames, err = h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0, repoAllowKlakini)
-		if err == nil && len(similarNames) < PageSize {
-			needed := PageSize - len(similarNames)
-			excludedIDs := make([]int, len(similarNames))
-			for i, n := range similarNames {
-				excludedIDs[i] = n.NameID
-			}
-			preferredConsonant := h.findBestConsonant(name, day)
-			if repoAllowKlakini {
-				for _, r := range name {
-					if r != 'เ' && r != 'แ' && r != 'โ' && r != 'ใ' && r != 'ไ' {
-						preferredConsonant = string(r)
-						break
-					}
+	similarNames, err := h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0, repoAllowKlakini)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(similarNames) < PageSize {
+		needed := PageSize - len(similarNames)
+		excludedIDs := make([]int, len(similarNames))
+		for i, n := range similarNames {
+			excludedIDs[i] = n.NameID
+		}
+
+		preferredConsonant := h.findBestConsonant(name, day)
+		if repoAllowKlakini {
+			for _, r := range name {
+				if r != 'เ' && r != 'แ' && r != 'โ' && r != 'ใ' && r != 'ไ' {
+					preferredConsonant = string(r)
+					break
 				}
 			}
-			fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, preferredConsonant, day, needed, repoAllowKlakini, excludedIDs)
-			if fallbackErr == nil {
-				similarNames = append(similarNames, fallbackNames...)
-			}
+		}
+		fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, preferredConsonant, day, needed, repoAllowKlakini, excludedIDs)
+		if fallbackErr == nil {
+			similarNames = append(similarNames, fallbackNames...)
 		}
 	}
-
-	if err != nil {
-		log.Printf("Error getting names: %v", err)
-		return c.SendString("Error loading names")
-	}
-
-	h.calculateScoresAndHighlights(similarNames, day)
-	displayNameHTML := h.createDisplayChars(name, day)
-	var klakiniChars []string
-	for _, dc := range displayNameHTML {
-		if dc.IsBad {
-			klakiniChars = append(klakiniChars, dc.Char)
-		}
-	}
-
-	tableProps := analysis.SimilarNamesProps{
-		SimilarNames:          similarNames,
-		IsAuspicious:          isAuspicious,
-		DisableKlakini:        disableKlakini,
-		DisplayNameHTML:       displayNameHTML,
-		HeaderDisplayNameHTML: h.createHeaderDisplayChars(name, day), // Add this line
-		KlakiniChars:          klakiniChars,
-		CleanedName:           name,
-		InputDay:              service.GetThaiDay(day),
-		AnimateHeader:         false,
-		IsVIP:                 isVIP,
-	}
-
-	// Render Both Components
-	// 1. Solar System (OOB)
-	// 2. Similar Names Table (Main Response)
-	c.Set("Content-Type", "text/html")
-
-	// Create a component that renders the SolarSystem wrapped in OOB div, AND the table
-	combined := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-		// OOB Swap for Solar System
-		if _, err := io.WriteString(w, `<div id="solar-system-wrapper" hx-swap-oob="true">`); err != nil {
-			return err
-		}
-		if err := analysis.SolarSystem(solarProps).Render(ctx, w); err != nil {
-			return err
-		}
-		if _, err := io.WriteString(w, `</div>`); err != nil {
-			return err
-		}
-
-		// Main Content (Table)
-		if err := analysis.SimilarNamesTable(tableProps).Render(ctx, w); err != nil {
-			return err
-		}
-		return nil
-	})
-
-	return combined.Render(c.Context(), c.Response().BodyWriter())
+	return similarNames, nil
 }
 
 func getMeaningsAndScores(pairs []string, pairCache *cache.NumberPairCache) ([]domain.PairMeaningResult, int, int) {
@@ -683,13 +602,7 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
-// Helper to calculate Solar System Props
 func (h *NumerologyHandler) getSolarSystemProps(name, day string, repoAllowKlakini bool, isVIP bool) (analysis.SolarSystemProps, error) {
-	numerologyData, numErr := h.numerologyCache.GetAll()
-	shadowData, shaErr := h.shadowCache.GetAll()
-	if numErr != nil || shaErr != nil {
-		return analysis.SolarSystemProps{}, fmt.Errorf("cache error")
-	}
 
 	decodedParts := service.DecodeName(name)
 	var results []domain.DecodedResult
@@ -702,8 +615,8 @@ func (h *NumerologyHandler) getSolarSystemProps(name, day string, repoAllowKlaki
 				if charStr == "" {
 					return
 				}
-				numVal := numerologyData[charStr]
-				shaVal := shadowData[charStr]
+				numVal, _ := h.numerologyCache.GetValue(charStr)
+				shaVal, _ := h.shadowCache.GetValue(charStr)
 
 				isKlakini := false
 				for _, r := range charStr {

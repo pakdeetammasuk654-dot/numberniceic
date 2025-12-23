@@ -24,6 +24,7 @@ type SolarSystemProps struct {
 	DecodedParts         []domain.DecodedResult // Type needs to be known or redefined
 	TotalNumerologyValue int
 	TotalShadowValue     int
+	SkipTrigger          bool
 }
 
 
@@ -341,4 +342,15 @@ templ SolarSystem(props SolarSystemProps) {
 			document.getElementById('meaning-modal-' + name).style.display = 'none';
 		}
 	</script>
+
+	<!-- Auto-trigger similar names update when solar system renders -->
+	if !props.SkipTrigger {
+		<div style="display:none;" 
+			hx-get="/similar-names" 
+			hx-trigger="load" 
+			hx-include="#name-form" 
+			hx-target="#results" 
+			hx-indicator="#results-wrapper">
+		</div>
+	}
 }

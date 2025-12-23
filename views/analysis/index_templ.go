@@ -69,7 +69,7 @@ func Index(props IndexProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" maxlength=\"30\" class=\"input-premium\" oninput=\"toggleClearButton()\" hx-get=\"/decode\" hx-target=\"#results\" hx-include=\"#name-form\" hx-trigger=\"input changed delay:500ms, load\" hx-indicator=\"body\"> <span id=\"clear-btn\" class=\"clear-btn\" onclick=\"clearName()\" style=\"right: 15px;\">×</span></div></div><div class=\"form-group\" style=\"margin-bottom: 0;\"><label for=\"day\" style=\"font-weight: bold; color: #333; margin-bottom: 0.25rem; display: block;\">วันเกิด</label><div class=\"input-wrapper\" style=\"box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 12px;\"><span class=\"input-icon\" style=\"color: #667eea;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\" ry=\"2\"></rect> <line x1=\"16\" x2=\"16\" y1=\"2\" y2=\"6\"></line> <line x1=\"8\" x2=\"8\" y1=\"2\" y2=\"6\"></line> <line x1=\"3\" x2=\"21\" y1=\"10\" y2=\"10\"></line></svg></span> <select id=\"day\" name=\"day\" required class=\"select-premium\" hx-get=\"/decode\" hx-target=\"#results\" hx-include=\"#name-form\" hx-trigger=\"change\" hx-indicator=\"body\"><option value=\"SUNDAY\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" maxlength=\"30\" class=\"input-premium\" oninput=\"toggleClearButton()\" hx-get=\"/decode\" hx-target=\"#solar-system-wrapper\" hx-include=\"#name-form\" hx-trigger=\"input changed delay:500ms, load\" hx-indicator=\"#solar-loading, #results-wrapper\"> <span id=\"clear-btn\" class=\"clear-btn\" onclick=\"clearName()\" style=\"right: 15px;\">×</span></div></div><div class=\"form-group\" style=\"margin-bottom: 0;\"><label for=\"day\" style=\"font-weight: bold; color: #333; margin-bottom: 0.25rem; display: block;\">วันเกิด</label><div class=\"input-wrapper\" style=\"box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 12px;\"><span class=\"input-icon\" style=\"color: #667eea;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\" ry=\"2\"></rect> <line x1=\"16\" x2=\"16\" y1=\"2\" y2=\"6\"></line> <line x1=\"8\" x2=\"8\" y1=\"2\" y2=\"6\"></line> <line x1=\"3\" x2=\"21\" y1=\"10\" y2=\"10\"></line></svg></span> <select id=\"day\" name=\"day\" required class=\"select-premium\" hx-get=\"/decode\" hx-target=\"#solar-system-wrapper\" hx-include=\"#name-form\" hx-trigger=\"change\" hx-indicator=\"#solar-loading, #results-wrapper\"><option value=\"SUNDAY\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -169,7 +169,7 @@ func Index(props IndexProps) templ.Component {
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(sample.AvatarURL)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 89, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 88, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -182,7 +182,7 @@ func Index(props IndexProps) templ.Component {
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(sample.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 90, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 89, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -193,7 +193,7 @@ func Index(props IndexProps) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</div></div><!-- Results Section for initial load and as a target --> <div id=\"results-container\"><div id=\"solar-system-wrapper\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</div></div><!-- Results Section for initial load and as a target --> <div id=\"results-container\"><div style=\"position: relative; margin-bottom: 1.5rem;\"><div id=\"solar-loading\" class=\"htmx-indicator\" style=\"position: absolute; inset: 0; background: rgba(255,255,255,0.7); z-index: 1000; border-radius: 12px; backdrop-filter: blur(2px); align-items: center; justify-content: center;\"><div style=\"display: flex; flex-direction: column; align-items: center; gap: 0.8rem;\"><svg class=\"spinner\" width=\"35px\" height=\"35px\" viewBox=\"0 0 66 66\" xmlns=\"http://www.w3.org/2000/svg\"><circle class=\"path\" fill=\"none\" stroke-width=\"6\" stroke-linecap=\"round\" cx=\"33\" cy=\"33\" r=\"30\" style=\"stroke: #667eea;\"></circle></svg> <span style=\"font-family: 'Kanit', sans-serif; color: #667eea; font-weight: 500; font-size: 1.1rem;\">กำลังโหลดข้อมูล...</span></div></div><div id=\"solar-system-wrapper\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -201,7 +201,15 @@ func Index(props IndexProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</div><div id=\"results\"><!-- This is where the streaming data will be injected -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</div></div><div id=\"results-wrapper\" class=\"htmx-indicator-container\"><style>\n\t\t\t\t\t.htmx-indicator-container.htmx-request #results { display: none; }\n\t\t\t\t\t.htmx-indicator-container.htmx-request #table-loading { display: block !important; }\n\t\t\t\t\t#table-loading { display: none; }\n\t\t\t\t</style><!-- Table Loading Indicator (Skeleton) --><div id=\"table-loading\" class=\"htmx-indicator\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = Skeleton("similar-names-skeleton").Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div><div id=\"results\"><!-- This is where the streaming data will be injected -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -209,7 +217,7 @@ func Index(props IndexProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div></div><!-- Back to Top Button --> <button id=\"back-to-top\" onclick=\"scrollToTop()\" title=\"Go to top\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15l-6-6-6 6\"></path></svg></button><!-- JavaScript --> <script>\n\t\t\tfunction selectName(name) {\n\t\t\t\tconst nameInput = document.getElementById('name');\n\t\t\t\tnameInput.value = name;\n\t\t\t\ttoggleClearButton();\n\t\t\n\t\t\t\t// Manually trigger the input event on the input field itself\n\t\t\t\thtmx.trigger('#name', 'input');\n\t\t\n\t\t\t\t// Scroll to the top of the form for better UX\n\t\t\t\tconst form = document.getElementById('name-form');\n\t\t\t\tif (form) {\n\t\t\t\t\tform.scrollIntoView({ behavior: 'smooth', block: 'start' });\n\t\t\t\t}\n\t\t\t}\n\t\t\n\t\t\tfunction toggleClearButton() {\n\t\t\t\tconst nameInput = document.getElementById('name');\n\t\t\t\tconst clearBtn = document.getElementById('clear-btn');\n\t\t\t\tif (nameInput && nameInput.value.length > 0) {\n\t\t\t\t\tclearBtn.style.display = 'block';\n\t\t\t\t} else if (clearBtn) {\n\t\t\t\t\tclearBtn.style.display = 'none';\n\t\t\t\t}\n\t\t\t}\n\t\t\n\t\t\tfunction clearName() {\n\t\t\t\tconst nameInput = document.getElementById('name');\n\t\t\t\tnameInput.value = '';\n\t\t\t\ttoggleClearButton();\n\t\t\t\tnameInput.focus();\n\t\t\t\t// Manually trigger the input event to clear the results via HTMX\n\t\t\t\thtmx.trigger('#name', 'input');\n\t\t\t}\n\t\t\n\t\t\t// Back to Top functionality\n\t\t\tconst backToTopButton = document.getElementById(\"back-to-top\");\n\t\t\n\t\t\twindow.onscroll = function () {\n\t\t\t\tif (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {\n\t\t\t\t\tbackToTopButton.style.display = \"flex\";\n\t\t\t\t} else {\n\t\t\t\t\tbackToTopButton.style.display = \"none\";\n\t\t\t\t}\n\t\t\t};\n\t\t\n\t\t\tfunction scrollToTop() {\n\t\t\t\twindow.scrollTo({ top: 0, behavior: 'smooth' });\n\t\t\t}\n\t\t\n\t\t\tdocument.addEventListener('DOMContentLoaded', function () {\n\t\t\t\ttoggleClearButton();\n\t\t\t\t// Trigger initial load from the input field\n\t\t\t\t// htmx.trigger('#name', 'load'); // REMOVED: Managed by streaming\n\t\t\t});\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</div></div></div><!-- Back to Top Button --> <button id=\"back-to-top\" onclick=\"scrollToTop()\" title=\"Go to top\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15l-6-6-6 6\"></path></svg></button><!-- JavaScript --> <script>\n\t\t\tfunction selectName(name) {\n\t\t\t\tconst nameInput = document.getElementById('name');\n\t\t\t\tnameInput.value = name;\n\t\t\t\ttoggleClearButton();\n\t\t\n\t\t\t\t// Manually trigger the input event on the input field itself\n\t\t\t\thtmx.trigger('#name', 'input');\n\t\t\n\t\t\t\t// Scroll to the top of the form for better UX\n\t\t\t\tconst form = document.getElementById('name-form');\n\t\t\t\tif (form) {\n\t\t\t\t\tform.scrollIntoView({ behavior: 'smooth', block: 'start' });\n\t\t\t\t}\n\t\t\t}\n\t\t\n\t\t\tfunction toggleClearButton() {\n\t\t\t\tconst nameInput = document.getElementById('name');\n\t\t\t\tconst clearBtn = document.getElementById('clear-btn');\n\t\t\t\tif (nameInput && nameInput.value.length > 0) {\n\t\t\t\t\tclearBtn.style.display = 'block';\n\t\t\t\t} else if (clearBtn) {\n\t\t\t\t\tclearBtn.style.display = 'none';\n\t\t\t\t}\n\t\t\t}\n\t\t\n\t\t\tfunction clearName() {\n\t\t\t\tconst nameInput = document.getElementById('name');\n\t\t\t\tnameInput.value = '';\n\t\t\t\ttoggleClearButton();\n\t\t\t\tnameInput.focus();\n\t\t\t\t// Manually trigger the input event to clear the results via HTMX\n\t\t\t\thtmx.trigger('#name', 'input');\n\t\t\t}\n\t\t\n\t\t\t// Back to Top functionality\n\t\t\tconst backToTopButton = document.getElementById(\"back-to-top\");\n\t\t\n\t\t\twindow.onscroll = function () {\n\t\t\t\tif (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {\n\t\t\t\t\tbackToTopButton.style.display = \"flex\";\n\t\t\t\t} else {\n\t\t\t\t\tbackToTopButton.style.display = \"none\";\n\t\t\t\t}\n\t\t\t};\n\t\t\n\t\t\tfunction scrollToTop() {\n\t\t\t\twindow.scrollTo({ top: 0, behavior: 'smooth' });\n\t\t\t}\n\t\t\n\t\t\tdocument.addEventListener('DOMContentLoaded', function () {\n\t\t\t\ttoggleClearButton();\n\t\t\t\t// Trigger initial load from the input field\n\t\t\t\t// htmx.trigger('#name', 'load'); // REMOVED: Managed by streaming\n\t\t\t});\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
