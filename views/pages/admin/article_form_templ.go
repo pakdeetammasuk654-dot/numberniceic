@@ -13,7 +13,7 @@ import (
 	"numberniceic/internal/core/domain"
 )
 
-func ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) templ.Component {
+func ArticleForm(isEdit bool, a *domain.Article) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -49,14 +49,14 @@ func ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) templ.Compon
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</h1><a href=\"/admin/articles\" class=\"link-button\">&larr; กลับไปหน้าจัดการบทความ</a></div><form action=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</h1><a href=\"/admin/articles\" class=\"link-button\">&larr; กลับไปหน้าจัดการบทความ</a></div><form id=\"article-form\" action=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 templ.SafeURL
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(getFormAction(isEdit, a)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 20, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 21, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -69,7 +69,7 @@ func ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) templ.Compon
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(getArticleField(isEdit, a, "Title"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 27, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 28, Col: 89}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -82,7 +82,7 @@ func ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) templ.Compon
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(getArticleField(isEdit, a, "Slug"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 31, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 32, Col: 86}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -95,7 +95,7 @@ func ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) templ.Compon
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(getArticleField(isEdit, a, "TitleShort"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 36, Col: 106}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 37, Col: 106}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -108,7 +108,7 @@ func ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) templ.Compon
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(getArticleField(isEdit, a, "Category"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 40, Col: 98}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 41, Col: 98}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -121,7 +121,7 @@ func ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) templ.Compon
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(getPinOrder(isEdit, a))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 44, Col: 103}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 45, Col: 103}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -139,7 +139,7 @@ func ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) templ.Compon
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(a.ImageURL)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 51, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 52, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -152,7 +152,7 @@ func ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) templ.Compon
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(a.ImageURL)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 52, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 53, Col: 69}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -170,7 +170,7 @@ func ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) templ.Compon
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(getArticleField(isEdit, a, "Excerpt"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 71, Col: 207}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 72, Col: 207}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -183,7 +183,7 @@ func ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) templ.Compon
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(getArticleField(isEdit, a, "Content"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 75, Col: 90}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 76, Col: 90}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -199,20 +199,7 @@ func ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) templ.Compon
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "> <label for=\"is_published\" style=\"margin-bottom: 0;\">เผยแพร่ทันที (Publish)</label></div><div class=\"button-group\" style=\"margin-top: 2rem;\"><button type=\"submit\" style=\"background-color: #007bff;\">บันทึกข้อมูล</button> <a href=\"/admin/articles\" class=\"secondary-btn\" style=\"text-decoration: none; display: inline-block; text-align: center;\">ยกเลิก</a></div></form><!-- Image Picker Modal --><div id=\"image-picker-modal\" class=\"modal-overlay\" style=\"display: none; z-index: 9999;\"><div class=\"modal-content\" style=\"max-width: 90vw; width: 1200px;\"><div class=\"modal-header\"><h2>เลือกรูปภาพ</h2><button type=\"button\" class=\"close-btn\" onclick=\"closeImagePicker()\">&times;</button></div><div class=\"modal-body\" id=\"image-picker-grid\" style=\"display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; max-height: 70vh;\"><!-- Images will be loaded here --></div></div></div><!-- TinyMCE CDN --><script src=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs("https://cdn.tiny.cloud/1/" + tinyMCEKey + "/tinymce/6/tinymce.min.js")
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/article_form.templ`, Line: 99, Col: 85}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" referrerpolicy=\"origin\"></script><script type=\"text/javascript\">\n        let imagePickerCallback = null; // Function to call when image is selected\n\n        function closeImagePicker() {\n            document.getElementById('image-picker-modal').style.display = 'none';\n            imagePickerCallback = null;\n        }\n\n        function loadImagesAndShowModal(callback) {\n            imagePickerCallback = callback;\n            const modal = document.getElementById('image-picker-modal');\n            const grid = document.getElementById('image-picker-grid');\n\n            // Fetch images from our API\n            fetch('/admin/api/images')\n                .then(response => response.json())\n                .then(images => {\n                    grid.innerHTML = ''; // Clear previous images\n                    images.forEach(imageName => {\n                        const imgContainer = document.createElement('div');\n                        imgContainer.style.cursor = 'pointer';\n                        imgContainer.style.border = '1px solid #ddd';\n                        imgContainer.style.borderRadius = '4px';\n                        imgContainer.style.overflow = 'hidden';\n                        imgContainer.style.position = 'relative';\n\n                        const img = document.createElement('img');\n                        img.src = `/uploads/${imageName}`;\n                        img.style.width = '100%';\n                        img.style.height = '120px';\n                        img.style.objectFit = 'cover';\n\n                        imgContainer.appendChild(img);\n\n                        imgContainer.onclick = () => {\n                            if (imagePickerCallback) {\n                                // TinyMCE expects the second argument to be meta object\n                                imagePickerCallback(`/uploads/${imageName}`, { alt: imageName });\n                            }\n                            closeImagePicker();\n                        };\n\n                        grid.appendChild(imgContainer);\n                    });\n                    modal.style.display = 'flex';\n                });\n        }\n\n        // Function for Cover Image Picker\n        function openImagePickerForCover() {\n            loadImagesAndShowModal((url) => {\n                document.getElementById('image_url').value = url;\n            });\n        }\n\n        tinymce.init({\n            selector: '#content',\n            plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',\n            toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',\n            height: 500,\n            menubar: false,\n            branding: false,\n            content_style: 'body { font-family:Sarabun,Helvetica,Arial,sans-serif; font-size:16px } p { text-indent: 2.5em; margin-bottom: 1em; }',\n\n            // Custom File Picker for TinyMCE\n            file_picker_callback: (cb, value, meta) => {\n                if (meta.filetype === 'image') {\n                    loadImagesAndShowModal(cb);\n                }\n            },\n        });\n    </script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "> <label for=\"is_published\" style=\"margin-bottom: 0;\">เผยแพร่ทันที (Publish)</label></div><div class=\"button-group\" style=\"margin-top: 2rem;\"><button type=\"submit\" style=\"background-color: #007bff;\">บันทึกข้อมูล</button> <a href=\"/admin/articles\" class=\"secondary-btn\" style=\"text-decoration: none; display: inline-block; text-align: center;\">ยกเลิก</a></div></form><!-- Image Picker Modal --><div id=\"image-picker-modal\" class=\"modal-overlay\" style=\"display: none; z-index: 9999;\"><div class=\"modal-content\" style=\"max-width: 90vw; width: 1200px;\"><div class=\"modal-header\"><h2>เลือกรูปภาพ</h2><button type=\"button\" class=\"close-btn\" onclick=\"closeImagePicker()\">&times;</button></div><div class=\"modal-body\" id=\"image-picker-grid\" style=\"display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; max-height: 70vh;\"><!-- Images will be loaded here --></div></div></div><!-- Dependencies --><script src=\"https://code.jquery.com/jquery-3.4.1.slim.min.js\" crossorigin=\"anonymous\"></script><link href=\"https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css\" rel=\"stylesheet\"><script src=\"https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js\"></script><script type=\"text/javascript\">\n        let imagePickerCallback = null;\n\n        function closeImagePicker() {\n            document.getElementById('image-picker-modal').style.display = 'none';\n            imagePickerCallback = null;\n        }\n\n        function loadImagesAndShowModal(callback) {\n            imagePickerCallback = callback;\n            const modal = document.getElementById('image-picker-modal');\n            const grid = document.getElementById('image-picker-grid');\n\n            fetch('/admin/api/images')\n                .then(response => response.json())\n                .then(images => {\n                    grid.innerHTML = '';\n                    images.forEach(imageName => {\n                        const imgContainer = document.createElement('div');\n                        imgContainer.style.cursor = 'pointer';\n                        imgContainer.style.border = '1px solid #ddd';\n                        imgContainer.style.borderRadius = '4px';\n                        imgContainer.style.overflow = 'hidden';\n                        imgContainer.style.position = 'relative';\n\n                        const img = document.createElement('img');\n                        img.src = `/uploads/${imageName}`;\n                        img.style.width = '100%';\n                        img.style.height = '120px';\n                        img.style.objectFit = 'cover';\n\n                        imgContainer.appendChild(img);\n                        imgContainer.onclick = () => {\n                            if (imagePickerCallback) {\n                                imagePickerCallback(`/uploads/${imageName}`);\n                            }\n                            closeImagePicker();\n                        };\n                        grid.appendChild(imgContainer);\n                    });\n                    modal.style.display = 'flex';\n                });\n        }\n\n        function openImagePickerForCover() {\n            loadImagesAndShowModal((url) => {\n                document.getElementById('image_url').value = url;\n            });\n        }\n\n        $(document).ready(function() {\n            // Custom button for Summernote\n            const LibraryButton = function (context) {\n                const ui = $.summernote.ui;\n                const button = ui.button({\n                    contents: '<i class=\"note-icon-picture\"/> Library',\n                    tooltip: 'เลือกรูปภาพจากคลัง',\n                    click: function () {\n                        loadImagesAndShowModal((url) => {\n                            context.invoke('editor.insertImage', url);\n                        });\n                    }\n                });\n                return button.render();\n            }\n\n            $('#content').summernote({\n                placeholder: 'เขียนเนื้อหาบทความที่นี่...',\n                tabsize: 2,\n                height: 500,\n                toolbar: [\n                    ['style', ['style']],\n                    ['font', ['bold', 'underline', 'clear']],\n                    ['color', ['color']],\n                    ['para', ['ul', 'ol', 'paragraph']],\n                    ['table', ['table']],\n                    ['insert', ['link', 'library', 'video']],\n                    ['view', ['fullscreen', 'codeview', 'help']]\n                ],\n                buttons: {\n                    library: LibraryButton\n                },\n                styleTags: [\n                    'p',\n                    { title: 'Blockquote', tag: 'blockquote', className: 'blockquote', value: 'blockquote' },\n                    'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'\n                ],\n                fontNames: ['Sarabun', 'Arial', 'Arial Black', 'Comic Sans MS', 'Courier New'],\n                addDefaultFonts: false\n            });\n        });\n    </script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

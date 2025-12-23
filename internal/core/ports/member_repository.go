@@ -5,6 +5,7 @@ import "numberniceic/internal/core/domain"
 type MemberRepository interface {
 	Create(member *domain.Member) error
 	GetByUsername(username string) (*domain.Member, error)
+	GetByEmail(email string) (*domain.Member, error)
 	GetByID(id int) (*domain.Member, error)
 	Update(member *domain.Member) error
 	Delete(id int) error

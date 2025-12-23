@@ -615,8 +615,9 @@ main {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0.5rem 0;
-    min-height: 240px;
+    padding: 1rem 0;
+    /* Restored some padding */
+    min-height: 280px;
     /* Aligned with solar system size */
     overflow: visible;
     position: relative;
@@ -766,55 +767,29 @@ main {
 
 .similar-names-table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
+    border-collapse: collapse;
+}
+
+.similar-names-table th,
+.similar-names-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
 }
 
 .similar-names-table th {
-    background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
-    color: #4a5568;
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
-    padding: 1rem 0.75rem;
-    border-bottom: 2px solid #e2e8f0;
+    background-color: #f7f7f7;
+    font-weight: bold;
 }
 
-.similar-names-table td {
-    padding: 1rem 0.75rem;
-    border-bottom: 1px solid #f0f4f8;
-    transition: all 0.2s ease;
+.similar-names-table .row-odd {
+    background-color: #fdfdfd;
 }
 
-.clickable-row:hover td {
-    background-color: rgba(102, 126, 234, 0.04);
+.similar-names-table .row-even {
+    background-color: #f9f9f9;
 }
-
-.name-cell {
-    font-weight: 600;
-    color: #2d3748;
-    font-family: 'Kanit', sans-serif;
-}
-
-.score-badge {
-    padding: 0.25rem 0.6rem;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 0.85rem;
-}
-
-.score-good {
-    background: rgba(72, 187, 120, 0.1);
-    color: #2f855a;
-}
-
-.score-bad {
-    background: rgba(245, 101, 101, 0.1);
-    color: #c53030;
-}
-
-
 
 .table-pairs-container {
     display: flex;
@@ -1869,7 +1844,7 @@ body.htmx-request .solar-system-container {
 
 .result-box-premium {
     padding: 1.5rem !important;
-    margin-top: 0.5rem !important;
+    margin-top: 1.5rem !important;
     position: relative;
     z-index: 5;
     background: rgba(255, 255, 255, 0.95) !important;
@@ -1946,33 +1921,4 @@ body.htmx-request .solar-system-container {
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
     border: 1px solid #f0f0f0;
-}
-
-@media (max-width: 480px) {
-    .avatars-grid {
-        gap: 0.5rem !important;
-        padding-left: 0.25rem !important;
-        padding-right: 0.25rem !important;
-        justify-content: space-between !important;
-    }
-
-    .avatar-img {
-        width: 52px !important;
-        height: 52px !important;
-    }
-
-    .avatar-premium {
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-        flex: 0 0 auto !important;
-        width: 60px !important;
-    }
-
-    .avatar-name {
-        font-size: 0.7rem !important;
-        white-space: nowrap;
-        max-width: 60px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
 }

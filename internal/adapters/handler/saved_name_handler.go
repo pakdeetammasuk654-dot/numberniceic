@@ -8,6 +8,7 @@ import (
 	"numberniceic/views/pages"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -78,8 +79,30 @@ func (h *SavedNameHandler) prepareDisplayNames(savedNames []domain.SavedName) []
 
 		// Create DisplayNameHTML
 		var displayChars []domain.DisplayChar
-		for _, r := range sn.Name {
-			displayChars = append(displayChars, domain.DisplayChar{Char: string(r), IsBad: false})
+		runes := []rune(sn.Name)
+		for j := 0; j < len(runes); j++ {
+			r := runes[j]
+			char := string(r)
+			isBad := h.klakiniCache.IsKlakini(sn.BirthDay, r)
+
+			// Check if the next character is a combining mark
+			if j+1 < len(runes) && unicode.Is(unicode.Mn, runes[j+1]) {
+				combiningChar := runes[j+1]
+				isCombiningBad := h.klakiniCache.IsKlakini(sn.BirthDay, combiningChar)
+
+				// If the base is not bad, but the combining mark is
+				if !isBad && isCombiningBad {
+					// Add the base character as good
+					displayChars = append(displayChars, domain.DisplayChar{Char: char, IsBad: false})
+					// Add the combining mark as bad
+					displayChars = append(displayChars, domain.DisplayChar{Char: string(combiningChar), IsBad: true})
+					j++ // Skip the combining mark in the next iteration
+					continue
+				}
+			}
+
+			// Default behavior: add the character with its own klakini status
+			displayChars = append(displayChars, domain.DisplayChar{Char: char, IsBad: isBad})
 		}
 
 		displayNames[i] = domain.SavedNameDisplay{
@@ -167,5 +190,12 @@ func (h *SavedNameHandler) DeleteSavedName(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not delete name"})
 	}
 
-	return c.SendString("") // Return empty string to remove element from DOM
+	// Fetch updated list to return OOB count and update the table
+	savedNames, err := h.service.GetSavedNames(userID.(int))
+	if err != nil {
+		return c.SendString("") // Fallback if list fetch fails
+	}
+	displayNames := h.prepareDisplayNames(savedNames)
+
+	return templ_render.Render(c, pages.SavedNamesList(displayNames))
 }

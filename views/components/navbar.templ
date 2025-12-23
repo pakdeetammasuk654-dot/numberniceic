@@ -7,7 +7,7 @@ templ Navbar(isLoggedIn bool, isAdmin bool, isVIP bool, activePage string) {
 			<div class="top-nav-row">
 				<div class="brand-logo">
 					<a href="/" class="brand-link">
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#FDB931" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 2px rgba(253, 185, 49, 0.5));"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
 						ชื่อดี.com
 						if isVIP {
 							<span style="font-size: 0.7em; background: linear-gradient(45deg, #FFD700, #DAA520); padding: 2px 6px; border-radius: 4px; color: #fff; margin-left: 5px; font-weight: bold;">VIP</span>
@@ -16,15 +16,7 @@ templ Navbar(isLoggedIn bool, isAdmin bool, isVIP bool, activePage string) {
 				</div>
 				<div class="auth-links" style="display: flex; align-items: center; gap: 1rem;">
 					<!-- Persistent Status Indicator -->
-					<div class="user-status-indicator" style="display: flex; align-items: center; font-size: 0.8rem; font-family: 'Kanit', sans-serif;">
-						if isLoggedIn {
-							if isVIP {
-								<span style="background: linear-gradient(135deg, #FFD700 0%, #DAA520 100%); color: #fff; padding: 2px 8px; border-radius: 20px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2);">สมาชิก VIP</span>
-							} else {
-								<span style="background: #eef2f7; color: #4a5568; padding: 2px 8px; border-radius: 20px; font-weight: 500; border: 1px solid #cbd5e0;">สมาชิกทั่วไป</span>
-							}
-						}
-					</div>
+
 
 					if isLoggedIn {
 						if isAdmin {

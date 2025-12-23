@@ -37,7 +37,10 @@ func (h *AdminHandler) ShowDashboard(c *fiber.Ctx) error {
 	}
 
 	return templ_render.Render(c, layout.Main(
-		"Admin Dashboard",
+		layout.SEOProps{
+			Title:  "Admin Dashboard",
+			OGType: "website",
+		},
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
@@ -64,7 +67,10 @@ func (h *AdminHandler) ShowUsersPage(c *fiber.Ctx) error {
 	}
 
 	return templ_render.Render(c, layout.Main(
-		"Manage Users",
+		layout.SEOProps{
+			Title:  "Manage Users",
+			OGType: "website",
+		},
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
@@ -133,7 +139,10 @@ func (h *AdminHandler) ShowArticlesPage(c *fiber.Ctx) error {
 	}
 
 	return templ_render.Render(c, layout.Main(
-		"Manage Articles",
+		layout.SEOProps{
+			Title:  "Manage Articles",
+			OGType: "website",
+		},
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
@@ -154,14 +163,17 @@ func (h *AdminHandler) ShowCreateArticlePage(c *fiber.Ctx) error {
 	}
 
 	return templ_render.Render(c, layout.Main(
-		"Create Article",
+		layout.SEOProps{
+			Title:  "Create Article",
+			OGType: "website",
+		},
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
-		admin.ArticleForm(false, nil, os.Getenv("TINY_MCE_KEY")),
+		admin.ArticleForm(false, nil),
 	))
 }
 
@@ -227,14 +239,17 @@ func (h *AdminHandler) ShowEditArticlePage(c *fiber.Ctx) error {
 	}
 
 	return templ_render.Render(c, layout.Main(
-		"Edit Article",
+		layout.SEOProps{
+			Title:  "Edit Article",
+			OGType: "website",
+		},
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
-		admin.ArticleForm(true, article, os.Getenv("TINY_MCE_KEY")),
+		admin.ArticleForm(true, article),
 	))
 }
 
@@ -336,7 +351,10 @@ func (h *AdminHandler) ShowImagesPage(c *fiber.Ctx) error {
 	}
 
 	return templ_render.Render(c, layout.Main(
-		"Manage Images",
+		layout.SEOProps{
+			Title:  "Manage Images",
+			OGType: "website",
+		},
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),

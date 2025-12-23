@@ -5,7 +5,7 @@ import (
 	"numberniceic/internal/core/domain"
 )
 
-templ ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) {
+templ ArticleForm(isEdit bool, a *domain.Article) {
 	<div style="margin-bottom: 2rem;">
 		<h1 style="font-family: 'Kanit', sans-serif;">
 			if isEdit {
@@ -17,6 +17,7 @@ templ ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) {
 		<a href="/admin/articles" class="link-button">&larr; กลับไปหน้าจัดการบทความ</a>
 	</div>
 	<form
+		id="article-form"
 		action={ templ.SafeURL(getFormAction(isEdit, a)) }
 		method="post"
 		enctype="multipart/form-data"
@@ -95,10 +96,12 @@ templ ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) {
 			</div>
 		</div>
 	</div>
-	<!-- TinyMCE CDN -->
-	<script src={ "https://cdn.tiny.cloud/1/" + tinyMCEKey + "/tinymce/6/tinymce.min.js" } referrerpolicy="origin"></script>
+	<!-- Dependencies -->
+	<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" crossorigin="anonymous"></script>
+	<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet"/>
+	<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
 	<script type="text/javascript">
-        let imagePickerCallback = null; // Function to call when image is selected
+        let imagePickerCallback = null;
 
         function closeImagePicker() {
             document.getElementById('image-picker-modal').style.display = 'none';
@@ -110,11 +113,10 @@ templ ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) {
             const modal = document.getElementById('image-picker-modal');
             const grid = document.getElementById('image-picker-grid');
 
-            // Fetch images from our API
             fetch('/admin/api/images')
                 .then(response => response.json())
                 .then(images => {
-                    grid.innerHTML = ''; // Clear previous images
+                    grid.innerHTML = '';
                     images.forEach(imageName => {
                         const imgContainer = document.createElement('div');
                         imgContainer.style.cursor = 'pointer';
@@ -130,43 +132,64 @@ templ ArticleForm(isEdit bool, a *domain.Article, tinyMCEKey string) {
                         img.style.objectFit = 'cover';
 
                         imgContainer.appendChild(img);
-
                         imgContainer.onclick = () => {
                             if (imagePickerCallback) {
-                                // TinyMCE expects the second argument to be meta object
-                                imagePickerCallback(`/uploads/${imageName}`, { alt: imageName });
+                                imagePickerCallback(`/uploads/${imageName}`);
                             }
                             closeImagePicker();
                         };
-
                         grid.appendChild(imgContainer);
                     });
                     modal.style.display = 'flex';
                 });
         }
 
-        // Function for Cover Image Picker
         function openImagePickerForCover() {
             loadImagesAndShowModal((url) => {
                 document.getElementById('image_url').value = url;
             });
         }
 
-        tinymce.init({
-            selector: '#content',
-            plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
-            toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
-            height: 500,
-            menubar: false,
-            branding: false,
-            content_style: 'body { font-family:Sarabun,Helvetica,Arial,sans-serif; font-size:16px } p { text-indent: 2.5em; margin-bottom: 1em; }',
+        $(document).ready(function() {
+            // Custom button for Summernote
+            const LibraryButton = function (context) {
+                const ui = $.summernote.ui;
+                const button = ui.button({
+                    contents: '<i class="note-icon-picture"/> Library',
+                    tooltip: 'เลือกรูปภาพจากคลัง',
+                    click: function () {
+                        loadImagesAndShowModal((url) => {
+                            context.invoke('editor.insertImage', url);
+                        });
+                    }
+                });
+                return button.render();
+            }
 
-            // Custom File Picker for TinyMCE
-            file_picker_callback: (cb, value, meta) => {
-                if (meta.filetype === 'image') {
-                    loadImagesAndShowModal(cb);
-                }
-            },
+            $('#content').summernote({
+                placeholder: 'เขียนเนื้อหาบทความที่นี่...',
+                tabsize: 2,
+                height: 500,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'underline', 'clear']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['table', ['table']],
+                    ['insert', ['link', 'library', 'video']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ],
+                buttons: {
+                    library: LibraryButton
+                },
+                styleTags: [
+                    'p',
+                    { title: 'Blockquote', tag: 'blockquote', className: 'blockquote', value: 'blockquote' },
+                    'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
+                ],
+                fontNames: ['Sarabun', 'Arial', 'Arial Black', 'Comic Sans MS', 'Courier New'],
+                addDefaultFonts: false
+            });
         });
     </script>
 }

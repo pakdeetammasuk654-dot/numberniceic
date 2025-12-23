@@ -22,26 +22,30 @@ templ UpgradeModal(qrCodeBase64 string, refNo string) {
 		<!-- Body -->
 		<div class="modal-body" style="padding: 2rem;">
 			<div class="vip-benefits" style="margin-bottom: 2rem;">
-				<h3 style="font-family: 'Kanit', sans-serif; color: #333; margin-bottom: 1rem;">ปลดล็อกความสามารถเต็มรูปแบบ</h3>
+				<h3 style="font-family: 'Kanit', sans-serif; color: #333; margin-bottom: 1rem;">สิทธิพิเศษสำหรับสมาชิก VIP</h3>
 				<ul style="list-style: none; padding: 0; margin: 0; color: #555; font-size: 1rem; line-height: 1.6;">
+					<li style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+						ปลดล็อกความสามารถเต็มรูปแบบ
+					</li>
 					<li style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
 						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
 						วิเคราะห์ความหมายคู่เลขครบทุกคู่ (ไม่จำกัด)
 					</li>
 					<li style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
 						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-						ดูรายการชื่อมงคลทั้งหมด (ไม่จำกัด 3 ชื่อ)
+						เป็นชื่อจริงในระบบกว่า 300,000 รายชื่อ
 					</li>
 					<li style="display: flex; gap: 0.5rem; align-items: center;">
 						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-						วิเคราะห์เชิงลึกกราฟพลังเงา
+						วิเคราะห์สามชั้นตรงตามตำราการตั้งชื่อ
 					</li>
 				</ul>
 			</div>
 
 			<div class="payment-section" style="text-align: center; border-top: 1px solid #eee; padding-top: 2rem;">
 				<div style="font-size: 1.2rem; font-weight: bold; color: #333; margin-bottom: 1rem;">
-					ราคา <span style="color: #e74c3c; font-size: 1.5rem;">1</span> บาท / ตลอดชีพ
+					ราคา <span style="color: #e74c3c; font-size: 1.5rem;">599</span> บาท / 1 ปี
 				</div>
 				
 				<!-- QR Code Display -->
@@ -82,6 +86,13 @@ templ UpgradeModal(qrCodeBase64 string, refNo string) {
 						<p style="margin: 5px 0; color: #2980b9; background: #e3f2fd; padding: 5px; border-radius: 4px;">📱 <strong>ชำระในเครื่องนี้?</strong> แคปหน้าจอ/บันทึกรูป และนำไปสแกนในแอปธนาคารได้เลย เมื่อจ่ายเสร็จกลับมาที่เว็บ ระบบจะอัปเดตให้ทันทีครับ</p>
 						<p style="margin: 0; color: #e74c3c; font-weight: bold;">⚠️ กรุณาอย่าปิดหรือรีเฟรชหน้านี้ จนกว่าจะขึ้นข้อความสำเร็จ (หรือกลับมาดูใหม่ได้ที่แดชบอร์ด)</p>
 					</div>
+				</div>
+
+				<!-- Expert Contact Support Note -->
+				<div style="margin-top: 1rem; text-align: center; font-size: 0.85rem; color: #718096; background: #fdfaea; padding: 0.75rem; border-radius: 10px; border: 1px dashed #f5e0a0;">
+					<p style="margin: 0; font-family: 'Sarabun', sans-serif;">
+						💡 สามารถติดต่อสอบถามคุณทญา ผู้เชี่ยวชาญการตั้งชื่อได้โดยตรงที่ <a href="tel:0936544442" style="color: #b45309; font-weight: bold; text-decoration: none;">093-654-4442</a>
+					</p>
 				</div>
 
 			</div>

@@ -40,7 +40,14 @@ func (h *ArticleHandler) ShowArticlesPage(c *fiber.Ctx) error {
 	}
 
 	return templ_render.Render(c, layout.Main(
-		"บทความ",
+		layout.SEOProps{
+			Title:       "บทความให้ความรู้อันเป็นมงคล",
+			Description: "คลังบทความเกี่ยวกับชื่อมงคล เลขศาสตร์ และความเชื่อโบราณ เพื่อเป็นแนวทางในการเลือกชื่อที่ดีที่สุดให้กับคุณและคนที่คุณรัก",
+			Keywords:    "บทความชื่อมงคล, ความรู้เรื่องชื่อ, เลขศาสตร์มงคล, พลังเงา",
+			Canonical:   "https://xn--b3cu8e7ah6h.com/articles",
+			OGImage:     "https://xn--b3cu8e7ah6h.com/static/og-articles.png",
+			OGType:      "website",
+		},
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
@@ -78,7 +85,14 @@ func (h *ArticleHandler) ShowArticleDetailPage(c *fiber.Ctx) error {
 	}
 
 	return templ_render.Render(c, layout.Main(
-		article.Title,
+		layout.SEOProps{
+			Title:       article.Title,
+			Description: article.Excerpt,
+			Keywords:    article.Category + ", " + article.Title,
+			Canonical:   fmt.Sprintf("https://xn--b3cu8e7ah6h.com/articles/%s", url.PathEscape(article.Slug)),
+			OGImage:     article.ImageURL,
+			OGType:      "article",
+		},
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),

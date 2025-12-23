@@ -138,6 +138,7 @@ func main() {
 	paymentService := service.NewPaymentService(orderRepo, memberRepo)
 	// We need to pass store to paymentHandler if we want to read session user_id
 	paymentHandler := handler.NewPaymentHandler(paymentService, store)
+	seoHandler := handler.NewSEOHandler(articleService)
 
 	// --- Middleware for Auth ---
 	authMiddleware := func(c *fiber.Ctx) error {
@@ -164,6 +165,9 @@ func main() {
 	// --- Routes ---
 
 	// Landing Page
+	app.Get("/sitemap.xml", seoHandler.GetSitemap)
+	app.Get("/robots.txt", seoHandler.GetRobots)
+
 	app.Get("/", func(c *fiber.Ctx) error {
 		// Fetch pinned articles
 		articles, err := articleService.GetAllArticles()
@@ -192,7 +196,14 @@ func main() {
 
 		// Use Templ for rendering
 		return templ_render.Render(c, layout.Main(
-			"ยินดีต้อนรับ",
+			layout.SEOProps{
+				Title:       "หน้าแรก",
+				Description: "ชื่อดี.com (NumberNiceIC) - เว็บไซต์วิเคราะห์ชื่อมงคลตามหลักเลขศาสตร์และพลังเงาแบบมืออาชีพ ค้นหาชื่อที่เหมาะสมกับดวงชะตาของคุณได้ง่ายๆ",
+				Keywords:    "ชื่อมงคล, วิเคราะห์ชื่อ, เลขศาสตร์, พลังเงา, ตั้งชื่อลูก, เปลี่ยนชื่อ",
+				Canonical:   "https://xn--b3cu8e7ah6h.com/",
+				OGImage:     "https://xn--b3cu8e7ah6h.com/static/og-image.png", // Assuming existence or fallback
+				OGType:      "website",
+			},
 			c.Locals("IsLoggedIn").(bool),
 			c.Locals("IsAdmin").(bool),
 			c.Locals("IsVIP").(bool),
@@ -215,7 +226,13 @@ func main() {
 		}
 
 		return templ_render.Render(c, layout.Main(
-			"เกี่ยวกับเรา",
+			layout.SEOProps{
+				Title:       "เกี่ยวกับเรา",
+				Description: "ทำความรู้จักกับ ชื่อดี.com ทีมงานผู้เชี่ยวชาญด้านเลขศาสาตร์ที่พร้อมช่วยเหลือคุณในการค้นหาชื่อที่เป็นมงคลและส่งเสริมชีวิต",
+				Keywords:    "เกี่ยวกับเรา, ทีมงานชื่อดี, ติดต่อเรา",
+				Canonical:   "https://xn--b3cu8e7ah6h.com/about",
+				OGType:      "website",
+			},
 			c.Locals("IsLoggedIn").(bool),
 			c.Locals("IsAdmin").(bool),
 			c.Locals("IsVIP").(bool),

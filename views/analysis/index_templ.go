@@ -56,20 +56,20 @@ func Index(props IndexProps) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Analyzer Form Container --> <div class=\"analyzer-container\" style=\"max-width: 600px; margin: 1rem auto; padding: 1.5rem; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 20px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15); border: 1px solid rgba(255, 255, 255, 0.18);\"><form id=\"name-form\"><!-- Hidden inputs --><input type=\"hidden\" name=\"auspicious\" id=\"main-auspicious\" value=\"false\"> <input type=\"hidden\" name=\"disable_klakini\" id=\"main-disable-klakini\" value=\"false\"><div class=\"form-group\" style=\"margin-bottom: 0.8rem;\"><div class=\"label-row\" style=\"margin-bottom: 0.25rem;\"><label for=\"name\" style=\"font-weight: bold; color: #333;\">ชื่อ</label> <small class=\"helper-text\" style=\"color: #667eea;\">วิเคราะห์อัตโนมัติเมื่อพิมพ์ชื่อ</small></div><div class=\"input-wrapper\" style=\"box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 12px; transition: transform 0.2s;\"><span class=\"input-icon\" style=\"color: #667eea;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"></path> <circle cx=\"12\" cy=\"7\" r=\"4\"></circle></svg></span> <input type=\"text\" id=\"name\" name=\"name\" required placeholder=\"เช่น อณัญญา\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Analyzer Form Container --> <div class=\"analyzer-container-premium\"><form id=\"name-form\"><!-- Hidden inputs --><input type=\"hidden\" name=\"auspicious\" id=\"main-auspicious\" value=\"false\"> <input type=\"hidden\" name=\"disable_klakini\" id=\"main-disable-klakini\" value=\"false\"><div class=\"form-group\" style=\"margin-bottom: 0.8rem;\"><div class=\"label-row\" style=\"margin-bottom: 0.25rem;\"><label for=\"name\" style=\"font-weight: bold; color: #333;\">ชื่อ</label> <small class=\"helper-text\" style=\"color: #667eea;\">วิเคราะห์อัตโนมัติเมื่อพิมพ์ชื่อ</small></div><div class=\"input-wrapper\" style=\"box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 12px; transition: transform 0.2s;\"><span class=\"input-icon\" style=\"color: #667eea;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"></path> <circle cx=\"12\" cy=\"7\" r=\"4\"></circle></svg></span> <input type=\"text\" id=\"name\" name=\"name\" required placeholder=\"เช่น ณเดชน์\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(props.DefaultName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 45, Col: 127}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 44, Col: 127}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" maxlength=\"30\" style=\"border: 2px solid #e0e0e0; border-radius: 12px; padding-left: 3rem; height: 50px; font-size: 1.1rem; transition: all 0.3s;\" onfocus=\"this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 4px rgba(102, 126, 234, 0.1)';\" onblur=\"this.style.borderColor='#e0e0e0'; this.style.boxShadow='none';\" oninput=\"toggleClearButton()\" hx-get=\"/decode\" hx-target=\"#results\" hx-include=\"#name-form\" hx-trigger=\"input changed delay:500ms, load\" hx-indicator=\"body\"> <span id=\"clear-btn\" class=\"clear-btn\" onclick=\"clearName()\" style=\"right: 15px;\">×</span></div></div><div class=\"form-group\" style=\"margin-bottom: 0;\"><label for=\"day\" style=\"font-weight: bold; color: #333; margin-bottom: 0.25rem; display: block;\">วันเกิด</label><div class=\"input-wrapper\" style=\"box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 12px;\"><span class=\"input-icon\" style=\"color: #667eea;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\" ry=\"2\"></rect> <line x1=\"16\" x2=\"16\" y1=\"2\" y2=\"6\"></line> <line x1=\"8\" x2=\"8\" y1=\"2\" y2=\"6\"></line> <line x1=\"3\" x2=\"21\" y1=\"10\" y2=\"10\"></line></svg></span> <select id=\"day\" name=\"day\" required style=\"border: 2px solid #e0e0e0; border-radius: 12px; padding-left: 3rem; height: 50px; font-size: 1rem; width: 100%; cursor: pointer; background-color: white; transition: all 0.3s;\" onfocus=\"this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 4px rgba(102, 126, 234, 0.1)';\" onblur=\"this.style.borderColor='#e0e0e0'; this.style.boxShadow='none';\" hx-get=\"/decode\" hx-target=\"#results\" hx-include=\"#name-form\" hx-trigger=\"change\" hx-indicator=\"body\"><option value=\"SUNDAY\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" maxlength=\"30\" class=\"input-premium\" oninput=\"toggleClearButton()\" hx-get=\"/decode\" hx-target=\"#results\" hx-include=\"#name-form\" hx-trigger=\"input changed delay:500ms, load\" hx-indicator=\"body\"> <span id=\"clear-btn\" class=\"clear-btn\" onclick=\"clearName()\" style=\"right: 15px;\">×</span></div></div><div class=\"form-group\" style=\"margin-bottom: 0;\"><label for=\"day\" style=\"font-weight: bold; color: #333; margin-bottom: 0.25rem; display: block;\">วันเกิด</label><div class=\"input-wrapper\" style=\"box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 12px;\"><span class=\"input-icon\" style=\"color: #667eea;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\" ry=\"2\"></rect> <line x1=\"16\" x2=\"16\" y1=\"2\" y2=\"6\"></line> <line x1=\"8\" x2=\"8\" y1=\"2\" y2=\"6\"></line> <line x1=\"3\" x2=\"21\" y1=\"10\" y2=\"10\"></line></svg></span> <select id=\"day\" name=\"day\" required class=\"select-premium\" hx-get=\"/decode\" hx-target=\"#results\" hx-include=\"#name-form\" hx-trigger=\"change\" hx-indicator=\"body\"><option value=\"SUNDAY\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -154,7 +154,7 @@ func Index(props IndexProps) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			for _, sample := range props.SampleNames {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"avatar-card\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"avatar-premium\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -169,7 +169,7 @@ func Index(props IndexProps) templ.Component {
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(sample.AvatarURL)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 93, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 89, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -182,7 +182,7 @@ func Index(props IndexProps) templ.Component {
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(sample.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 94, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 90, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {

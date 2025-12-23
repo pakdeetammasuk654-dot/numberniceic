@@ -8,7 +8,7 @@ package pages
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-func Login() templ.Component {
+func Login(username string, errorField string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -29,9 +29,71 @@ func Login() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script type=\"text/javascript\">document.body.classList.add('auth-page');</script><div class=\"auth-wrapper\"><div class=\"auth-container\"><div class=\"auth-header\"><h1 style=\"font-family: 'Kanit', sans-serif;\">เข้าสู่ระบบ</h1><p>Login to NumberNiceIC</p></div><form action=\"/login\" method=\"post\" class=\"auth-form\"><div class=\"form-group\"><label for=\"username\">ชื่อผู้ใช้ (Username)</label><div class=\"auth-input-wrapper\"><span class=\"auth-input-icon\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"></path><circle cx=\"12\" cy=\"7\" r=\"4\"></circle></svg></span> <input type=\"text\" id=\"username\" name=\"username\" placeholder=\"Enter your username\" required></div></div><div class=\"form-group\"><label for=\"password\">รหัสผ่าน (Password)</label><div class=\"auth-input-wrapper\"><span class=\"auth-input-icon\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"11\" width=\"18\" height=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg></span> <input type=\"password\" id=\"password\" name=\"password\" placeholder=\"Enter your password\" required></div></div><button type=\"submit\" class=\"auth-btn\">เข้าสู่ระบบ (Login)</button></form><div class=\"auth-footer\"><p>ยังไม่มีบัญชี? <a href=\"/register\" class=\"auth-link\">ลงทะเบียนที่นี่</a></p></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script type=\"text/javascript\">document.body.classList.add('auth-page');</script><div class=\"auth-wrapper\"><div class=\"auth-container\"><div class=\"auth-header\" style=\"text-align: center; margin-bottom: 2rem;\"><div style=\"display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 0.5rem;\"><div class=\"auth-header-icon\" style=\"background: rgba(102, 126, 234, 0.1); padding: 0.75rem; border-radius: 50%; color: #667eea; display: flex; align-items: center; justify-content: center;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4\"></path><polyline points=\"10 17 15 12 10 7\"></polyline><line x1=\"15\" y1=\"12\" x2=\"3\" y2=\"12\"></line></svg></div><h1 style=\"font-family: 'Kanit', sans-serif; margin: 0; font-size: 1.75rem;\">เข้าสู่ระบบ</h1></div><p style=\"margin: 0; color: #4a5568;\">เข้าใช้งานระบบ ชื่อดี.com</p></div><form action=\"/login\" method=\"post\" class=\"auth-form\"><div class=\"form-group\"><label for=\"username\">ชื่อผู้ใช้ (Username)</label><div class=\"auth-input-wrapper\"><span class=\"auth-input-icon\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"></path><circle cx=\"12\" cy=\"7\" r=\"4\"></circle></svg></span> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
+		}
+		if errorField == "username" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<input type=\"text\" id=\"username\" name=\"username\" class=\"auth-input-error\" placeholder=\"Username (ไทย/Eng)\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var2 string
+			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(username)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/login.templ`, Line: 24, Col: 136}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" required>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<input type=\"text\" id=\"username\" name=\"username\" placeholder=\"Username (ไทย/Eng)\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var3 string
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(username)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/login.templ`, Line: 26, Col: 111}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" required>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div></div><div class=\"form-group\"><label for=\"password\">รหัสผ่าน (Password)</label><div class=\"auth-input-wrapper\"><span class=\"auth-input-icon\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"11\" width=\"18\" height=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg></span> ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if errorField == "password" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<input type=\"password\" id=\"password\" name=\"password\" class=\"auth-input-error\" placeholder=\"Enter your password\" required>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<input type=\"password\" id=\"password\" name=\"password\" placeholder=\"Enter your password\" required>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div></div><button type=\"submit\" class=\"auth-btn\">เข้าสู่ระบบ (Login)</button></form><div class=\"auth-footer\"><p>ยังไม่มีบัญชี? <a href=\"/register\" class=\"auth-link\">ลงทะเบียนที่นี่</a></p></div></div></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if errorField != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<script>\n            setTimeout(() => {\n                const el = document.getElementById(\"{ errorField }\");\n                if (el) {\n                    el.focus();\n                    el.select();\n                }\n            }, 100);\n        </script>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
 		return nil
 	})

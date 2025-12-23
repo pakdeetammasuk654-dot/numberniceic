@@ -137,8 +137,7 @@ templ SolarSystem(props SolarSystemProps) {
 	</div>
 
 	<!-- Compact Result & Action Card -->
-	<div class="result-box fade-slide-in"
-		style="padding: 1rem; margin-top: 0.5rem; position: relative; z-index: 5; background: rgba(255,255,255,0.95); border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+	<div class="result-box-premium fade-slide-in">
 
 		<!-- Score Breakdown -->
 		<div style="display: flex; justify-content: center; align-items: center; gap: 1.5rem; margin-bottom: 0.8rem;">
@@ -176,7 +175,7 @@ templ SolarSystem(props SolarSystemProps) {
 		<div style="display: flex; gap: 0.5rem;">
 			<!-- Numerology Button -->
 			<button type="button" { templ.Attributes{"onclick": fmt.Sprintf("openMeaningModal('%s')", props.CleanedName)}... }
-				style="flex: 1; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 10px; padding: 0.6rem 0.3rem; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 0.4rem; color: #555;">
+				class="action-btn-premium">
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
 					stroke="#2196f3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
@@ -196,7 +195,7 @@ templ SolarSystem(props SolarSystemProps) {
 				hx-target="#linguistic-modal-content"
 				hx-swap="innerHTML" hx-indicator="#linguistic-loader"
 				onclick="document.getElementById('linguistic-modal-container').style.display='flex'"
-				style="flex: 1; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 10px; padding: 0.6rem 0.3rem; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 0.4rem; color: #555;">
+				class="action-btn-premium">
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
 					stroke="#4caf50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
@@ -209,7 +208,7 @@ templ SolarSystem(props SolarSystemProps) {
 			<button type="button" hx-post="/saved-names"
 				hx-vals={ fmt.Sprintf(`{"name": "%s", "birth_day": "%s", "total_score": "%d", "sat_sum": "%d", "sha_sum": "%d"}`, props.CleanedName, props.InputDayRaw, props.GrandTotalScore, props.TotalNumerologyValue, props.TotalShadowValue) }
 				hx-swap="none"
-				style="flex: 1; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 10px; padding: 0.6rem 0.3rem; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 0.4rem; color: #555;">
+				class="action-btn-premium">
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
 					stroke="#ff9800" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -218,6 +217,13 @@ templ SolarSystem(props SolarSystemProps) {
 				</svg>
 				<span style="font-family: 'Kanit', sans-serif; font-size: 0.85rem;">บันทึก</span>
 			</button>
+		</div>
+
+		<!-- Expert Contact Support Note -->
+		<div style="margin-top: 1rem; text-align: center; font-size: 0.85rem; color: #718096; background: #f8fafc; padding: 0.75rem; border-radius: 10px; border: 1px dashed #e2e8f0;">
+			<p style="margin: 0; font-family: 'Sarabun', sans-serif;">
+				💡 สามารถติดต่อสอบถามคุณทญา ผู้เชี่ยวชาญการตั้งชื่อได้โดยตรงที่ <a href="tel:0936544442" style="color: #3182ce; font-weight: bold; text-decoration: none;">093-654-4442</a>
+			</p>
 		</div>
 	</div>
 

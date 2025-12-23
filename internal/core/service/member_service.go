@@ -22,8 +22,10 @@ func (s *MemberService) Register(username, password, email, tel string) error {
 		return fmt.Errorf("error checking existing user: %w", err)
 	}
 	if existingMember != nil {
-		return errors.New("username already exists")
+		return errors.New("ชื่อผู้ใช้นี้มีคนใช้แล้ว")
 	}
+
+	// 2. Email uniqueness check removed per user request (email can be duplicate)
 
 	// 2. Hash the password (Note: Repository Create method already hashes password,
 	// but let's keep it consistent with previous logic or adjust repo.
@@ -60,21 +62,28 @@ func (s *MemberService) Register(username, password, email, tel string) error {
 }
 
 func (s *MemberService) Login(username, password string) (*domain.Member, error) {
-	// 1. Find the user
+	// 1. Find the user (try by username first, then by email)
 	member, err := s.repo.GetByUsername(username)
 	if err != nil {
 		return nil, fmt.Errorf("error finding user: %w", err)
 	}
+
 	if member == nil {
-		return nil, errors.New("invalid username or password")
+		// Try by email
+		member, err = s.repo.GetByEmail(username)
+		if err != nil {
+			return nil, fmt.Errorf("error finding email: %w", err)
+		}
+	}
+
+	if member == nil {
+		return nil, errors.New("ไม่พบ Username นี้หรือ Password ไม่ถูกต้อง")
 	}
 
 	// 2. Compare passwords
-	// Use the repo's CheckPassword method if available, or do it here.
-	// The repo has CheckPassword method.
 	err = s.repo.CheckPassword(member.Password, password)
 	if err != nil {
-		return nil, errors.New("invalid username or password")
+		return nil, errors.New("ไม่พบ Username นี้หรือ Password ไม่ถูกต้อง")
 	}
 
 	return member, nil

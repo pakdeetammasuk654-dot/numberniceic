@@ -20,8 +20,7 @@ templ Index(props IndexProps) {
 
 		
 		<!-- Analyzer Form Container -->
-		<div class="analyzer-container"
-			style="max-width: 600px; margin: 1rem auto; padding: 1.5rem; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 20px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15); border: 1px solid rgba(255, 255, 255, 0.18);">
+		<div class="analyzer-container-premium">
 		
 			<form id="name-form">
 				<!-- Hidden inputs -->
@@ -42,10 +41,8 @@ templ Index(props IndexProps) {
 								<circle cx="12" cy="7" r="4"></circle>
 							</svg>
 						</span>
-						<input type="text" id="name" name="name" required placeholder="เช่น อณัญญา" value={ props.DefaultName } maxlength="30"
-							style="border: 2px solid #e0e0e0; border-radius: 12px; padding-left: 3rem; height: 50px; font-size: 1.1rem; transition: all 0.3s;"
-							onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 4px rgba(102, 126, 234, 0.1)';"
-							onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none';"
+						<input type="text" id="name" name="name" required placeholder="เช่น ณเดชน์" value={ props.DefaultName } maxlength="30"
+							class="input-premium"
 							oninput="toggleClearButton()" hx-get="/decode" hx-target="#results" hx-include="#name-form"
 							hx-trigger="input changed delay:500ms, load" hx-indicator="body"/>
 						<span id="clear-btn" class="clear-btn" onclick="clearName()" style="right: 15px;">×</span>
@@ -66,9 +63,8 @@ templ Index(props IndexProps) {
 							</svg>
 						</span>
 						<select id="day" name="day" required
-							style="border: 2px solid #e0e0e0; border-radius: 12px; padding-left: 3rem; height: 50px; font-size: 1rem; width: 100%; cursor: pointer; background-color: white; transition: all 0.3s;"
-							onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 4px rgba(102, 126, 234, 0.1)';"
-							onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none';" hx-get="/decode"
+							class="select-premium"
+							hx-get="/decode"
 							hx-target="#results" hx-include="#name-form" hx-trigger="change" hx-indicator="body">
 							<option value="SUNDAY" if props.DefaultDay == "SUNDAY" { selected }>วันอาทิตย์</option>
 							<option value="MONDAY" if props.DefaultDay == "MONDAY" { selected }>วันจันทร์</option>
@@ -89,7 +85,7 @@ templ Index(props IndexProps) {
 		<div class="sample-names-container">
 			<div class="avatars-grid">
 				for _, sample := range props.SampleNames {
-					<div class="avatar-card" { templ.Attributes{"onclick": "selectName('" + sample.Name + "')" }... }>
+					<div class="avatar-premium" { templ.Attributes{"onclick": "selectName('" + sample.Name + "')" }... }>
 						<img src={ sample.AvatarURL } alt="Avatar" class="avatar-img"/>
 						<div class="avatar-name">{ sample.Name }</div>
 					</div>

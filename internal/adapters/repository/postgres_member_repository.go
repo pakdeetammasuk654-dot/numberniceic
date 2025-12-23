@@ -43,6 +43,26 @@ func (r *PostgresMemberRepository) Create(member *domain.Member) error {
 	return nil
 }
 
+func (r *PostgresMemberRepository) GetByEmail(email string) (*domain.Member, error) {
+	if email == "" {
+		return nil, nil
+	}
+	query := `
+		SELECT id, username, password, email, tel, status
+		FROM member
+		WHERE email = $1
+	`
+	var m domain.Member
+	err := r.db.QueryRow(query, email).Scan(&m.ID, &m.Username, &m.Password, &m.Email, &m.Tel, &m.Status)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &m, nil
+}
+
 func (r *PostgresMemberRepository) GetByUsername(username string) (*domain.Member, error) {
 	// Use 'status' but skip timestamps for now
 	query := `

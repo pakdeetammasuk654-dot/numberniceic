@@ -1,32 +1,40 @@
 package components
 
 templ Toast(success string, errorMsg string) {
-	if success != "" {
-		<script>
-            Toastify({
-                text: "{ success }",
-                duration: 3000,
-                gravity: "top",
-                position: "center",
-                style: {
-                    background: "linear-gradient(to right, #00b09b, #96c93d)",
-                },
-                stopOnFocus: true,
-            }).showToast();
-        </script>
-	}
-	if errorMsg != "" {
-		<script>
-            Toastify({
-                text: "{ errorMsg }",
-                duration: 3000,
-                gravity: "top",
-                position: "center",
-                style: {
-                    background: "linear-gradient(to right, #ff5f6d, #ffc371)",
-                },
-                stopOnFocus: true,
-            }).showToast();
-        </script>
-	}
+	<div id="toast-trigger" data-success={ success } data-error={ errorMsg } style="display: none;"></div>
+	<script>
+        (function() {
+            const trigger = document.getElementById('toast-trigger');
+            if (!trigger) return;
+
+            const success = trigger.getAttribute('data-success');
+            const error = trigger.getAttribute('data-error');
+
+            if (success) {
+                Toastify({
+                    text: success,
+                    duration: 3000,
+                    gravity: "top",
+                    position: "center",
+                    style: {
+                        background: "linear-gradient(to right, #00b09b, #96c93d)",
+                    },
+                    stopOnFocus: true,
+                }).showToast();
+            }
+
+            if (error) {
+                Toastify({
+                    text: error,
+                    duration: 4000,
+                    gravity: "top",
+                    position: "center",
+                    style: {
+                        background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+                    },
+                    stopOnFocus: true,
+                }).showToast();
+            }
+        })();
+    </script>
 }

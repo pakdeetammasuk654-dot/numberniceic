@@ -2,13 +2,54 @@ package layout
 
 import "numberniceic/views/components"
 
-templ Main(title string, isLoggedIn bool, isAdmin bool, isVIP bool, activePage string, toastSuccess string, toastError string, content templ.Component) {
+type SEOProps struct {
+	Title       string
+	Description string
+	Keywords    string
+	Canonical   string
+	OGImage     string
+	OGType      string
+}
+
+templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage string, toastSuccess string, toastError string, content templ.Component) {
 	<!DOCTYPE html>
 	<html lang="th">
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-			<title>{ title } - NumberNiceIC</title>
+			
+			<!-- Global site tag (gtag.js) - Google Analytics -->
+			<script async src="https://www.googletagmanager.com/gtag/js?id=G-3GZPS4KBX2"></script>
+			<script>
+				window.dataLayer = window.dataLayer || [];
+				function gtag(){dataLayer.push(arguments);}
+				gtag('js', new Date());
+				gtag('config', 'G-3GZPS4KBX2');
+			</script>
+			
+			<!-- Primary Meta Tags -->
+			<title>{ seo.Title } - ชื่อดี.com วิเคราะห์ชื่อมงคล</title>
+			<meta name="title" content={ seo.Title + " - ชื่อดี.com" }/>
+			<meta name="description" content={ seo.Description }/>
+			<meta name="keywords" content={ seo.Keywords }/>
+			
+			if seo.Canonical != "" {
+				<link rel="canonical" href={ seo.Canonical }/>
+			}
+
+			<!-- Open Graph / Facebook -->
+			<meta property="og:type" content={ seo.OGType }/>
+			<meta property="og:url" content={ seo.Canonical }/>
+			<meta property="og:title" content={ seo.Title }/>
+			<meta property="og:description" content={ seo.Description }/>
+			<meta property="og:image" content={ seo.OGImage }/>
+
+			<!-- Twitter -->
+			<meta property="twitter:card" content="summary_large_image"/>
+			<meta property="twitter:url" content={ seo.Canonical }/>
+			<meta property="twitter:title" content={ seo.Title }/>
+			<meta property="twitter:description" content={ seo.Description }/>
+			<meta property="twitter:image" content={ seo.OGImage }/>
 			<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2"/>
 			<link rel="icon" type="image/png" href="/favicon.png?v=2"/>
 			<link rel="shortcut icon" href="/favicon.ico?v=2"/>
@@ -18,7 +59,7 @@ templ Main(title string, isLoggedIn bool, isAdmin bool, isVIP bool, activePage s
 			<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&family=Kanit:wght@400;700&display=swap" rel="stylesheet"/>
 			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
 			<!-- Corrected CSS Path -->
-			<link rel="stylesheet" href="/css/style.css"/>
+			<link rel="stylesheet" href="/css/style-v4.css"/>
 			<link rel="stylesheet" href="/css/auth.css"/>
 			<!-- Toastify JS CDN -->
 			<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"/>

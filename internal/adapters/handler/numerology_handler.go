@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"numberniceic/internal/adapters/cache"
 	"numberniceic/internal/adapters/handler/templ_render"
 	"numberniceic/internal/core/domain"
@@ -66,7 +67,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 	name := c.Query("name")
 	day := c.Query("day")
 	if name == "" {
-		name = "อณัญญา"
+		name = "ณเดชน์"
 	}
 	if day == "" {
 		day = "SUNDAY"
@@ -87,7 +88,12 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 	// Prepare Props for Index
 	indexProps := analysis.IndexProps{
 		Layout: analysis.LayoutProps{
-			Title:        "วิเคราะห์ชื่อ (Streaming)",
+			Title:        fmt.Sprintf("วิเคราะห์ชื่อ %s ผลรวมเลขศาสตร์ พลังเงา", name),
+			Description:  fmt.Sprintf("ผลวิเคราะห์ชื่อ %s สำหรับผู้ที่เกิดวัน %s วิเคราะห์คะแนนเลขศาสตร์และพลังเงา พร้อมตรวจสอบอักษรกาลกิณีอย่างละเอียด", name, service.GetThaiDay(day)),
+			Keywords:     fmt.Sprintf("วิเคราะห์ชื่อ %s, ชื่อมงคล %s, เลขศาสตร์ %s, พลังเงา %s", name, name, name, name),
+			Canonical:    fmt.Sprintf("https://xn--b3cu8e7ah6h.com/analyzer?name=%s&day=%s", url.QueryEscape(name), url.QueryEscape(day)),
+			OGImage:      "https://xn--b3cu8e7ah6h.com/static/og-analyzer.png",
+			OGType:       "website",
 			IsLoggedIn:   c.Locals("IsLoggedIn") == true,
 			IsAdmin:      c.Locals("IsAdmin") == true,
 			ActivePage:   "analyzer",

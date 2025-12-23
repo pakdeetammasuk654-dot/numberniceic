@@ -29,17 +29,35 @@ func Toast(success string, errorMsg string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		if success != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script>\n            Toastify({\n                text: \"{ success }\",\n                duration: 3000,\n                gravity: \"top\",\n                position: \"center\",\n                style: {\n                    background: \"linear-gradient(to right, #00b09b, #96c93d)\",\n                },\n                stopOnFocus: true,\n            }).showToast();\n        </script>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"toast-trigger\" data-success=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		if errorMsg != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<script>\n            Toastify({\n                text: \"{ errorMsg }\",\n                duration: 3000,\n                gravity: \"top\",\n                position: \"center\",\n                style: {\n                    background: \"linear-gradient(to right, #ff5f6d, #ffc371)\",\n                },\n                stopOnFocus: true,\n            }).showToast();\n        </script>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
+		var templ_7745c5c3_Var2 string
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(success)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/components/toast.templ`, Line: 4, Col: 47}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" data-error=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/components/toast.templ`, Line: 4, Col: 71}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" style=\"display: none;\"></div><script>\n        (function() {\n            const trigger = document.getElementById('toast-trigger');\n            if (!trigger) return;\n\n            const success = trigger.getAttribute('data-success');\n            const error = trigger.getAttribute('data-error');\n\n            if (success) {\n                Toastify({\n                    text: success,\n                    duration: 3000,\n                    gravity: \"top\",\n                    position: \"center\",\n                    style: {\n                        background: \"linear-gradient(to right, #00b09b, #96c93d)\",\n                    },\n                    stopOnFocus: true,\n                }).showToast();\n            }\n\n            if (error) {\n                Toastify({\n                    text: error,\n                    duration: 4000,\n                    gravity: \"top\",\n                    position: \"center\",\n                    style: {\n                        background: \"linear-gradient(to right, #ff5f6d, #ffc371)\",\n                    },\n                    stopOnFocus: true,\n                }).showToast();\n            }\n        })();\n    </script>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		return nil
 	})

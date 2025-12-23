@@ -6,6 +6,9 @@ import (
 )
 
 templ SavedNamesList(savedNames []domain.SavedNameDisplay) {
+	<div id="saved-names-count" hx-swap-oob="innerHTML">
+		{ fmt.Sprintf("%d", len(savedNames)) }
+	</div>
 	for i, name := range savedNames {
 		<tr class={ "clickable-row", templ.KV("row-even", i%2 == 0), templ.KV("row-odd", i%2 != 0) } onclick={ navigateToAnalyzer(name.Name, name.BirthDayRaw) }>
 			<td>

@@ -11,6 +11,7 @@ import (
 	"numberniceic/views/pages"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -44,15 +45,45 @@ func (h *MemberHandler) ShowRegisterPage(c *fiber.Ctx) error {
 		return fmt.Sprintf("%v", v)
 	}
 
+	sess, _ := h.store.Get(c)
+	lastUsername := ""
+	lastEmail := ""
+	lastTel := ""
+	errorField := ""
+
+	if v := sess.Get("reg_username"); v != nil {
+		lastUsername = v.(string)
+		sess.Delete("reg_username")
+	}
+	if v := sess.Get("reg_email"); v != nil {
+		lastEmail = v.(string)
+		sess.Delete("reg_email")
+	}
+	if v := sess.Get("reg_tel"); v != nil {
+		lastTel = v.(string)
+		sess.Delete("reg_tel")
+	}
+	if v := sess.Get("error_field"); v != nil {
+		errorField = v.(string)
+		sess.Delete("error_field")
+	}
+	sess.Save()
+
 	return templ_render.Render(c, layout.Main(
-		"ลงทะเบียน",
+		layout.SEOProps{
+			Title:       "สมัครสมาชิก",
+			Description: "สมัครสมาชิกกับ ชื่อดี.com เพื่อรับสิทธิพิเศษในการบันทึกชื่อที่คุณชื่นชอบ และเข้าถึงบทความวิเคราะห์เชิงลึก",
+			Keywords:    "สมัครสมาชิก, ลงทะเบียน, ชื่อมงคล",
+			Canonical:   "https://xn--b3cu8e7ah6h.com/register",
+			OGType:      "website",
+		},
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
 		"register",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
-		pages.Register(),
+		pages.Register(lastUsername, lastEmail, lastTel, errorField),
 	))
 }
 
@@ -60,26 +91,59 @@ func (h *MemberHandler) ShowRegisterPage(c *fiber.Ctx) error {
 func (h *MemberHandler) HandleRegister(c *fiber.Ctx) error {
 	username := strings.TrimSpace(c.FormValue("username"))
 	password := c.FormValue("password")
+	confirmPassword := c.FormValue("confirm_password")
 	email := strings.TrimSpace(c.FormValue("email"))
 	tel := strings.TrimSpace(c.FormValue("tel"))
 
 	sess, _ := h.store.Get(c)
 
-	if username == "" || password == "" {
-		sess.Set("toast_error", "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน")
+	// Helper to save form state
+	saveState := func(ef string) {
+		sess.Set("reg_username", username)
+		sess.Set("reg_email", email)
+		sess.Set("reg_tel", tel)
+		sess.Set("error_field", ef)
 		sess.Save()
+	}
+
+	if username == "" {
+		sess.Set("toast_error", "กรุณากรอกชื่อผู้ใช้")
+		saveState("username")
+		return c.Redirect("/register")
+	}
+
+	if !h.isValidUsername(username) {
+		sess.Set("toast_error", "Username ต้องเป็นภาษาไทย ภาษาอังกฤษ หรือตัวเลข และห้ามมีช่องว่าง")
+		saveState("username")
+		return c.Redirect("/register")
+	}
+
+	if password == "" {
+		sess.Set("toast_error", "กรุณากรอกรหัสผ่าน")
+		saveState("password")
+		return c.Redirect("/register")
+	}
+
+	if password != confirmPassword {
+		sess.Set("toast_error", "รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน")
+		saveState("password_mismatch")
 		return c.Redirect("/register")
 	}
 
 	err := h.service.Register(username, password, email, tel)
 	if err != nil {
-		log.Printf("Register Error: %v", err) // Log the error
-		sess.Set("toast_error", "เกิดข้อผิดพลาดในการลงทะเบียน: "+err.Error())
-		sess.Save()
+		log.Printf("Register Error: %v", err)
+		sess.Set("toast_error", err.Error())
+
+		saveState("username")
 		return c.Redirect("/register")
 	}
 
 	sess.Set("toast_success", "ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบ")
+	sess.Delete("reg_username")
+	sess.Delete("reg_email")
+	sess.Delete("reg_tel")
+	sess.Delete("error_field")
 	sess.Save()
 	return c.Redirect("/login")
 }
@@ -94,15 +158,34 @@ func (h *MemberHandler) ShowLoginPage(c *fiber.Ctx) error {
 		return fmt.Sprintf("%v", v)
 	}
 
+	sess, _ := h.store.Get(c)
+	lastUsername := ""
+	errorField := ""
+	if v := sess.Get("last_username"); v != nil {
+		lastUsername = v.(string)
+		sess.Delete("last_username")
+	}
+	if v := sess.Get("error_field"); v != nil {
+		errorField = v.(string)
+		sess.Delete("error_field")
+	}
+	sess.Save()
+
 	return templ_render.Render(c, layout.Main(
-		"เข้าสู่ระบบ",
+		layout.SEOProps{
+			Title:       "เข้าสู่ระบบ",
+			Description: "เข้าสู่ระบบ ชื่อดี.com เพื่อจัดการรายชื่อมงคลที่คุณบันทึกไว้",
+			Keywords:    "เข้าสู่ระบบ, ล็อกอิน",
+			Canonical:   "https://xn--b3cu8e7ah6h.com/login",
+			OGType:      "website",
+		},
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
 		"login",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
-		pages.Login(),
+		pages.Login(lastUsername, errorField),
 	))
 }
 
@@ -118,8 +201,10 @@ func (h *MemberHandler) HandleLogin(c *fiber.Ctx) error {
 		fmt.Printf("DEBUG: Login Success for %s. DB Status=%d. IsVIP=%v\n", member.Username, member.Status, member.IsVIP())
 	}
 	if err != nil {
-		log.Printf("Login Error: %v", err) // Log the error
-		sess.Set("toast_error", "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง")
+		log.Printf("Login Error: %v", err)
+		sess.Set("toast_error", err.Error())
+		sess.Set("last_username", username) // Remember username
+		sess.Set("error_field", "password") // Default to password if login fails
 		sess.Save()
 		return c.Redirect("/login")
 	}
@@ -146,8 +231,17 @@ func (h *MemberHandler) HandleLogin(c *fiber.Ctx) error {
 
 // ShowDashboard renders the member's dashboard.
 func (h *MemberHandler) ShowDashboard(c *fiber.Ctx) error {
+	if h.service == nil || h.store == nil || h.savedNameService == nil {
+		log.Println("ERROR: MemberHandler services or store is nil")
+		return c.Status(fiber.StatusInternalServerError).SendString("Service configuration error")
+	}
+
 	sess, _ := h.store.Get(c)
-	memberID := sess.Get("member_id").(int)
+	memberIDRaw := sess.Get("member_id")
+	memberID, ok := memberIDRaw.(int)
+	if !ok {
+		return c.Redirect("/login")
+	}
 
 	member, err := h.service.GetMemberByID(memberID)
 	if err != nil || member == nil {
@@ -172,14 +266,18 @@ func (h *MemberHandler) ShowDashboard(c *fiber.Ctx) error {
 	}
 
 	return templ_render.Render(c, layout.Main(
-		"แดชบอร์ด",
+		layout.SEOProps{
+			Title:       "แดชบอร์ดส่วนตัว",
+			Description: "จัดการรายชื่อมงคลที่คุณชื่นชอบและบันทึกไว้ใน ชื่อดี.com",
+			OGType:      "website",
+		},
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
 		"dashboard",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
-		pages.Dashboard(member.Username, member.Email, member.Tel, displayNames),
+		pages.Dashboard(member.Username, member.Email, member.Tel, displayNames, member.IsVIP()),
 	))
 }
 
@@ -199,6 +297,10 @@ func (h *MemberHandler) HandleLogout(c *fiber.Ctx) error {
 }
 
 func (h *MemberHandler) prepareDisplayNames(savedNames []domain.SavedName) []domain.SavedNameDisplay {
+	if h.klakiniCache == nil || h.numberPairCache == nil {
+		log.Println("ERROR: Caches are nil in prepareDisplayNames")
+		return nil
+	}
 	displayNames := make([]domain.SavedNameDisplay, len(savedNames))
 	for i, sn := range savedNames {
 		satPairs := h.getPairsWithColors(sn.SatSum)
@@ -209,8 +311,30 @@ func (h *MemberHandler) prepareDisplayNames(savedNames []domain.SavedName) []dom
 
 		// Create DisplayNameHTML
 		var displayChars []domain.DisplayChar
-		for _, r := range sn.Name {
-			displayChars = append(displayChars, domain.DisplayChar{Char: string(r), IsBad: false})
+		runes := []rune(sn.Name)
+		for j := 0; j < len(runes); j++ {
+			r := runes[j]
+			char := string(r)
+			isBad := h.klakiniCache.IsKlakini(sn.BirthDay, r)
+
+			// Check if the next character is a combining mark
+			if j+1 < len(runes) && unicode.Is(unicode.Mn, runes[j+1]) {
+				combiningChar := runes[j+1]
+				isCombiningBad := h.klakiniCache.IsKlakini(sn.BirthDay, combiningChar)
+
+				// If the base is not bad, but the combining mark is
+				if !isBad && isCombiningBad {
+					// Add the base character as good
+					displayChars = append(displayChars, domain.DisplayChar{Char: char, IsBad: false})
+					// Add the combining mark as bad
+					displayChars = append(displayChars, domain.DisplayChar{Char: string(combiningChar), IsBad: true})
+					j++ // Skip the combining mark in the next iteration
+					continue
+				}
+			}
+
+			// Default behavior: add the character with its own klakini status
+			displayChars = append(displayChars, domain.DisplayChar{Char: char, IsBad: isBad})
 		}
 
 		displayNames[i] = domain.SavedNameDisplay{
@@ -253,6 +377,10 @@ func (h *MemberHandler) getKlakiniChars(name, day string) []string {
 }
 
 func (h *MemberHandler) getPairsWithColors(sum int) []domain.PairInfo {
+	if h.numberPairCache == nil {
+		log.Println("ERROR: numberPairCache is nil in getPairsWithColors")
+		return nil
+	}
 	s := strconv.Itoa(sum)
 	var pairs []string
 	if sum < 0 {
@@ -283,4 +411,21 @@ func (h *MemberHandler) getPairsWithColors(sum int) []domain.PairInfo {
 		pairInfos = append(pairInfos, domain.PairInfo{Number: p, Color: color})
 	}
 	return pairInfos
+}
+func (h *MemberHandler) isValidUsername(username string) bool {
+	if len(username) < 3 {
+		return false
+	}
+	for _, r := range username {
+		// Allow: Thai (\u0E00-\u0E7F), English (a-z, A-Z), Numbers (0-9), Underscore (_)
+		if (r >= 0x0E00 && r <= 0x0E7F) ||
+			(r >= 'a' && r <= 'z') ||
+			(r >= 'A' && r <= 'Z') ||
+			(r >= '0' && r <= '9') ||
+			r == '_' {
+			continue
+		}
+		return false
+	}
+	return true
 }
