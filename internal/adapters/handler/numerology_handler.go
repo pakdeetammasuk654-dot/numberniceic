@@ -66,18 +66,24 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 	// Parse query params
 	name := c.Query("name")
 	day := c.Query("day")
+
+	// Get Sample Names
+	samples, _ := h.sampleNamesCache.GetAll()
+
 	if name == "" {
-		name = "ณเดชน์"
+		if len(samples) > 0 {
+			name = samples[0].Name
+		} else {
+			name = "ปัญญา"
+		}
 	}
+
 	if day == "" {
 		day = "SUNDAY"
 	}
 	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on"
 	disableKlakini := c.Query("disable_klakini") == "true" || c.Query("disable_klakini") == "on"
 	repoAllowKlakini := !disableKlakini
-
-	// Get Sample Names
-	samples, _ := h.sampleNamesCache.GetAll()
 
 	isVIP := c.Locals("IsVIP") == true
 

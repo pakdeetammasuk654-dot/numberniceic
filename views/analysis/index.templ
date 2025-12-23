@@ -2,6 +2,7 @@ package analysis
 
 import (
 	"numberniceic/internal/core/domain"
+	"strings"
 )
 
 type IndexProps struct {
@@ -41,7 +42,7 @@ templ Index(props IndexProps) {
 								<circle cx="12" cy="7" r="4"></circle>
 							</svg>
 						</span>
-						<input type="text" id="name" name="name" required placeholder="เช่น ณเดชน์" value={ props.DefaultName } maxlength="30"
+						<input type="text" id="name" name="name" required placeholder="เช่น ปัญญา" value={ props.DefaultName } maxlength="30"
 							class="input-premium"
 							oninput="toggleClearButton()" hx-get="/decode" hx-target="#solar-system-wrapper" hx-include="#name-form"
 							hx-trigger="input changed delay:500ms, load" hx-indicator="#solar-loading, #results-wrapper"/>
@@ -84,7 +85,9 @@ templ Index(props IndexProps) {
 		<div class="sample-names-container">
 			<div class="avatars-grid">
 				for _, sample := range props.SampleNames {
-					<div class="avatar-premium" { templ.Attributes{"onclick": "selectName('" + sample.Name + "')" }... }>
+					<div class={ "avatar-premium", templ.KV("active", strings.TrimSpace(sample.Name) == strings.TrimSpace(props.DefaultName)) } 
+						data-name={ strings.TrimSpace(sample.Name) }
+						{ templ.Attributes{"onclick": "selectName('" + strings.TrimSpace(sample.Name) + "')" }... }>
 						<img src={ sample.AvatarURL } alt="Avatar" class="avatar-img"/>
 						<div class="avatar-name">{ sample.Name }</div>
 					</div>
@@ -141,6 +144,7 @@ templ Index(props IndexProps) {
 				const nameInput = document.getElementById('name');
 				nameInput.value = name;
 				toggleClearButton();
+				updateAvatarActive(name);
 		
 				// Manually trigger the input event on the input field itself
 				htmx.trigger('#name', 'input');
@@ -151,6 +155,36 @@ templ Index(props IndexProps) {
 					form.scrollIntoView({ behavior: 'smooth', block: 'start' });
 				}
 			}
+
+			function updateAvatarActive(currentName) {
+				const avatars = document.querySelectorAll('.avatar-premium');
+				// Normalize: remove whitespace
+				const clean = (str) => str ? str.trim().replace(/\s+/g, '') : '';
+				const target = clean(currentName);
+				
+				avatars.forEach(avatar => {
+					const dataName = clean(avatar.getAttribute('data-name'));
+					
+					// Compare normalized values
+					if (dataName === target && dataName.length > 0) {
+						avatar.classList.add('active');
+					} else {
+						avatar.classList.remove('active');
+					}
+				});
+			}
+
+			// Update active avatar and clear button state on load
+			document.addEventListener('DOMContentLoaded', function() {
+				const nameInput = document.getElementById('name');
+				if (nameInput) {
+					toggleClearButton();
+					updateAvatarActive(nameInput.value);
+					nameInput.addEventListener('input', function() {
+						updateAvatarActive(this.value);
+					});
+				}
+			});
 		
 			function toggleClearButton() {
 				const nameInput = document.getElementById('name');

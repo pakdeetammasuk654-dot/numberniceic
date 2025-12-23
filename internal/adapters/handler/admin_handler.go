@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"io/ioutil"
+	"numberniceic/internal/adapters/cache"
 	"numberniceic/internal/adapters/handler/templ_render"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/service"
@@ -19,11 +20,57 @@ import (
 )
 
 type AdminHandler struct {
-	service *service.AdminService
+	service     *service.AdminService
+	sampleCache *cache.SampleNamesCache
 }
 
-func NewAdminHandler(service *service.AdminService) *AdminHandler {
-	return &AdminHandler{service: service}
+func NewAdminHandler(service *service.AdminService, sampleCache *cache.SampleNamesCache) *AdminHandler {
+	return &AdminHandler{service: service, sampleCache: sampleCache}
+}
+
+// --- Sample Names Management ---
+
+func (h *AdminHandler) ShowSampleNamesPage(c *fiber.Ctx) error {
+	samples, err := h.service.GetAllSampleNames()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error loading sample names")
+	}
+
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "Manage Sample Names",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.SampleNames(samples),
+	))
+}
+
+func (h *AdminHandler) SetActiveSampleName(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	err := h.service.SetActiveSampleName(id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error setting active sample name")
+	}
+
+	// Reload Cache
+	h.sampleCache.Reload()
+
+	// Redirect or return success
+	return c.Redirect("/admin/sample-names")
 }
 
 // --- Dashboard ---

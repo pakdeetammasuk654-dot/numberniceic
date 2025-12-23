@@ -1,0 +1,57 @@
+package admin
+
+import (
+    "numberniceic/internal/core/domain"
+    "fmt"
+)
+
+templ SampleNames(samples []domain.SampleName) {
+    <div class="admin-content">
+        <div class="content-header">
+            <h1 class="page-title">Manage Sample Names</h1>
+        </div>
+
+        <div class="content-body">
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Avatar</th>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            for _, s := range samples {
+                                <tr>
+                                    <td>
+                                        <img src={ s.AvatarURL } style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;"/>
+                                    </td>
+                                    <td>{ s.Name }</td>
+                                    <td>
+                                        if s.IsActive {
+                                            <span class="badge badge-success">Active</span>
+                                        } else {
+                                            <span class="badge badge-secondary">Inactive</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        if !s.IsActive {
+                                            <form action={ templ.SafeURL(fmt.Sprintf("/admin/sample-names/%d/active", s.ID)) } method="POST" style="display:inline;">
+                                                <button type="submit" class="btn btn-sm btn-primary">Set Active</button>
+                                            </form>
+                                        } else {
+                                            <button class="btn btn-sm btn-outline-success" disabled>Current Default</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+}

@@ -8,13 +8,25 @@ import (
 type AdminService struct {
 	memberRepo  ports.MemberRepository
 	articleRepo ports.ArticleRepository
+	sampleRepo  ports.SampleNamesRepository
 }
 
-func NewAdminService(memberRepo ports.MemberRepository, articleRepo ports.ArticleRepository) *AdminService {
+func NewAdminService(memberRepo ports.MemberRepository, articleRepo ports.ArticleRepository, sampleRepo ports.SampleNamesRepository) *AdminService {
 	return &AdminService{
 		memberRepo:  memberRepo,
 		articleRepo: articleRepo,
+		sampleRepo:  sampleRepo,
 	}
+}
+
+// --- Sample Names Management ---
+
+func (s *AdminService) GetAllSampleNames() ([]domain.SampleName, error) {
+	return s.sampleRepo.GetAll()
+}
+
+func (s *AdminService) SetActiveSampleName(id int) error {
+	return s.sampleRepo.SetActive(id)
 }
 
 // --- User Management ---

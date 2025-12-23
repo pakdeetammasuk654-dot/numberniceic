@@ -25,3 +25,13 @@ go.work
 secrets.txt
 
 run_dev.sh
+
+# Binaries
+numbernice-app
+numbernice-linux
+run_migration-linux
+cloud_sql_proxy
+
+# Uploads
+static/uploads/*
+!static/uploads/.gitkeep

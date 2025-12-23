@@ -45,7 +45,12 @@ func main() {
 	shadowCache := setupNumerologyCache(db, "sha_nums")
 	klakiniCache := setupKlakiniCache(db)
 	numberPairCache := setupNumberPairCache(db)
-	sampleNamesCache := setupSampleNamesCache(db)
+
+	sampleNamesRepo := repository.NewPostgresSampleNamesRepository(db)
+	sampleNamesCache := cache.NewSampleNamesCache(sampleNamesRepo)
+	sampleNamesCache.EnsureLoaded()
+	fmt.Println("Sample names cache is ready.")
+
 	namesMiracleRepo := repository.NewPostgresNamesMiracleRepository(db)
 	memberRepo := repository.NewPostgresMemberRepository(db)
 	memberService := service.NewMemberService(memberRepo)
@@ -53,7 +58,7 @@ func main() {
 	savedNameService := service.NewSavedNameService(savedNameRepo)
 	articleRepo := repository.NewPostgresArticleRepository(db)
 	articleService := service.NewArticleService(articleRepo)
-	adminService := service.NewAdminService(memberRepo, articleRepo)
+	adminService := service.NewAdminService(memberRepo, articleRepo, sampleNamesRepo)
 
 	// --- Session Store ---
 	store := session.New(session.Config{
@@ -132,7 +137,7 @@ func main() {
 	memberHandler := handler.NewMemberHandler(memberService, savedNameService, klakiniCache, numberPairCache, store)
 	savedNameHandler := handler.NewSavedNameHandler(savedNameService, klakiniCache, numberPairCache, store)
 	articleHandler := handler.NewArticleHandler(articleService, store)
-	adminHandler := handler.NewAdminHandler(adminService)
+	adminHandler := handler.NewAdminHandler(adminService, sampleNamesCache)
 
 	orderRepo := repository.NewPostgresOrderRepository(db)
 	paymentService := service.NewPaymentService(orderRepo, memberRepo)
@@ -296,6 +301,14 @@ func main() {
 	admin.Delete("/images/:filename", adminHandler.DeleteImage)
 	admin.Get("/api/images", adminHandler.GetImagesJSON) // New API endpoint
 
+	// Sample Names Management
+	admin.Get("/sample-names", adminHandler.ShowSampleNamesPage)
+	admin.Post("/sample-names/:id/active", adminHandler.SetActiveSampleName)
+
+	// Sample Names Management
+	admin.Get("/sample-names", adminHandler.ShowSampleNamesPage)
+	admin.Post("/sample-names/:id/active", adminHandler.SetActiveSampleName)
+
 	// Payment Routes
 	app.Get("/payment/upgrade", paymentHandler.GetUpgradeModal)
 	app.Post("/api/mock-payment/success", paymentHandler.SimulatePaymentSuccess)
@@ -339,13 +352,5 @@ func setupNumberPairCache(db *sql.DB) *cache.NumberPairCache {
 	c := cache.NewNumberPairCache(repo)
 	c.EnsureLoaded()
 	fmt.Println("Number pair meaning cache is ready.")
-	return c
-}
-
-func setupSampleNamesCache(db *sql.DB) *cache.SampleNamesCache {
-	repo := repository.NewPostgresSampleNamesRepository(db)
-	c := cache.NewSampleNamesCache(repo)
-	c.EnsureLoaded()
-	fmt.Println("Sample names cache is ready.")
 	return c
 }

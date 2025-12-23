@@ -10,6 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"numberniceic/internal/core/domain"
+	"strings"
 )
 
 type IndexProps struct {
@@ -56,14 +57,14 @@ func Index(props IndexProps) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Analyzer Form Container --> <div class=\"analyzer-container-premium\"><form id=\"name-form\"><!-- Hidden inputs --><input type=\"hidden\" name=\"auspicious\" id=\"main-auspicious\" value=\"false\"> <input type=\"hidden\" name=\"disable_klakini\" id=\"main-disable-klakini\" value=\"false\"><div class=\"form-group\" style=\"margin-bottom: 0.8rem;\"><div class=\"label-row\" style=\"margin-bottom: 0.25rem;\"><label for=\"name\" style=\"font-weight: bold; color: #333;\">ชื่อ</label> <small class=\"helper-text\" style=\"color: #667eea;\">วิเคราะห์อัตโนมัติเมื่อพิมพ์ชื่อ</small></div><div class=\"input-wrapper\" style=\"box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 12px; transition: transform 0.2s;\"><span class=\"input-icon\" style=\"color: #667eea;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"></path> <circle cx=\"12\" cy=\"7\" r=\"4\"></circle></svg></span> <input type=\"text\" id=\"name\" name=\"name\" required placeholder=\"เช่น ณเดชน์\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Analyzer Form Container --> <div class=\"analyzer-container-premium\"><form id=\"name-form\"><!-- Hidden inputs --><input type=\"hidden\" name=\"auspicious\" id=\"main-auspicious\" value=\"false\"> <input type=\"hidden\" name=\"disable_klakini\" id=\"main-disable-klakini\" value=\"false\"><div class=\"form-group\" style=\"margin-bottom: 0.8rem;\"><div class=\"label-row\" style=\"margin-bottom: 0.25rem;\"><label for=\"name\" style=\"font-weight: bold; color: #333;\">ชื่อ</label> <small class=\"helper-text\" style=\"color: #667eea;\">วิเคราะห์อัตโนมัติเมื่อพิมพ์ชื่อ</small></div><div class=\"input-wrapper\" style=\"box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 12px; transition: transform 0.2s;\"><span class=\"input-icon\" style=\"color: #667eea;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"></path> <circle cx=\"12\" cy=\"7\" r=\"4\"></circle></svg></span> <input type=\"text\" id=\"name\" name=\"name\" required placeholder=\"เช่น ปัญญา\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(props.DefaultName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 44, Col: 127}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 45, Col: 124}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -154,46 +155,77 @@ func Index(props IndexProps) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			for _, sample := range props.SampleNames {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"avatar-premium\"")
+				var templ_7745c5c3_Var4 = []any{"avatar-premium", templ.KV("active", strings.TrimSpace(sample.Name) == strings.TrimSpace(props.DefaultName))}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var4...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, templ.Attributes{"onclick": "selectName('" + sample.Name + "')"})
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "><img src=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(sample.AvatarURL)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 88, Col: 33}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\" alt=\"Avatar\" class=\"avatar-img\"><div class=\"avatar-name\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var5 string
-				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(sample.Name)
+				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var4).String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 89, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 1, Col: 0}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" data-name=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var6 string
+				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(strings.TrimSpace(sample.Name))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 89, Col: 48}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, templ.Attributes{"onclick": "selectName('" + strings.TrimSpace(sample.Name) + "')"})
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "><img src=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var7 string
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(sample.AvatarURL)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 91, Col: 33}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" alt=\"Avatar\" class=\"avatar-img\"><div class=\"avatar-name\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var8 string
+				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(sample.Name)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 92, Col: 44}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</div></div><!-- Results Section for initial load and as a target --> <div id=\"results-container\"><div style=\"position: relative; margin-bottom: 1.5rem;\"><div id=\"solar-loading\" class=\"htmx-indicator\" style=\"position: absolute; inset: 0; background: rgba(255,255,255,0.7); z-index: 1000; border-radius: 12px; backdrop-filter: blur(2px); align-items: center; justify-content: center;\"><div style=\"display: flex; flex-direction: column; align-items: center; gap: 0.8rem;\"><svg class=\"spinner\" width=\"35px\" height=\"35px\" viewBox=\"0 0 66 66\" xmlns=\"http://www.w3.org/2000/svg\"><circle class=\"path\" fill=\"none\" stroke-width=\"6\" stroke-linecap=\"round\" cx=\"33\" cy=\"33\" r=\"30\" style=\"stroke: #667eea;\"></circle></svg> <span style=\"font-family: 'Kanit', sans-serif; color: #667eea; font-weight: 500; font-size: 1.1rem;\">กำลังโหลดข้อมูล...</span></div></div><div id=\"solar-system-wrapper\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div></div><!-- Results Section for initial load and as a target --> <div id=\"results-container\"><div style=\"position: relative; margin-bottom: 1.5rem;\"><div id=\"solar-loading\" class=\"htmx-indicator\" style=\"position: absolute; inset: 0; background: rgba(255,255,255,0.7); z-index: 1000; border-radius: 12px; backdrop-filter: blur(2px); align-items: center; justify-content: center;\"><div style=\"display: flex; flex-direction: column; align-items: center; gap: 0.8rem;\"><svg class=\"spinner\" width=\"35px\" height=\"35px\" viewBox=\"0 0 66 66\" xmlns=\"http://www.w3.org/2000/svg\"><circle class=\"path\" fill=\"none\" stroke-width=\"6\" stroke-linecap=\"round\" cx=\"33\" cy=\"33\" r=\"30\" style=\"stroke: #667eea;\"></circle></svg> <span style=\"font-family: 'Kanit', sans-serif; color: #667eea; font-weight: 500; font-size: 1.1rem;\">กำลังโหลดข้อมูล...</span></div></div><div id=\"solar-system-wrapper\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -201,7 +233,7 @@ func Index(props IndexProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</div></div><div id=\"results-wrapper\" class=\"htmx-indicator-container\"><style>\n\t\t\t\t\t.htmx-indicator-container.htmx-request #results { display: none; }\n\t\t\t\t\t.htmx-indicator-container.htmx-request #table-loading { display: block !important; }\n\t\t\t\t\t#table-loading { display: none; }\n\t\t\t\t</style><!-- Table Loading Indicator (Skeleton) --><div id=\"table-loading\" class=\"htmx-indicator\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</div></div><div id=\"results-wrapper\" class=\"htmx-indicator-container\"><style>\n\t\t\t\t\t.htmx-indicator-container.htmx-request #results { display: none; }\n\t\t\t\t\t.htmx-indicator-container.htmx-request #table-loading { display: block !important; }\n\t\t\t\t\t#table-loading { display: none; }\n\t\t\t\t</style><!-- Table Loading Indicator (Skeleton) --><div id=\"table-loading\" class=\"htmx-indicator\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -209,7 +241,7 @@ func Index(props IndexProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div><div id=\"results\"><!-- This is where the streaming data will be injected -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</div><div id=\"results\"><!-- This is where the streaming data will be injected -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -217,7 +249,7 @@ func Index(props IndexProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</div></div></div><!-- Back to Top Button --> <button id=\"back-to-top\" onclick=\"scrollToTop()\" title=\"Go to top\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15l-6-6-6 6\"></path></svg></button><!-- JavaScript --> <script>\n\t\t\tfunction selectName(name) {\n\t\t\t\tconst nameInput = document.getElementById('name');\n\t\t\t\tnameInput.value = name;\n\t\t\t\ttoggleClearButton();\n\t\t\n\t\t\t\t// Manually trigger the input event on the input field itself\n\t\t\t\thtmx.trigger('#name', 'input');\n\t\t\n\t\t\t\t// Scroll to the top of the form for better UX\n\t\t\t\tconst form = document.getElementById('name-form');\n\t\t\t\tif (form) {\n\t\t\t\t\tform.scrollIntoView({ behavior: 'smooth', block: 'start' });\n\t\t\t\t}\n\t\t\t}\n\t\t\n\t\t\tfunction toggleClearButton() {\n\t\t\t\tconst nameInput = document.getElementById('name');\n\t\t\t\tconst clearBtn = document.getElementById('clear-btn');\n\t\t\t\tif (nameInput && nameInput.value.length > 0) {\n\t\t\t\t\tclearBtn.style.display = 'block';\n\t\t\t\t} else if (clearBtn) {\n\t\t\t\t\tclearBtn.style.display = 'none';\n\t\t\t\t}\n\t\t\t}\n\t\t\n\t\t\tfunction clearName() {\n\t\t\t\tconst nameInput = document.getElementById('name');\n\t\t\t\tnameInput.value = '';\n\t\t\t\ttoggleClearButton();\n\t\t\t\tnameInput.focus();\n\t\t\t\t// Manually trigger the input event to clear the results via HTMX\n\t\t\t\thtmx.trigger('#name', 'input');\n\t\t\t}\n\t\t\n\t\t\t// Back to Top functionality\n\t\t\tconst backToTopButton = document.getElementById(\"back-to-top\");\n\t\t\n\t\t\twindow.onscroll = function () {\n\t\t\t\tif (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {\n\t\t\t\t\tbackToTopButton.style.display = \"flex\";\n\t\t\t\t} else {\n\t\t\t\t\tbackToTopButton.style.display = \"none\";\n\t\t\t\t}\n\t\t\t};\n\t\t\n\t\t\tfunction scrollToTop() {\n\t\t\t\twindow.scrollTo({ top: 0, behavior: 'smooth' });\n\t\t\t}\n\t\t\n\t\t\tdocument.addEventListener('DOMContentLoaded', function () {\n\t\t\t\ttoggleClearButton();\n\t\t\t\t// Trigger initial load from the input field\n\t\t\t\t// htmx.trigger('#name', 'load'); // REMOVED: Managed by streaming\n\t\t\t});\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</div></div></div><!-- Back to Top Button --> <button id=\"back-to-top\" onclick=\"scrollToTop()\" title=\"Go to top\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15l-6-6-6 6\"></path></svg></button><!-- JavaScript --> <script>\n\t\t\tfunction selectName(name) {\n\t\t\t\tconst nameInput = document.getElementById('name');\n\t\t\t\tnameInput.value = name;\n\t\t\t\ttoggleClearButton();\n\t\t\t\tupdateAvatarActive(name);\n\t\t\n\t\t\t\t// Manually trigger the input event on the input field itself\n\t\t\t\thtmx.trigger('#name', 'input');\n\t\t\n\t\t\t\t// Scroll to the top of the form for better UX\n\t\t\t\tconst form = document.getElementById('name-form');\n\t\t\t\tif (form) {\n\t\t\t\t\tform.scrollIntoView({ behavior: 'smooth', block: 'start' });\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfunction updateAvatarActive(currentName) {\n\t\t\t\tconst avatars = document.querySelectorAll('.avatar-premium');\n\t\t\t\t// Normalize: remove whitespace\n\t\t\t\tconst clean = (str) => str ? str.trim().replace(/\\s+/g, '') : '';\n\t\t\t\tconst target = clean(currentName);\n\t\t\t\t\n\t\t\t\tavatars.forEach(avatar => {\n\t\t\t\t\tconst dataName = clean(avatar.getAttribute('data-name'));\n\t\t\t\t\t\n\t\t\t\t\t// Compare normalized values\n\t\t\t\t\tif (dataName === target && dataName.length > 0) {\n\t\t\t\t\t\tavatar.classList.add('active');\n\t\t\t\t\t} else {\n\t\t\t\t\t\tavatar.classList.remove('active');\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Update active avatar and clear button state on load\n\t\t\tdocument.addEventListener('DOMContentLoaded', function() {\n\t\t\t\tconst nameInput = document.getElementById('name');\n\t\t\t\tif (nameInput) {\n\t\t\t\t\ttoggleClearButton();\n\t\t\t\t\tupdateAvatarActive(nameInput.value);\n\t\t\t\t\tnameInput.addEventListener('input', function() {\n\t\t\t\t\t\tupdateAvatarActive(this.value);\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t});\n\t\t\n\t\t\tfunction toggleClearButton() {\n\t\t\t\tconst nameInput = document.getElementById('name');\n\t\t\t\tconst clearBtn = document.getElementById('clear-btn');\n\t\t\t\tif (nameInput && nameInput.value.length > 0) {\n\t\t\t\t\tclearBtn.style.display = 'block';\n\t\t\t\t} else if (clearBtn) {\n\t\t\t\t\tclearBtn.style.display = 'none';\n\t\t\t\t}\n\t\t\t}\n\t\t\n\t\t\tfunction clearName() {\n\t\t\t\tconst nameInput = document.getElementById('name');\n\t\t\t\tnameInput.value = '';\n\t\t\t\ttoggleClearButton();\n\t\t\t\tnameInput.focus();\n\t\t\t\t// Manually trigger the input event to clear the results via HTMX\n\t\t\t\thtmx.trigger('#name', 'input');\n\t\t\t}\n\t\t\n\t\t\t// Back to Top functionality\n\t\t\tconst backToTopButton = document.getElementById(\"back-to-top\");\n\t\t\n\t\t\twindow.onscroll = function () {\n\t\t\t\tif (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {\n\t\t\t\t\tbackToTopButton.style.display = \"flex\";\n\t\t\t\t} else {\n\t\t\t\t\tbackToTopButton.style.display = \"none\";\n\t\t\t\t}\n\t\t\t};\n\t\t\n\t\t\tfunction scrollToTop() {\n\t\t\t\twindow.scrollTo({ top: 0, behavior: 'smooth' });\n\t\t\t}\n\t\t\n\t\t\tdocument.addEventListener('DOMContentLoaded', function () {\n\t\t\t\ttoggleClearButton();\n\t\t\t\t// Trigger initial load from the input field\n\t\t\t\t// htmx.trigger('#name', 'load'); // REMOVED: Managed by streaming\n\t\t\t});\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

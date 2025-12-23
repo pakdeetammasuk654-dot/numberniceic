@@ -1867,6 +1867,19 @@ body.htmx-request .solar-system-container {
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
 }
 
+.avatar-premium.active {
+    background: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05) !important;
+    transform: translateY(-8px) scale(1.05) !important;
+}
+
+.avatar-premium.active .avatar-img {
+    border-style: solid !important;
+    border-color: #667eea !important;
+    box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+    border-width: 3px !important;
+}
+
 .result-box-premium {
     padding: 1.5rem !important;
     margin-top: 0.5rem !important;

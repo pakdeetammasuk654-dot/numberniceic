@@ -1,0 +1,16 @@
+[Unit]
+Description=NumberNiceIC Web Service
+After=network.target
+
+[Service]
+Type=simple
+User=tayap
+WorkingDirectory=/home/tayap/apps/numberniceic
+ExecStart=/home/tayap/apps/numberniceic/numbernice-linux
+Restart=always
+EnvironmentFile=/home/tayap/apps/numberniceic/.env
+# Env vars can also be set here if not in .env
+# Environment=PORT=3000
+
+[Install]
+WantedBy=multi-user.target
