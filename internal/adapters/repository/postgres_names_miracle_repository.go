@@ -338,6 +338,107 @@ func (r *PostgresNamesMiracleRepository) GetFallbackNames(name, preferredConsona
 	return results, nil
 }
 
+func (r *PostgresNamesMiracleRepository) Create(name *domain.SimilarNameResult) error {
+	// Prepare t_sat and t_sha strings for pq.Array
+	var tSat []string
+	for _, t := range name.TSat {
+		tSat = append(tSat, t.Type)
+	}
+	var tSha []string
+	for _, t := range name.TSha {
+		tSha = append(tSha, t.Type)
+	}
+
+	query := `
+		INSERT INTO names_miracle (
+			thname, satnum, shanum, 
+			k_sunday, k_monday, k_tuesday, k_wednesday1, k_wednesday2, k_thursday, k_friday, k_saturday,
+			t_sat, t_sha
+		) VALUES (
+			$1, $2, $3, 
+			$4, $5, $6, $7, $8, $9, $10, $11,
+			$12, $13
+		) RETURNING name_id
+	`
+	err := r.db.QueryRow(
+		query,
+		name.ThName,
+		pq.Array(name.SatNum),
+		pq.Array(name.ShaNum),
+		name.KSunday,
+		name.KMonday,
+		name.KTuesday,
+		name.KWednesday1,
+		name.KWednesday2,
+		name.KThursday,
+		name.KFriday,
+		name.KSaturday,
+		pq.Array(tSat),
+		pq.Array(tSha),
+	).Scan(&name.NameID)
+
+	return err
+}
+
+func (r *PostgresNamesMiracleRepository) GetLatest(limit int) ([]domain.SimilarNameResult, error) {
+	query := `
+		SELECT 
+			name_id, thname, satnum, shanum,
+			k_sunday, k_monday, k_tuesday, k_wednesday1, k_wednesday2, k_thursday, k_friday, k_saturday,
+			t_sat, t_sha
+		FROM names_miracle
+		ORDER BY name_id DESC
+		LIMIT $1
+	`
+	rows, err := r.db.Query(query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []domain.SimilarNameResult
+	for rows.Next() {
+		var res domain.SimilarNameResult
+		var satNum, shaNum, tSat, tSha pq.StringArray
+		err := rows.Scan(
+			&res.NameID, &res.ThName, &satNum, &shaNum,
+			&res.KSunday, &res.KMonday, &res.KTuesday, &res.KWednesday1, &res.KWednesday2, &res.KThursday, &res.KFriday, &res.KSaturday,
+			&tSat, &tSha,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		res.SatNum = []string(satNum)
+		res.ShaNum = []string(shaNum)
+
+		res.TSat = make([]domain.PairTypeInfo, len(tSat))
+		for i, v := range tSat {
+			res.TSat[i] = domain.PairTypeInfo{Type: v}
+		}
+		res.TSha = make([]domain.PairTypeInfo, len(tSha))
+		for i, v := range tSha {
+			res.TSha[i] = domain.PairTypeInfo{Type: v}
+		}
+
+		results = append(results, res)
+	}
+	return results, nil
+}
+
+func (r *PostgresNamesMiracleRepository) Delete(id int) error {
+	query := "DELETE FROM names_miracle WHERE name_id = $1"
+	_, err := r.db.Exec(query, id)
+	return err
+}
+
+func (r *PostgresNamesMiracleRepository) Count() (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM names_miracle"
+	err := r.db.QueryRow(query).Scan(&count)
+	return count, err
+}
+
 func (r *PostgresNamesMiracleRepository) executeNameQuery(query string, args ...interface{}) ([]domain.SimilarNameResult, error) {
 	rows, err := r.db.Query(query, args...)
 	if err != nil {

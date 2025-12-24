@@ -52,13 +52,15 @@ func main() {
 	fmt.Println("Sample names cache is ready.")
 
 	namesMiracleRepo := repository.NewPostgresNamesMiracleRepository(db)
+	numerologySvc := service.NewNumerologyService(numerologyCache, shadowCache, klakiniCache, numberPairCache)
+
 	memberRepo := repository.NewPostgresMemberRepository(db)
 	memberService := service.NewMemberService(memberRepo)
 	savedNameRepo := repository.NewPostgresSavedNameRepository(db)
 	savedNameService := service.NewSavedNameService(savedNameRepo)
 	articleRepo := repository.NewPostgresArticleRepository(db)
 	articleService := service.NewArticleService(articleRepo)
-	adminService := service.NewAdminService(memberRepo, articleRepo, sampleNamesRepo)
+	adminService := service.NewAdminService(memberRepo, articleRepo, sampleNamesRepo, namesMiracleRepo, numerologySvc)
 
 	// --- Session Store ---
 	store := session.New(session.Config{
@@ -137,7 +139,7 @@ func main() {
 	memberHandler := handler.NewMemberHandler(memberService, savedNameService, klakiniCache, numberPairCache, store)
 	savedNameHandler := handler.NewSavedNameHandler(savedNameService, klakiniCache, numberPairCache, store)
 	articleHandler := handler.NewArticleHandler(articleService, store)
-	adminHandler := handler.NewAdminHandler(adminService, sampleNamesCache)
+	adminHandler := handler.NewAdminHandler(adminService, sampleNamesCache, store)
 
 	orderRepo := repository.NewPostgresOrderRepository(db)
 	paymentService := service.NewPaymentService(orderRepo, memberRepo)
@@ -305,9 +307,11 @@ func main() {
 	admin.Get("/sample-names", adminHandler.ShowSampleNamesPage)
 	admin.Post("/sample-names/:id/active", adminHandler.SetActiveSampleName)
 
-	// Sample Names Management
-	admin.Get("/sample-names", adminHandler.ShowSampleNamesPage)
-	admin.Post("/sample-names/:id/active", adminHandler.SetActiveSampleName)
+	// Add System Name
+	admin.Get("/add-name", adminHandler.ShowAddNamePage)
+	admin.Post("/add-name", adminHandler.AddSystemName)
+	admin.Post("/add-name/bulk", adminHandler.BulkUploadNames)
+	admin.Delete("/add-name/:id", adminHandler.DeleteSystemName)
 
 	// Payment Routes
 	app.Get("/payment/upgrade", paymentHandler.GetUpgradeModal)

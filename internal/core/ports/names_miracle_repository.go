@@ -8,4 +8,8 @@ type NamesMiracleRepository interface {
 	GetSimilarNames(name, day string, limit, offset int, allowKlakini bool) ([]domain.SimilarNameResult, error)
 	GetAuspiciousNames(name, preferredConsonant, day string, limit, offset int, allowKlakini bool) ([]domain.SimilarNameResult, error)
 	GetFallbackNames(name, preferredConsonant, day string, limit int, allowKlakini bool, excludedIDs []int) ([]domain.SimilarNameResult, error)
+	Create(name *domain.SimilarNameResult) error
+	GetLatest(limit int) ([]domain.SimilarNameResult, error)
+	Delete(id int) error
+	Count() (int, error)
 }

@@ -6,17 +6,66 @@ import (
 )
 
 type AdminService struct {
-	memberRepo  ports.MemberRepository
-	articleRepo ports.ArticleRepository
-	sampleRepo  ports.SampleNamesRepository
+	memberRepo       ports.MemberRepository
+	articleRepo      ports.ArticleRepository
+	sampleRepo       ports.SampleNamesRepository
+	namesMiracleRepo ports.NamesMiracleRepository
+	numerologySvc    *NumerologyService
 }
 
-func NewAdminService(memberRepo ports.MemberRepository, articleRepo ports.ArticleRepository, sampleRepo ports.SampleNamesRepository) *AdminService {
+func NewAdminService(
+	memberRepo ports.MemberRepository,
+	articleRepo ports.ArticleRepository,
+	sampleRepo ports.SampleNamesRepository,
+	namesMiracleRepo ports.NamesMiracleRepository,
+	numerologySvc *NumerologyService,
+) *AdminService {
 	return &AdminService{
-		memberRepo:  memberRepo,
-		articleRepo: articleRepo,
-		sampleRepo:  sampleRepo,
+		memberRepo:       memberRepo,
+		articleRepo:      articleRepo,
+		sampleRepo:       sampleRepo,
+		namesMiracleRepo: namesMiracleRepo,
+		numerologySvc:    numerologySvc,
 	}
+}
+
+func (s *AdminService) AddSystemName(name string) error {
+	details := s.numerologySvc.CalculateNameDetails(name)
+	return s.namesMiracleRepo.Create(details)
+}
+
+func (s *AdminService) AddSystemNamesBulk(names []string) (int, int) {
+	successCount := 0
+	failCount := 0
+
+	for _, name := range names {
+		trimmedName := SanitizeInput(name)
+		if trimmedName == "" {
+			continue // Skip empty results after sanitization
+		}
+
+		err := s.AddSystemName(trimmedName)
+		if err != nil {
+			// If it's an error (duplicate or other), we count as fail and move to next
+			failCount++
+			continue
+		}
+		successCount++
+	}
+
+	return successCount, failCount
+}
+
+func (s *AdminService) GetLatestSystemNames(limit int) ([]domain.SimilarNameResult, error) {
+	return s.namesMiracleRepo.GetLatest(limit)
+}
+
+func (s *AdminService) GetTotalNamesCount() (int, error) {
+	return s.namesMiracleRepo.Count()
+}
+
+func (s *AdminService) DeleteSystemName(id int) error {
+	return s.namesMiracleRepo.Delete(id)
 }
 
 // --- Sample Names Management ---

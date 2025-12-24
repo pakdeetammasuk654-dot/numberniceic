@@ -17,9 +17,12 @@ if [ $? -ne 0 ]; then
 fi
 
 # 2. Transfer Files
-echo "Uploading files..."
+echo "Stopping service and uploading files..."
 INSTANCE_NAME="my-free-server"
 ZONE="us-central1-a"
+
+# Stop service to unlock binary
+gcloud compute ssh $INSTANCE_NAME --zone=$ZONE --command="sudo systemctl stop numberniceic"
 
 # Create directory
 gcloud compute ssh $INSTANCE_NAME --zone=$ZONE --command="mkdir -p $REMOTE_DIR/migrations"

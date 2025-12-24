@@ -35,3 +35,6 @@ cloud_sql_proxy
 # Uploads
 static/uploads/*
 !static/uploads/.gitkeep
+
+# Database backups
+*.sql

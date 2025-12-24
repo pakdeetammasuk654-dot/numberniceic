@@ -13,19 +13,22 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/google/uuid"
 )
 
 type AdminHandler struct {
 	service     *service.AdminService
 	sampleCache *cache.SampleNamesCache
+	store       *session.Store
 }
 
-func NewAdminHandler(service *service.AdminService, sampleCache *cache.SampleNamesCache) *AdminHandler {
-	return &AdminHandler{service: service, sampleCache: sampleCache}
+func NewAdminHandler(service *service.AdminService, sampleCache *cache.SampleNamesCache, store *session.Store) *AdminHandler {
+	return &AdminHandler{service: service, sampleCache: sampleCache, store: store}
 }
 
 // --- Sample Names Management ---
@@ -461,4 +464,138 @@ func (h *AdminHandler) DeleteImage(c *fiber.Ctx) error {
 	}
 
 	return c.SendString("") // Remove element from DOM
+}
+
+// --- Add System Name ---
+
+func (h *AdminHandler) ShowAddNamePage(c *fiber.Ctx) error {
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	recentNames, _ := h.service.GetLatestSystemNames(10)
+	totalCount, _ := h.service.GetTotalNamesCount()
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "เพิ่มชื่อระบบ",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.AddNameForm(recentNames, totalCount),
+	))
+}
+
+func (h *AdminHandler) AddSystemName(c *fiber.Ctx) error {
+	name := strings.TrimSpace(c.FormValue("name"))
+	if name == "" {
+		if c.Get("HX-Request") == "true" {
+			c.Set("HX-Trigger", `{"show-toast-error": "กรุณากรอกชื่อ"}`)
+			recentNames, _ := h.service.GetLatestSystemNames(10)
+			totalCount, _ := h.service.GetTotalNamesCount()
+			return templ_render.Render(c, admin.RecentNamesTable(recentNames, "", "", totalCount))
+		}
+		return c.Status(fiber.StatusBadRequest).SendString("Name is required")
+	}
+
+	sess, _ := h.store.Get(c)
+
+	err := h.service.AddSystemName(name)
+	if err != nil {
+		errorMsg := err.Error()
+		lowerErr := strings.ToLower(errorMsg)
+		// More robust detection for duplicate key error (PostgreSQL error 23505)
+		if strings.Contains(lowerErr, "unique constraint") ||
+			strings.Contains(lowerErr, "23505") ||
+			strings.Contains(lowerErr, "duplicate key") {
+			errorMsg = "ชื่อ '" + name + "' นี้มีอยู่ในระบบแล้ว"
+		}
+
+		if c.Get("HX-Request") == "true" {
+			recentNames, _ := h.service.GetLatestSystemNames(10)
+			totalCount, _ := h.service.GetTotalNamesCount()
+			return templ_render.Render(c, admin.RecentNamesTable(recentNames, errorMsg, "error", totalCount))
+		}
+		sess.Set("toast_error", errorMsg)
+		sess.Save()
+		return c.Redirect("/admin/add-name")
+	}
+
+	recentNames, _ := h.service.GetLatestSystemNames(10)
+
+	if c.Get("HX-Request") == "true" {
+		totalCount, _ := h.service.GetTotalNamesCount()
+		return templ_render.Render(c, admin.RecentNamesTable(recentNames, "เพิ่มชื่อ '"+name+"' สำเร็จ", "success", totalCount))
+	}
+
+	sess.Set("toast_success", "เพิ่มชื่อ '"+name+"' เข้าระบบสำเร็จ")
+	sess.Save()
+	return c.Redirect("/admin/add-name")
+}
+
+func (h *AdminHandler) BulkUploadNames(c *fiber.Ctx) error {
+	file, err := c.FormFile("bulk_file")
+	if err != nil {
+		c.Set("HX-Trigger", `{"show-toast-error": "กรุณาเลือกไฟล์ที่ต้องการอัปโหลด"}`)
+		recentNames, _ := h.service.GetLatestSystemNames(10)
+		totalCount, _ := h.service.GetTotalNamesCount()
+		return templ_render.Render(c, admin.RecentNamesTable(recentNames, "", "", totalCount))
+	}
+
+	f, err := file.Open()
+	if err != nil {
+		c.Set("HX-Trigger", `{"show-toast-error": "ไม่สามารถเปิดไฟล์ได้"}`)
+		recentNames, _ := h.service.GetLatestSystemNames(10)
+		totalCount, _ := h.service.GetTotalNamesCount()
+		return templ_render.Render(c, admin.RecentNamesTable(recentNames, "", "", totalCount))
+	}
+	defer f.Close()
+
+	content, err := ioutil.ReadAll(f)
+	if err != nil {
+		c.Set("HX-Trigger", `{"show-toast-error": "ไม่สามารถอ่านข้อมูลในไฟล์ได้"}`)
+		recentNames, _ := h.service.GetLatestSystemNames(10)
+		totalCount, _ := h.service.GetTotalNamesCount()
+		return templ_render.Render(c, admin.RecentNamesTable(recentNames, "", "", totalCount))
+	}
+
+	// Split by any whitespace (space, newline, tab, etc.)
+	names := strings.Fields(string(content))
+	if len(names) == 0 {
+		c.Set("HX-Trigger", `{"show-toast-error": "ไม่พบรายชื่อในไฟล์"}`)
+		recentNames, _ := h.service.GetLatestSystemNames(10)
+		totalCount, _ := h.service.GetTotalNamesCount()
+		return templ_render.Render(c, admin.RecentNamesTable(recentNames, "", "", totalCount))
+	}
+
+	success, fail := h.service.AddSystemNamesBulk(names)
+
+	msg := fmt.Sprintf("อัปโหลดสำเร็จ: %d รายชื่อ, ผิดพลาด/ซ้ำ: %d รายชื่อ", success, fail)
+	recentNames, _ := h.service.GetLatestSystemNames(10)
+	totalCount, _ := h.service.GetTotalNamesCount()
+	return templ_render.Render(c, admin.RecentNamesTable(recentNames, msg, "success", totalCount))
+}
+
+func (h *AdminHandler) DeleteSystemName(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+
+	err := h.service.DeleteSystemName(id)
+	if err != nil {
+		recentNames, _ := h.service.GetLatestSystemNames(10)
+		totalCount, _ := h.service.GetTotalNamesCount()
+		return templ_render.Render(c, admin.RecentNamesTable(recentNames, "เกิดข้อผิดพลาดในการลบ", "error", totalCount))
+	}
+
+	recentNames, _ := h.service.GetLatestSystemNames(10)
+	totalCount, _ := h.service.GetTotalNamesCount()
+	return templ_render.Render(c, admin.RecentNamesTable(recentNames, "ลบชื่อสำเร็จ", "success", totalCount))
 }

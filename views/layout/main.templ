@@ -108,8 +108,9 @@ templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage s
                         }
                     }
 
-                    // Handle Toast Trigger from Server Headers (e.g. HX-Trigger: show-toast)
-                    if (evt.detail.xhr.getResponseHeader("HX-Trigger") === "show-toast") {
+                    // Handle Toast Trigger from Server Headers
+                    const trigger = evt.detail.xhr.getResponseHeader("HX-Trigger");
+                    if (trigger === "show-toast") {
                          Toastify({
                             text: "ดำเนินการสำเร็จ",
                             duration: 3000,
@@ -118,6 +119,27 @@ templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage s
                             style: { background: "linear-gradient(to right, #00b09b, #96c93d)" }
                         }).showToast();
                     }
+                });
+
+                // Structured Toast Listeners
+                document.body.addEventListener('show-toast-success', function(evt) {
+                    Toastify({
+                        text: evt.detail.value || "ดำเนินการสำเร็จ",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "center",
+                        style: { background: "linear-gradient(to right, #00b09b, #96c93d)" }
+                    }).showToast();
+                });
+
+                document.body.addEventListener('show-toast-error', function(evt) {
+                    Toastify({
+                        text: evt.detail.value || "เกิดข้อผิดพลาด",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "center",
+                        style: { background: "linear-gradient(to right, #ff5f6d, #ffc371)" }
+                    }).showToast();
                 });
             </script>
 		</body>
