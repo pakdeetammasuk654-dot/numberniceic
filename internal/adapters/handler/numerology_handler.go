@@ -447,6 +447,41 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 		return c.SendString("<div>Error loading names.</div>")
 	}
 
+	// Deduplicate names based on NameID and ThName (Robust defense against duplicates)
+	seenIDs := make(map[int]bool)
+	seenNames := make(map[string]bool)
+	var uniqueNames []domain.SimilarNameResult
+
+	// Helper to remove invisible characters
+	removeInvisible := func(s string) string {
+		return strings.Map(func(r rune) rune {
+			// Keep printable chars, but specifically filter out common invisible ones if IsPrint lets them through
+			if unicode.IsPrint(r) {
+				return r
+			}
+			return -1
+		}, s)
+	}
+
+	for _, n := range similarNames {
+		// Normalize both names for comparison
+		normalizedInput := removeInvisible(strings.TrimSpace(name))
+		normalizedDbName := removeInvisible(strings.TrimSpace(n.ThName))
+
+		// Cap similarity at 99% if not exact match (after robust normalization)
+		if normalizedDbName != normalizedInput && n.Similarity > 0.99 {
+			n.Similarity = 0.99
+		}
+
+		// Use normalized name for deduplication
+		if !seenIDs[n.NameID] && !seenNames[normalizedDbName] {
+			uniqueNames = append(uniqueNames, n)
+			seenIDs[n.NameID] = true
+			seenNames[normalizedDbName] = true
+		}
+	}
+	similarNames = uniqueNames
+
 	h.calculateScoresAndHighlights(similarNames, day)
 
 	// Create display chars for the header (always true Klakini status)

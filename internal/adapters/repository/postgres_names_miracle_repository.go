@@ -74,7 +74,7 @@ func (r *PostgresNamesMiracleRepository) GetSimilarNames(name, day string, limit
             shanum,
             sim -- Return the similarity score
         FROM ranked_names
-        ORDER BY sim DESC
+        ORDER BY (CASE WHEN thname = $1 THEN 1 ELSE 0 END) DESC, sim DESC, thname ASC
         LIMIT $2 OFFSET $3;
     `, klakiniWhereClause)
 
@@ -222,7 +222,7 @@ func (r *PostgresNamesMiracleRepository) GetFallbackNames(name, preferredConsona
 		}
 
 		if len(currentExcluded) > 0 {
-			query.WriteString(fmt.Sprintf("AND name_id NOT IN (SELECT unnest($%d::int[])) ", paramCount))
+			query.WriteString(fmt.Sprintf("AND name_id NOT IN (SELECT unnest($%d::bigint[])) ", paramCount))
 			args = append(args, pq.Array(currentExcluded))
 			paramCount++
 		}
@@ -298,7 +298,7 @@ func (r *PostgresNamesMiracleRepository) GetFallbackNames(name, preferredConsona
 				FROM names_miracle
 				WHERE thname %s $2
 				%s -- klakini check
-				AND name_id NOT IN (SELECT unnest($3::int[]))
+				AND name_id NOT IN (SELECT unnest($3::bigint[]))
 				ORDER BY thname ASC
 				LIMIT $4;
 			`, compareOp, klakiniWhereClause)
