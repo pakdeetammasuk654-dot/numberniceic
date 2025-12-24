@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 type ThaiChar struct {
@@ -164,6 +165,14 @@ func formatTotalValue(total int) []string {
 }
 
 func SanitizeInput(input string) string {
+	// First, remove invisible characters by checking unicode properties
+	input = strings.Map(func(r rune) rune {
+		if unicode.IsPrint(r) {
+			return r
+		}
+		return -1
+	}, input)
+
 	reg := regexp.MustCompile(`[^a-zA-Z\p{Thai}\s]+`)
 	cleaned := reg.ReplaceAllString(input, "")
 	return strings.TrimSpace(cleaned)
