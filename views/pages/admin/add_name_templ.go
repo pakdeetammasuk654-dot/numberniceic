@@ -35,7 +35,7 @@ func AddNameForm(recentNames []domain.SimilarNameResult, totalCount int) templ.C
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div style=\"margin-bottom: 2rem;\"><a href=\"/admin\" style=\"display: inline-flex; align-items: center; text-decoration: none; color: #007bff; margin-bottom: 1rem;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"margin-right: 0.5rem;\"><line x1=\"19\" y1=\"12\" x2=\"5\" y2=\"12\"></line><polyline points=\"12 19 5 12 12 5\"></polyline></svg> กลับไปที่แดชบอร์ด</a><h1 style=\"font-family: 'Kanit', sans-serif;\">เพิ่มชื่อเข้าระบบ</h1><p style=\"color: #666;\">กรอกชื่อที่ต้องการเพิ่ม ระบบจะคำนวณเลขศาสตร์ พลังเงา และกาลกิณีให้โดยอัตโนมัติ</p></div><div style=\"display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;\"><div style=\"background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); height: fit-content;\"><form id=\"add-name-form\" hx-post=\"/admin/add-name\" hx-target=\"#recent-names-container\" hx-swap=\"innerHTML\" hx-on:htmx:after-request=\"if(event.detail.successful) { this.reset(); document.getElementById('name').focus(); }\"><input type=\"submit\" style=\"display: none;\"><div style=\"margin-bottom: 1.5rem;\"><label for=\"name\" style=\"display: block; margin-bottom: 0.5rem; font-weight: bold; font-family: 'Kanit', sans-serif;\">ชื่อ (ภาษาไทย)</label> <input type=\"text\" id=\"name\" name=\"name\" required autofocus placeholder=\"เช่น ปัญญา, มงคล\" pattern=\"[a-zA-Zก-๙\\s]*\" title=\"กรุณากรอกเฉพาะอักษรไทยหรืออังกฤษเท่านั้น\" style=\"width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; font-family: 'Kanit', sans-serif;\"></div><button type=\"submit\" style=\"width: 100%; background: #28a745; color: white; border: none; padding: 0.75rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; font-family: 'Kanit', sans-serif; transition: background 0.2s;\" onmouseover=\"this.style.background='#218838'\" onmouseout=\"this.style.background='#28a745'\">บันทึกข้อมูล</button></form><div style=\"margin-top: 2.5rem; border-top: 1px solid #eee; padding-top: 2rem;\"><h4 style=\"font-family: 'Kanit', sans-serif; margin-bottom: 1rem; color: #555;\">อัปโหลดไฟล์รายชื่อ (.txt)</h4><form hx-post=\"/admin/add-name/bulk\" hx-encoding=\"multipart/form-data\" hx-target=\"#recent-names-container\" hx-swap=\"innerHTML\" onhtmx:after-request=\"if(event.detail.successful) { this.reset(); }\"><div style=\"margin-bottom: 1rem;\"><input type=\"file\" name=\"bulk_file\" accept=\".txt\" required style=\"width: 100%; font-size: 0.9rem; color: #666;\"></div><button type=\"submit\" style=\"width: 100%; background: #6c757d; color: white; border: none; padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; font-family: 'Kanit', sans-serif; transition: background 0.2s;\" onmouseover=\"this.style.background='#5a6268'\" onmouseout=\"this.style.background='#6c757d'\">อัปโหลดและประมวลผล</button><p style=\"font-size: 0.75rem; color: #999; margin-top: 0.5rem;\">* แยกแต่ละชื่อด้วยการเว้นวรรค หรือขึ้นบรรทัดใหม่</p></form></div></div><div style=\"background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);\"><div style=\"margin-bottom: 1.5rem;\"><h3 style=\"font-family: 'Kanit', sans-serif; margin: 0;\">10 รายชื่อล่าสุดที่บันทึก</h3></div><div id=\"recent-names-container\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div style=\"margin-bottom: 2rem;\"><a href=\"/admin\" style=\"display: inline-flex; align-items: center; text-decoration: none; color: #007bff; margin-bottom: 1rem;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"margin-right: 0.5rem;\"><line x1=\"19\" y1=\"12\" x2=\"5\" y2=\"12\"></line><polyline points=\"12 19 5 12 12 5\"></polyline></svg> กลับไปที่แดชบอร์ด</a><h1 style=\"font-family: 'Kanit', sans-serif;\">เพิ่มชื่อเข้าระบบ</h1><p style=\"color: #666;\">กรอกชื่อที่ต้องการเพิ่ม ระบบจะคำนวณเลขศาสตร์ พลังเงา และกาลกิณีให้โดยอัตโนมัติ</p></div><div style=\"display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;\"><div style=\"background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); height: fit-content;\"><form id=\"add-name-form\" hx-post=\"/admin/add-name\" hx-target=\"#recent-names-container\" hx-swap=\"innerHTML\" hx-on:htmx:after-request=\"if(event.detail.successful) { this.reset(); document.getElementById('name').focus(); }\"><input type=\"submit\" style=\"display: none;\"><div style=\"margin-bottom: 1.5rem;\"><label for=\"name\" style=\"display: block; margin-bottom: 0.5rem; font-weight: bold; font-family: 'Kanit', sans-serif;\">ชื่อ (ภาษาไทย)</label> <input type=\"text\" id=\"name\" name=\"name\" required autofocus placeholder=\"เช่น ปัญญา, มงคล\" pattern=\"[a-zA-Zก-๙\\s]*\" title=\"กรุณากรอกเฉพาะอักษรไทยหรืออังกฤษเท่านั้น\" style=\"width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; font-family: 'Kanit', sans-serif;\"></div><button type=\"submit\" style=\"width: 100%; background: #28a745; color: white; border: none; padding: 0.75rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; font-family: 'Kanit', sans-serif; transition: background 0.2s;\" onmouseover=\"this.style.background='#218838'\" onmouseout=\"this.style.background='#28a745'\">บันทึกข้อมูล</button></form><div style=\"margin-top: 2.5rem; border-top: 1px solid #eee; padding-top: 2rem;\"><h4 style=\"font-family: 'Kanit', sans-serif; margin-bottom: 1rem; color: #555;\">อัปโหลดไฟล์รายชื่อ (.txt)</h4><form hx-post=\"/admin/add-name/bulk\" hx-encoding=\"multipart/form-data\" hx-target=\"#recent-names-container\" hx-swap=\"innerHTML\" hx-indicator=\"#bulk-loading\" onhtmx:after-request=\"if(event.detail.successful) { this.reset(); }\"><div style=\"margin-bottom: 1rem;\"><input type=\"file\" name=\"bulk_file\" accept=\".txt\" required style=\"width: 100%; font-size: 0.9rem; color: #666;\"></div><button type=\"submit\" style=\"width: 100%; background: #6c757d; color: white; border: none; padding: 0.6rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; font-family: 'Kanit', sans-serif; transition: background 0.2s;\" onmouseover=\"this.style.background='#5a6268'\" onmouseout=\"this.style.background='#6c757d'\">อัปโหลดและประมวลผล</button><p style=\"font-size: 0.75rem; color: #999; margin-top: 0.5rem;\">* แยกแต่ละชื่อด้วยการเว้นวรรค หรือขึ้นบรรทัดใหม่</p><!-- Loading Indicator --><div id=\"bulk-loading\" class=\"htmx-indicator\" style=\"margin-top: 1rem; color: #007bff; display: none; align-items: center; font-family: 'Kanit', sans-serif;\"><svg class=\"spinner\" viewBox=\"0 0 50 50\" style=\"width: 20px; height: 20px; margin-right: 8px;\"><circle class=\"path\" cx=\"25\" cy=\"25\" r=\"20\" fill=\"none\" stroke-width=\"5\"></circle></svg> กำลังประมวลผลข้อมูลขนาดใหญ่.... กรุณารอสักครู่</div></form></div></div><div style=\"background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);\"><div style=\"margin-bottom: 1.5rem;\"><h3 style=\"font-family: 'Kanit', sans-serif; margin: 0;\">10 รายชื่อล่าสุดที่บันทึก</h3></div><div id=\"recent-names-container\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -79,7 +79,7 @@ func RecentNamesTable(names []domain.SimilarNameResult, toastMsg string, toastTy
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(totalCount))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 102, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 111, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -97,7 +97,7 @@ func RecentNamesTable(names []domain.SimilarNameResult, toastMsg string, toastTy
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(toastMsg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 106, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 115, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -110,7 +110,7 @@ func RecentNamesTable(names []domain.SimilarNameResult, toastMsg string, toastTy
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(toastType)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 106, Col: 74}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 115, Col: 74}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -133,7 +133,7 @@ func RecentNamesTable(names []domain.SimilarNameResult, toastMsg string, toastTy
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(name.NameID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 136, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 145, Col: 73}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -146,7 +146,7 @@ func RecentNamesTable(names []domain.SimilarNameResult, toastMsg string, toastTy
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(name.ThName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 137, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 146, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -166,7 +166,7 @@ func RecentNamesTable(names []domain.SimilarNameResult, toastMsg string, toastTy
 						var templ_7745c5c3_Var8 string
 						templ_7745c5c3_Var8, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background: " + service.GetPairTypeColor(name.TSat[i].Type) + "; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem;")
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 143, Col: 163}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 152, Col: 163}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 						if templ_7745c5c3_Err != nil {
@@ -179,7 +179,7 @@ func RecentNamesTable(names []domain.SimilarNameResult, toastMsg string, toastTy
 						var templ_7745c5c3_Var9 string
 						templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(num)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 143, Col: 171}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 152, Col: 171}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 						if templ_7745c5c3_Err != nil {
@@ -197,7 +197,7 @@ func RecentNamesTable(names []domain.SimilarNameResult, toastMsg string, toastTy
 						var templ_7745c5c3_Var10 string
 						templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(num)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 145, Col: 109}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 154, Col: 109}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 						if templ_7745c5c3_Err != nil {
@@ -224,7 +224,7 @@ func RecentNamesTable(names []domain.SimilarNameResult, toastMsg string, toastTy
 						var templ_7745c5c3_Var11 string
 						templ_7745c5c3_Var11, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background: " + service.GetPairTypeColor(name.TSha[i].Type) + "; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem;")
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 156, Col: 163}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 165, Col: 163}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 						if templ_7745c5c3_Err != nil {
@@ -237,7 +237,7 @@ func RecentNamesTable(names []domain.SimilarNameResult, toastMsg string, toastTy
 						var templ_7745c5c3_Var12 string
 						templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(num)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 156, Col: 171}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 165, Col: 171}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 						if templ_7745c5c3_Err != nil {
@@ -255,7 +255,7 @@ func RecentNamesTable(names []domain.SimilarNameResult, toastMsg string, toastTy
 						var templ_7745c5c3_Var13 string
 						templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(num)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 158, Col: 109}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 167, Col: 109}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 						if templ_7745c5c3_Err != nil {
@@ -275,7 +275,7 @@ func RecentNamesTable(names []domain.SimilarNameResult, toastMsg string, toastTy
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/add-name/" + strconv.Itoa(name.NameID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 166, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 175, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -288,7 +288,7 @@ func RecentNamesTable(names []domain.SimilarNameResult, toastMsg string, toastTy
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs("คุณแน่ใจหรือไม่ว่าต้องการลบชื่อ '" + name.ThName + "' ?")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 168, Col: 140}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/add_name.templ`, Line: 177, Col: 140}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {

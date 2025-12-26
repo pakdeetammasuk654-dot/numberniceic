@@ -352,11 +352,12 @@ func (h *MemberHandler) prepareDisplayNames(savedNames []domain.SavedName) []dom
 }
 
 func (h *MemberHandler) isAllPairsTopTier(pairs []domain.PairInfo) bool {
+	if len(pairs) == 0 {
+		return false
+	}
 	for _, p := range pairs {
 		if meaning, ok := h.numberPairCache.GetMeaning(p.Number); ok {
-			switch meaning.PairType {
-			case "D10", "D8", "D5":
-			default:
+			if !service.IsGoodPairType(meaning.PairType) {
 				return false
 			}
 		} else {

@@ -63,7 +63,7 @@ func (h *PaymentHandler) GetUpgradeModal(c *fiber.Ctx) error {
 		refNo = refNo[len(refNo)-12:]
 	}
 
-	amount := 599.00 // VIP Price 599 THB for 1 Year
+	amount := 599.00 // VIP Price 599 THB Lifetime
 
 	// 3. Create Order in Database
 	err := h.service.CreateOrder(refNo, amount, userID)

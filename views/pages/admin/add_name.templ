@@ -59,6 +59,7 @@ templ AddNameForm(recentNames []domain.SimilarNameResult, totalCount int) {
 					hx-encoding="multipart/form-data" 
 					hx-target="#recent-names-container" 
 					hx-swap="innerHTML"
+					hx-indicator="#bulk-loading"
 					onhtmx:after-request="if(event.detail.successful) { this.reset(); }"
 				>
 					<div style="margin-bottom: 1rem;">
@@ -79,6 +80,14 @@ templ AddNameForm(recentNames []domain.SimilarNameResult, totalCount int) {
 						อัปโหลดและประมวลผล
 					</button>
 					<p style="font-size: 0.75rem; color: #999; margin-top: 0.5rem;">* แยกแต่ละชื่อด้วยการเว้นวรรค หรือขึ้นบรรทัดใหม่</p>
+					
+					<!-- Loading Indicator -->
+					<div id="bulk-loading" class="htmx-indicator" style="margin-top: 1rem; color: #007bff; display: none; align-items: center; font-family: 'Kanit', sans-serif;">
+						<svg class="spinner" viewBox="0 0 50 50" style="width: 20px; height: 20px; margin-right: 8px;">
+							<circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+						</svg>
+						กำลังประมวลผลข้อมูลขนาดใหญ่.... กรุณารอสักครู่
+					</div>
 				</form>
 			</div>
 		</div>

@@ -250,9 +250,38 @@ func (h *NumerologyHandler) calculateScoresAndHighlights(names []domain.SimilarN
 	for i := range names {
 		satMeanings, satPos, satNeg := getMeaningsAndScores(names[i].SatNum, h.numberPairCache)
 		shaMeanings, shaPos, shaNeg := getMeaningsAndScores(names[i].ShaNum, h.numberPairCache)
+
 		names[i].TotalScore = satPos + satNeg + shaPos + shaNeg
-		names[i].IsTopTier = h.isAllPairsTopTier(names[i].ThName, names[i].SatNum, h.numberPairCache) &&
-			h.isAllPairsTopTier(names[i].ThName, names[i].ShaNum, h.numberPairCache)
+
+		// Premium/TopTier Logic:
+		// 1. Must NOT have any BAD pairs (R10, R7, R5)
+		// 2. Must have AT LEAST ONE GOOD pair (D10, D8, D5)
+		// Apply this check to both Numerology (Sat) and Shadow (Sha) pillars.
+
+		isPillarStrictPremium := func(pairs []string) bool {
+			if len(pairs) == 0 {
+				return false
+			}
+			for _, p := range pairs {
+				if m, ok := h.numberPairCache.GetMeaning(p); ok {
+					if !service.IsGoodPairType(m.PairType) {
+						fmt.Printf("DEBUG: %s Pair %s Type '%s' NOT Good\n", names[i].ThName, p, m.PairType)
+						return false // Found non-Good pair (Neutral or Bad)
+					}
+				} else {
+					fmt.Printf("DEBUG: %s Pair %s Unknown/Not Found in Cache\n", names[i].ThName, p)
+					return false // Unknown pair is not Good
+				}
+			}
+			return true
+		}
+
+		satP := isPillarStrictPremium(names[i].SatNum)
+		shaP := isPillarStrictPremium(names[i].ShaNum)
+		names[i].IsTopTier = satP && shaP
+		if names[i].IsTopTier {
+			fmt.Printf("DEBUG: PREMIUM FOUND: %s\n", names[i].ThName)
+		}
 
 		// Generate display characters for the name with true Klakini status.
 		names[i].DisplayNameHTML = h.createDisplayChars(names[i].ThName, day)

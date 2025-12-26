@@ -135,7 +135,7 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 					hx-vals='js:{"name": (document.getElementById("name") ? document.getElementById("name").value : ""), "day": (document.getElementById("day") ? document.getElementById("day").value : ""), "auspicious": document.getElementById("auspicious-toggle").checked, "disable_klakini": document.getElementById("disable-klakini-toggle").checked}'
 				>
 					<div class="toggle-item">
-						<span class="toggle-label" style="font-size: 0.85rem; color: #888; white-space: nowrap;">ชื่อดีเท่านั้น</span>
+						<span class="toggle-label" style="font-size: 0.85rem; color: #28a745; white-space: nowrap; font-weight: 500;">ชื่อดีเท่านั้น</span>
 						<label class="toggle-switch">
 							<input type="checkbox" id="auspicious-toggle" name="auspicious" 
 								if props.IsAuspicious {
@@ -147,7 +147,7 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 					</div>
 	
 					<div class="toggle-item">
-						<span class="toggle-label" style="font-size: 0.85rem; color: #888; white-space: nowrap;">ปิดชื่อกาลกิณี</span>
+						<span class="toggle-label" style="font-size: 0.85rem; color: #888; white-space: nowrap;">ปิด<span style="color: #d32f2f; font-weight: bold;">ชื่อ</span>กาลกิณี</span>
 						<label class="toggle-switch">
 							<input type="checkbox" id="disable-klakini-toggle" name="disable_klakini"
 								if props.DisableKlakini {
@@ -168,8 +168,8 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
 						</div>
 						<div>
-							<h3 style="margin: 0; font-family: 'Kanit', sans-serif; font-size: 1.1rem;">VIP ตั้งชื่อให้แม่นยำ</h3>
-							<p style="margin: 0; font-family: 'Kanit', sans-serif; font-size: 0.9rem; opacity: 0.9;">ปลดล็อกชื่อจริงกว่า 3 แสนรายชื่อ</p>
+							<h3 style="margin: 0; font-family: 'Kanit', sans-serif; font-size: 1.1rem;">VIP ตั้งชื่อให้คมๆ</h3>
+							<p style="margin: 0; font-family: 'Kanit', sans-serif; font-size: 0.9rem; opacity: 0.9;">วิเคราะห์คนจริง +3 แสนรายชื่อ</p>
 						</div>
 					</div>
 					<a href="#" 
@@ -177,7 +177,7 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 					   hx-target="#upgrade-modal-container" 
 					   hx-swap="innerHTML"
 					   onclick="event.preventDefault(); var el = document.getElementById('upgrade-modal-container'); if(!el){ el = document.createElement('div'); el.id = 'upgrade-modal-container'; el.className = 'modal-overlay'; el.style.display = 'none'; el.style.zIndex='9999'; document.body.appendChild(el); } el.style.display='flex'"
-					   style="background: #2c3e50; color: white; padding: 0.5rem 1.2rem; border-radius: 8px; text-decoration: none; font-family: 'Kanit', sans-serif; font-size: 0.9rem; font-weight: 500;">สมัครเลย</a>
+					   style="background: #2c3e50; color: white; padding: 0.5rem 1.2rem; border-radius: 8px; text-decoration: none; font-family: 'Kanit', sans-serif; font-size: 0.9rem; font-weight: 500;">อัปเกรด</a>
 				</div>
 			} else {
 				<!-- VIP Active Banner -->
@@ -208,7 +208,9 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 					<tbody>
 						for i, name := range props.SimilarNames {
 						if props.IsVIP || i < 3 {
-							<tr class="clickable-row" { templ.Attributes{"onclick": "selectName('" + name.ThName + "')" }... } title="คลิกเพื่อวิเคราะห์ชื่อนี้">
+							<tr class={ "clickable-row", templ.KV("premium-row", name.IsTopTier) } 
+                                style={ templ.KV("background: linear-gradient(90deg, #FFFDE7 0%, #FFF59D 100%) !important; border-bottom: 2px solid #FBC02D !important;", name.IsTopTier) }
+                                { templ.Attributes{"onclick": "selectName('" + name.ThName + "')" }... } title="คลิกเพื่อวิเคราะห์ชื่อนี้">
 								<td style="padding-left: 1.5rem;">
 									<div class={ "name-cell", templ.KV("name-top-tier", name.IsTopTier) }>
 										for _, dc := range name.DisplayNameHTML {
@@ -236,14 +238,19 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 										}
 									</div>
 								</td>
-								<td style="text-align: center;">
-									<span class={ "score-badge", templ.KV("score-bad", name.TotalScore < 0), templ.KV("score-good", name.TotalScore >= 0) }>
+								<td style="text-align: center; vertical-align: middle;">
+                                    <div style="display: flex; flex-direction: column; align-items: center;">
+                                        if name.IsTopTier {
+                                            <span style="font-size: 0.8rem; margin-bottom: 2px; line-height: 1;">⭐</span>
+                                        }
+									    <span class={ "score-badge", templ.KV("score-bad", name.TotalScore < 0), templ.KV("score-good", name.TotalScore >= 0) }>
 										if name.TotalScore > 0 {
 											+{ fmt.Sprintf("%d", name.TotalScore) }
 										} else {
 											{ fmt.Sprintf("%d", name.TotalScore) }
 										}
 									</span>
+                                    </div>
 								</td>
 								<td style="text-align: center;">
 									<span style="font-size: 0.85rem; color: #adb5bd;">{ fmt.Sprintf("%.0f%%", mul(name.Similarity, 100)) }</span>

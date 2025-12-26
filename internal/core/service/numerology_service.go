@@ -206,19 +206,37 @@ func GetPairTypeColor(pairType string) string {
 	trimmedType := strings.TrimSpace(pairType)
 	switch trimmedType {
 	case "D10":
-		return "#2E7D32"
+		return "#2E7D32" // Dark Green
 	case "D8":
-		return "#43A047"
+		return "#43A047" // Green
 	case "D5":
-		return "#66BB6A"
+		return "#66BB6A" // Light Green
 	case "R10":
-		return "#C62828"
+		return "#C62828" // Dark Red
 	case "R7":
-		return "#E53935"
+		return "#E53935" // Red
 	case "R5":
-		return "#EF5350"
+		return "#EF5350" // Light Red
 	default:
-		return "#9E9E9E"
+		return "#9E9E9E" // Grey
+	}
+}
+
+func IsGoodPairType(pairType string) bool {
+	switch strings.TrimSpace(pairType) {
+	case "D10", "D8", "D5":
+		return true
+	default:
+		return false
+	}
+}
+
+func IsBadPairType(pairType string) bool {
+	switch strings.TrimSpace(pairType) {
+	case "R10", "R7", "R5":
+		return true
+	default:
+		return false
 	}
 }
 
