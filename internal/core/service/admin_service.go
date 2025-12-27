@@ -96,6 +96,18 @@ func (s *AdminService) GetMemberByID(id int) (*domain.Member, error) {
 	return s.memberRepo.GetByID(id)
 }
 
+func (s *AdminService) GetMemberByUsername(username string) (*domain.Member, error) {
+	return s.memberRepo.GetByUsername(username)
+}
+
+func (s *AdminService) UpdateAssignedColors(id int, colors string) error {
+	return s.memberRepo.UpdateAssignedColors(id, colors)
+}
+
+func (s *AdminService) GetMembersWithAssignedColors() ([]domain.Member, error) {
+	return s.memberRepo.GetMembersWithAssignedColors()
+}
+
 // --- Article Management ---
 
 func (s *AdminService) GetAllArticles() ([]domain.Article, error) {

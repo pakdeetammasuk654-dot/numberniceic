@@ -31,10 +31,20 @@ numbernice-app
 numbernice-linux
 run_migration-linux
 cloud_sql_proxy
+chuedee
+cleanup-tool-linux
 
 # Uploads
 static/uploads/*
 !static/uploads/.gitkeep
 
 # Database backups
-*.sql
+backup_*.sql
+
+# Scripts
+clean_new_server.sh
+clean_remote_db.sh
+deploy_chuedee.sh
+
+# Migration tool (if compiled locally)
+run_migration

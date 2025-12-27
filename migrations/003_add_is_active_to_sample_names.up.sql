@@ -1,1 +1,1 @@
-ALTER TABLE sample_names ADD COLUMN is_active BOOLEAN DEFAULT false;
+ALTER TABLE sample_names ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT false;

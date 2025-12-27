@@ -17,13 +17,13 @@ type SavedName struct {
 
 type SavedNameDisplay struct {
 	SavedName
-	BirthDayThai    string
-	BirthDayRaw     string
-	KlakiniChars    []string
-	SatPairs        []PairInfo
-	ShaPairs        []PairInfo
-	DisplayNameHTML []DisplayChar
-	IsTopTier       bool
+	BirthDayThai    string        `json:"birth_day_thai"`
+	BirthDayRaw     string        `json:"birth_day_raw"`
+	KlakiniChars    []string      `json:"klakini_chars"`
+	SatPairs        []PairInfo    `json:"sat_pairs"`
+	ShaPairs        []PairInfo    `json:"sha_pairs"`
+	DisplayNameHTML []DisplayChar `json:"display_name_html"`
+	IsTopTier       bool          `json:"is_top_tier"`
 }
 
 type PairInfo struct {

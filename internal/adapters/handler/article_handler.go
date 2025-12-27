@@ -102,3 +102,41 @@ func (h *ArticleHandler) ShowArticleDetailPage(c *fiber.Ctx) error {
 		pages.ArticleDetail(article),
 	))
 }
+
+// GetArticlesJSON returns articles in JSON format for API consumers
+func (h *ArticleHandler) GetArticlesJSON(c *fiber.Ctx) error {
+	articles, err := h.service.GetAllArticles()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Error loading articles",
+		})
+	}
+	return c.JSON(articles)
+}
+
+// GetArticleBySlugJSON returns a single article in JSON format for API consumers
+func (h *ArticleHandler) GetArticleBySlugJSON(c *fiber.Ctx) error {
+	slug := c.Params("slug")
+
+	// Decode the slug to handle Thai characters correctly
+	decodedSlug, err := url.QueryUnescape(slug)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid article slug",
+		})
+	}
+
+	article, err := h.service.GetArticleBySlug(decodedSlug)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Error loading article",
+		})
+	}
+	if article == nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Article not found",
+		})
+	}
+
+	return c.JSON(article)
+}

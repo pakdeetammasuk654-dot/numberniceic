@@ -31,24 +31,59 @@ func NewSavedNameHandler(service *service.SavedNameService, klakiniCache *cache.
 }
 
 func (h *SavedNameHandler) SaveName(c *fiber.Ctx) error {
-	sess, _ := h.store.Get(c)
-	userID := sess.Get("member_id")
-	if userID == nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	var userID int
+
+	// Try JWT first (for mobile app)
+	userIDFromJWT := c.Locals("user_id")
+	if userIDFromJWT != nil {
+		userID = userIDFromJWT.(int)
+	} else {
+		// Fall back to session (for web)
+		sess, _ := h.store.Get(c)
+		sessionUserID := sess.Get("member_id")
+		if sessionUserID == nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		}
+		userID = sessionUserID.(int)
 	}
 
-	name := c.FormValue("name")
-	birthDay := c.FormValue("birth_day")
-	totalScore, _ := strconv.Atoi(c.FormValue("total_score"))
-	satSum, _ := strconv.Atoi(c.FormValue("sat_sum"))
-	shaSum, _ := strconv.Atoi(c.FormValue("sha_sum"))
+	// Parse form data or JSON
+	var name, birthDay string
+	var totalScore, satSum, shaSum int
 
-	err := h.service.SaveName(userID.(int), name, birthDay, totalScore, satSum, shaSum)
+	if strings.HasPrefix(c.Get("Content-Type"), "application/json") {
+		// JSON request (mobile app)
+		type SaveNameRequest struct {
+			Name       string `json:"name"`
+			BirthDay   string `json:"birth_day"`
+			TotalScore int    `json:"total_score"`
+			SatSum     int    `json:"sat_sum"`
+			ShaSum     int    `json:"sha_sum"`
+		}
+		var req SaveNameRequest
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
+		}
+		name = req.Name
+		birthDay = req.BirthDay
+		totalScore = req.TotalScore
+		satSum = req.SatSum
+		shaSum = req.ShaSum
+	} else {
+		// Form data (web)
+		name = c.FormValue("name")
+		birthDay = c.FormValue("birth_day")
+		totalScore, _ = strconv.Atoi(c.FormValue("total_score"))
+		satSum, _ = strconv.Atoi(c.FormValue("sat_sum"))
+		shaSum, _ = strconv.Atoi(c.FormValue("sha_sum"))
+	}
+
+	err := h.service.SaveName(userID, name, birthDay, totalScore, satSum, shaSum)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not save name"})
 	}
 
-	return c.SendString("Name saved successfully!")
+	return c.JSON(fiber.Map{"message": "Name saved successfully!"})
 }
 
 func (h *SavedNameHandler) GetSavedNames(c *fiber.Ctx) error {
@@ -178,20 +213,35 @@ func (h *SavedNameHandler) getPairsWithColors(sum int) []domain.PairInfo {
 }
 
 func (h *SavedNameHandler) DeleteSavedName(c *fiber.Ctx) error {
-	sess, _ := h.store.Get(c)
-	userID := sess.Get("member_id")
-	if userID == nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	var userID int
+	isMobile := false
+
+	// Try JWT first
+	userIDFromJWT := c.Locals("user_id")
+	if userIDFromJWT != nil {
+		userID = userIDFromJWT.(int)
+		isMobile = true
+	} else {
+		sess, _ := h.store.Get(c)
+		sessionUserID := sess.Get("member_id")
+		if sessionUserID == nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		}
+		userID = sessionUserID.(int)
 	}
 
 	id, _ := strconv.Atoi(c.Params("id"))
-	err := h.service.DeleteSavedName(id, userID.(int))
+	err := h.service.DeleteSavedName(id, userID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not delete name"})
 	}
 
-	// Fetch updated list to return OOB count and update the table
-	savedNames, err := h.service.GetSavedNames(userID.(int))
+	if isMobile || strings.HasPrefix(c.Get("Content-Type"), "application/json") {
+		return c.JSON(fiber.Map{"message": "Name deleted successfully"})
+	}
+
+	// Fetch updated list to return OOB count and update the table (Web)
+	savedNames, err := h.service.GetSavedNames(userID)
 	if err != nil {
 		return c.SendString("") // Fallback if list fetch fails
 	}

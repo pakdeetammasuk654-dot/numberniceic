@@ -1,0 +1,120 @@
+package admin
+
+import (
+	"fmt"
+	"numberniceic/internal/core/domain"
+)
+
+templ WalletColors(colors []domain.WalletColor) {
+	<div class="container mx-auto px-4 py-8">
+		<h1 class="text-3xl font-bold mb-6 text-gray-800">จัดการสีกระเป๋าตามวันเกิด</h1>
+
+		<div class="bg-white rounded-lg shadow-md overflow-hidden">
+			<table class="min-w-full divide-y divide-gray-200">
+				<thead class="bg-gray-50">
+					<tr>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วัน</th>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อสี</th>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รหัสสี</th>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">คำอธิบาย</th>
+						<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
+					</tr>
+				</thead>
+				<tbody class="bg-white divide-y divide-gray-200">
+					for _, c := range colors {
+						@WalletColorRow(c)
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+}
+
+templ WalletColorRow(c domain.WalletColor) {
+	<tr id={ fmt.Sprintf("color-%d", c.DayOfWeek) }>
+		<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+			switch c.DayOfWeek {
+				case 0:
+					<span>วันอาทิตย์</span>
+				case 1:
+					<span>วันจันทร์</span>
+				case 2:
+					<span>วันอังคาร</span>
+				case 3:
+					<span>วันพุธ</span>
+				case 4:
+					<span>วันพฤหัสบดี</span>
+				case 5:
+					<span>วันศุกร์</span>
+				case 6:
+					<span>วันเสาร์</span>
+			}
+		</td>
+		<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ c.ColorName }</td>
+		<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+			<div class="flex items-center">
+				<div class="w-6 h-6 rounded-full border border-gray-300 mr-2" style={ fmt.Sprintf("background-color: %s;", c.ColorHex) }></div>
+				{ c.ColorHex }
+			</div>
+		</td>
+		<td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={ c.Description }>{ c.Description }</td>
+		<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+			<button
+				hx-get={ fmt.Sprintf("/admin/wallet-colors/%d/edit", c.DayOfWeek) }
+				hx-target={ fmt.Sprintf("#color-%d", c.DayOfWeek) }
+				hx-swap="outerHTML"
+				class="text-indigo-600 hover:text-indigo-900"
+			>
+				แก้ไข
+			</button>
+		</td>
+	</tr>
+}
+
+templ WalletColorEditRow(c domain.WalletColor) {
+	<tr id={ fmt.Sprintf("color-%d", c.DayOfWeek) }>
+		<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+			switch c.DayOfWeek {
+				case 0:
+					<span>วันอาทิตย์</span>
+				case 1:
+					<span>วันจันทร์</span>
+				case 2:
+					<span>วันอังคาร</span>
+				case 3:
+					<span>วันพุธ</span>
+				case 4:
+					<span>วันพฤหัสบดี</span>
+				case 5:
+					<span>วันศุกร์</span>
+				case 6:
+					<span>วันเสาร์</span>
+			}
+		</td>
+		<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+			<input type="text" name="color_name" value={ c.ColorName } class="w-full px-2 py-1 border rounded text-sm" form={ fmt.Sprintf("form-%d", c.DayOfWeek) } />
+		</td>
+		<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+			<div class="flex items-center">
+				<input type="color" name="color_hex" value={ c.ColorHex } class="w-8 h-8 p-0 border-0 rounded-full overflow-hidden cursor-pointer mr-2" form={ fmt.Sprintf("form-%d", c.DayOfWeek) } />
+				<input type="text" name="color_hex_text" value={ c.ColorHex } class="w-20 px-2 py-1 border rounded text-sm" form={ fmt.Sprintf("form-%d", c.DayOfWeek) } />
+			</div>
+		</td>
+		<td class="px-6 py-4 text-sm text-gray-500">
+			<textarea name="description" class="w-full px-2 py-1 border rounded text-sm" rows="2" form={ fmt.Sprintf("form-%d", c.DayOfWeek) }>{ c.Description }</textarea>
+		</td>
+		<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+			<form id={ fmt.Sprintf("form-%d", c.DayOfWeek) } hx-post={ fmt.Sprintf("/admin/wallet-colors/%d", c.DayOfWeek) } hx-target={ fmt.Sprintf("#color-%d", c.DayOfWeek) } hx-swap="outerHTML">
+				<button type="submit" class="text-green-600 hover:text-green-900 mr-2">บันทึก</button>
+				<button
+					hx-get={ fmt.Sprintf("/admin/wallet-colors/%d/cancel", c.DayOfWeek) }
+					hx-target={ fmt.Sprintf("#color-%d", c.DayOfWeek) }
+					hx-swap="outerHTML"
+					class="text-gray-600 hover:text-gray-900"
+				>
+					ยกเลิก
+				</button>
+			</form>
+		</td>
+	</tr>
+}

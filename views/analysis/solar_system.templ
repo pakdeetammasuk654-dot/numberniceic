@@ -6,25 +6,25 @@ import (
 )
 
 type SolarSystemProps struct {
-	CleanedName          string
-	InputDay             string
-	InputDayRaw          string
-	DisableKlakini       bool
-	IsVIP                bool
-	SunDisplayNameHTML   []domain.DisplayChar
-	NumerologyPairs      []domain.PairMeaningResult
-	ShadowPairs          []domain.PairMeaningResult
-	NumPositiveScore     int
-	NumNegativeScore     int
-	ShaPositiveScore     int
-	ShaNegativeScore     int
-	GrandTotalScore      int
-	IsSunDead            bool
-	AllUniquePairs       []domain.PairMeaningResult
-	DecodedParts         []domain.DecodedResult // Type needs to be known or redefined
-	TotalNumerologyValue int
-	TotalShadowValue     int
-	SkipTrigger          bool
+	CleanedName          string                     `json:"cleaned_name"`
+	InputDay             string                     `json:"input_day"`
+	InputDayRaw          string                     `json:"input_day_raw"`
+	DisableKlakini       bool                       `json:"disable_klakini"`
+	IsVIP                bool                       `json:"is_vip"`
+	SunDisplayNameHTML   []domain.DisplayChar       `json:"sun_display_name_html"`
+	NumerologyPairs      []domain.PairMeaningResult `json:"numerology_pairs"`
+	ShadowPairs          []domain.PairMeaningResult `json:"shadow_pairs"`
+	NumPositiveScore     int                        `json:"num_positive_score"`
+	NumNegativeScore     int                        `json:"num_negative_score"`
+	ShaPositiveScore     int                        `json:"sha_positive_score"`
+	ShaNegativeScore     int                        `json:"sha_negative_score"`
+	GrandTotalScore      int                        `json:"grand_total_score"`
+	IsSunDead            bool                       `json:"is_sun_dead"`
+	AllUniquePairs       []domain.PairMeaningResult `json:"all_unique_pairs"`
+	DecodedParts         []domain.DecodedResult     `json:"decoded_parts"`
+	TotalNumerologyValue int                        `json:"total_numerology_value"`
+	TotalShadowValue     int                        `json:"total_shadow_value"`
+	SkipTrigger          bool                       `json:"skip_trigger"`
 }
 
 

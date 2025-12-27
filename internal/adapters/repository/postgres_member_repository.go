@@ -5,6 +5,7 @@ import (
 	"errors"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -48,54 +49,63 @@ func (r *PostgresMemberRepository) GetByEmail(email string) (*domain.Member, err
 		return nil, nil
 	}
 	query := `
-		SELECT id, username, password, email, tel, status
+		SELECT id, username, password, email, tel, status, day_of_birth, COALESCE(assigned_colors, '')
 		FROM member
 		WHERE email = $1
 	`
 	var m domain.Member
-	err := r.db.QueryRow(query, email).Scan(&m.ID, &m.Username, &m.Password, &m.Email, &m.Tel, &m.Status)
+	err := r.db.QueryRow(query, email).Scan(&m.ID, &m.Username, &m.Password, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
 	}
+	m.Username = strings.TrimSpace(m.Username)
+	m.Email = strings.TrimSpace(m.Email)
+	m.Tel = strings.TrimSpace(m.Tel)
 	return &m, nil
 }
 
 func (r *PostgresMemberRepository) GetByUsername(username string) (*domain.Member, error) {
 	// Use 'status' but skip timestamps for now
 	query := `
-		SELECT id, username, password, email, tel, status
+		SELECT id, username, password, email, tel, status, day_of_birth, COALESCE(assigned_colors, '')
 		FROM member
 		WHERE username = $1
 	`
 	var m domain.Member
-	err := r.db.QueryRow(query, username).Scan(&m.ID, &m.Username, &m.Password, &m.Email, &m.Tel, &m.Status)
+	err := r.db.QueryRow(query, username).Scan(&m.ID, &m.Username, &m.Password, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
 	}
+	m.Username = strings.TrimSpace(m.Username)
+	m.Email = strings.TrimSpace(m.Email)
+	m.Tel = strings.TrimSpace(m.Tel)
 	return &m, nil
 }
 
 func (r *PostgresMemberRepository) GetByID(id int) (*domain.Member, error) {
 	// Use 'status' but skip timestamps for now
 	query := `
-		SELECT id, username, password, email, tel, status
+		SELECT id, username, password, email, tel, status, day_of_birth, COALESCE(assigned_colors, '')
 		FROM member
 		WHERE id = $1
 	`
 	var m domain.Member
-	err := r.db.QueryRow(query, id).Scan(&m.ID, &m.Username, &m.Password, &m.Email, &m.Tel, &m.Status)
+	err := r.db.QueryRow(query, id).Scan(&m.ID, &m.Username, &m.Password, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
 	}
+	m.Username = strings.TrimSpace(m.Username)
+	m.Email = strings.TrimSpace(m.Email)
+	m.Tel = strings.TrimSpace(m.Tel)
 	return &m, nil
 }
 
@@ -119,7 +129,7 @@ func (r *PostgresMemberRepository) GetAllMembers() ([]domain.Member, error) {
 	// Use 'status' but skip timestamps for now
 	// ORDER BY id DESC (Latest first)
 	query := `
-		SELECT id, username, email, tel, status
+		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, '')
 		FROM member
 		ORDER BY id DESC
 	`
@@ -132,10 +142,13 @@ func (r *PostgresMemberRepository) GetAllMembers() ([]domain.Member, error) {
 	var members []domain.Member
 	for rows.Next() {
 		var m domain.Member
-		err := rows.Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status)
+		err := rows.Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors)
 		if err != nil {
 			return nil, err
 		}
+		m.Username = strings.TrimSpace(m.Username)
+		m.Email = strings.TrimSpace(m.Email)
+		m.Tel = strings.TrimSpace(m.Tel)
 		members = append(members, m)
 	}
 	return members, nil
@@ -177,4 +190,44 @@ func (r *PostgresMemberRepository) SetVIP(id int, isVIP bool) error {
 	query := `UPDATE member SET status = $1 WHERE id = $2 AND status < 9`
 	_, err := r.db.Exec(query, newStatus, id)
 	return err
+}
+
+func (r *PostgresMemberRepository) UpdateDayOfBirth(id int, dayOfWeek int) error {
+	query := `UPDATE member SET day_of_birth = $1 WHERE id = $2`
+	_, err := r.db.Exec(query, dayOfWeek, id)
+	return err
+}
+
+func (r *PostgresMemberRepository) UpdateAssignedColors(id int, colors string) error {
+	query := `UPDATE member SET assigned_colors = $1 WHERE id = $2`
+	_, err := r.db.Exec(query, colors, id)
+	return err
+}
+
+func (r *PostgresMemberRepository) GetMembersWithAssignedColors() ([]domain.Member, error) {
+	query := `
+		SELECT id, username, email, tel, status, day_of_birth, assigned_colors
+		FROM member
+		WHERE assigned_colors IS NOT NULL AND assigned_colors != ''
+		ORDER BY id DESC
+	`
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var members []domain.Member
+	for rows.Next() {
+		var m domain.Member
+		err := rows.Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors)
+		if err != nil {
+			return nil, err
+		}
+		m.Username = strings.TrimSpace(m.Username)
+		m.Email = strings.TrimSpace(m.Email)
+		m.Tel = strings.TrimSpace(m.Tel)
+		members = append(members, m)
+	}
+	return members, nil
 }

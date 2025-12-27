@@ -16,8 +16,10 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/session"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -62,6 +64,12 @@ func main() {
 	articleService := service.NewArticleService(articleRepo)
 	adminService := service.NewAdminService(memberRepo, articleRepo, sampleNamesRepo, namesMiracleRepo, numerologySvc)
 
+	buddhistDayRepo := repository.NewPostgresBuddhistDayRepository(db)
+	buddhistDayService := service.NewBuddhistDayService(buddhistDayRepo)
+
+	walletColorRepo := repository.NewPostgresWalletColorRepository(db)
+	walletColorService := service.NewWalletColorService(walletColorRepo)
+
 	// --- Session Store ---
 	store := session.New(session.Config{
 		CookieHTTPOnly: true,
@@ -71,6 +79,7 @@ func main() {
 	// --- Fiber App ---
 	app := fiber.New()
 	app.Use(recover.New())
+	app.Use(cors.New()) // Enable CORS for API access
 	app.Static("/", "./static")
 
 	// --- Central Middleware for Session Data ---
@@ -136,10 +145,10 @@ func main() {
 	// --- Handlers ---
 	// --- Handlers ---
 	numerologyHandler := handler.NewNumerologyHandler(numerologyCache, shadowCache, klakiniCache, numberPairCache, namesMiracleRepo, linguisticService, sampleNamesCache)
-	memberHandler := handler.NewMemberHandler(memberService, savedNameService, klakiniCache, numberPairCache, store)
+	memberHandler := handler.NewMemberHandler(memberService, savedNameService, buddhistDayService, klakiniCache, numberPairCache, store)
 	savedNameHandler := handler.NewSavedNameHandler(savedNameService, klakiniCache, numberPairCache, store)
 	articleHandler := handler.NewArticleHandler(articleService, store)
-	adminHandler := handler.NewAdminHandler(adminService, sampleNamesCache, store)
+	adminHandler := handler.NewAdminHandler(adminService, sampleNamesCache, store, buddhistDayService, walletColorService)
 
 	orderRepo := repository.NewPostgresOrderRepository(db)
 	paymentService := service.NewPaymentService(orderRepo, memberRepo)
@@ -166,6 +175,36 @@ func main() {
 			sess.Save()
 			return c.Redirect("/dashboard")
 		}
+		return c.Next()
+	}
+
+	// --- Optional Auth Middleware (for endpoints that support both JWT and session) ---
+	const jwtSecret = "s3cr3t-k3y-f0r-num63rn1c31c-m0b1l3-@pp" // Same as in member_handler.go
+
+	optionalAuthMiddleware := func(c *fiber.Ctx) error {
+		// Try JWT first (for mobile app)
+		authHeader := c.Get("Authorization")
+		if authHeader != "" && len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+			tokenString := authHeader[7:]
+
+			// Parse and validate JWT token
+			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+				return []byte(jwtSecret), nil
+			})
+
+			if err == nil && token.Valid {
+				// Extract claims
+				if claims, ok := token.Claims.(jwt.MapClaims); ok {
+					if userID, ok := claims["user_id"].(float64); ok {
+						// JWT is valid, set user_id in locals
+						c.Locals("user_id", int(userID))
+					}
+				}
+			}
+		}
+
+		// JWT not present or invalid, continue without setting user_id
+		// The handler will check session auth as fallback
 		return c.Next()
 	}
 
@@ -221,6 +260,41 @@ func main() {
 		))
 	})
 
+	// Buddhist Day Banner Route (HTMX)
+	app.Get("/buddhist-day-banner", func(c *fiber.Ctx) error {
+		days, err := buddhistDayService.GetUpcomingDays(1)
+		if err != nil || len(days) == 0 {
+			return c.SendString("") // No upcoming days or error
+		}
+
+		nextDay := days[0]
+		today := time.Now().Truncate(24 * time.Hour)
+		targetDay := nextDay.Date.Truncate(24 * time.Hour)
+
+		// Check if today is the buddhist day
+		if today.Equal(targetDay) {
+			return c.SendString(`
+				<div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
+					<p class="font-bold">วันนี้วันพระ</p>
+					<p>ขอให้ท่านมีความสุขกาย สุขใจ คิดสิ่งใดสมปรารถนา</p>
+				</div>
+			`)
+		}
+
+		// Check if tomorrow is the buddhist day
+		tomorrow := today.Add(24 * time.Hour)
+		if tomorrow.Equal(targetDay) {
+			return c.SendString(`
+				<div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4" role="alert">
+					<p class="font-bold">พรุ่งนี้วันพระ</p>
+					<p>เตรียมตัวทำบุญ ตักบาตร เพื่อความเป็นสิริมงคล</p>
+				</div>
+			`)
+		}
+
+		return c.SendString("")
+	})
+
 	// About Us Page
 	app.Get("/about", func(c *fiber.Ctx) error {
 		// Helper to get string from Locals safely
@@ -264,9 +338,25 @@ func main() {
 	app.Get("/articles", articleHandler.ShowArticlesPage)
 	app.Get("/articles/:slug", articleHandler.ShowArticleDetailPage)
 
+	// API Routes
+	api := app.Group("/api")
+	api.Get("/analyze", numerologyHandler.AnalyzeAPI)
+	api.Get("/analyze-linguistically", numerologyHandler.AnalyzeLinguisticallyAPI)
+	api.Get("/sample-names", numerologyHandler.GetSampleNamesAPI)
+	api.Post("/saved-names", optionalAuthMiddleware, savedNameHandler.SaveName)
+	app.Delete("/api/saved-names/:id", optionalAuthMiddleware, savedNameHandler.DeleteSavedName)
+	api.Get("/articles", articleHandler.GetArticlesJSON)
+	api.Get("/articles/:slug", articleHandler.GetArticleBySlugJSON) // New Endpoint
+	api.Get("/buddhist-days", adminHandler.GetBuddhistDaysJSON)
+	api.Get("/buddhist-days/upcoming", adminHandler.GetUpcomingBuddhistDayJSON)
+	api.Get("/buddhist-days/check", adminHandler.CheckIsBuddhistDayJSON)
+
 	// Auth routes
 	app.Get("/login", memberHandler.ShowLoginPage)
 	app.Post("/login", memberHandler.HandleLogin)
+	app.Post("/api/login", memberHandler.HandleLoginAPI)
+	app.Post("/api/register", memberHandler.HandleRegisterAPI)
+	app.Get("/api/dashboard", memberHandler.GetDashboardAPI) // New Dashboard API
 	app.Get("/register", memberHandler.ShowRegisterPage)
 	app.Post("/register", memberHandler.HandleRegister)
 	app.Get("/logout", memberHandler.HandleLogout)
@@ -276,13 +366,13 @@ func main() {
 	dashboard.Get("/", memberHandler.ShowDashboard)
 
 	// Saved Names Routes
-	// POST /saved-names does NOT use authMiddleware because it handles 401 internally for HTMX
-	app.Post("/saved-names", savedNameHandler.SaveName)
+	// POST /saved-names uses optional auth middleware to support both JWT and session
+	app.Post("/saved-names", optionalAuthMiddleware, savedNameHandler.SaveName)
 
 	// Other saved-names routes CAN use authMiddleware
 	savedNames := app.Group("/saved-names", authMiddleware)
 	savedNames.Get("/", savedNameHandler.GetSavedNames)
-	savedNames.Delete("/:id", savedNameHandler.DeleteSavedName)
+	savedNames.Delete("/:id", optionalAuthMiddleware, savedNameHandler.DeleteSavedName)
 
 	// Admin Routes
 	admin := app.Group("/admin", authMiddleware, adminMiddleware)
@@ -312,6 +402,22 @@ func main() {
 	admin.Post("/add-name", adminHandler.AddSystemName)
 	admin.Post("/add-name/bulk", adminHandler.BulkUploadNames)
 	admin.Delete("/add-name/:id", adminHandler.DeleteSystemName)
+
+	// Buddhist Day Management
+	admin.Get("/buddhist-days", adminHandler.ShowBuddhistDaysPage)
+	admin.Post("/buddhist-days", adminHandler.AddBuddhistDay)
+	admin.Delete("/buddhist-days/:id", adminHandler.DeleteBuddhistDay)
+
+	// API Docs
+	admin.Get("/api-docs", adminHandler.ShowAPIDocsPage)
+
+	// Wallet Color Management
+	admin.Get("/wallet-colors", adminHandler.ShowWalletColorsPage)
+	admin.Get("/wallet-colors/:day/edit", adminHandler.ShowEditWalletColorRow)
+	admin.Post("/wallet-colors/:day", adminHandler.UpdateWalletColor)
+	admin.Get("/wallet-colors/:day/cancel", adminHandler.CancelEditWalletColorRow)
+	admin.Get("/customer-color-report", adminHandler.ShowCustomerColorReportPage)
+	admin.Post("/assign-customer-colors", adminHandler.AssignCustomerColors)
 
 	// Payment Routes
 	app.Get("/payment/upgrade", paymentHandler.GetUpgradeModal)

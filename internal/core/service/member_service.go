@@ -32,13 +32,8 @@ func (s *MemberService) Register(username, password, email, tel string) error {
 	// Looking at PostgresMemberRepository.Create, it hashes the password again!
 	// We should pass the raw password to Create if repo hashes it, OR hash it here and pass hashed.
 	// Let's check PostgresMemberRepository again. It does hash it.
-	// So we should pass the raw password to Create.
-
-	// Wait, if I pass raw password to Create, and Create hashes it, that's fine.
-	// But here I was hashing it too. Let's remove hashing here and let repo handle it
-	// OR remove hashing from repo and handle it here.
-	// Usually service handles business logic (hashing).
-	// Let's check PostgresMemberRepository.Create again.
+	// So we should NOT hash it here in service if I want to avoid double hashing.
+	// However, to be clean, I will just pass the raw password to repo.Create.
 
 	/*
 		func (r *PostgresMemberRepository) Create(member *domain.Member) error {
@@ -91,4 +86,11 @@ func (s *MemberService) Login(username, password string) (*domain.Member, error)
 
 func (s *MemberService) GetMemberByID(id int) (*domain.Member, error) {
 	return s.repo.GetByID(id)
+}
+
+func (s *MemberService) UpdateDayOfBirth(id int, dayOfWeek int) error {
+	if dayOfWeek < 0 || dayOfWeek > 6 {
+		return errors.New("invalid day of week")
+	}
+	return s.repo.UpdateDayOfBirth(id, dayOfWeek)
 }

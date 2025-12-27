@@ -20,4 +20,20 @@ Content-Type: application/json
 # @name ListModels
 GET https://generativelanguage.googleapis.com/v1beta/models?key={{GEMINI_API_KEY}}
 
+### Get All Articles (JSON API)
+# @name GetArticlesJSON
+GET http://localhost:3000/api/articles
+Accept: application/json
+
+###
+### Login API (JSON)
+# @name LoginAPI
+POST http://localhost:3000/api/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "password"
+}
+
 ###

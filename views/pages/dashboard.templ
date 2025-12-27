@@ -9,18 +9,29 @@ script navigateToAnalyzer(name string, day string) {
 	window.location.href = '/analyzer?name=' + name + '&day=' + day;
 }
 
-templ Dashboard(username string, email string, tel string, savedNames []domain.SavedNameDisplay, isVIP bool) {
+templ Dashboard(username string, email string, tel string, savedNames []domain.SavedNameDisplay, isVIP bool, assignedColors []string, isBuddhistDay bool) {
 	<div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
 		<div>
-			<h1 style="font-family: 'Kanit', sans-serif; margin: 0;">ยินดีต้อนรับ, { username }!</h1>
-			<p style="font-family: 'Kanit', sans-serif; color: #666; margin: 0.5rem 0 0 0;">ข้อมูลส่วนตัวและรายชื่อดีที่คุณเลือก</p>
-		</div>
-		if isVIP {
-			<div style="background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); padding: 0.5rem 1.25rem; border-radius: 50px; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 15px rgba(253, 185, 49, 0.3); border: 1px solid rgba(255,255,255,0.3);">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-				<span style="font-family: 'Kanit', sans-serif; font-weight: bold; color: #4a3b00; font-size: 0.95rem;">VIP MEMBER</span>
+			<div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+				<h1 style="font-family: 'Kanit', sans-serif; margin: 0;">ยินดีต้อนรับ, { username }!</h1>
+				if isBuddhistDay {
+					<div style="background-color: rgba(255, 165, 0, 0.15); border: 1px solid rgba(255, 215, 0, 0.5); padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
+						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#FFD700" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+						<span style="font-family: 'Kanit', sans-serif; font-size: 0.9rem; font-weight: bold; color: #d4af37;">วันนี้วันพระ</span>
+					</div>
+				}
 			</div>
-		}
+			if isVIP {
+				<p style="font-family: 'Kanit', sans-serif; margin: 0.25rem 0 0 0; font-weight: 500; font-size: 1.1rem;">
+					<span style="background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-flex; align-items: center; gap: 0.25rem;">
+						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="url(#gold-gradient)" stroke="url(#gold-gradient)" stroke-width="0"><defs><linearGradient id="gold-gradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#D4AF37"/><stop offset="50%" stop-color="#FFD700"/><stop offset="100%" stop-color="#D4AF37"/></linearGradient></defs><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+						สถานะสมาชิก VIP
+					</span>
+				</p>
+			} else {
+				<p style="font-family: 'Kanit', sans-serif; color: #666; margin: 0.5rem 0 0 0;">ข้อมูลส่วนตัวและรายชื่อดีที่คุณเลือก</p>
+			}
+		</div>
 	</div>
 
 	<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
@@ -62,17 +73,22 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
 					</button>
 				</div>
 			</div>
-		} else {
-			<div class="name-card" style="margin: 0; background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: white; border: none; font-family: 'Kanit', sans-serif; display: flex; flex-direction: column;">
-				<h2 style="font-size: 1.25rem; margin-bottom: 1rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
-					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-					สถานะสมาชิก VIP
+		}
+
+		if len(assignedColors) > 0 {
+			<div class="name-card" style="margin: 0; font-family: 'Kanit', sans-serif; display: flex; flex-direction: column;">
+				<h2 style="font-size: 1.25rem; margin-bottom: 1.25rem; border-bottom: 1px solid #eee; padding-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4"></path><path d="M4 12v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"></path><path d="M16 12a4 4 0 0 1-8 0"></path></svg>
+					สีกระเป๋าถูกโฉลก
 				</h2>
-				<p style="font-size: 1rem; color: #fff; margin-bottom: 1.25rem;">คุณกำลังใช้งานในระดับ VIP สูงสุด</p>
-				<div style="background: rgba(255, 255, 255, 0.2); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.3);">
-					<p style="margin: 0; font-size: 0.9rem; line-height: 1.5;">✨ ปลดล็อกทุกฟีเจอร์การวิเคราะห์แล้ว<br>✨ เข้าถึงระบบค้นหาชื่อมงคลแบบพรีเมียมได้ไม่จำกัด</p>
+				<div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; align-items: center; flex: 1;">
+					for _, color := range assignedColors {
+						if color != "" {
+							<div style={ "width: 50px; height: 50px; border-radius: 50%; border: 2px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.1); background-color: " + color + ";" }></div>
+						}
+					}
 				</div>
-				<p style="margin-top: 1.5rem; font-size: 0.8rem; text-align: center; color: rgba(255, 255, 255, 0.8);">ขอบคุณที่ร่วมเป็นส่วนหนึ่งของ ชื่อดี.com</p>
+				<p style="margin-top: 1rem; font-size: 0.85rem; color: #666; text-align: center;">สีมงคลประจำตัวของคุณที่อาจารย์เลือกให้</p>
 			</div>
 		}
 	</div>

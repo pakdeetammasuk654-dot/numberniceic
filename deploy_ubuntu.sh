@@ -45,13 +45,12 @@ gcloud compute scp --recurse views $INSTANCE_NAME:$REMOTE_DIR/ --zone=$ZONE
 gcloud compute scp .env $INSTANCE_NAME:$REMOTE_DIR/ --zone=$ZONE
 
 # Build local migration runner
-GOOS=linux GOARCH=amd64 go build -o run_migration-linux run_migration.go
+echo "Building Migration Tool for Linux..."
+GOOS=linux GOARCH=amd64 go build -o run_migration-linux cmd/migrate/main.go
 gcloud compute scp run_migration-linux $INSTANCE_NAME:$REMOTE_DIR/ --zone=$ZONE
 
 # 3. Apply Changes & Restart
 echo "Applying changes on server..."
 gcloud compute ssh $INSTANCE_NAME --zone=$ZONE --command="cd $REMOTE_DIR && chmod +x numbernice-linux run_migration-linux && ./run_migration-linux && echo 'Restarting Service...' && sudo systemctl restart numberniceic && sudo systemctl status numberniceic --no-pager"
-
-echo "Deployment to Ubuntu Server Complete!"
 
 echo "Deployment to Ubuntu Server Complete!"

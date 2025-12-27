@@ -10,9 +10,12 @@ type MemberRepository interface {
 	Update(member *domain.Member) error
 	Delete(id int) error
 	CheckPassword(hashedPassword, password string) error
+	UpdateDayOfBirth(id int, dayOfWeek int) error
 
 	// Admin methods
 	GetAllMembers() ([]domain.Member, error)
 	UpdateStatus(id int, status int) error
 	SetVIP(id int, isVIP bool) error
+	UpdateAssignedColors(id int, colors string) error
+	GetMembersWithAssignedColors() ([]domain.Member, error)
 }

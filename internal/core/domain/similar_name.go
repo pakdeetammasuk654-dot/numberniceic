@@ -8,8 +8,8 @@ type PairTypeInfo struct {
 
 // DisplayChar represents a single character for display, with a flag if it's a klakini.
 type DisplayChar struct {
-	Char  string
-	IsBad bool
+	Char  string `json:"char"`
+	IsBad bool   `json:"is_bad"`
 }
 
 type SimilarNameResult struct {

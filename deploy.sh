@@ -39,7 +39,7 @@ echo "--- Updating Database ---"
 # Check if cloud-sql-proxy is installed
 if ! command -v cloud_sql_proxy &> /dev/null; then
     echo "cloud_sql_proxy not found. Skipping auto-migration."
-    echo "Please run the migration manually using 'go run run_migration.go' connected to your production DB."
+    echo "Please run the migration manually using 'go run cmd/migrate/main.go' connected to your production DB."
 else
     if [ -z "$DB_INSTANCE_CONNECTION_NAME" ]; then
         # Try to detect automatically (might find nothing if 0 items)
@@ -66,7 +66,7 @@ else
     
     echo "Running Migration..."
     # Run migration using local go script pointing to proxy port
-    DB_HOST=127.0.0.1 DB_PORT=5433 go run run_migration.go
+    DB_HOST=127.0.0.1 DB_PORT=5433 go run cmd/migrate/main.go
     
     kill $PROXY_PID
 fi

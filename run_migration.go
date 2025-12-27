@@ -1,5 +1,10 @@
+// This file is deprecated. Please use cmd/migrate/main.go instead.
+// It is kept temporarily to avoid breaking scripts that might still reference it,
+// but its content is commented out to prevent "main redeclared" errors.
+
 package main
 
+/*
 import (
 	"database/sql"
 	"fmt"
@@ -73,3 +78,4 @@ func main() {
 		log.Println("Migration successful!")
 	}
 }
+*/

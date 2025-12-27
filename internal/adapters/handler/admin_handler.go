@@ -22,13 +22,15 @@ import (
 )
 
 type AdminHandler struct {
-	service     *service.AdminService
-	sampleCache *cache.SampleNamesCache
-	store       *session.Store
+	service            *service.AdminService
+	sampleCache        *cache.SampleNamesCache
+	store              *session.Store
+	buddhistDayService *service.BuddhistDayService
+	walletColorService *service.WalletColorService
 }
 
-func NewAdminHandler(service *service.AdminService, sampleCache *cache.SampleNamesCache, store *session.Store) *AdminHandler {
-	return &AdminHandler{service: service, sampleCache: sampleCache, store: store}
+func NewAdminHandler(service *service.AdminService, sampleCache *cache.SampleNamesCache, store *session.Store, buddhistDayService *service.BuddhistDayService, walletColorService *service.WalletColorService) *AdminHandler {
+	return &AdminHandler{service: service, sampleCache: sampleCache, store: store, buddhistDayService: buddhistDayService, walletColorService: walletColorService}
 }
 
 // --- Sample Names Management ---
@@ -598,4 +600,272 @@ func (h *AdminHandler) DeleteSystemName(c *fiber.Ctx) error {
 	recentNames, _ := h.service.GetLatestSystemNames(10)
 	totalCount, _ := h.service.GetTotalNamesCount()
 	return templ_render.Render(c, admin.RecentNamesTable(recentNames, "ลบชื่อสำเร็จ", "success", totalCount))
+}
+
+// --- Buddhist Day Management ---
+
+func (h *AdminHandler) ShowBuddhistDaysPage(c *fiber.Ctx) error {
+	days, err := h.buddhistDayService.GetAllDays()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error loading buddhist days")
+	}
+
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "Manage Buddhist Days",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.BuddhistDays(days),
+	))
+}
+
+func (h *AdminHandler) AddBuddhistDay(c *fiber.Ctx) error {
+	dateStr := c.FormValue("date")
+	err := h.buddhistDayService.AddDay(dateStr)
+	if err != nil {
+		// Handle error (e.g., duplicate date)
+		sess, _ := h.store.Get(c)
+		sess.Set("toast_error", "Error adding date: "+err.Error())
+		sess.Save()
+		return c.Redirect("/admin/buddhist-days")
+	}
+	return c.Redirect("/admin/buddhist-days")
+}
+
+func (h *AdminHandler) DeleteBuddhistDay(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	err := h.buddhistDayService.DeleteDay(id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error deleting day")
+	}
+	return c.SendString("") // Remove row from DOM
+}
+
+// --- API for Android App ---
+
+func (h *AdminHandler) GetBuddhistDaysJSON(c *fiber.Ctx) error {
+	days, err := h.buddhistDayService.GetAllDays()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Error loading buddhist days",
+		})
+	}
+	return c.JSON(days)
+}
+
+func (h *AdminHandler) GetUpcomingBuddhistDayJSON(c *fiber.Ctx) error {
+	days, err := h.buddhistDayService.GetUpcomingDays(1)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Error loading upcoming buddhist day",
+		})
+	}
+	if len(days) == 0 {
+		return c.JSON(fiber.Map{
+			"message": "No upcoming buddhist days found",
+		})
+	}
+	return c.JSON(days[0])
+}
+
+func (h *AdminHandler) CheckIsBuddhistDayJSON(c *fiber.Ctx) error {
+	dateStr := c.Query("date")
+	var date time.Time
+	var err error
+
+	if dateStr == "" {
+		date = time.Now().Truncate(24 * time.Hour)
+	} else {
+		date, err = time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Invalid date format. Use YYYY-MM-DD",
+			})
+		}
+	}
+
+	isBuddhistDay, err := h.buddhistDayService.IsBuddhistDay(date)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Error checking buddhist day",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"date":            date.Format("2006-01-02"),
+		"is_buddhist_day": isBuddhistDay,
+	})
+}
+
+// --- API Docs ---
+func (h *AdminHandler) ShowAPIDocsPage(c *fiber.Ctx) error {
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "API Documentation",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.APIDocs(),
+	))
+}
+
+// --- Wallet Color Management ---
+
+func (h *AdminHandler) ShowWalletColorsPage(c *fiber.Ctx) error {
+	colors, err := h.walletColorService.GetAll()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error loading wallet colors")
+	}
+
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "Manage Wallet Colors",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.WalletColors(colors),
+	))
+}
+
+func (h *AdminHandler) ShowEditWalletColorRow(c *fiber.Ctx) error {
+	dayOfWeek, _ := strconv.Atoi(c.Params("day"))
+	color, err := h.walletColorService.GetByDay(dayOfWeek)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error loading color")
+	}
+	return templ_render.Render(c, admin.WalletColorEditRow(*color))
+}
+
+func (h *AdminHandler) CancelEditWalletColorRow(c *fiber.Ctx) error {
+	dayOfWeek, _ := strconv.Atoi(c.Params("day"))
+	color, err := h.walletColorService.GetByDay(dayOfWeek)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error loading color")
+	}
+	return templ_render.Render(c, admin.WalletColorRow(*color))
+}
+
+func (h *AdminHandler) UpdateWalletColor(c *fiber.Ctx) error {
+	dayOfWeek, _ := strconv.Atoi(c.Params("day"))
+	colorName := c.FormValue("color_name")
+	colorHex := c.FormValue("color_hex")
+	description := c.FormValue("description")
+
+	color := &domain.WalletColor{
+		DayOfWeek:   dayOfWeek,
+		ColorName:   colorName,
+		ColorHex:    colorHex,
+		Description: description,
+	}
+
+	err := h.walletColorService.Update(color)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error updating color")
+	}
+
+	// Return the updated row (read-only view)
+	updatedColor, _ := h.walletColorService.GetByDay(dayOfWeek)
+	c.Set("HX-Trigger", "show-toast-success")
+	return templ_render.Render(c, admin.WalletColorRow(*updatedColor))
+}
+
+// --- Customer Color Report ---
+
+func (h *AdminHandler) ShowCustomerColorReportPage(c *fiber.Ctx) error {
+	username := c.Query("username")
+	var member *domain.Member
+
+	if username != "" {
+		member, _ = h.service.GetMemberByUsername(username)
+	}
+
+	recentAssignments, _ := h.service.GetMembersWithAssignedColors()
+
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "Customer Color Report",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.CustomerColorReport(member, username, recentAssignments),
+	))
+}
+
+func (h *AdminHandler) AssignCustomerColors(c *fiber.Ctx) error {
+	memberID, _ := strconv.Atoi(c.FormValue("member_id"))
+	username := c.FormValue("username")
+
+	// Collect 5 colors
+	colors := make([]string, 5)
+	for i := 1; i <= 5; i++ {
+		cHex := c.FormValue(fmt.Sprintf("color_%d", i))
+		colors[i-1] = cHex
+	}
+
+	colorsStr := strings.Join(colors, ",")
+
+	err := h.service.UpdateAssignedColors(memberID, colorsStr)
+
+	sess, _ := h.store.Get(c)
+	if err != nil {
+		sess.Set("toast_error", "บันทึกสีไม่สำเร็จ: "+err.Error())
+	} else {
+		sess.Set("toast_success", "บันทึกสีกระเป๋าเรียบร้อยแล้ว")
+	}
+	sess.Save()
+
+	return c.Redirect("/admin/customer-color-report?username=" + username)
 }

@@ -1,7 +1,10 @@
 package handler
 
 import (
+	"bufio"
+	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -10,18 +13,15 @@ import (
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
 	"numberniceic/internal/core/service"
+	"numberniceic/views/analysis"
 	"sort"
 	"strconv"
 	"strings"
 	"unicode"
 
-	"bufio"
-	"context"
-	"io"
-	"numberniceic/views/analysis"
-
 	"github.com/a-h/templ"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const PageSize = 100
@@ -60,6 +60,96 @@ func NewNumerologyHandler(
 
 func isHtmxRequest(c *fiber.Ctx) bool {
 	return c.Get("HX-Request") == "true"
+}
+
+func (h *NumerologyHandler) AnalyzeAPI(c *fiber.Ctx) error {
+	name := service.SanitizeInput(c.Query("name"))
+	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
+	if day == "" {
+		day = "sunday"
+	}
+	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on" || c.Query("auspicious") == "1"
+	disableKlakini := c.Query("disable_klakini") == "true" || c.Query("disable_klakini") == "on" || c.Query("disable_klakini") == "1"
+
+	// --- VIP/Admin Detection via Token ---
+	isVIP := false
+	isAdmin := false
+
+	authHeader := c.Get("Authorization")
+	if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return []byte(jwtSecret), nil
+		})
+
+		if err == nil && token.Valid {
+			if claims, ok := token.Claims.(jwt.MapClaims); ok {
+				statusFloat, _ := claims["status"].(float64)
+				status := int(statusFloat)
+				if status == 2 || status == 9 {
+					isVIP = true
+				}
+				if status == 9 {
+					isAdmin = true
+				}
+			}
+		}
+	}
+	// Also check locals just in case middleware set it
+	if c.Locals("IsVIP") == true {
+		isVIP = true
+	}
+	if c.Locals("IsAdmin") == true {
+		isAdmin = true
+	}
+	// -------------------------------------
+
+	repoAllowKlakini := !disableKlakini
+
+	// 1. Get Solar System Data
+	solarProps, err := h.getSolarSystemProps(name, day, repoAllowKlakini, isVIP)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get analysis"})
+	}
+
+	// 2. Get Similar Names
+	similarNames, err := h.fetchSimilarNames(name, day, isAuspicious, repoAllowKlakini)
+	if err == nil {
+		h.calculateScoresAndHighlights(similarNames, day)
+	}
+
+	// 3. Apply Limit based on VIP/Admin status
+	finalSimilarNames := similarNames
+	if !isVIP && !isAdmin {
+		if len(similarNames) > 3 {
+			finalSimilarNames = similarNames[:3]
+		}
+	} else {
+		// VIP/Admin can see up to 100
+		if len(similarNames) > 100 {
+			finalSimilarNames = similarNames[:100]
+		}
+	}
+
+	return c.JSON(fiber.Map{
+		"solar_system":        solarProps,
+		"similar_names":       finalSimilarNames,
+		"total_similar_count": len(similarNames),
+		"is_vip":              isVIP,
+		"is_admin":            isAdmin,
+	})
+}
+
+func (h *NumerologyHandler) GetSampleNamesAPI(c *fiber.Ctx) error {
+	samples, err := h.sampleNamesCache.GetAll()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch sample names"})
+	}
+
+	return c.JSON(samples)
 }
 
 func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
@@ -243,6 +333,24 @@ func (h *NumerologyHandler) GetNumberMeanings(c *fiber.Ctx) error {
 	})
 
 	return templ_render.Render(c, analysis.NumberMeaningsModal(meanings))
+}
+
+// AnalyzeLinguisticallyAPI returns JSON for mobile apps
+func (h *NumerologyHandler) AnalyzeLinguisticallyAPI(c *fiber.Ctx) error {
+	name := service.SanitizeInput(c.Query("name"))
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Name is required"})
+	}
+
+	analysisRes, err := h.linguisticService.AnalyzeName(name)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Analysis failed"})
+	}
+
+	return c.JSON(fiber.Map{
+		"name":     name,
+		"analysis": analysisRes,
+	})
 }
 
 // calculateScoresAndHighlights calculates scores and also generates the DisplayNameHTML for each name.
@@ -737,7 +845,7 @@ func (h *NumerologyHandler) getSolarSystemProps(name, day string, repoAllowKlaki
 	return analysis.SolarSystemProps{
 		CleanedName:          name,
 		InputDay:             service.GetThaiDay(day),
-		InputDayRaw:          day,
+		InputDayRaw:          service.GetThaiDay(day),
 		DisableKlakini:       !repoAllowKlakini,
 		SunDisplayNameHTML:   h.createDisplayChars(name, day),
 		NumerologyPairs:      numMeanings,
