@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
@@ -8,6 +9,7 @@ import '../models/sample_name.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../widgets/shared_footer.dart';
+import '../widgets/upgrade_dialog.dart';
 import 'login_page.dart';
 import 'register_page.dart';
 import 'dashboard_page.dart';
@@ -318,11 +320,23 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
     );
   }
 
+  Future<void> _showUpgradeDialog() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => UpgradeDialog(onSuccess: () {
+        // Refresh analysis result to get VIP status
+        _onInputChanged();
+      }),
+    );
+  }
+
   void _showNumerologyDetail() {
     final solar = _analysisResult!['solar_system'] as Map<String, dynamic>;
     final decodedParts = (solar['decoded_parts'] as List?) ?? [];
     final uniquePairs = (solar['all_unique_pairs'] as List?) ?? [];
     final name = solar['cleaned_name'];
+    final isVip = _analysisResult!['is_vip'] == true;
 
     showDialog(
       context: context,
@@ -365,7 +379,51 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
                 const SizedBox(height: 24),
                 Text('ทำนายเลขศาสตร์', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
-                ...uniquePairs.map((p) => _buildMeaningItem(p)).toList(),
+                ...uniquePairs.asMap().entries.map((entry) {
+                   final idx = entry.key;
+                   final p = entry.value;
+                   if (!isVip && idx > 2) return const SizedBox.shrink();
+                   
+                   bool shouldBlur = !isVip && idx == 2;
+
+                   Widget item = _buildMeaningItem(p);
+                   
+                   if (shouldBlur) {
+                     return ImageFiltered(
+                       imageFilter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                       child: item,
+                     );
+                   }
+                   return item;
+                }).toList(),
+                
+                if (!isVip && uniquePairs.length > 2) ...[
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.amber[50],
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.amber[200]!),
+                          ),
+                          child: Text('🔒 เนื้อหานี้สำหรับสมาชิก VIP', 
+                             style: GoogleFonts.kanit(fontSize: 13, color: Colors.amber[900], fontWeight: FontWeight.bold)),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _showUpgradeDialog();
+                          },
+                          child: Text('สมัครสมาชิก VIP เพื่ออ่านต่อ', 
+                             style: GoogleFonts.kanit(color: Colors.blue[800], decoration: TextDecoration.underline)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1321,9 +1379,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
               ),
             ),
             ElevatedButton(
-              onPressed: () {
-                 // TODO: Handle upgrade
-              },
+              onPressed: _showUpgradeDialog,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2C3E50),
                 foregroundColor: Colors.white,
@@ -1451,9 +1507,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
                          SizedBox(
                           height: 32,
                           child: ElevatedButton(
-                            onPressed: () {
-                              // TODO: Handle upgrade
-                            },
+                            onPressed: _showUpgradeDialog,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFF57F17),
                               foregroundColor: Colors.white,
@@ -1487,9 +1541,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
                       ),
                       const SizedBox(height: 8),
                       TextButton(
-                        onPressed: () {
-                          // TODO: Handle upgrade
-                        },
+                        onPressed: _showUpgradeDialog,
                         style: TextButton.styleFrom(
                           backgroundColor: const Color(0xFF2C3E50),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

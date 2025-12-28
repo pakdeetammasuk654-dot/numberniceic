@@ -65,7 +65,7 @@ func (r *PostgresNamesMiracleRepository) GetSimilarNames(name, day string, limit
                 *,
                 similarity(thname, $1) as sim
             FROM filtered_names
-            WHERE similarity(thname, $1) > 0.1 -- Keep this for the "similar" search
+            WHERE similarity(thname, $1) > 0.01 -- Keep this for the "similar" search
         )
         SELECT 
             name_id,
@@ -79,6 +79,47 @@ func (r *PostgresNamesMiracleRepository) GetSimilarNames(name, day string, limit
     `, klakiniWhereClause)
 
 	return r.executeNameQuery(query, name, limit, offset)
+}
+
+// GetBestSimilarNames fetches highly similar names that are also "Top Tier" (Strictly Good Pairs).
+// This avoids the need to iterate through thousands of names in the application layer.
+func (r *PostgresNamesMiracleRepository) GetBestSimilarNames(name, day string, limit int, allowKlakini bool) ([]domain.SimilarNameResult, error) {
+	klakiniColumn, err := getKlakiniColumn(day)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build the WHERE clause for Klakini
+	klakiniWhereClause := ""
+	if !allowKlakini {
+		klakiniWhereClause = fmt.Sprintf("AND %s = false", klakiniColumn)
+	}
+
+	// Filter for Strict Good Pairs: t_sat and t_sha must ONLY contain D10, D8, D5
+	// Using PostgreSQL array containment operator <@
+	// e.g. t_sat <@ ARRAY['D10', 'D8', 'D5']::text[]
+	strictGoodClause := `
+		AND t_sat <@ ARRAY['D10', 'D8', 'D5']::text[]
+		AND t_sha <@ ARRAY['D10', 'D8', 'D5']::text[]
+	`
+
+	query := fmt.Sprintf(`
+        SELECT 
+            name_id,
+            thname,
+            satnum,
+            shanum,
+            similarity(thname, $1) as sim
+        FROM names_miracle
+        WHERE 1=1 
+		%s 
+		%s
+		AND similarity(thname, $1) > 0.001 -- Lower threshold to ensure we find *something*, but still relevant
+        ORDER BY sim DESC, thname ASC
+        LIMIT $2;
+    `, klakiniWhereClause, strictGoodClause)
+
+	return r.executeNameQuery(query, name, limit)
 }
 
 // GetAuspiciousNames fetches names for the auspicious search, which has different filtering rules.
@@ -182,7 +223,7 @@ func (r *PostgresNamesMiracleRepository) GetFallbackNames(name, preferredConsona
 		args := []interface{}{name} // $1 is always name for similarity
 		paramCount := 2
 
-		query.WriteString(fmt.Sprintf(`
+		query.WriteString(`
 			SELECT 
 				name_id,
 				thname,
@@ -191,7 +232,7 @@ func (r *PostgresNamesMiracleRepository) GetFallbackNames(name, preferredConsona
 				similarity(thname, $1) as sim
 			FROM names_miracle
 			WHERE 1=1 
-		`))
+		`)
 
 		if !isGeneric {
 			// Construct patterns in Go

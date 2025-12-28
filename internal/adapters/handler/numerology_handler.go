@@ -116,27 +116,62 @@ func (h *NumerologyHandler) AnalyzeAPI(c *fiber.Ctx) error {
 	}
 
 	// 2. Get Similar Names
+	disableKlakiniTable := disableKlakini
+	disableKlakiniTop4 := c.Query("disable_klakini_top4") == "true" || c.Query("disable_klakini_top4") == "on" || c.Query("disable_klakini_top4") == "1"
+	repoAllowKlakini = !disableKlakiniTable || !disableKlakiniTop4
+
 	similarNames, err := h.fetchSimilarNames(name, day, isAuspicious, repoAllowKlakini)
 	if err == nil {
 		h.calculateScoresAndHighlights(similarNames, day)
 	}
 
+	// 1. Prepare Table Candidates (Source of truth)
+	tableCandidates := similarNames
+	if disableKlakiniTable {
+		tableCandidates = h.filterKlakiniNames(similarNames)
+	}
+	if len(tableCandidates) > 100 {
+		tableCandidates = tableCandidates[:100]
+	}
+
+	// 2. Derive Top 4 and Last 4 - FETCH SEPARATELY (Turbo Mode)
+	allowKlakiniTop4 := !disableKlakiniTop4
+	bestCandidates, errBest := h.namesMiracleRepo.GetBestSimilarNames(name, day, 100, allowKlakiniTop4)
+	if errBest == nil && len(bestCandidates) > 0 {
+		h.calculateScoresAndHighlights(bestCandidates, day)
+	} else {
+		// Fallback: Use similarNames if Turbo fails or returns nothing
+		bestCandidates = []domain.SimilarNameResult{}
+		for _, n := range similarNames {
+			if !n.HasBadPair && len(n.KlakiniChars) == 0 {
+				if !allowKlakiniTop4 && len(n.KlakiniChars) > 0 {
+					continue
+				}
+				bestCandidates = append(bestCandidates, n)
+			}
+		}
+	}
+
+	top4, last4, _ := h.getBestNames(bestCandidates, 100)
+
 	// 3. Apply Limit based on VIP/Admin status
-	finalSimilarNames := similarNames
+	finalSimilarNames := tableCandidates
 	if !isVIP && !isAdmin {
-		if len(similarNames) > 3 {
-			finalSimilarNames = similarNames[:3]
+		if len(finalSimilarNames) > 3 {
+			finalSimilarNames = finalSimilarNames[:3]
 		}
 	} else {
 		// VIP/Admin can see up to 100
-		if len(similarNames) > 100 {
-			finalSimilarNames = similarNames[:100]
+		if len(finalSimilarNames) > 100 {
+			finalSimilarNames = finalSimilarNames[:100]
 		}
 	}
 
 	return c.JSON(fiber.Map{
 		"solar_system":        solarProps,
 		"similar_names":       finalSimilarNames,
+		"top_4_names":         top4,
+		"last_4_names":        last4,
 		"total_similar_count": len(similarNames),
 		"is_vip":              isVIP,
 		"is_admin":            isAdmin,
@@ -154,8 +189,8 @@ func (h *NumerologyHandler) GetSampleNamesAPI(c *fiber.Ctx) error {
 
 func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 	// Parse query params
-	name := c.Query("name")
-	day := c.Query("day")
+	name := service.SanitizeInput(c.Query("name"))
+	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
 
 	// Get Sample Names
 	samples, _ := h.sampleNamesCache.GetAll()
@@ -167,22 +202,18 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 			name = "ปัญญา"
 		}
 	}
-
 	if day == "" {
-		day = "SUNDAY"
+		day = "sunday"
 	}
 	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on"
 	disableKlakini := c.Query("disable_klakini") == "true" || c.Query("disable_klakini") == "on"
-	repoAllowKlakini := !disableKlakini
+	disableKlakiniTable := disableKlakini
+	disableKlakiniTop4 := c.Query("disable_klakini_top4") == "true" || c.Query("disable_klakini_top4") == "on"
+	repoAllowKlakini := !disableKlakiniTable || !disableKlakiniTop4
 
 	isVIP := c.Locals("IsVIP") == true
 
-	// Prepare Solar System Data (Synchronous/Fast)
-	solarProps, _ := h.getSolarSystemProps(name, day, repoAllowKlakini, isVIP)
-	solarProps.DisableKlakini = disableKlakini
-	solarProps.SkipTrigger = true
-
-	// Prepare Props for Index
+	// Prepare minimal Props for Index (Render Shell Immediately)
 	indexProps := analysis.IndexProps{
 		Layout: analysis.LayoutProps{
 			Title:        fmt.Sprintf("วิเคราะห์ชื่อ %s ผลรวมเลขศาสตร์ พลังเงา", name),
@@ -201,9 +232,9 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 		DefaultName:           name,
 		DefaultDay:            day,
 		SampleNames:           samples,
-		SolarSystem:           solarProps,
 		IsVIP:                 isVIP,
 		HeaderDisplayNameHTML: h.createHeaderDisplayChars(name, day),
+		SolarSystemInitial:    analysis.SolarSystemSkeleton(), // 🔥 Show Skeleton Immediately
 	}
 
 	// 1. Set Headers for Streaming
@@ -212,40 +243,99 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 	c.Set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
 	c.Set("Pragma", "no-cache")
 	c.Set("Expires", "0")
+	c.Set("X-Accel-Buffering", "no") // 🔥 TRICK: Tell Nginx not to buffer this response!
+
 	c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
-		// Create a "Lazy Component" that acts as the Results prop
+		// Define a way to flush
+		flush := func() {
+			w.Flush()
+		}
+
+		// A. Create the lazy Results component
 		lazyResults := templ.ComponentFunc(func(ctx context.Context, w2 io.Writer) error {
-			// A. Render Skeleton first
+			// 1. Render Table Skeleton
 			if err := analysis.Skeleton("streaming-skeleton").Render(ctx, w2); err != nil {
 				return err
 			}
-
-			// B. Flush to send Skeleton to client
+			// Flush the Skeleton immediately so it appears along with the rest of the shell
 			if f, ok := w2.(http.Flusher); ok {
 				f.Flush()
 			} else {
-				// Try flushing the underlying writer if possible,
-				// but w2 here is passed from templ.Render.
-				// In this context, w2 IS the bufio.Writer from Fiber (wrapped).
-				// We can try to cast w2 back to *bufio.Writer or flush it if it's a flusher.
-				// Since we are inside BodyStreamWriter, 'w' is the bufio writer.
-				// 'w2' should be wrapping it.
-				// We can just flush 'w' directly if we are sure content is written to it.
 				w.Flush()
 			}
 
-			// C. Simulate Delay / Computation
-			// time.Sleep(1 * time.Second) // Optional: Simulate lag to see skeleton
+			// --- HEAVY LIFTING STARTS HERE (Progressive) ---
 
-			// D. Fetch Actual Data
-			similarNames, err := h.fetchSimilarNames(name, day, isAuspicious, repoAllowKlakini)
+			// B. Calculate & Stream Solar System (Phase 1)
+			solarProps, _ := h.getSolarSystemProps(name, day, repoAllowKlakini, isVIP)
+			solarProps.DisableKlakini = disableKlakiniTable
+			solarProps.SkipTrigger = true
 
+			// Render Solar System and a script to swap it into the wrapper
+			// We wrap it in a div that we will swap via JS
+			fmt.Fprintf(w2, "<div id=\"solar-swap-content\" style=\"display:none;\">")
+			analysis.SolarSystem(solarProps).Render(ctx, w2)
+			fmt.Fprintf(w2, "</div>")
+			fmt.Fprintf(w2, "<script>document.getElementById('solar-system-wrapper').innerHTML = document.getElementById('solar-swap-content').innerHTML; document.getElementById('solar-swap-content').remove();</script>")
+
+			if f, ok := w2.(http.Flusher); ok {
+				f.Flush()
+			} else {
+				w.Flush()
+			}
+
+			// C. Fetch Actual Data for Table (Phase 2)
+			similarNames, err := h.fetchSimilarNames(name, day, false, repoAllowKlakini)
 			if err != nil {
-				// Render Error
 				return nil
 			}
 
-			h.calculateScoresAndHighlights(similarNames, day)
+			// Cap similarity at 99% if not exact match
+			normalizedInput := strings.TrimSpace(name)
+			for i := range similarNames {
+				normalizedDbName := strings.TrimSpace(similarNames[i].ThName)
+				if normalizedDbName != normalizedInput && similarNames[i].Similarity > 0.99 {
+					similarNames[i].Similarity = 0.99
+				}
+			}
+
+			// 2. Filter for BEST NAMES (Top 4 / Last 4)
+			allowKlakiniTop4 := !disableKlakiniTop4
+			bestCandidates, errBest := h.namesMiracleRepo.GetBestSimilarNames(name, day, 100, allowKlakiniTop4)
+			if errBest == nil && len(bestCandidates) > 0 {
+				h.calculateScoresAndHighlights(bestCandidates, day)
+			} else {
+				bestCandidates = []domain.SimilarNameResult{}
+				for _, n := range similarNames {
+					if !n.HasBadPair && len(n.KlakiniChars) == 0 {
+						if !allowKlakiniTop4 && len(n.KlakiniChars) > 0 {
+							continue
+						}
+						bestCandidates = append(bestCandidates, n)
+					}
+				}
+			}
+
+			top4, last4, totalCountBest := h.getBestNames(bestCandidates, 100)
+
+			// 3. Filter for TABLE
+			tableCandidates := similarNames
+			if isAuspicious {
+				var filtered []domain.SimilarNameResult
+				for _, n := range tableCandidates {
+					if !n.HasBadPair {
+						filtered = append(filtered, n)
+					}
+				}
+				tableCandidates = filtered
+			}
+			if disableKlakiniTable {
+				tableCandidates = h.filterKlakiniNames(tableCandidates)
+			}
+			if len(tableCandidates) > 100 {
+				tableCandidates = tableCandidates[:100]
+			}
+
 			displayNameHTML := h.createDisplayChars(name, day)
 			var klakiniChars []string
 			for _, dc := range displayNameHTML {
@@ -253,15 +343,17 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 					klakiniChars = append(klakiniChars, dc.Char)
 				}
 			}
-			// --- Logic End ---
 
-			// E. Render Actual Table
 			tableProps := analysis.SimilarNamesProps{
-				SimilarNames:          similarNames,
+				SimilarNames:          tableCandidates,
+				Top4Names:             top4,
+				Last4Names:            last4,
+				TotalFilteredCount:    totalCountBest,
 				IsAuspicious:          isAuspicious,
-				DisableKlakini:        disableKlakini,
+				DisableKlakini:        disableKlakiniTable,
+				DisableKlakiniTop4:    disableKlakiniTop4,
 				DisplayNameHTML:       displayNameHTML,
-				HeaderDisplayNameHTML: h.createHeaderDisplayChars(name, day), // Add this line
+				HeaderDisplayNameHTML: h.createHeaderDisplayChars(name, day),
 				KlakiniChars:          klakiniChars,
 				CleanedName:           name,
 				InputDay:              service.GetThaiDay(day),
@@ -269,16 +361,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 				IsVIP:                 isVIP,
 			}
 
-			// F. Render the "Swapping" Logic
-			// We have rendered the Skeleton. Now we append the Table AND a script to replace the Skeleton.
-			// Actually, if we just append the table, it appears below.
-			// We want to replace #results content or #similar-names-skeleton.
-			// My StreamScript removes the skeleton.
-			// And the Table renders a div with id="similar-names-section".
-			// Visual: [Skeleton] ... [Table]
-			// Script: removes Skeleton.
-			// Result: [Table]
-
+			// D. Render the Table and Swap Script
 			if err := analysis.SimilarNamesTable(tableProps).Render(ctx, w2); err != nil {
 				return err
 			}
@@ -286,15 +369,19 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 				return err
 			}
 
-			w.Flush()
+			if f, ok := w2.(http.Flusher); ok {
+				f.Flush()
+			} else {
+				w.Flush()
+			}
 			return nil
 		})
 
 		indexProps.Results = lazyResults
 
-		// Render the whole page. When it hits 'Results', it executes the lazy component.
+		// Render Index (Page Shell)
 		analysis.Index(indexProps).Render(context.Background(), w)
-		w.Flush()
+		flush() // 🔥 FLUSH IMMEDIATELY after shell render
 	})
 
 	return nil
@@ -360,6 +447,24 @@ func (h *NumerologyHandler) calculateScoresAndHighlights(names []domain.SimilarN
 		shaMeanings, shaPos, shaNeg := getMeaningsAndScores(names[i].ShaNum, h.numberPairCache)
 
 		names[i].TotalScore = satPos + satNeg + shaPos + shaNeg
+
+		// HasBadPair detection must match visual logic (Red circles)
+		hasBad := false
+		for _, m := range satMeanings {
+			if service.IsBadPairType(m.Meaning.PairType) {
+				hasBad = true
+				break
+			}
+		}
+		if !hasBad {
+			for _, m := range shaMeanings {
+				if service.IsBadPairType(m.Meaning.PairType) {
+					hasBad = true
+					break
+				}
+			}
+		}
+		names[i].HasBadPair = hasBad
 
 		// Premium/TopTier Logic:
 		// 1. Must NOT have any BAD pairs (R10, R7, R5)
@@ -455,8 +560,8 @@ func (h *NumerologyHandler) findBestConsonant(name, day string) string {
 }
 
 func (h *NumerologyHandler) findAuspiciousNames(name, day string, repoAllowKlakini bool) ([]domain.SimilarNameResult, error) {
-	var auspiciousNames []domain.SimilarNameResult
 	offset := 0
+	batchSize := 200
 
 	// Determine the best consonant to use for sorting/prioritizing
 	preferredConsonant := h.findBestConsonant(name, day)
@@ -470,27 +575,38 @@ func (h *NumerologyHandler) findAuspiciousNames(name, day string, repoAllowKlaki
 		}
 	}
 
+	var auspiciousNames []domain.SimilarNameResult
+	validCount := 0
+	target := 100
+
 	for {
-		// Use GetAuspiciousNames which has the correct query logic (no similarity threshold)
-		candidates, err := h.namesMiracleRepo.GetAuspiciousNames(name, preferredConsonant, day, SearchBatchSize, offset, repoAllowKlakini)
+		candidates, err := h.namesMiracleRepo.GetAuspiciousNames(name, preferredConsonant, day, batchSize, offset, repoAllowKlakini)
 		if err != nil {
 			return nil, fmt.Errorf("error fetching candidates at offset %d: %w", offset, err)
 		}
 		if len(candidates) == 0 {
 			break
 		}
+
+		h.calculateScoresAndHighlights(candidates, day)
+
 		for _, candidate := range candidates {
-			if h.isAllPairsTopTier(candidate.ThName, candidate.SatNum, h.numberPairCache) && h.isAllPairsTopTier(candidate.ThName, candidate.ShaNum, h.numberPairCache) {
+			if candidate.IsTopTier {
 				auspiciousNames = append(auspiciousNames, candidate)
-				if len(auspiciousNames) >= PageSize {
-					break
+				if len(candidate.KlakiniChars) == 0 {
+					validCount++
 				}
 			}
 		}
-		if len(auspiciousNames) >= PageSize {
+
+		if validCount >= target {
 			break
 		}
+
 		offset += len(candidates)
+		if offset >= 20000 {
+			break
+		}
 	}
 	return auspiciousNames, nil
 }
@@ -504,27 +620,23 @@ func (h *NumerologyHandler) createDisplayChars(name, day string) []domain.Displa
 
 	for i := 0; i < len(runes); i++ {
 		r := runes[i]
-		char := string(r)
+		currentStr := string(r)
 		isBad := h.klakiniCache.IsKlakini(day, r)
 
-		// Check if the next character is a combining mark
-		if i+1 < len(runes) && unicode.Is(unicode.Mn, runes[i+1]) {
-			combiningChar := runes[i+1]
-			isCombiningBad := h.klakiniCache.IsKlakini(day, combiningChar)
+		// Look ahead for combining marks (vowels, tone marks, etc.)
+		// We loop to consume ALL consecutive combining marks to ensure the whole cluster stays together.
+		for i+1 < len(runes) && (unicode.Is(unicode.Mn, runes[i+1]) || unicode.Is(unicode.Mc, runes[i+1]) || unicode.Is(unicode.Me, runes[i+1])) {
+			i++ // Advance to the combining char
+			combiningChar := runes[i]
+			currentStr += string(combiningChar)
 
-			// If the base is not bad, but the combining mark is
-			if !isBad && isCombiningBad {
-				// Add the base character as good
-				result = append(result, domain.DisplayChar{Char: char, IsBad: false})
-				// Add the combining mark as bad
-				result = append(result, domain.DisplayChar{Char: string(combiningChar), IsBad: true})
-				i++ // Skip the combining mark in the next iteration
-				continue
+			// If any part of the cluster (base or mark) is Klakini, the whole cluster is displayed as Bad (Red)
+			if h.klakiniCache.IsKlakini(day, combiningChar) {
+				isBad = true
 			}
 		}
 
-		// Default behavior: add the character with its own klakini status
-		result = append(result, domain.DisplayChar{Char: char, IsBad: isBad})
+		result = append(result, domain.DisplayChar{Char: currentStr, IsBad: isBad})
 	}
 
 	return result
@@ -540,8 +652,11 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 	name := service.SanitizeInput(c.Query("name"))
 	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
 	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on" || c.Query("auspicious") == "1"
-	disableKlakini := c.Query("disable_klakini") == "true" || c.Query("disable_klakini") == "on" || c.Query("disable_klakini") == "1"
-	repoAllowKlakini := !disableKlakini
+	disableKlakiniTable := c.Query("disable_klakini") == "true" || c.Query("disable_klakini") == "on" || c.Query("disable_klakini") == "1"
+	disableKlakiniTop4 := c.Query("disable_klakini_top4") == "true" || c.Query("disable_klakini_top4") == "on"
+
+	// We allow klakini in repo fetch if AT LEAST ONE of the sections allows it.
+	repoAllowKlakini := !disableKlakiniTable || !disableKlakiniTop4
 
 	if name == "" || day == "" {
 		return c.SendString("<!-- Missing parameters -->")
@@ -549,77 +664,63 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 
 	var similarNames []domain.SimilarNameResult
 	var err error
-	if isAuspicious {
-		similarNames, err = h.findAuspiciousNames(name, day, repoAllowKlakini)
-	} else {
-		similarNames, err = h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0, repoAllowKlakini)
-		if err == nil && len(similarNames) < PageSize {
-			needed := PageSize - len(similarNames)
-			excludedIDs := make([]int, len(similarNames))
-			for i, n := range similarNames {
-				excludedIDs[i] = n.NameID
-			}
-
-			preferredConsonant := h.findBestConsonant(name, day)
-			if repoAllowKlakini {
-				for _, r := range name {
-					if r != 'เ' && r != 'แ' && r != 'โ' && r != 'ใ' && r != 'ไ' {
-						preferredConsonant = string(r)
-						break
-					}
-				}
-			}
-
-			fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, preferredConsonant, day, needed, repoAllowKlakini, excludedIDs)
-			if fallbackErr == nil {
-				similarNames = append(similarNames, fallbackNames...)
-			} else {
-				log.Printf("Error getting fallback names: %v", fallbackErr)
-			}
-		}
-	}
+	// Always fetch from the general fetcher to get a pool for both cards and table
+	similarNames, err = h.fetchSimilarNames(name, day, false, repoAllowKlakini)
 
 	if err != nil {
 		log.Printf("Error getting names: %v", err)
 		return c.SendString("<div>Error loading names.</div>")
 	}
 
-	// Deduplicate names based on NameID and ThName (Robust defense against duplicates)
-	seenIDs := make(map[int]bool)
-	seenNames := make(map[string]bool)
-	var uniqueNames []domain.SimilarNameResult
-
-	// Helper to remove invisible characters
-	removeInvisible := func(s string) string {
-		return strings.Map(func(r rune) rune {
-			// Keep printable chars, but specifically filter out common invisible ones if IsPrint lets them through
-			if unicode.IsPrint(r) {
-				return r
-			}
-			return -1
-		}, s)
-	}
-
-	for _, n := range similarNames {
-		// Normalize both names for comparison
-		normalizedInput := removeInvisible(strings.TrimSpace(name))
-		normalizedDbName := removeInvisible(strings.TrimSpace(n.ThName))
-
-		// Cap similarity at 99% if not exact match (after robust normalization)
-		if normalizedDbName != normalizedInput && n.Similarity > 0.99 {
-			n.Similarity = 0.99
-		}
-
-		// Use normalized name for deduplication
-		if !seenIDs[n.NameID] && !seenNames[normalizedDbName] {
-			uniqueNames = append(uniqueNames, n)
-			seenIDs[n.NameID] = true
-			seenNames[normalizedDbName] = true
+	// Cap similarity at 99% if not exact match
+	normalizedInput := strings.TrimSpace(name)
+	for i := range similarNames {
+		normalizedDbName := strings.TrimSpace(similarNames[i].ThName)
+		if normalizedDbName != normalizedInput && similarNames[i].Similarity > 0.99 {
+			similarNames[i].Similarity = 0.99
 		}
 	}
-	similarNames = uniqueNames
 
 	h.calculateScoresAndHighlights(similarNames, day)
+
+	// 1. Prepare Table Candidates
+	tableCandidates := similarNames
+	if isAuspicious {
+		// Table "Good Names Only" uses !HasBadPair (no red)
+		var filtered []domain.SimilarNameResult
+		for _, n := range tableCandidates {
+			if !n.HasBadPair {
+				filtered = append(filtered, n)
+			}
+		}
+		tableCandidates = filtered
+	}
+	if disableKlakiniTable {
+		tableCandidates = h.filterKlakiniNames(tableCandidates)
+	}
+	if len(tableCandidates) > 100 {
+		tableCandidates = tableCandidates[:100]
+	}
+
+	// 2. Prepare Best Names Candidates - FETCH SEPARATELY (Turbo Mode)
+	allowKlakiniTop4 := !disableKlakiniTop4
+	bestCandidates, errBest := h.namesMiracleRepo.GetBestSimilarNames(name, day, 100, allowKlakiniTop4)
+	if errBest == nil && len(bestCandidates) > 0 {
+		h.calculateScoresAndHighlights(bestCandidates, day)
+	} else {
+		// Fallback: Use similarNames if Turbo fails or returns nothing
+		bestCandidates = []domain.SimilarNameResult{}
+		for _, n := range similarNames {
+			if !n.HasBadPair && len(n.KlakiniChars) == 0 {
+				if !allowKlakiniTop4 && len(n.KlakiniChars) > 0 {
+					continue
+				}
+				bestCandidates = append(bestCandidates, n)
+			}
+		}
+	}
+
+	top4, last4, totalCountBest := h.getBestNames(bestCandidates, 100)
 
 	// Create display chars for the header (always true Klakini status)
 	displayNameHTML := h.createDisplayChars(name, day)
@@ -632,21 +733,34 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 
 	// Use Templ Component
 	isVIP := c.Locals("IsVIP") == true
+	showTop4 := c.Query("show_top4") == "true" || c.Query("show_top4") == "on"
+
 	props := analysis.SimilarNamesProps{
-		SimilarNames:          similarNames,
+		SimilarNames:          tableCandidates,
+		Top4Names:             top4,
+		Last4Names:            last4,
+		TotalFilteredCount:    totalCountBest,
 		IsAuspicious:          isAuspicious,
-		DisableKlakini:        disableKlakini,
+		DisableKlakini:        disableKlakiniTable,
+		DisableKlakiniTop4:    disableKlakiniTop4,
 		DisplayNameHTML:       displayNameHTML,
-		HeaderDisplayNameHTML: h.createHeaderDisplayChars(name, day), // Add this line
+		HeaderDisplayNameHTML: h.createHeaderDisplayChars(name, day),
 		KlakiniChars:          klakiniChars,
 		CleanedName:           name,
 		InputDay:              service.GetThaiDay(day),
 		AnimateHeader:         false,
 		IsVIP:                 isVIP,
+		ShowTop4:              showTop4,
 	}
 
-	c.Set("Content-Type", "text/html")
-	return analysis.SimilarNamesTable(props).Render(c.Context(), c.Response().BodyWriter())
+	section := c.Query("section")
+	if section == "top4" {
+		return templ_render.Render(c, analysis.Top4Section(props))
+	} else if section == "table" {
+		return templ_render.Render(c, analysis.SimilarNamesList(props))
+	}
+
+	return templ_render.Render(c, analysis.SimilarNamesTable(props))
 }
 
 func (h *NumerologyHandler) GetAuspiciousNames(c *fiber.Ctx) error {
@@ -696,38 +810,126 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 	return templ_render.Render(c, analysis.SolarSystem(solarProps))
 }
 
+func (h *NumerologyHandler) getBestNames(candidates []domain.SimilarNameResult, limit int) ([]domain.SimilarNameResult, []domain.SimilarNameResult, int) {
+	var top4 []domain.SimilarNameResult
+	var last4 []domain.SimilarNameResult
+
+	// 1. Filter for "Strict Best" (IsTopTier - All Green)
+	var bestNames []domain.SimilarNameResult
+	// 2. Also track "Standard Good" (No Bad Pairs, No Klakini) as backup
+	var standardGoodNames []domain.SimilarNameResult
+
+	for _, c := range candidates {
+		// Basic requirement: No Bad Pairs, No Klakini
+		// (Note: candidates passed here usually already filter Klakini if requested,
+		// but let's double check HasBadPair which is the baseline for "Good")
+		if !c.HasBadPair && len(c.KlakiniChars) == 0 {
+			if c.IsTopTier {
+				bestNames = append(bestNames, c)
+			} else {
+				standardGoodNames = append(standardGoodNames, c)
+			}
+		}
+	}
+
+	// 3. Fill the list: Prioritize Best, then fill with Standard Good
+	finalList := bestNames
+	if len(finalList) < limit {
+		needed := limit - len(finalList)
+		if len(standardGoodNames) > 0 {
+			// Take as many standard ones as needed
+			take := needed
+			if take > len(standardGoodNames) {
+				take = len(standardGoodNames)
+			}
+			finalList = append(finalList, standardGoodNames[:take]...)
+		}
+	}
+
+	// 4. Limit to requested size
+	if len(finalList) > limit {
+		finalList = finalList[:limit]
+	}
+
+	// 5. Derive Top 4 and Last 4
+	if len(finalList) > 0 {
+		// Get Top 4
+		if len(finalList) >= 4 {
+			top4 = finalList[:4]
+		} else {
+			top4 = finalList
+		}
+
+		// Get Last 4 from the end of this ranked set
+		if len(finalList) >= 4 {
+			last4 = finalList[len(finalList)-4:]
+		} else {
+			last4 = finalList
+		}
+	}
+
+	return top4, last4, len(finalList)
+}
+
+func (h *NumerologyHandler) filterKlakiniNames(names []domain.SimilarNameResult) []domain.SimilarNameResult {
+	var filtered []domain.SimilarNameResult
+	for _, n := range names {
+		// If len(KlakiniChars) > 0, it means it has klakini.
+		// Since highlights are already calculated, we can check KlakiniChars field.
+		if len(n.KlakiniChars) == 0 {
+			filtered = append(filtered, n)
+		}
+	}
+	// Note: h.calculateScoresAndHighlights MUST be called before this.
+	return filtered
+}
+
 func (h *NumerologyHandler) fetchSimilarNames(name, day string, isAuspicious, repoAllowKlakini bool) ([]domain.SimilarNameResult, error) {
 	if isAuspicious {
+		// Use the specific auspicious finder (starts with same letter logic)
 		return h.findAuspiciousNames(name, day, repoAllowKlakini)
 	}
 
-	similarNames, err := h.namesMiracleRepo.GetSimilarNames(name, day, PageSize, 0, repoAllowKlakini)
-	if err != nil {
-		return nil, err
-	}
+	// Original Logic: Loop to find enough "Perfectly Good" names (No Bad Pair AND No Klakini)
+	var accumulatedNames []domain.SimilarNameResult
+	offset := 0
+	batchSize := 200
+	targetGood := 100
+	validCount := 0
 
-	if len(similarNames) < PageSize {
-		needed := PageSize - len(similarNames)
-		excludedIDs := make([]int, len(similarNames))
-		for i, n := range similarNames {
-			excludedIDs[i] = n.NameID
+	for {
+		batch, err := h.namesMiracleRepo.GetSimilarNames(name, day, batchSize, offset, repoAllowKlakini)
+		if err != nil {
+			return nil, err
+		}
+		if len(batch) == 0 {
+			break
 		}
 
-		preferredConsonant := h.findBestConsonant(name, day)
-		if repoAllowKlakini {
-			for _, r := range name {
-				if r != 'เ' && r != 'แ' && r != 'โ' && r != 'ใ' && r != 'ไ' {
-					preferredConsonant = string(r)
-					break
-				}
+		h.calculateScoresAndHighlights(batch, day)
+
+		for _, n := range batch {
+			// If we are in "Similar Names" mode (isAuspicious=false),
+			// we collect ALL names for the table, but we still count how many
+			// "Perfectly Good" names we have to ensure we have enough for ranking cards.
+			accumulatedNames = append(accumulatedNames, n)
+
+			if !n.HasBadPair && len(n.KlakiniChars) == 0 {
+				validCount++
 			}
 		}
-		fallbackNames, fallbackErr := h.namesMiracleRepo.GetFallbackNames(name, preferredConsonant, day, needed, repoAllowKlakini, excludedIDs)
-		if fallbackErr == nil {
-			similarNames = append(similarNames, fallbackNames...)
+
+		if validCount >= targetGood {
+			break
+		}
+
+		offset += len(batch)
+		if offset >= 20000 { // Failsafe to prevent infinite loop
+			break
 		}
 	}
-	return similarNames, nil
+
+	return accumulatedNames, nil
 }
 
 func getMeaningsAndScores(pairs []string, pairCache *cache.NumberPairCache) ([]domain.PairMeaningResult, int, int) {

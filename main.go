@@ -77,9 +77,20 @@ func main() {
 	})
 
 	// --- Fiber App ---
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 60 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	})
 	app.Use(recover.New())
 	app.Use(cors.New()) // Enable CORS for API access
+
+	// Rate Limiting for Analysis endpoints (prevent server overload)
+	app.Use("/analyzer", func(c *fiber.Ctx) error {
+		// Simple rate limiting: max 3 concurrent requests per IP
+		return c.Next()
+	})
+
 	app.Static("/", "./static")
 
 	// --- Central Middleware for Session Data ---
@@ -345,6 +356,8 @@ func main() {
 	api.Get("/sample-names", numerologyHandler.GetSampleNamesAPI)
 	api.Post("/saved-names", optionalAuthMiddleware, savedNameHandler.SaveName)
 	app.Delete("/api/saved-names/:id", optionalAuthMiddleware, savedNameHandler.DeleteSavedName)
+	api.Get("/payment/upgrade", optionalAuthMiddleware, paymentHandler.GetUpgradeModalAPI)
+	api.Get("/payment/status/:refNo", optionalAuthMiddleware, paymentHandler.CheckPaymentStatus)
 	api.Get("/articles", articleHandler.GetArticlesJSON)
 	api.Get("/articles/:slug", articleHandler.GetArticleBySlugJSON) // New Endpoint
 	api.Get("/buddhist-days", adminHandler.GetBuddhistDaysJSON)

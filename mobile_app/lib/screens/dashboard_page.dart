@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:async';
+import 'dart:convert';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../utils/custom_toast.dart';
+import '../widgets/upgrade_dialog.dart';
 import 'landing_page.dart';
 import 'analyzer_page.dart';
 import 'articles_page.dart';
@@ -63,6 +66,16 @@ class _DashboardPageState extends State<DashboardPage> {
         CustomToast.show(context, e.toString().replaceAll('Exception: ', ''), isSuccess: false);
       }
     }
+  }
+
+  Future<void> _showUpgradeDialog() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => UpgradeDialog(onSuccess: () {
+        _loadDashboard();
+      }),
+    );
   }
 
   @override
@@ -283,6 +296,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   _buildProfileCard(
                     data['username'] ?? data['Username'] ?? '', 
                     data['email'] ?? data['Email'] ?? '', 
+                    data['tel'] ?? data['Tel'] ?? '',
                     isVip, 
                     isAdmin
                   ),
@@ -411,9 +425,7 @@ class _DashboardPageState extends State<DashboardPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                   CustomToast.show(context, 'กรุณาอัปเกรดผ่านทางหน้าเว็บไซต์หลัก');
-                },
+                onPressed: _showUpgradeDialog,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFFD700),
                   foregroundColor: const Color(0xFF4A3B00),
@@ -448,7 +460,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildProfileCard(String username, String email, bool isVip, bool isAdmin) {
+  Widget _buildProfileCard(String username, String email, String tel, bool isVip, bool isAdmin) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -501,6 +513,17 @@ class _DashboardPageState extends State<DashboardPage> {
                   ],
                 ),
                 Text(email, style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[600])),
+                if (tel.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Row(
+                      children: [
+                        Icon(Icons.phone_android_rounded, size: 14, color: Colors.grey[400]),
+                        const SizedBox(width: 4),
+                        Text(tel, style: GoogleFonts.kanit(fontSize: 13, color: Colors.grey[600])),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
@@ -826,4 +849,6 @@ class _DashboardPageState extends State<DashboardPage> {
   
 
 }
+
+
 

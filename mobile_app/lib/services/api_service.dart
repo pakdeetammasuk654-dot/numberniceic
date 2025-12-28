@@ -7,7 +7,7 @@ import '../models/sample_name.dart';
 import 'auth_service.dart';
 
 class ApiService {
-  static String get baseUrl => 'https://unmobbed-gonzalo-uniplanar.ngrok-free.dev';
+  static String get baseUrl => 'http://localhost:3000';
 
   static Future<List<Article>> getArticles() async {
     final url = Uri.parse('$baseUrl/api/articles');
@@ -131,6 +131,52 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Connection error: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getUpgradeInfo() async {
+    final url = Uri.parse('$baseUrl/api/payment/upgrade');
+    try {
+      final token = await AuthService.getToken();
+      if (token == null) throw Exception('กรุณาเข้าสู่ระบบ');
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('ไม่สามารถดึงข้อมูลชำระเงินได้');
+      }
+    } catch (e) {
+      throw Exception('Connection error: $e');
+    }
+  }
+
+  static Future<String> checkPaymentStatus(String refNo) async {
+    final url = Uri.parse('$baseUrl/api/payment/status/$refNo');
+    try {
+      final token = await AuthService.getToken();
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['status'] ?? 'pending';
+      }
+      return 'pending';
+    } catch (e) {
+      return 'pending';
     }
   }
 

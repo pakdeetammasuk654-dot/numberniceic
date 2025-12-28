@@ -37,3 +37,8 @@ Content-Type: application/json
 }
 
 ###
+
+### Analyze Name API (Includes Top 4)
+# @name AnalyzeNameAPI
+GET http://localhost:3000/api/analyze?name=สม&day=sunday
+Accept: application/json

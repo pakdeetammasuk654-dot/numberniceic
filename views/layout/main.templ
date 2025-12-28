@@ -60,6 +60,20 @@ templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage s
 			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
 			<!-- Corrected CSS Path -->
 			<link rel="stylesheet" href="/css/style-v4.css?v=5"/>
+			<link rel="stylesheet" href="/css/analysis-v5.css?v=18"/>
+			<style>
+				/* Critical CSS Injection for Best Names Layout */
+				.best-names-grid-layout { display: flex !important; flex-wrap: wrap !important; justify-content: center !important; gap: 1rem !important; width: 100% !important; }
+				.best-names-grid-layout > div { flex: 1 1 150px; max-width: 280px; min-width: 155px; }
+				.best-name-card-premium, .best-name-card-standard { display: flex !important; flex-direction: column !important; align-items: center !important; padding: 1rem !important; border-radius: 12px !important; position: relative !important; height: 100% !important; background: white !important; }
+				.best-name-card-premium { box-shadow: 0 4px 6px rgba(0,0,0,0.05), 0 0 0 2px #FFD700 !important; }
+				.best-name-card-standard { border: 1px solid #eee !important; box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important; }
+				.card-pair-circle { display: flex !important; width: 28px !important; height: 28px !important; border-radius: 50% !important; align-items: center !important; justify-content: center !important; color: white !important; font-weight: bold; }
+				.clickable-row { cursor: pointer; }
+			    .best-name-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 2; }
+			    .badge-premium { background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #4a3b00; }
+			    .badge-standard { background: #f0f0f0; color: #666; border: 1px solid #ddd; }
+			</style>
 			<link rel="stylesheet" href="/css/auth.css"/>
 			<!-- Toastify JS CDN -->
 			<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"/>

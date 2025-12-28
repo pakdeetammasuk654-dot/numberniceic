@@ -1908,8 +1908,6 @@ body.htmx-request .solar-system-container {
 
 .action-btn-premium {
     flex: 1;
-    background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
     border-radius: 14px !important;
     padding: 0.8rem 0.5rem !important;
     cursor: pointer;
@@ -1918,25 +1916,38 @@ body.htmx-request .solar-system-container {
     justify-content: center;
     align-items: center;
     gap: 0.5rem;
-    color: #4a5568 !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
     font-family: 'Kanit', sans-serif !important;
+    border: none !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white !important;
+}
+
+.btn-numerology {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+}
+
+.btn-linguistic {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%) !important;
+}
+
+.btn-save {
+    background: linear-gradient(135deg, #f6d365 0%, #fda085 100%) !important;
 }
 
 .action-btn-premium:hover {
-    background: #f8fafc !important;
-    border-color: #667eea !important;
-    color: #667eea !important;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(102, 126, 234, 0.12);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    filter: brightness(1.1);
 }
 
 .action-btn-premium svg {
     transition: transform 0.3s ease;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
 }
 
 .action-btn-premium:hover svg {
-    transform: scale(1.15) rotate(5deg);
+    transform: scale(1.2) rotate(5deg);
 }
 
 @media (max-width: 600px) {

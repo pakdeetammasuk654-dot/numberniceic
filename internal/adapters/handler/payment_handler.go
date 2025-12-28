@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"numberniceic/internal/adapters/handler/templ_render"
@@ -163,11 +164,90 @@ func (h *PaymentHandler) SimulatePaymentSuccess(c *fiber.Ctx) error {
 
 	c.Cookie(cookie)
 
-	// In real app, we might also want to upgrade the user here if they are logged in, just in case.
-	// But usually this button is for "Simulating" the callback.
-	// The Webhook handles the real logic.
-
 	return templ_render.Render(c, payment.PaymentSuccess())
+}
+
+// GetUpgradeModalAPI returns JSON for mobile apps
+func (h *PaymentHandler) GetUpgradeModalAPI(c *fiber.Ctx) error {
+	merchantID := os.Getenv("MERCHANT_ID")
+	apiKey := os.Getenv("API_KEY")
+
+	var userID *int
+	// Identify User from JWT
+	userIDFromJWT := c.Locals("user_id")
+	if userIDFromJWT != nil {
+		uid := userIDFromJWT.(int)
+		userID = &uid
+	} else {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	// 2. Generate Unique Ref No
+	refNo := fmt.Sprintf("%d", time.Now().UnixNano())
+	if len(refNo) > 12 {
+		refNo = refNo[len(refNo)-12:]
+	}
+
+	amount := 599.00 // VIP Price 599 THB Lifetime
+
+	// 3. Create Order in Database
+	err := h.service.CreateOrder(refNo, amount, userID)
+	if err != nil {
+		log.Printf("Error creating order: %v", err)
+	}
+
+	if merchantID == "" || apiKey == "" {
+		return c.JSON(fiber.Map{
+			"refNo":    refNo,
+			"qrBase64": "", // Mock mode
+			"amount":   amount,
+		})
+	}
+
+	// Payload - PaySolutions V2
+	baseURL := "https://apis.paysolutions.asia/tep/api/v2/promptpaynew"
+	req, _ := http.NewRequest("POST", baseURL, nil)
+	q := req.URL.Query()
+	q.Add("merchantID", merchantID)
+	q.Add("productDetail", "VIP Upgrade Mobile")
+	q.Add("customerEmail", "mobile-user@example.com")
+	q.Add("customerName", "Mobile User")
+	q.Add("total", fmt.Sprintf("%.2f", amount))
+	q.Add("referenceNo", refNo)
+	postbackURL := os.Getenv("POST_BACK_URL")
+	if postbackURL != "" {
+		q.Add("postbackurl", postbackURL)
+	}
+	req.URL.RawQuery = q.Encode()
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Payment service error"})
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	var resultMap map[string]interface{}
+	json.Unmarshal(body, &resultMap)
+
+	var qrBase64 string
+	if dataMap, ok := resultMap["data"].(map[string]interface{}); ok {
+		if val, ok := dataMap["image"].(string); ok {
+			qrBase64 = val
+		}
+	}
+
+	if qrBase64 != "" && !bytes.HasPrefix([]byte(qrBase64), []byte("data:image")) {
+		qrBase64 = "data:image/png;base64," + qrBase64
+	}
+
+	return c.JSON(fiber.Map{
+		"refNo":    refNo,
+		"qrBase64": qrBase64,
+		"amount":   amount,
+	})
 }
 
 // ResetPayment clears VIP status (helper for dev)
@@ -192,8 +272,6 @@ func (h *PaymentHandler) HandlePaymentWebhook(c *fiber.Ctx) error {
 	err := h.service.ProcessPaymentSuccess(refNo, total)
 	if err != nil {
 		log.Printf("❌ Error processing payment success: %v", err)
-		// We might return non-200 to tell PaySolutions to retry?
-		// Or assume it's done.
 	} else {
 		log.Printf("✅ Payment Processed Successfully. User Upgraded.")
 	}
@@ -201,23 +279,29 @@ func (h *PaymentHandler) HandlePaymentWebhook(c *fiber.Ctx) error {
 	return c.SendString("OK")
 }
 
-// CheckPaymentStatus checks if the order is paid and returns the success UI if so
+// CheckPaymentStatus checks if the order is paid and returns status JSON or HTML
 func (h *PaymentHandler) CheckPaymentStatus(c *fiber.Ctx) error {
 	refNo := c.Params("refNo")
+	isMobile := c.Locals("user_id") != nil || strings.HasPrefix(c.Get("Content-Type"), "application/json")
 
 	order, err := h.service.GetOrder(refNo)
 	if err != nil {
-		// handle error or not found
+		if isMobile {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Order not found"})
+		}
 		return c.SendStatus(fiber.StatusNotFound)
 	}
 
+	if isMobile {
+		return c.JSON(fiber.Map{
+			"refNo":  refNo,
+			"status": order.Status, // e.g., "paid", "pending"
+		})
+	}
+
 	if order.Status == "paid" {
-		// Log
-		log.Printf("DEBUG: Polling - Order %s is PAID. Returning Success UI.", refNo)
-		// Return the Success Component HTML
 		return templ_render.Render(c, payment.PaymentSuccess())
 	}
 
-	// Still pending
 	return c.SendStatus(fiber.StatusNoContent)
 }

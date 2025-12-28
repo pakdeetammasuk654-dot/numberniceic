@@ -26,6 +26,7 @@ type SimilarNameResult struct {
 	TotalScore            int            `json:"total_score"`
 	Similarity            float64        `json:"similarity"`
 	IsTopTier             bool           `json:"is_top_tier"`
+	HasBadPair            bool           `json:"has_bad_pair"`
 
 	// Klakini flags
 	KSunday     bool `json:"k_sunday"`

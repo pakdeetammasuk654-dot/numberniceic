@@ -22,6 +22,7 @@ type IndexProps struct {
 	SolarSystem           SolarSystemProps
 	IsVIP                 bool
 	Results               templ.Component
+	SolarSystemInitial    templ.Component // Added for lazy loading
 }
 
 func Index(props IndexProps) templ.Component {
@@ -57,7 +58,7 @@ func Index(props IndexProps) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Analyzer Form Container --> <div class=\"analyzer-container-premium\"><form id=\"name-form\"><!-- Hidden inputs --><input type=\"hidden\" name=\"auspicious\" id=\"main-auspicious\" value=\"false\"> <input type=\"hidden\" name=\"disable_klakini\" id=\"main-disable-klakini\" value=\"false\"><div class=\"form-group\" style=\"margin-bottom: 0.8rem;\"><div class=\"label-row\" style=\"margin-bottom: 0.25rem;\"><label for=\"name\" style=\"font-weight: bold; color: #333;\">ชื่อ</label> <small class=\"helper-text\" style=\"color: #667eea;\">วิเคราะห์อัตโนมัติเมื่อพิมพ์ชื่อ</small></div><div class=\"input-wrapper\" style=\"box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 12px; transition: transform 0.2s;\"><span class=\"input-icon\" style=\"color: #667eea;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"></path> <circle cx=\"12\" cy=\"7\" r=\"4\"></circle></svg></span> <input type=\"text\" id=\"name\" name=\"name\" required placeholder=\"เช่น ปัญญา\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Analyzer Form Container --> <div class=\"analyzer-container-premium\"><form id=\"name-form\"><!-- Hidden inputs --><input type=\"hidden\" name=\"auspicious\" id=\"main-auspicious\" value=\"false\"> <input type=\"hidden\" name=\"disable_klakini\" id=\"main-disable-klakini\" value=\"false\"><div class=\"form-group\"><div class=\"label-row\"><label for=\"name\">ชื่อ</label> <small class=\"helper-text\">วิเคราะห์อัตโนมัติเมื่อพิมพ์ชื่อ</small></div><div class=\"input-wrapper\"><span class=\"input-icon\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"></path> <circle cx=\"12\" cy=\"7\" r=\"4\"></circle></svg></span> <input type=\"text\" id=\"name\" name=\"name\" required placeholder=\"เช่น ปัญญา\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -70,7 +71,7 @@ func Index(props IndexProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" maxlength=\"30\" class=\"input-premium\" oninput=\"toggleClearButton()\" hx-get=\"/decode\" hx-target=\"#solar-system-wrapper\" hx-include=\"#name-form\" hx-trigger=\"input changed delay:500ms, load\" hx-indicator=\"#solar-loading, #results-wrapper\"> <span id=\"clear-btn\" class=\"clear-btn\" onclick=\"clearName()\" style=\"right: 15px;\">×</span></div></div><div class=\"form-group\" style=\"margin-bottom: 0;\"><label for=\"day\" style=\"font-weight: bold; color: #333; margin-bottom: 0.25rem; display: block;\">วันเกิด</label><div class=\"input-wrapper\" style=\"box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 12px;\"><span class=\"input-icon\" style=\"color: #667eea;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\" ry=\"2\"></rect> <line x1=\"16\" x2=\"16\" y1=\"2\" y2=\"6\"></line> <line x1=\"8\" x2=\"8\" y1=\"2\" y2=\"6\"></line> <line x1=\"3\" x2=\"21\" y1=\"10\" y2=\"10\"></line></svg></span> <select id=\"day\" name=\"day\" required class=\"select-premium\" hx-get=\"/decode\" hx-target=\"#solar-system-wrapper\" hx-include=\"#name-form\" hx-trigger=\"change\" hx-indicator=\"#solar-loading, #results-wrapper\"><option value=\"SUNDAY\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" maxlength=\"30\" class=\"input-premium\" oninput=\"toggleClearButton()\" hx-get=\"/decode\" hx-target=\"#solar-system-wrapper\" hx-include=\"#name-form\" hx-trigger=\"input changed delay:500ms\" hx-indicator=\"#solar-loading, #results-wrapper\"> <span id=\"clear-btn\" class=\"clear-btn\" onclick=\"clearName()\">×</span></div></div><div class=\"form-group\"><label for=\"day\">วันเกิด</label><div class=\"input-wrapper\"><span class=\"input-icon\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\" ry=\"2\"></rect> <line x1=\"16\" x2=\"16\" y1=\"2\" y2=\"6\"></line> <line x1=\"8\" x2=\"8\" y1=\"2\" y2=\"6\"></line> <line x1=\"3\" x2=\"21\" y1=\"10\" y2=\"10\"></line></svg></span> <select id=\"day\" name=\"day\" required class=\"select-premium\" hx-get=\"/decode\" hx-target=\"#solar-system-wrapper\" hx-include=\"#name-form\" hx-trigger=\"change\" hx-indicator=\"#solar-loading, #results-wrapper\"><option value=\"SUNDAY\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -180,7 +181,7 @@ func Index(props IndexProps) templ.Component {
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(strings.TrimSpace(sample.Name))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 89, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 88, Col: 48}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -201,7 +202,7 @@ func Index(props IndexProps) templ.Component {
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(sample.AvatarURL)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 91, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 90, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -214,7 +215,7 @@ func Index(props IndexProps) templ.Component {
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(sample.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 92, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/index.templ`, Line: 91, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -225,15 +226,22 @@ func Index(props IndexProps) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div></div><!-- Results Section for initial load and as a target --> <div id=\"results-container\"><div style=\"position: relative; margin-bottom: 1.5rem;\"><div id=\"solar-loading\" class=\"htmx-indicator\" style=\"position: absolute; inset: 0; background: rgba(255,255,255,0.7); z-index: 1000; border-radius: 12px; backdrop-filter: blur(2px); align-items: center; justify-content: center;\"><div style=\"display: flex; flex-direction: column; align-items: center; gap: 0.8rem;\"><svg class=\"spinner\" width=\"35px\" height=\"35px\" viewBox=\"0 0 66 66\" xmlns=\"http://www.w3.org/2000/svg\"><circle class=\"path\" fill=\"none\" stroke-width=\"6\" stroke-linecap=\"round\" cx=\"33\" cy=\"33\" r=\"30\" style=\"stroke: #667eea;\"></circle></svg> <span style=\"font-family: 'Kanit', sans-serif; color: #667eea; font-weight: 500; font-size: 1.1rem;\">กำลังโหลดข้อมูล...</span></div></div><div id=\"solar-system-wrapper\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div></div><!-- Results Section for initial load and as a target --> <div id=\"results-container\"><div class=\"result-container-relative\"><div id=\"solar-loading\" class=\"htmx-indicator loading-overlay\"><div class=\"loading-content\"><svg class=\"spinner\" width=\"35px\" height=\"35px\" viewBox=\"0 0 66 66\" xmlns=\"http://www.w3.org/2000/svg\"><circle class=\"path stroke-primary-important\" fill=\"none\" stroke-width=\"6\" stroke-linecap=\"round\" cx=\"33\" cy=\"33\" r=\"30\"></circle></svg> <span class=\"loading-text-lg\"><strong style=\"color: #f57f17; font-size: 1.2em;\">โปรดรอสักครู่</strong><br>กำลังวิเคราะห์จาก 3 แสนรายชื่อ....</span></div></div><div id=\"solar-system-wrapper\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = SolarSystem(props.SolarSystem).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
+			if props.SolarSystemInitial != nil {
+				templ_7745c5c3_Err = props.SolarSystemInitial.Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = SolarSystem(props.SolarSystem).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</div></div><div id=\"results-wrapper\" class=\"htmx-indicator-container\"><style>\n\t\t\t\t\t.htmx-indicator-container.htmx-request #results { display: none; }\n\t\t\t\t\t.htmx-indicator-container.htmx-request #table-loading { display: block !important; }\n\t\t\t\t\t#table-loading { display: none; }\n\t\t\t\t</style><!-- Table Loading Indicator (Skeleton) --><div id=\"table-loading\" class=\"htmx-indicator\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</div></div><div id=\"results-wrapper\" class=\"htmx-indicator-container\"><!-- Table Loading Indicator (Skeleton) --><div id=\"table-loading\" class=\"htmx-indicator\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

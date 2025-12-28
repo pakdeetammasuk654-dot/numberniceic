@@ -71,6 +71,27 @@ templ Layout(props LayoutProps) {
 			
 			<!-- Corrected CSS Path -->
 			<link rel="stylesheet" href="/css/style-v4.css"/>
+			<!-- Critical CSS Injection for Best Names Layout -->
+			<link rel="stylesheet" href="/css/analysis-v5.css?v=26"/>
+			<style>
+				.best-names-grid-layout { display: flex !important; flex-wrap: wrap !important; justify-content: center !important; gap: 1rem !important; width: 100% !important; }
+				.best-names-grid-layout > div { flex: 1 1 150px; max-width: 280px; min-width: 155px; }
+				.best-name-card-premium, .best-name-card-standard { display: flex !important; flex-direction: column !important; align-items: center !important; padding: 1rem !important; border-radius: 12px !important; position: relative !important; height: 100% !important; background: white !important; overflow: visible !important; }
+				.best-name-card-premium { box-shadow: 0 4px 6px rgba(0,0,0,0.05), 0 0 0 2px #FFD700 !important; }
+				.best-name-card-standard { border: 1px solid #eee !important; box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important; }
+				.card-pair-circle { display: flex !important; width: 28px !important; height: 28px !important; border-radius: 50% !important; align-items: center !important; justify-content: center !important; color: white !important; font-weight: bold; }
+				.clickable-row { cursor: pointer; }
+			    .best-name-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 2; }
+			    .badge-premium { background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #4a3b00; }
+			    .badge-standard { background: #f0f0f0; color: #666; border: 1px solid #ddd; }
+				.title-name { font-size: 0 !important; } 
+				.title-name > span { font-size: 1.1rem !important; }
+				.d-none { display: none !important; }
+				.result-box-premium { position: relative !important; z-index: 2000 !important; pointer-events: auto !important; } /* Nuclear Option for Z-Index */
+				.action-btn-premium { position: relative !important; z-index: 2010 !important; pointer-events: auto !important; }
+				.modal-overlay { z-index: 3000 !important; } /* Ensure modals are on top */
+				.similarity-divider { margin: 0 0.4rem; color: #ddd; }
+			</style>
 			<link rel="stylesheet" href="/css/auth.css"/>
 			
 			<!-- Toastify JS CDN -->
@@ -86,7 +107,7 @@ templ Layout(props LayoutProps) {
 			<div id="global-loader" class="htmx-indicator">
 				<div class="loader-content">
 					<svg class="spinner" width="24px" height="24px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
-						<circle class="path" fill="none" stroke="#667eea" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
+						<circle class="path spinner-path-primary" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
 					</svg>
 					<span>กำลังโหลด....</span>
 				</div>
@@ -150,21 +171,21 @@ templ Header(props LayoutProps) {
 		<nav class="nav-container">
 			<!-- Row 1: Logo and Auth -->
 			<div class="top-nav-row">
-				<div class="brand-logo" style="display: flex; align-items: center; gap: 0.5rem;">
-					<a href="/" class="brand-link">
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#FDB931" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 2px rgba(253, 185, 49, 0.5));"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+				<div class="brand-logo brand-logo-container">
+					<a href="/" class="link-plain">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#FDB931" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="brand-icon-filter"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
 						ชื่อดี.com
 					</a>
 					if props.IsVIP {
-						<span class="vip-badge" style="background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #4a3b00; font-size: 0.7rem; font-weight: bold; padding: 0.2rem 0.5rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 0.2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+						<span class="vip-badge vip-badge-header">
 							<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M2 20h20v2H2v-2zm2-8l4.5 5L12 6l3.5 11 4.5-5V2H4v10z"></path></svg>
 							VIP
 						</span>
 					}
 				</div>
-				<div class="auth-links" style="display: flex; align-items: center; gap: 1rem;">
+				<div class="auth-links auth-links-container">
 					<!-- Persistent Status Indicator -->
-					<div class="user-status-indicator" style="display: flex; align-items: center; font-size: 0.8rem; font-family: 'Kanit', sans-serif;">
+					<div class="user-status-indicator">
 						if props.IsLoggedIn {
 						}
 					</div>
