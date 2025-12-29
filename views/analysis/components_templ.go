@@ -365,65 +365,70 @@ func Top4Section(props SimilarNamesProps) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			for _, dc := range props.DisplayNameHTML {
-				if dc.IsBad {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<span class=\"klakini-char\">")
+				if dc.Char == " " {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<span class=\"name-spacer\">&nbsp;</span> ")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				} else if dc.IsBad {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<span class=\"klakini-char\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 236, Col: 80}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 238, Col: 80}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</span> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</span> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var15 string
 					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 238, Col: 59}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 240, Col: 59}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</span> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</span> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<span>\"</span></span></span></h3><div class=\"top-4-toggles\"><!-- Toggle: Show Top 4 (Client Side) --><div class=\"toggle-item-top4\"><span class=\"toggle-label-top4\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"#f57f17\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"toggle-icon-svg\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"></polygon></svg> <span>VIP</span></span> <label class=\"toggle-switch toggle-label-scale\"><input type=\"checkbox\" id=\"show-top4-toggle\" onchange=\"toggleBestNames(this.checked)\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<span>\"</span></span></span></h3><div class=\"top-4-toggles\"><!-- Toggle: Show Top 4 (Client Side) --><div class=\"toggle-item-top4\"><span class=\"toggle-label-top4\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"#f57f17\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"toggle-icon-svg\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"></polygon></svg> <span>VIP</span></span> <label class=\"toggle-switch toggle-label-scale\"><input type=\"checkbox\" id=\"show-top4-toggle\" onchange=\"toggleBestNames(this.checked)\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if props.ShowTop4 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, " checked")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "> <span class=\"slider\"></span></label></div><!-- Toggle: Disable Klakini (Server Side - Top 4 ONLY) --><div class=\"toggle-item\"><span class=\"toggle-label toggle-label-klakini\"><span>ไม่รวม</span>ชื่อกาลกิณี</span> <label class=\"toggle-switch toggle-label-scale\"><input type=\"checkbox\" id=\"disable-klakini-top4-toggle\" name=\"disable_klakini_top4\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "> <span class=\"slider\"></span></label></div><!-- Toggle: Disable Klakini (Server Side - Top 4 ONLY) --><div class=\"toggle-item\"><span class=\"toggle-label toggle-label-klakini\"><span>ไม่รวม</span>ชื่อกาลกิณี</span> <label class=\"toggle-switch toggle-label-scale\"><input type=\"checkbox\" id=\"disable-klakini-top4-toggle\" name=\"disable_klakini_top4\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if props.DisableKlakiniTop4 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, " checked")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, " hx-get=\"/similar-names\" hx-target=\"#top4-section\" hx-swap=\"innerHTML\" hx-indicator=\"#top4-loader\" hx-vals='js:{\"section\": \"top4\", \"name\": (document.getElementById(\"name\") ? document.getElementById(\"name\").value : \"\"), \"day\": (document.getElementById(\"day\") ? document.getElementById(\"day\").value : \"\"), \"auspicious\": document.getElementById(\"auspicious-toggle\") ? document.getElementById(\"auspicious-toggle\").checked : false, \"disable_klakini_top4\": event.target.checked, \"disable_klakini\": document.getElementById(\"disable-klakini-toggle\") ? document.getElementById(\"disable-klakini-toggle\").checked : false, \"show_top4\": document.getElementById(\"show-top4-toggle\") ? document.getElementById(\"show-top4-toggle\").checked : false}'> <span class=\"slider\"></span></label></div></div></div><!-- LAST 4 VIEW (Default) -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, " hx-get=\"/similar-names\" hx-target=\"#top4-section\" hx-swap=\"innerHTML\" hx-indicator=\"#top4-loader\" hx-vals='js:{\"section\": \"top4\", \"name\": (document.getElementById(\"name\") ? document.getElementById(\"name\").value : \"\"), \"day\": (document.getElementById(\"day\") ? document.getElementById(\"day\").value : \"\"), \"auspicious\": document.getElementById(\"auspicious-toggle\") ? document.getElementById(\"auspicious-toggle\").checked : false, \"disable_klakini_top4\": event.target.checked, \"disable_klakini\": document.getElementById(\"disable-klakini-toggle\") ? document.getElementById(\"disable-klakini-toggle\").checked : false, \"show_top4\": document.getElementById(\"show-top4-toggle\") ? document.getElementById(\"show-top4-toggle\").checked : false}'> <span class=\"slider\"></span></label></div></div></div><!-- LAST 4 VIEW (Default) -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -432,7 +437,7 @@ func Top4Section(props SimilarNamesProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<div id=\"last4-view\" class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<div id=\"last4-view\" class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -445,7 +450,7 @@ func Top4Section(props SimilarNamesProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -457,7 +462,7 @@ func Top4Section(props SimilarNamesProps) templ.Component {
 					}
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<!-- Fallback if only Top 4 exist -->")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<!-- Fallback if only Top 4 exist -->")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -468,7 +473,7 @@ func Top4Section(props SimilarNamesProps) templ.Component {
 					}
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</div><!-- TOP 4 VIEW (Hidden initially) -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</div><!-- TOP 4 VIEW (Hidden initially) -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -477,7 +482,7 @@ func Top4Section(props SimilarNamesProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<div id=\"top4-view\" class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<div id=\"top4-view\" class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -490,7 +495,7 @@ func Top4Section(props SimilarNamesProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -500,7 +505,7 @@ func Top4Section(props SimilarNamesProps) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -559,27 +564,27 @@ func SimilarNamesList(props SimilarNamesProps) templ.Component {
 			templ_7745c5c3_Var20 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<div class=\"position-relative\"><div id=\"table-loader\" class=\"global-loader htmx-indicator\"><div class=\"spinner-container\"><div class=\"premium-spinner\"></div><span class=\"loading-text\"><strong style=\"color: #f57f17; font-size: 1.1em;\">โปรดรอสักครู่</strong><br>กำลังวิเคราะห์จาก 3 แสนรายชื่อ....</span></div></div><!-- Table Toolbar (Toggles) --><div class=\"table-toolbar\"><h3 class=\"table-toolbar-title\">รายชื่อที่ใกล้เคียง</h3><div class=\"toggle-switch-container table-toggle-group\" hx-get=\"/similar-names\" hx-target=\"#similar-names-list-section\" hx-swap=\"innerHTML\" hx-trigger=\"change\" hx-indicator=\"#table-loader\" hx-vals='js:{\"section\": \"table\", \"name\": (document.getElementById(\"name\") ? document.getElementById(\"name\").value : \"\"), \"day\": (document.getElementById(\"day\") ? document.getElementById(\"day\").value : \"\"), \"auspicious\": document.getElementById(\"auspicious-toggle\").checked, \"disable_klakini\": document.getElementById(\"disable-klakini-toggle\").checked, \"disable_klakini_top4\": document.getElementById(\"disable-klakini-top4-toggle\") ? document.getElementById(\"disable-klakini-top4-toggle\").checked : false, \"show_top4\": document.getElementById(\"show-top4-toggle\") ? document.getElementById(\"show-top4-toggle\").checked : false}'><div class=\"toggle-item\"><span class=\"toggle-label toggle-label-auspicious\">ชื่อดีเท่านั้น</span> <label class=\"toggle-switch toggle-label-scale\"><input type=\"checkbox\" id=\"auspicious-toggle\" name=\"auspicious\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<div class=\"position-relative\"><div id=\"table-loader\" class=\"global-loader htmx-indicator\"><div class=\"spinner-container\"><div class=\"premium-spinner\"></div><span class=\"loading-text\"><strong style=\"color: #f57f17; font-size: 1.1em;\">โปรดรอสักครู่</strong><br>กำลังวิเคราะห์จาก 3 แสนรายชื่อ....</span></div></div><!-- Table Toolbar (Toggles) --><div class=\"table-toolbar\"><h3 class=\"table-toolbar-title\">รายชื่อที่ใกล้เคียง</h3><div class=\"toggle-switch-container table-toggle-group\" hx-get=\"/similar-names\" hx-target=\"#similar-names-list-section\" hx-swap=\"innerHTML\" hx-trigger=\"change\" hx-indicator=\"#table-loader\" hx-vals='js:{\"section\": \"table\", \"name\": (document.getElementById(\"name\") ? document.getElementById(\"name\").value : \"\"), \"day\": (document.getElementById(\"day\") ? document.getElementById(\"day\").value : \"\"), \"auspicious\": document.getElementById(\"auspicious-toggle\").checked, \"disable_klakini\": document.getElementById(\"disable-klakini-toggle\").checked, \"disable_klakini_top4\": document.getElementById(\"disable-klakini-top4-toggle\") ? document.getElementById(\"disable-klakini-top4-toggle\").checked : false, \"show_top4\": document.getElementById(\"show-top4-toggle\") ? document.getElementById(\"show-top4-toggle\").checked : false}'><div class=\"toggle-item\"><span class=\"toggle-label toggle-label-auspicious\">ชื่อดีเท่านั้น</span> <label class=\"toggle-switch toggle-label-scale\"><input type=\"checkbox\" id=\"auspicious-toggle\" name=\"auspicious\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if props.IsAuspicious {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, " checked")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, " onchange=\"document.getElementById('main-auspicious').value = this.checked\"> <span class=\"slider\"></span></label></div><div class=\"toggle-item\"><span class=\"toggle-label toggle-label-klakini\"><span>ไม่รวม</span>ชื่อกาลกิณี</span> <label class=\"toggle-switch toggle-label-scale\"><input type=\"checkbox\" id=\"disable-klakini-toggle\" name=\"disable_klakini\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, " onchange=\"document.getElementById('main-auspicious').value = this.checked\"> <span class=\"slider\"></span></label></div><div class=\"toggle-item\"><span class=\"toggle-label toggle-label-klakini\"><span>ไม่รวม</span>ชื่อกาลกิณี</span> <label class=\"toggle-switch toggle-label-scale\"><input type=\"checkbox\" id=\"disable-klakini-toggle\" name=\"disable_klakini\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if props.DisableKlakini {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, " checked")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, " onchange=\"document.getElementById('main-disable-klakini').value = this.checked\"> <span class=\"slider\"></span></label></div></div></div><!-- Table Section --><div class=\"table-responsive\"><table class=\"similar-names-table\"><thead><tr><th class=\"th-left-padded\">ชื่อดี</th><th class=\"th-center\">เลขศาสตร์</th><th class=\"th-center\">พลังเงา</th><th class=\"th-center\">คะแนน</th><th class=\"th-center\">คล้าย</th><th class=\"w-40px\"></th></tr></thead> <tbody>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, " onchange=\"document.getElementById('main-disable-klakini').value = this.checked\"> <span class=\"slider\"></span></label></div></div></div><!-- Table Section --><div class=\"table-responsive\"><table class=\"similar-names-table\"><thead><tr><th class=\"th-left-padded\">ชื่อดี</th><th class=\"th-center\">เลขศาสตร์</th><th class=\"th-center\">พลังเงา</th><th class=\"th-center\">คะแนน</th><th class=\"th-center\">คล้าย</th><th class=\"w-40px\"></th></tr></thead> <tbody>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -590,7 +595,7 @@ func SimilarNamesList(props SimilarNamesProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<tr class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<tr class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -603,7 +608,7 @@ func SimilarNamesList(props SimilarNamesProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -611,7 +616,7 @@ func SimilarNamesList(props SimilarNamesProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, " title=\"คลิกเพื่อวิเคราะห์ชื่อนี้\"><td class=\"td-left-padded\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, " title=\"คลิกเพื่อวิเคราะห์ชื่อนี้\"><td class=\"td-left-padded\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -620,7 +625,7 @@ func SimilarNamesList(props SimilarNamesProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<div class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<div class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -633,26 +638,26 @@ func SimilarNamesList(props SimilarNamesProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				for _, dc := range name.DisplayNameHTML {
 					if dc.IsBad {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "<span class=\"klakini-char\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<span class=\"klakini-char\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var25 string
 						templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 399, Col: 48}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 401, Col: 48}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</span>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</span>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -660,7 +665,7 @@ func SimilarNamesList(props SimilarNamesProps) templ.Component {
 						var templ_7745c5c3_Var26 string
 						templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 401, Col: 21}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 403, Col: 21}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 						if templ_7745c5c3_Err != nil {
@@ -668,84 +673,84 @@ func SimilarNamesList(props SimilarNamesProps) templ.Component {
 						}
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</div></td><td class=\"td-relative\"><div class=\"table-pairs-container justify-center\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "</div></td><td class=\"td-relative\"><div class=\"table-pairs-container justify-center\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				for i, pairInfo := range name.TSat {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<span class=\"table-pair-circle\" style=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<span class=\"table-pair-circle\" style=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var27 string
 					templ_7745c5c3_Var27, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pairInfo.Color)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 410, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 412, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var28 string
 					templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(name.SatNum[i])
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 410, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 412, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</div></td><td class=\"position-relative\"><div class=\"table-pairs-container justify-center\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</div></td><td class=\"position-relative\"><div class=\"table-pairs-container justify-center\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				for i, pairInfo := range name.TSha {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<span class=\"table-pair-circle\" style=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "<span class=\"table-pair-circle\" style=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var29 string
 					templ_7745c5c3_Var29, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pairInfo.Color)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 418, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 420, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var30 string
 					templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(name.ShaNum[i])
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 418, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 420, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</div></td><td class=\"text-center-middle\"><div class=\"flex-col-center\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</div></td><td class=\"text-center-middle\"><div class=\"flex-col-center\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if name.IsTopTier {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<span class=\"text-small-star\">⭐</span> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "<span class=\"text-small-star\">⭐</span> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -755,7 +760,7 @@ func SimilarNamesList(props SimilarNamesProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "<span class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<span class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -768,19 +773,19 @@ func SimilarNamesList(props SimilarNamesProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if name.TotalScore > 0 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "+")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "+")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var33 string
 					templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", name.TotalScore))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 429, Col: 48}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 431, Col: 48}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 					if templ_7745c5c3_Err != nil {
@@ -790,44 +795,44 @@ func SimilarNamesList(props SimilarNamesProps) templ.Component {
 					var templ_7745c5c3_Var34 string
 					templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", name.TotalScore))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 431, Col: 47}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 433, Col: 47}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "</span></div></td><td class=\"text-center\"><span class=\"text-similarity\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "</span></div></td><td class=\"text-center\"><span class=\"text-similarity\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var35 string
 				templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", mul(name.Similarity, 100)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 437, Col: 89}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 439, Col: 89}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "</span></td><td class=\"text-center\"><div class=\"action-icon\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><line x1=\"21\" y1=\"21\" x2=\"16.65\" y2=\"16.65\"></line></svg></div></td></tr>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</span></td><td class=\"text-center\"><div class=\"action-icon\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><line x1=\"21\" y1=\"21\" x2=\"16.65\" y2=\"16.65\"></line></svg></div></td></tr>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else if !props.IsVIP && i == 3 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "<tr><td colspan=\"6\"><div class=\"vip-locked-section\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"11\" width=\"18\" height=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg> <span class=\"font-sarabun-bold\">ชื่อดีถูกล็อกแสดงแค่ 3 รายชื่อเท่านั้น</span> <a href=\"#\" hx-get=\"/payment/upgrade\" hx-target=\"#upgrade-modal-container\" hx-swap=\"innerHTML\" onclick=\"event.preventDefault(); var el = document.getElementById('upgrade-modal-container'); if(!el){ el = document.createElement('div'); el.id = 'upgrade-modal-container'; el.className = 'modal-overlay'; el.style.display = 'none'; el.style.zIndex='9999'; document.body.appendChild(el); } el.style.display='flex'\" class=\"vip-upgrade-btn\">สมัครสมาชิกเพื่อดูทั้งหมด</a></div></td></tr>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "<tr><td colspan=\"6\"><div class=\"vip-locked-section\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"11\" width=\"18\" height=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg> <span class=\"font-sarabun-bold\">ชื่อดีถูกล็อกแสดงแค่ 3 รายชื่อเท่านั้น</span> <a href=\"#\" hx-get=\"/payment/upgrade\" hx-target=\"#upgrade-modal-container\" hx-swap=\"innerHTML\" onclick=\"event.preventDefault(); var el = document.getElementById('upgrade-modal-container'); if(!el){ el = document.createElement('div'); el.id = 'upgrade-modal-container'; el.className = 'modal-overlay'; el.style.display = 'none'; el.style.zIndex='9999'; document.body.appendChild(el); } el.style.display='flex'\" class=\"vip-upgrade-btn\">สมัครสมาชิกเพื่อดูทั้งหมด</a></div></td></tr>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
 		if len(props.SimilarNames) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "<tr><td colspan=\"6\" class=\"empty-state-cell\"><div class=\"empty-state-content\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#e0e0e0\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle> <line x1=\"12\" y1=\"8\" x2=\"12\" y2=\"12\"></line> <line x1=\"12\" y1=\"16\" x2=\"12.01\" y2=\"16\"></line></svg> <span>ไม่พบชื่อที่ใกล้เคียง</span></div></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "<tr><td colspan=\"6\" class=\"empty-state-cell\"><div class=\"empty-state-content\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#e0e0e0\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle> <line x1=\"12\" y1=\"8\" x2=\"12\" y2=\"12\"></line> <line x1=\"12\" y1=\"16\" x2=\"12.01\" y2=\"16\"></line></svg> <span>ไม่พบชื่อที่ใกล้เคียง</span></div></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "</tbody></table></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "</tbody></table></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -861,42 +866,42 @@ func DayIcon(day string) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if strings.Contains(day, "อาทิตย์") {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "<!-- Sunday: Red/Orange Sun --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#ff4d4d\" stroke=\"#ff4d4d\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"day-icon-sun\"><circle cx=\"12\" cy=\"12\" r=\"5\"></circle> <line x1=\"12\" y1=\"1\" x2=\"12\" y2=\"3\"></line> <line x1=\"12\" y1=\"21\" x2=\"12\" y2=\"23\"></line> <line x1=\"4.22\" y1=\"4.22\" x2=\"5.64\" y2=\"5.64\"></line> <line x1=\"18.36\" y1=\"18.36\" x2=\"19.78\" y2=\"19.78\"></line> <line x1=\"1\" y1=\"12\" x2=\"3\" y2=\"12\"></line> <line x1=\"21\" y1=\"12\" x2=\"23\" y2=\"12\"></line> <line x1=\"4.22\" y1=\"19.78\" x2=\"5.64\" y2=\"18.36\"></line> <line x1=\"18.36\" y1=\"5.64\" x2=\"19.78\" y2=\"4.22\"></line></svg>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<!-- Sunday: Red/Orange Sun --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#ff4d4d\" stroke=\"#ff4d4d\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"day-icon-sun\"><circle cx=\"12\" cy=\"12\" r=\"5\"></circle> <line x1=\"12\" y1=\"1\" x2=\"12\" y2=\"3\"></line> <line x1=\"12\" y1=\"21\" x2=\"12\" y2=\"23\"></line> <line x1=\"4.22\" y1=\"4.22\" x2=\"5.64\" y2=\"5.64\"></line> <line x1=\"18.36\" y1=\"18.36\" x2=\"19.78\" y2=\"19.78\"></line> <line x1=\"1\" y1=\"12\" x2=\"3\" y2=\"12\"></line> <line x1=\"21\" y1=\"12\" x2=\"23\" y2=\"12\"></line> <line x1=\"4.22\" y1=\"19.78\" x2=\"5.64\" y2=\"18.36\"></line> <line x1=\"18.36\" y1=\"5.64\" x2=\"19.78\" y2=\"4.22\"></line></svg>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else if strings.Contains(day, "จันทร์") {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<!-- Monday: Yellow Moon --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#f1c40f\" stroke=\"#f1c40f\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"day-icon-mon\"><path d=\"M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z\"></path></svg>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "<!-- Monday: Yellow Moon --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#f1c40f\" stroke=\"#f1c40f\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"day-icon-mon\"><path d=\"M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z\"></path></svg>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else if strings.Contains(day, "อังคาร") {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "<!-- Tuesday: Pink Mars-like --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#ff80ab\" stroke=\"#ff80ab\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"day-icon-tue\"><circle cx=\"12\" cy=\"12\" r=\"7\"></circle> <circle cx=\"12\" cy=\"12\" r=\"3\"></circle></svg>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "<!-- Tuesday: Pink Mars-like --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#ff80ab\" stroke=\"#ff80ab\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"day-icon-tue\"><circle cx=\"12\" cy=\"12\" r=\"7\"></circle> <circle cx=\"12\" cy=\"12\" r=\"3\"></circle></svg>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else if strings.Contains(day, "พุธ") {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "<!-- Wednesday: Green Mercury-like --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#20bf6b\" stroke=\"#20bf6b\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"day-icon-wed\"><path d=\"M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z\"></path> <path d=\"M12 8a4 4 0 1 0 4 4 4 4 0 0 0-4-4z\"></path></svg>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "<!-- Wednesday: Green Mercury-like --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#20bf6b\" stroke=\"#20bf6b\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"day-icon-wed\"><path d=\"M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z\"></path> <path d=\"M12 8a4 4 0 1 0 4 4 4 4 0 0 0-4-4z\"></path></svg>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else if strings.Contains(day, "พฤหัส") {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "<!-- Thursday: Orange Jupiter-like --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#f39c12\" stroke=\"#f39c12\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"day-icon-thu\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle> <line x1=\"2\" y1=\"12\" x2=\"22\" y2=\"12\"></line> <path d=\"M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z\"></path></svg>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "<!-- Thursday: Orange Jupiter-like --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#f39c12\" stroke=\"#f39c12\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"day-icon-thu\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle> <line x1=\"2\" y1=\"12\" x2=\"22\" y2=\"12\"></line> <path d=\"M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z\"></path></svg>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else if strings.Contains(day, "ศุกร์") {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "<!-- Friday: Blue Venus-like --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#45aaf2\" stroke=\"#45aaf2\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"day-icon-fri\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle> <path d=\"M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83M16.62 12l-5.74 9.94\"></path></svg>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "<!-- Friday: Blue Venus-like --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#45aaf2\" stroke=\"#45aaf2\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"day-icon-fri\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle> <path d=\"M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83M16.62 12l-5.74 9.94\"></path></svg>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else if strings.Contains(day, "เสาร์") {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "<!-- Saturday: Purple Saturn-like --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#a55eea\" stroke=\"#a55eea\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"day-icon-sat\"><circle cx=\"12\" cy=\"12\" r=\"6\"></circle> <path d=\"M2 12h20M7 7l10 10M7 17l10-10\"></path></svg>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<!-- Saturday: Purple Saturn-like --> <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#a55eea\" stroke=\"#a55eea\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"day-icon-sat\"><circle cx=\"12\" cy=\"12\" r=\"6\"></circle> <path d=\"M2 12h20M7 7l10 10M7 17l10-10\"></path></svg>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\" ry=\"2\"></rect><line x1=\"16\" x2=\"16\" y1=\"2\" y2=\"6\"></line><line x1=\"8\" x2=\"8\" y1=\"2\" y2=\"6\"></line><line x1=\"3\" x2=\"21\" y1=\"10\" y2=\"10\"></line></svg>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\" ry=\"2\"></rect><line x1=\"16\" x2=\"16\" y1=\"2\" y2=\"6\"></line><line x1=\"8\" x2=\"8\" y1=\"2\" y2=\"6\"></line><line x1=\"3\" x2=\"21\" y1=\"10\" y2=\"10\"></line></svg>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -931,7 +936,7 @@ func BestNameCard(name domain.SimilarNameResult, rank int, isPremium bool) templ
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "<div")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "<div")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -939,7 +944,7 @@ func BestNameCard(name domain.SimilarNameResult, rank int, isPremium bool) templ
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, " class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, " class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -952,48 +957,48 @@ func BestNameCard(name domain.SimilarNameResult, rank int, isPremium bool) templ
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if isPremium {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "<!-- Premium Crown Badge --> <div class=\"best-name-badge badge-premium\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"currentColor\" stroke=\"none\"><path d=\"M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z\"></path></svg> Top ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "<!-- Premium Crown Badge --> <div class=\"best-name-badge badge-premium\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"currentColor\" stroke=\"none\"><path d=\"M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z\"></path></svg> Top ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var40 string
 			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(rank))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 551, Col: 28}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 553, Col: 28}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "<!-- Standard Rank Badge (Semi-Premium) --> <div class=\"best-name-badge badge-standard\">#")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "<!-- Standard Rank Badge (Semi-Premium) --> <div class=\"best-name-badge badge-standard\">#")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var41 string
 			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(rank))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 556, Col: 25}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 558, Col: 25}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "<div class=\"card-name-container\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<div class=\"card-name-container\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1002,7 +1007,7 @@ func BestNameCard(name domain.SimilarNameResult, rank int, isPremium bool) templ
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<div class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "<div class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1015,36 +1020,36 @@ func BestNameCard(name domain.SimilarNameResult, rank int, isPremium bool) templ
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if name.IsTopTier {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "<span class=\"card-star-icon\">⭐</span> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "<span class=\"card-star-icon\">⭐</span> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "<span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, dc := range name.DisplayNameHTML {
 			if dc.IsBad {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<span class=\"klakini-char\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "<span class=\"klakini-char\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var44 string
 				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 568, Col: 43}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 570, Col: 43}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1052,7 +1057,7 @@ func BestNameCard(name domain.SimilarNameResult, rank int, isPremium bool) templ
 				var templ_7745c5c3_Var45 string
 				templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 570, Col: 16}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 572, Col: 16}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 				if templ_7745c5c3_Err != nil {
@@ -1060,145 +1065,145 @@ func BestNameCard(name domain.SimilarNameResult, rank int, isPremium bool) templ
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "</span></div><div class=\"card-similarity\">คล้าย <span class=\"font-bold\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "</span></div><div class=\"card-similarity\">คล้าย <span class=\"font-bold\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var46 string
 		templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", mul(name.Similarity, 100)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 576, Col: 94}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 578, Col: 94}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "</span> <span class=\"similarity-divider\">•</span> <span>คะแนน <span class=\"font-bold\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "</span> <span class=\"similarity-divider\">•</span> <span>คะแนน <span class=\"font-bold\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(name.TotalScore))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 578, Col: 81}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 580, Col: 81}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "</span></span></div></div><!-- Score and Pairs Consolidated --><div class=\"card-score-wrapper\"><!-- Pair Circles --><div class=\"card-pairs-wrapper\"><!-- Sat Num (Main) -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "</span></span></div></div><!-- Score and Pairs Consolidated --><div class=\"card-score-wrapper\"><!-- Pair Circles --><div class=\"card-pairs-wrapper\"><!-- Sat Num (Main) -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for i, pairInfo := range name.TSat {
 			if i < len(name.SatNum) {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "<div class=\"card-pair-circle\" style=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "<div class=\"card-pair-circle\" style=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var48 string
 				templ_7745c5c3_Var48, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pairInfo.Color)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 590, Col: 99}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 592, Col: 99}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "\" title=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "\" title=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var49 string
 				templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs("เลขมงคล: " + name.SatNum[i])
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 590, Col: 152}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 592, Col: 152}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var50 string
 				templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(name.SatNum[i])
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 591, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 593, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "<!-- Divider if both exist -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<!-- Divider if both exist -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(name.TSat) > 0 && len(name.TSha) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<div class=\"card-divider\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "<div class=\"card-divider\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "<!-- Sha Num (Shadow) -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "<!-- Sha Num (Shadow) -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for i, pairInfo := range name.TSha {
 			if i < len(name.ShaNum) {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "<div class=\"card-pair-circle card-pair-shadow\" style=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "<div class=\"card-pair-circle card-pair-shadow\" style=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var51 string
 				templ_7745c5c3_Var51, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pairInfo.Color)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 604, Col: 116}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 606, Col: 116}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "\" title=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "\" title=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var52 string
 				templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs("เลขเงา: " + name.ShaNum[i])
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 604, Col: 166}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 606, Col: 166}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var53 string
 				templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(name.ShaNum[i])
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 605, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/components.templ`, Line: 607, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "</div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "</div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

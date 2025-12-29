@@ -59,20 +59,41 @@ templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage s
 			<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&family=Kanit:wght@400;700&display=swap" rel="stylesheet"/>
 			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
 			<!-- Corrected CSS Path -->
-			<link rel="stylesheet" href="/css/style-v4.css?v=5"/>
-			<link rel="stylesheet" href="/css/analysis-v5.css?v=18"/>
+			<link rel="stylesheet" href="/css/style-v4.css?v=11"/>
+			<!-- Critical CSS Injection for Best Names Layout -->
+			<link rel="stylesheet" href="/css/analysis-v5.css?v=42"/>
 			<style>
 				/* Critical CSS Injection for Best Names Layout */
-				.best-names-grid-layout { display: flex !important; flex-wrap: wrap !important; justify-content: center !important; gap: 1rem !important; width: 100% !important; }
-				.best-names-grid-layout > div { flex: 1 1 150px; max-width: 280px; min-width: 155px; }
+				.best-names-grid-layout { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 0.8rem !important; width: 100% !important; justify-content: start !important; }
+				.best-names-grid-layout > div { width: 100% !important; min-width: 0 !important; max-width: none !important; }
 				.best-name-card-premium, .best-name-card-standard { display: flex !important; flex-direction: column !important; align-items: center !important; padding: 1rem !important; border-radius: 12px !important; position: relative !important; height: 100% !important; background: white !important; }
 				.best-name-card-premium { box-shadow: 0 4px 6px rgba(0,0,0,0.05), 0 0 0 2px #FFD700 !important; }
 				.best-name-card-standard { border: 1px solid #eee !important; box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important; }
 				.card-pair-circle { display: flex !important; width: 28px !important; height: 28px !important; border-radius: 50% !important; align-items: center !important; justify-content: center !important; color: white !important; font-weight: bold; }
 				.clickable-row { cursor: pointer; }
-			    .best-name-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 2; }
-			    .badge-premium { background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #4a3b00; }
-			    .badge-standard { background: #f0f0f0; color: #666; border: 1px solid #ddd; }
+			    .best-name-badge { position: absolute !important; left: auto !important; transform: none !important; padding: 4px 12px !important; border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; border-top-right-radius: 12px !important; font-size: 0.8rem !important; font-weight: bold; white-space: nowrap; z-index: 2; }
+			    .best-name-card-premium .best-name-badge { top: -2px !important; right: -2px !important; }
+			    .best-name-card-standard .best-name-badge { top: -1px !important; right: -1px !important; }
+			    .badge-premium { background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #4a3b00; box-shadow: -2px 2px 4px rgba(0,0,0,0.1); }
+			    .badge-standard { background: #f1f1f1 !important; color: #888 !important; border: none !important; box-shadow: none !important; }
+			    
+			    /* Global Premium Gold Text */
+			    .premium-gold-text {
+			        color: #d4a700 !important;
+			        font-weight: 700 !important;
+			        font-family: 'Kanit', sans-serif !important;
+			    }
+			    .brand-link, .brand-link:visited, .brand-link:hover, .brand-link:active, .link-plain, .link-plain:visited, .link-plain:hover, .link-plain:active {
+			        color: #d4a700 !important;
+			        text-decoration: none !important;
+			        display: flex !important;
+			        align-items: center !important;
+			        gap: 0.5rem !important;
+			    }
+			    .klakini-char {
+			        color: #ff4757 !important;
+			        -webkit-text-fill-color: #ff4757 !important;
+			    }
 			</style>
 			<link rel="stylesheet" href="/css/auth.css"/>
 			<!-- Toastify JS CDN -->

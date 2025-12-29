@@ -73,6 +73,32 @@ main {
     gap: 0.5rem;
 }
 
+.brand-link,
+.brand-link:visited {
+    color: #FFD700 !important;
+    text-decoration: none !important;
+}
+
+@keyframes gold-shine {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.premium-gold-text {
+    color: #d4a700 !important;
+    font-weight: 700 !important;
+    font-family: 'Kanit', sans-serif !important;
+}
+
 .auth-links {
     display: flex;
     align-items: center;
@@ -1943,7 +1969,7 @@ body.htmx-request .solar-system-container {
 
 .action-btn-premium svg {
     transition: transform 0.3s ease;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
 .action-btn-premium:hover svg {

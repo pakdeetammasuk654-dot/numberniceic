@@ -66,7 +66,7 @@ func (h *NumerologyHandler) AnalyzeAPI(c *fiber.Ctx) error {
 	name := service.SanitizeInput(c.Query("name"))
 	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
 	if day == "" {
-		day = "sunday"
+		day = "thursday"
 	}
 	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on" || c.Query("auspicious") == "1"
 	disableKlakini := c.Query("disable_klakini") == "true" || c.Query("disable_klakini") == "on" || c.Query("disable_klakini") == "1"
@@ -143,7 +143,7 @@ func (h *NumerologyHandler) AnalyzeAPI(c *fiber.Ctx) error {
 		// Fallback: Use similarNames if Turbo fails or returns nothing
 		bestCandidates = []domain.SimilarNameResult{}
 		for _, n := range similarNames {
-			if !n.HasBadPair && len(n.KlakiniChars) == 0 {
+			if !n.HasBadPair {
 				if !allowKlakiniTop4 && len(n.KlakiniChars) > 0 {
 					continue
 				}
@@ -152,7 +152,7 @@ func (h *NumerologyHandler) AnalyzeAPI(c *fiber.Ctx) error {
 		}
 	}
 
-	top4, last4, _ := h.getBestNames(bestCandidates, 100)
+	top4, last4, _ := h.getBestNames(bestCandidates, 100, allowKlakiniTop4)
 
 	// 3. Apply Limit based on VIP/Admin status
 	finalSimilarNames := tableCandidates
@@ -203,7 +203,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 		}
 	}
 	if day == "" {
-		day = "sunday"
+		day = "thursday"
 	}
 	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on"
 	disableKlakini := c.Query("disable_klakini") == "true" || c.Query("disable_klakini") == "on"
@@ -212,6 +212,11 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 	repoAllowKlakini := !disableKlakiniTable || !disableKlakiniTop4
 
 	isVIP := c.Locals("IsVIP") == true
+
+	// Calculate Solar System Props (Fast - mostly cache)
+	solarProps, _ := h.getSolarSystemProps(name, day, repoAllowKlakini, isVIP)
+	solarProps.DisableKlakini = disableKlakiniTable
+	solarProps.SkipTrigger = true
 
 	// Prepare minimal Props for Index (Render Shell Immediately)
 	indexProps := analysis.IndexProps{
@@ -230,11 +235,11 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 			IsVIP:        isVIP,
 		},
 		DefaultName:           name,
-		DefaultDay:            day,
+		DefaultDay:            strings.ToUpper(day),
 		SampleNames:           samples,
 		IsVIP:                 isVIP,
 		HeaderDisplayNameHTML: h.createHeaderDisplayChars(name, day),
-		SolarSystemInitial:    analysis.SolarSystemSkeleton(), // 🔥 Show Skeleton Immediately
+		SolarSystem:           solarProps,
 	}
 
 	// 1. Set Headers for Streaming
@@ -266,25 +271,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 
 			// --- HEAVY LIFTING STARTS HERE (Progressive) ---
 
-			// B. Calculate & Stream Solar System (Phase 1)
-			solarProps, _ := h.getSolarSystemProps(name, day, repoAllowKlakini, isVIP)
-			solarProps.DisableKlakini = disableKlakiniTable
-			solarProps.SkipTrigger = true
-
-			// Render Solar System and a script to swap it into the wrapper
-			// We wrap it in a div that we will swap via JS
-			fmt.Fprintf(w2, "<div id=\"solar-swap-content\" style=\"display:none;\">")
-			analysis.SolarSystem(solarProps).Render(ctx, w2)
-			fmt.Fprintf(w2, "</div>")
-			fmt.Fprintf(w2, "<script>document.getElementById('solar-system-wrapper').innerHTML = document.getElementById('solar-swap-content').innerHTML; document.getElementById('solar-swap-content').remove();</script>")
-
-			if f, ok := w2.(http.Flusher); ok {
-				f.Flush()
-			} else {
-				w.Flush()
-			}
-
-			// C. Fetch Actual Data for Table (Phase 2)
+			// B. Fetch Actual Data for Table (Phase 1)
 			similarNames, err := h.fetchSimilarNames(name, day, false, repoAllowKlakini)
 			if err != nil {
 				return nil
@@ -307,7 +294,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 			} else {
 				bestCandidates = []domain.SimilarNameResult{}
 				for _, n := range similarNames {
-					if !n.HasBadPair && len(n.KlakiniChars) == 0 {
+					if !n.HasBadPair {
 						if !allowKlakiniTop4 && len(n.KlakiniChars) > 0 {
 							continue
 						}
@@ -316,7 +303,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 				}
 			}
 
-			top4, last4, totalCountBest := h.getBestNames(bestCandidates, 100)
+			top4, last4, totalCountBest := h.getBestNames(bestCandidates, 100, allowKlakiniTop4)
 
 			// 3. Filter for TABLE
 			tableCandidates := similarNames
@@ -361,7 +348,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 				IsVIP:                 isVIP,
 			}
 
-			// D. Render the Table and Swap Script
+			// C. Render the Table and Swap Script
 			if err := analysis.SimilarNamesTable(tableProps).Render(ctx, w2); err != nil {
 				return err
 			}
@@ -711,7 +698,7 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 		// Fallback: Use similarNames if Turbo fails or returns nothing
 		bestCandidates = []domain.SimilarNameResult{}
 		for _, n := range similarNames {
-			if !n.HasBadPair && len(n.KlakiniChars) == 0 {
+			if !n.HasBadPair {
 				if !allowKlakiniTop4 && len(n.KlakiniChars) > 0 {
 					continue
 				}
@@ -720,7 +707,7 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 		}
 	}
 
-	top4, last4, totalCountBest := h.getBestNames(bestCandidates, 100)
+	top4, last4, totalCountBest := h.getBestNames(bestCandidates, 100, allowKlakiniTop4)
 
 	// Create display chars for the header (always true Klakini status)
 	displayNameHTML := h.createDisplayChars(name, day)
@@ -798,7 +785,7 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{})
 	}
 	if day == "" {
-		day = "sunday"
+		day = "thursday"
 	}
 
 	isVIP := c.Locals("IsVIP") == true
@@ -810,20 +797,23 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 	return templ_render.Render(c, analysis.SolarSystem(solarProps))
 }
 
-func (h *NumerologyHandler) getBestNames(candidates []domain.SimilarNameResult, limit int) ([]domain.SimilarNameResult, []domain.SimilarNameResult, int) {
+func (h *NumerologyHandler) getBestNames(candidates []domain.SimilarNameResult, limit int, allowKlakini bool) ([]domain.SimilarNameResult, []domain.SimilarNameResult, int) {
 	var top4 []domain.SimilarNameResult
 	var last4 []domain.SimilarNameResult
 
 	// 1. Filter for "Strict Best" (IsTopTier - All Green)
 	var bestNames []domain.SimilarNameResult
-	// 2. Also track "Standard Good" (No Bad Pairs, No Klakini) as backup
+	// 2. Also track "Standard Good" (No Bad Pairs) as backup
 	var standardGoodNames []domain.SimilarNameResult
 
 	for _, c := range candidates {
-		// Basic requirement: No Bad Pairs, No Klakini
-		// (Note: candidates passed here usually already filter Klakini if requested,
-		// but let's double check HasBadPair which is the baseline for "Good")
-		if !c.HasBadPair && len(c.KlakiniChars) == 0 {
+		// Basic requirement: No Bad Pairs
+		// Klakini requirement depends on allowKlakini
+		if !c.HasBadPair {
+			if !allowKlakini && len(c.KlakiniChars) > 0 {
+				continue
+			}
+
 			if c.IsTopTier {
 				bestNames = append(bestNames, c)
 			} else {

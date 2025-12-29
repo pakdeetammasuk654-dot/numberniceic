@@ -232,7 +232,9 @@ templ Top4Section(props SimilarNamesProps) {
                                 <span class="title-name">
                                     <span>"</span>
                                     for _, dc := range props.DisplayNameHTML {
-                                        if dc.IsBad {
+                                        if dc.Char == " " {
+                                             <span class="name-spacer">&nbsp;</span>
+                                        } else if dc.IsBad {
                                             <span class="klakini-char">{ dc.Char }</span>
                                         } else {
                                             <span>{ dc.Char }</span>

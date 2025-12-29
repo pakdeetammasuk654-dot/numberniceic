@@ -613,6 +613,7 @@
 
 .klakini-char {
     color: #ff4757 !important;
+    -webkit-text-fill-color: #ff4757 !important;
     font-weight: bold;
 }
 
@@ -729,6 +730,7 @@
     justify-content: center;
     gap: 4px;
     line-height: 1.2;
+    padding-top: 1rem;
 }
 
 .card-name-premium {
@@ -835,13 +837,7 @@
 }
 
 /* Top 4 Section */
-.top-4-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-    gap: 1rem;
-}
+/* .top-4-header moved to avoid duplication */
 
 .top-4-title {
     margin: 0;
@@ -858,6 +854,7 @@
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
+    background: transparent !important;
 }
 
 .toggle-item-top4 {
@@ -910,6 +907,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    background: transparent !important;
 }
 
 .toggle-label {
@@ -1026,17 +1024,56 @@
     font-size: 1.1rem;
 }
 
+/* Force white background to eliminate gray overscroll/artifacts */
+html,
+body {
+    background: white !important;
+}
+
 /* Layout Utilities */
 .section-spacer-top {
     margin-top: 1rem;
+    background: transparent !important;
 }
 
 .top4-wrapper {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 2px dashed #f0f0f0;
+    margin-top: 2rem;
+    /* Increased spacing */
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
     width: 100%;
     position: relative;
+    background: white !important;
+    z-index: 10;
+}
+
+.top4-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -200vw;
+    /* Huge negative margin to cover all side gaps */
+    right: -200vw;
+    background: white;
+    z-index: -1;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    /* Premium section shadow */
+}
+
+.top-4-inner-wrapper {
+    display: contents;
+}
+
+.top-4-header {
+    background: transparent !important;
+    position: relative;
+    z-index: 11;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    gap: 1rem;
 }
 
 .top4-section-container {
@@ -1067,24 +1104,19 @@
 }
 
 /* Best Names Grid Layout */
-
-
-
-/* Ensure proper card sizing for Flex Layout */
-.best-names-grid-layout>div {
-    flex: 1 1 150px;
-    /* Grow, Shrink, Basis */
-    max-width: 280px;
-    min-width: 155px;
+.best-names-grid-layout {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    /* Force 2 columns always */
+    gap: 0.8rem;
+    width: 100%;
 }
 
-/* Mobile Tweak: Ensure 2 columns fit */
-@media (max-width: 420px) {
-    .best-names-grid-layout>div {
-        max-width: 100%;
-        /* Allow filling width if needed */
-        flex: 1 1 45%;
-    }
+.best-names-grid-layout>div {
+    width: 100%;
+    /* Ensure cards fill the grid cell */
+    min-width: 0;
+    max-width: none;
 }
 
 /* Solar System & Modals Extra Styles */
@@ -1296,7 +1328,7 @@
 
 /* Best Name Card Internal Layout */
 .card-name-container {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.1rem;
     text-align: center;
 }
 
@@ -1309,7 +1341,7 @@
 }
 
 .card-score-wrapper {
-    margin-top: 0.8rem;
+    margin-top: 0.2rem;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -1491,29 +1523,56 @@
 }
 
 .best-name-badge {
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0.2rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
+    position: absolute !important;
+    left: auto !important;
+    transform: none !important;
+    padding: 4px 12px;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-top-right-radius: 12px !important;
+    font-size: 0.8rem;
     font-weight: bold;
     white-space: nowrap;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     z-index: 2;
+}
+
+.best-name-card-premium .best-name-badge {
+    top: -2px !important;
+    right: -2px !important;
+}
+
+.best-name-card-standard .best-name-badge {
+    top: -1px !important;
+    right: -1px !important;
 }
 
 .badge-premium {
     background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
     color: #4a3b00;
+    box-shadow: -2px 2px 4px rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
 .badge-standard {
-    background: #f0f0f0;
-    color: #666;
-    border: 1px solid #ddd;
+    background: #f1f1f1 !important;
+    /* Visible light gray background */
+    color: #888;
+    border: none;
+    box-shadow: none;
+}
+
+/* Name Spacer for whitespace in names */
+.name-spacer {
+    display: inline-block;
+    width: 0.6rem;
+}
+
+.title-name {
+    display: inline;
+    font-weight: bold;
+    color: #333;
+    background: transparent !important;
 }

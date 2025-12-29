@@ -70,9 +70,9 @@ templ Layout(props LayoutProps) {
 			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
 			
 			<!-- Corrected CSS Path -->
-			<link rel="stylesheet" href="/css/style-v4.css"/>
+			<link rel="stylesheet" href="/css/style-v4.css?v=11"/>
 			<!-- Critical CSS Injection for Best Names Layout -->
-			<link rel="stylesheet" href="/css/analysis-v5.css?v=26"/>
+			<link rel="stylesheet" href="/css/analysis-v5.css?v=42"/>
 			<style>
 				.best-names-grid-layout { display: flex !important; flex-wrap: wrap !important; justify-content: center !important; gap: 1rem !important; width: 100% !important; }
 				.best-names-grid-layout > div { flex: 1 1 150px; max-width: 280px; min-width: 155px; }
@@ -91,6 +91,24 @@ templ Layout(props LayoutProps) {
 				.action-btn-premium { position: relative !important; z-index: 2010 !important; pointer-events: auto !important; }
 				.modal-overlay { z-index: 3000 !important; } /* Ensure modals are on top */
 				.similarity-divider { margin: 0 0.4rem; color: #ddd; }
+				
+				/* Global Premium Gold Text Override */
+			    .premium-gold-text {
+			        color: #d4a700 !important;
+			        font-weight: 700 !important;
+			        font-family: 'Kanit', sans-serif !important;
+			    }
+			    .brand-link, .brand-link:visited, .brand-link:hover, .brand-link:active, .link-plain, .link-plain:visited, .link-plain:hover, .link-plain:active {
+			        color: #d4a700 !important;
+			        text-decoration: none !important;
+			        display: flex !important;
+			        align-items: center !important;
+			        gap: 0.5rem !important;
+			    }
+			    .klakini-char {
+			        color: #ff4757 !important;
+			        -webkit-text-fill-color: #ff4757 !important;
+			    }
 			</style>
 			<link rel="stylesheet" href="/css/auth.css"/>
 			
@@ -173,8 +191,8 @@ templ Header(props LayoutProps) {
 			<div class="top-nav-row">
 				<div class="brand-logo brand-logo-container">
 					<a href="/" class="link-plain">
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#FDB931" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="brand-icon-filter"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-						ชื่อดี.com
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#d4a700" stroke="#B8860B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="brand-icon-filter"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+						<span class="premium-gold-text">ชื่อดี.com</span>
 					</a>
 					if props.IsVIP {
 						<span class="vip-badge vip-badge-header">
