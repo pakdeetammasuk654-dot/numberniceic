@@ -37,4 +37,6 @@ type SimilarNameResult struct {
 	KThursday   bool `json:"k_thursday"`
 	KFriday     bool `json:"k_friday"`
 	KSaturday   bool `json:"k_saturday"`
+
+	CategoryCounts map[string]int `json:"category_counts"`
 }

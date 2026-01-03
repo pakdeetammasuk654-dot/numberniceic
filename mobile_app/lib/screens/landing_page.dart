@@ -47,246 +47,30 @@ class _LandingPageState extends State<LandingPage> {
         elevation: 0,
         scrolledUnderElevation: 2,
         centerTitle: false,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: const Text(
+
+        title: Text(
           'ชื่อดี.com',
-          style: TextStyle(
+          style: GoogleFonts.kanit(
             fontWeight: FontWeight.bold,
             color: Colors.white,
-            fontFamily: 'Kanit',
             fontSize: 22,
           ),
         ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
-          child: Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: const BoxDecoration(
-              color: Color(0xFF444444),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Buddhist Day Badge
-                FutureBuilder<bool>(
-                  future: _isBuddhistDayFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData && snapshot.data == true) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.5)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.filter_vintage_rounded, size: 18, color: Color(0xFFFFD700)),
-                            const SizedBox(width: 6),
-                            Text(
-                              'วันนี้วันพระ', 
-                              style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFFFFD700)),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                    return const SizedBox();
-                  },
-                ),
-                
-                
-                // Premium Gradient Action Button
-                InkWell(
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalyzerPage()));
-                  },
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF667EEA).withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.analytics_rounded, size: 16, color: Colors.white),
-                        const SizedBox(width: 6),
-                        Text(
-                          'วิเคราะห์ชื่อ',
-                          style: GoogleFonts.kanit(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          FutureBuilder<Map<String, dynamic>>(
-            future: _userInfoFuture,
-            builder: (context, snapshot) {
-              final userInfo = snapshot.data;
-              final isLoggedIn = userInfo != null && userInfo['username'] != null;
 
-              if (isLoggedIn) {
-                return TextButton.icon(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const DashboardPage())),
-                  icon: const Icon(Icons.dashboard_outlined, color: Colors.white, size: 20),
-                  label: Text('แดชบอร์ด', style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold)),
-                );
-              } else {
-                return TextButton.icon(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage())),
-                  icon: const Icon(Icons.login_outlined, color: Colors.white, size: 20),
-                  label: Text('เข้าสู่ระบบ', style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold)),
-                );
-              }
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('ไม่มีการแจ้งเตือนใหม่')),
+              );
             },
+            tooltip: 'การแจ้งเตือน',
           ),
           const SizedBox(width: 8),
         ],
       ),
-      drawer: Drawer(
-        child: FutureBuilder<Map<String, dynamic>>(
-          future: _userInfoFuture,
-          builder: (context, snapshot) {
-             final userInfo = snapshot.data;
-             final isLoggedIn = userInfo != null && userInfo['username'] != null;
-             
-             return ListView(
-               padding: EdgeInsets.zero,
-               children: [
-                 DrawerHeader(
-                   decoration: const BoxDecoration(
-                     gradient: LinearGradient(
-                       colors: [Color(0xFF00b09b), Color(0xFF96c93d)],
-                       begin: Alignment.topLeft,
-                       end: Alignment.bottomRight,
-                     ),
-                   ),
-                   child: Column(
-                     crossAxisAlignment: CrossAxisAlignment.start,
-                     mainAxisAlignment: MainAxisAlignment.end,
-                     children: [
-                       const CircleAvatar(
-                         radius: 30,
-                         backgroundColor: Colors.white,
-                         child: Icon(Icons.person, size: 40, color: Colors.teal),
-                       ),
-                       const SizedBox(height: 10),
-                       Text(
-                         isLoggedIn ? 'สวัสดี, ${userInfo['username']}' : 'ยินดีต้อนรับ',
-                         style: GoogleFonts.kanit(
-                           color: Colors.white,
-                           fontSize: 20,
-                           fontWeight: FontWeight.bold,
-                         ),
-                       ),
-                     ],
-                   ),
-                 ),
-                 
-                 // Menu Items logic
-                 ListTile(
-                   leading: const Icon(Icons.home),
-                   title: Text('หน้าแรก', style: GoogleFonts.kanit()),
-                   onTap: () => Navigator.pop(context),
-                 ),
-                 ListTile(
-                   leading: const Icon(Icons.article),
-                   title: Text('บทความ', style: GoogleFonts.kanit()),
-                   onTap: () {
-                     Navigator.pop(context);
-                     Navigator.push(
-                       context,
-                       MaterialPageRoute(builder: (context) => const ArticlesPage()),
-                     );
-                   },
-                 ),
-                 const Divider(),
 
-                 if (isLoggedIn) ...[
-                   // Logged In Menus
-                   ListTile(
-                      leading: const Icon(Icons.dashboard_rounded, color: Colors.teal),
-                      title: Text('แดชบอร์ด', style: GoogleFonts.kanit(color: Colors.teal, fontWeight: FontWeight.bold)),
-                      onTap: () {
-                         Navigator.pop(context); // Close drawer
-                         Navigator.push(
-                           context, 
-                           MaterialPageRoute(builder: (context) => const DashboardPage())
-                         );
-                      },
-                    ),
-                   const Divider(),
-                   ListTile(
-                     leading: const Icon(Icons.logout, color: Colors.deepOrange),
-                     title: Text('ออกจากระบบ', style: GoogleFonts.kanit(color: Colors.deepOrange)),
-                     onTap: () async {
-                       await AuthService.logout();
-                       if (context.mounted) {
-                          Navigator.pop(context);
-                          CustomToast.show(context, 'ออกจากระบบเรียบร้อยแล้ว');
-                          setState(() {}); 
-                       }
-                     },
-                   ),
-                 ] else ...[
-                   // Guest Menus
-                   ListTile(
-                     leading: const Icon(Icons.login),
-                     title: Text('เข้าสู่ระบบ', style: GoogleFonts.kanit()),
-                     onTap: () {
-                       Navigator.pop(context);
-                       Navigator.push(
-                         context,
-                         MaterialPageRoute(builder: (context) => const LoginPage()),
-                       ).then((_) => setState(() {}));
-                     },
-                   ),
-                   ListTile(
-                     leading: const Icon(Icons.person_add),
-                     title: Text('สมัครสมาชิก', style: GoogleFonts.kanit()),
-                     onTap: () {
-                       Navigator.pop(context);
-                       Navigator.push(
-                         context,
-                         MaterialPageRoute(builder: (context) => const RegisterPage()),
-                       );
-                     },
-                   ),
-                 ],
-               ],
-             );
-          },
-        ),
-      ),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: SingleChildScrollView(
@@ -360,7 +144,7 @@ class _LandingPageState extends State<LandingPage> {
                    if (subArticles.length > 2) Expanded(child: _buildSubHeroItem(context, subArticles[2])),
                     Expanded(
                       child: Container(
-                        height: 150, 
+                        height: 180, 
                         decoration: const BoxDecoration(
                           gradient: LinearGradient(
                             colors: [Color(0xFF667eea), Color(0xFF764ba2)],
@@ -379,7 +163,7 @@ class _LandingPageState extends State<LandingPage> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               if (subArticles.length > 3)
-                                ...subArticles.sublist(3, subArticles.length > 5 ? 5 : subArticles.length).map((a) => 
+                                ...subArticles.sublist(3, subArticles.length > 6 ? 6 : subArticles.length).map((a) => 
                                    Expanded(
                                      child: Container(
                                        padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -393,8 +177,9 @@ class _LandingPageState extends State<LandingPage> {
                                          overflow: TextOverflow.ellipsis,
                                          style: GoogleFonts.kanit(
                                            color: Colors.white,
-                                           fontSize: 14,
-                                           fontWeight: FontWeight.w300,
+                                           fontSize: 20,
+                                           fontWeight: FontWeight.w400,
+                                           height: 1.1,
                                          ),
                                        ),
                                      ),
@@ -409,15 +194,15 @@ class _LandingPageState extends State<LandingPage> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
-                                        'ดูบทความทั้งหมด',
+                                        'ดูทั้งหมด',
                                         style: GoogleFonts.kanit(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 14,
+                                          fontSize: 20,
                                         ),
                                       ),
-                                      const SizedBox(width: 6),
-                                      const Icon(Icons.arrow_forward, color: Colors.white, size: 16),
+                                      const SizedBox(width: 8),
+                                      const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
                                     ],
                                   ),
                                 ),
@@ -497,9 +282,9 @@ class _LandingPageState extends State<LandingPage> {
                       fontWeight: FontWeight.w400,
                       fontSize: 14,
                       letterSpacing: 0.5,
+                      height: 1.0,
                     ),
                   ),
-                  const SizedBox(height: 2),
                   Text(
                     article.title,
                     maxLines: 2,
@@ -508,10 +293,10 @@ class _LandingPageState extends State<LandingPage> {
                       color: Colors.black87,
                       fontSize: 24,
                       fontWeight: FontWeight.w300, 
-                      height: 1.2,
+                      height: 1.1,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 2),
                   Text(
                     article.excerpt,
                     maxLines: 2,
@@ -519,7 +304,7 @@ class _LandingPageState extends State<LandingPage> {
                     style: GoogleFonts.kanit(
                       color: const Color(0xFF555555),
                       fontSize: 16,
-                      height: 1.4,
+                      height: 1.2,
                       fontWeight: FontWeight.w300,
                     ),
                   ),
@@ -547,7 +332,7 @@ class _LandingPageState extends State<LandingPage> {
         );
       },
       child: Container(
-        height: 150,
+        height: 180,
         decoration: BoxDecoration(
           image: DecorationImage(
             image: NetworkImage(
@@ -575,9 +360,9 @@ class _LandingPageState extends State<LandingPage> {
             textAlign: TextAlign.center,
             style: GoogleFonts.kanit(
               color: Colors.white,
-              fontWeight: FontWeight.w300,
-              fontSize: 16,
-              height: 1.2,
+              fontWeight: FontWeight.w400,
+              fontSize: 20,
+              height: 1.1,
               shadows: [const Shadow(color: Colors.black, blurRadius: 4)],
             ),
           ),

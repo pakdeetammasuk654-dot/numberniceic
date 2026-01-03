@@ -22,15 +22,16 @@ import (
 )
 
 type AdminHandler struct {
-	service            *service.AdminService
-	sampleCache        *cache.SampleNamesCache
-	store              *session.Store
-	buddhistDayService *service.BuddhistDayService
-	walletColorService *service.WalletColorService
+	service                *service.AdminService
+	sampleCache            *cache.SampleNamesCache
+	store                  *session.Store
+	buddhistDayService     *service.BuddhistDayService
+	walletColorService     *service.WalletColorService
+	shippingAddressService *service.ShippingAddressService
 }
 
-func NewAdminHandler(service *service.AdminService, sampleCache *cache.SampleNamesCache, store *session.Store, buddhistDayService *service.BuddhistDayService, walletColorService *service.WalletColorService) *AdminHandler {
-	return &AdminHandler{service: service, sampleCache: sampleCache, store: store, buddhistDayService: buddhistDayService, walletColorService: walletColorService}
+func NewAdminHandler(service *service.AdminService, sampleCache *cache.SampleNamesCache, store *session.Store, buddhistDayService *service.BuddhistDayService, walletColorService *service.WalletColorService, shippingAddressService *service.ShippingAddressService) *AdminHandler {
+	return &AdminHandler{service: service, sampleCache: sampleCache, store: store, buddhistDayService: buddhistDayService, walletColorService: walletColorService, shippingAddressService: shippingAddressService}
 }
 
 // --- Sample Names Management ---
@@ -103,6 +104,38 @@ func (h *AdminHandler) ShowDashboard(c *fiber.Ctx) error {
 	))
 }
 
+func (h *AdminHandler) ShowAuspiciousNumbersPage(c *fiber.Ctx) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	pageSize := 20
+
+	pagedResult, err := h.service.GetSellNumbersPaged(page, pageSize)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error loading auspicious numbers")
+	}
+
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "เบอร์มงคล",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.AuspiciousNumbers(pagedResult),
+	))
+}
+
 // --- User Management ---
 func (h *AdminHandler) ShowUsersPage(c *fiber.Ctx) error {
 	users, err := h.service.GetAllUsers()
@@ -161,6 +194,39 @@ func (h *AdminHandler) DeleteUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error deleting user")
 	}
 	return c.SendString("") // Remove row from DOM
+}
+
+func (h *AdminHandler) HandleViewUserAddress(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	c.Set("Content-Type", "text/html; charset=utf-8")
+
+	addresses, err := h.shippingAddressService.GetMyAddresses(id)
+	if err != nil {
+		return c.SendString(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>User Address</title><style>body{font-family:'Kanit',sans-serif;padding:20px;background:#f8f9fa;}</style></head><body><h3 style='text-align:center;color:#666;'>เกิดข้อผิดพลาดในการโหลดที่อยู่</h3><div style="text-align:center;margin-top:20px;"><button onclick="window.close()" style="padding:10px 20px;cursor:pointer;">ปิดหน้าต่าง</button></div></body></html>`)
+	}
+
+	if len(addresses) == 0 {
+		return c.SendString(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>User Address</title><style>body{font-family:'Kanit',sans-serif;padding:20px;background:#f8f9fa;}</style></head><body><h3 style='text-align:center;color:#666;'>ไม่พบข้อมูลที่อยู่จัดส่งสำหรับสมาชิกรายนี้</h3><div style="text-align:center;margin-top:20px;"><button onclick="window.close()" style="padding:10px 20px;cursor:pointer;">ปิดหน้าต่าง</button></div></body></html>`)
+	}
+
+	html := `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>User Address</title><style>body{font-family:'Kanit',sans-serif;padding:20px;background:#f8f9fa;}.card{background:white;padding:20px;border-radius:10px;box-shadow:0 4px 6px rgba(0,0,0,0.1);margin-bottom:15px;}.default-badge{background:#2da44e;color:white;padding:2px 8px;border-radius:12px;font-size:0.8rem;float:right;}</style></head><body><h2>รายการที่อยู่จัดส่ง</h2>`
+
+	for _, addr := range addresses {
+		// badge := ""
+		// if addr.IsDefault {
+		// 	badge = `<span class="default-badge">Default</span>`
+		// }
+
+		html += fmt.Sprintf(`<div class="card">
+			<h3 style="margin:0 0 10px 0;">%s</h3>
+			<p style="margin:0 0 5px 0;"><strong>Tel:</strong> %s</p>
+			<p style="color:#555;">%s<br>%s, %s<br>%s %s</p>
+		</div>`, addr.RecipientName, addr.PhoneNumber, addr.AddressLine1, addr.SubDistrict, addr.District, addr.Province, addr.PostalCode)
+	}
+	html += `<div style="text-align:center;margin-top:20px;"><button onclick="window.close()" style="padding:10px 20px;cursor:pointer;">Close</button></div></body></html>`
+
+	c.Set("Content-Type", "text/html")
+	return c.SendString(html)
 }
 
 // --- Article Management ---
@@ -803,10 +869,186 @@ func (h *AdminHandler) UpdateWalletColor(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error updating color")
 	}
 
-	// Return the updated row (read-only view)
+	// HX-Trigger to update toast or other parts if needed
+	c.Set("HX-Trigger", "show-toast")
+
+	// Return the View Row
 	updatedColor, _ := h.walletColorService.GetByDay(dayOfWeek)
-	c.Set("HX-Trigger", "show-toast-success")
 	return templ_render.Render(c, admin.WalletColorRow(*updatedColor))
+}
+
+// --- Product Management ---
+
+func (h *AdminHandler) ShowProductsPage(c *fiber.Ctx) error {
+	products, err := h.service.GetAllProducts()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error loading products")
+	}
+
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "Manage Products",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.Products(products),
+	))
+}
+
+func (h *AdminHandler) ShowCreateProductPage(c *fiber.Ctx) error {
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "Create Product",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.ProductForm(false, nil),
+	))
+}
+
+func (h *AdminHandler) CreateProduct(c *fiber.Ctx) error {
+	// Handle Image Upload
+	imagePath := ""
+	file, err := c.FormFile("image_file")
+	if err == nil {
+		ext := filepath.Ext(file.Filename)
+		filename := fmt.Sprintf("prod_%s%s", uuid.New().String(), ext)
+		path := fmt.Sprintf("./static/uploads/products/%s", filename)
+		// Ensure dir exists
+		os.MkdirAll("./static/uploads/products", 0755)
+
+		if err := c.SaveFile(file, path); err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Error saving image: " + err.Error())
+		}
+		imagePath = fmt.Sprintf("/uploads/products/%s", filename)
+	}
+
+	price, _ := strconv.Atoi(c.FormValue("price"))
+
+	product := &domain.Product{
+		Code:        c.FormValue("code"),
+		Name:        c.FormValue("name"),
+		Description: c.FormValue("description"),
+		Price:       price,
+		ImagePath:   imagePath,
+		IconType:    c.FormValue("icon_type"),
+		ImageColor1: c.FormValue("image_color_1"),
+		ImageColor2: c.FormValue("image_color_2"),
+		IsActive:    c.FormValue("is_active") == "on",
+	}
+
+	err = h.service.CreateProduct(product)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error creating product: " + err.Error())
+	}
+
+	return c.Redirect("/admin/products")
+}
+
+func (h *AdminHandler) ShowEditProductPage(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	product, err := h.service.GetProductByID(id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error loading product")
+	}
+
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "Edit Product",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.ProductForm(true, product),
+	))
+}
+
+func (h *AdminHandler) UpdateProduct(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+
+	// Handle Image Upload
+	imagePath := c.FormValue("current_image_path")
+	file, err := c.FormFile("image_file")
+	if err == nil {
+		ext := filepath.Ext(file.Filename)
+		filename := fmt.Sprintf("prod_%s%s", uuid.New().String(), ext)
+		path := fmt.Sprintf("./static/uploads/products/%s", filename)
+		os.MkdirAll("./static/uploads/products", 0755)
+
+		if err := c.SaveFile(file, path); err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Error saving image: " + err.Error())
+		}
+		imagePath = fmt.Sprintf("/uploads/products/%s", filename)
+	}
+
+	price, _ := strconv.Atoi(c.FormValue("price"))
+
+	product := &domain.Product{
+		ID:          id,
+		Code:        c.FormValue("code"),
+		Name:        c.FormValue("name"),
+		Description: c.FormValue("description"),
+		Price:       price,
+		ImagePath:   imagePath,
+		IconType:    c.FormValue("icon_type"),
+		ImageColor1: c.FormValue("image_color_1"),
+		ImageColor2: c.FormValue("image_color_2"),
+		IsActive:    c.FormValue("is_active") == "on",
+	}
+
+	err = h.service.UpdateProduct(product)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error updating product: " + err.Error())
+	}
+
+	return c.Redirect("/admin/products")
+}
+
+func (h *AdminHandler) DeleteProduct(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	err := h.service.DeleteProduct(id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error deleting product")
+	}
+	return c.SendString("") // Remove row from DOM
 }
 
 // --- Customer Color Report ---
@@ -868,4 +1110,61 @@ func (h *AdminHandler) AssignCustomerColors(c *fiber.Ctx) error {
 	sess.Save()
 
 	return c.Redirect("/admin/customer-color-report?username=" + username)
+}
+
+// --- Order Management ---
+
+func (h *AdminHandler) HandleManageOrders(c *fiber.Ctx) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	if page < 1 {
+		page = 1
+	}
+	limit := 20
+	search := c.Query("q", "")
+
+	orders, total, err := h.service.GetOrdersPaginated(page, limit, search)
+	if err != nil {
+		return c.Status(500).SendString("Failed to fetch orders: " + err.Error())
+	}
+
+	totalPages := int(total / int64(limit))
+	if total%int64(limit) > 0 {
+		totalPages++
+	}
+
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "จัดการคำสั่งซื้อ | Admin Dashboard",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		admin.Orders(orders, page, totalPages, search),
+	))
+}
+
+func (h *AdminHandler) HandleDeleteOrder(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("Invalid ID")
+	}
+
+	err = h.service.DeleteOrder(id)
+	if err != nil {
+		return c.Status(500).SendString("Failed to delete order")
+	}
+
+	return c.SendStatus(200) // HTMX expects 200 OK to swap content (empty in this case with hx-swap="outerHTML")
 }

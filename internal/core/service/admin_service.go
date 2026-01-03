@@ -10,7 +10,10 @@ type AdminService struct {
 	articleRepo      ports.ArticleRepository
 	sampleRepo       ports.SampleNamesRepository
 	namesMiracleRepo ports.NamesMiracleRepository
+	productRepo      ports.ProductRepository
+	orderRepo        ports.OrderRepository
 	numerologySvc    *NumerologyService
+	phoneNumberSvc   *PhoneNumberService
 }
 
 func NewAdminService(
@@ -18,15 +21,29 @@ func NewAdminService(
 	articleRepo ports.ArticleRepository,
 	sampleRepo ports.SampleNamesRepository,
 	namesMiracleRepo ports.NamesMiracleRepository,
+	productRepo ports.ProductRepository,
+	orderRepo ports.OrderRepository,
 	numerologySvc *NumerologyService,
+	phoneNumberSvc *PhoneNumberService,
 ) *AdminService {
 	return &AdminService{
 		memberRepo:       memberRepo,
 		articleRepo:      articleRepo,
 		sampleRepo:       sampleRepo,
 		namesMiracleRepo: namesMiracleRepo,
+		productRepo:      productRepo,
+		orderRepo:        orderRepo,
 		numerologySvc:    numerologySvc,
+		phoneNumberSvc:   phoneNumberSvc,
 	}
+}
+
+func (s *AdminService) GetSellNumbers() ([]domain.PhoneNumberAnalysis, error) {
+	return s.phoneNumberSvc.GetSellNumbers()
+}
+
+func (s *AdminService) GetSellNumbersPaged(page, pageSize int) (domain.PagedPhoneNumberAnalysis, error) {
+	return s.phoneNumberSvc.GetSellNumbersPaged(page, pageSize)
 }
 
 func (s *AdminService) AddSystemName(name string) error {
@@ -136,4 +153,41 @@ func (s *AdminService) DeleteArticle(id int) error {
 
 func (s *AdminService) UpdateArticlePinOrder(id int, order int) error {
 	return s.articleRepo.UpdatePinOrder(id, order)
+}
+
+// --- Product Management ---
+
+func (s *AdminService) GetAllProducts() ([]domain.Product, error) {
+	return s.productRepo.GetAll()
+}
+
+func (s *AdminService) GetProductByID(id int) (*domain.Product, error) {
+	return s.productRepo.GetByID(id)
+}
+
+func (s *AdminService) CreateProduct(product *domain.Product) error {
+	return s.productRepo.Create(product)
+}
+
+func (s *AdminService) UpdateProduct(product *domain.Product) error {
+	return s.productRepo.Update(product)
+}
+
+func (s *AdminService) DeleteProduct(id int) error {
+	return s.productRepo.Delete(id)
+}
+
+// --- Order Management ---
+
+func (s *AdminService) GetAllOrders() ([]domain.Order, error) {
+	return s.orderRepo.GetAll()
+}
+
+func (s *AdminService) GetOrdersPaginated(page, limit int, search string) ([]domain.Order, int64, error) {
+	offset := (page - 1) * limit
+	return s.orderRepo.GetWithPagination(limit, offset, search)
+}
+
+func (s *AdminService) DeleteOrder(id int) error {
+	return s.orderRepo.Delete(id)
 }

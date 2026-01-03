@@ -110,7 +110,7 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'ราคาพิเศษตลอดชีพเพียง ${_amount?.toStringAsFixed(0) ?? "599"} บาท',
+                    'ราคาพิเศษ 1 ปี เพียง ${_amount?.toStringAsFixed(0) ?? "599"} บาท',
                     style: GoogleFonts.kanit(color: Colors.white70, fontSize: 14),
                   ),
                   const SizedBox(height: 16),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'screens/landing_page.dart';
+import 'screens/main_tab_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,14 +15,14 @@ class MyApp extends StatelessWidget {
       title: 'NumberNiceIC Mobile',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
+        useMaterial3: false,
         // Apply Kanit font globally
         textTheme: GoogleFonts.kanitTextTheme(
           Theme.of(context).textTheme,
         ),
       ),
-      // Set Landing Page as the home
-      home: const LandingPage(),
+      // Set Main Tab Page as the home
+      home: const MainTabPage(),
     );
   }
 }

@@ -9,7 +9,7 @@ script navigateToAnalyzer(name string, day string) {
 	window.location.href = '/analyzer?name=' + name + '&day=' + day;
 }
 
-templ Dashboard(username string, email string, tel string, savedNames []domain.SavedNameDisplay, isVIP bool, assignedColors []string, isBuddhistDay bool) {
+templ Dashboard(username string, email string, tel string, savedNames []domain.SavedNameDisplay, isVIP bool, assignedColors []string, isBuddhistDay bool, myCodes []domain.PromotionalCode, hasShippingAddress bool, vipExpiryText string) {
 	<div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
 		<div>
 			<div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
@@ -23,10 +23,10 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
 			</div>
 			if isVIP {
 				<p style="font-family: 'Kanit', sans-serif; margin: 0.25rem 0 0 0; font-weight: 500; font-size: 1.1rem;">
-					<span style="background: linear-gradient(90deg, #D4AF37 0%, #FFD700 50%, #D4AF37 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-flex; align-items: center; gap: 0.25rem;">
-						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="url(#gold-gradient)" stroke="url(#gold-gradient)" stroke-width="0"><defs><linearGradient id="gold-gradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#D4AF37"/><stop offset="50%" stop-color="#FFD700"/><stop offset="100%" stop-color="#D4AF37"/></linearGradient></defs><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-						สถานะสมาชิก VIP
-					</span>
+					สถานะ: <span style="background: linear-gradient(135deg, #FFD700 0%, #FFC107 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; text-shadow: 0px 2px 4px rgba(0,0,0,0.1);">สมาชิก VIP</span>
+					if vipExpiryText != "" {
+						<span style="font-size: 0.9rem; color: #666; margin-left: 0.5rem; font-weight: normal;">({ vipExpiryText })</span>
+					}
 				</p>
 			} else {
 				<p style="font-family: 'Kanit', sans-serif; color: #666; margin: 0.5rem 0 0 0;">ข้อมูลส่วนตัวและรายชื่อดีที่คุณเลือก</p>
@@ -34,20 +34,31 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
 		</div>
 	</div>
 
+
 	<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
 		<!-- User Info Card -->
 		<div class="name-card" style="margin: 0; font-family: 'Kanit', sans-serif; display: flex; flex-direction: column;">
 			<h2 style="font-size: 1.25rem; margin-bottom: 1.25rem; border-bottom: 1px solid #eee; padding-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
 				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
 				ข้อมูลส่วนตัว
+				if !hasShippingAddress {
+					<span title="ยังไม่ได้ใส่ที่อยู่" style="display: inline-flex; width: 10px; height: 10px; background-color: #f56565; border-radius: 50%; margin-left: auto;"></span>
+				}
 			</h2>
 			<div style="flex: 1; display: flex; flex-direction: column; gap: 0.75rem;">
 				<p style="margin: 0;"><strong style="color: #718096; width: 100px; display: inline-block;">ชื่อผู้ใช้:</strong> { username }</p>
 				<p style="margin: 0;"><strong style="color: #718096; width: 100px; display: inline-block;">อีเมล:</strong> { email }</p>
 				<p style="margin: 0;"><strong style="color: #718096; width: 100px; display: inline-block;">เบอร์โทรศัพท์:</strong> { tel }</p>
 			</div>
-			<div style="margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1rem;">
-				<a href="/logout" class="link-button" style="color: #dc3545; text-decoration: none; font-weight: 500;">
+			<div style="margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+				<a href="/shipping-address" class="link-button" style="color: #007bff; text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+					จัดการที่อยู่จัดส่ง
+					if !hasShippingAddress {
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f56565" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: auto;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+					}
+				</a>
+				<a href="/logout" class="link-button" style="color: #dc3545; text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
 					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
 					ออกจากระบบ
 				</a>
@@ -68,9 +79,11 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
 					<li style="display: flex; align-items: center; gap: 0.5rem;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> วิเคราะห์ตามตำราโบราณครบทุกชั้น</li>
 				</ul>
 				<div style="margin-top: auto;">
-					<button hx-get="/payment/upgrade" hx-target="#upgrade-modal-container" hx-swap="innerHTML" onclick="document.getElementById('upgrade-modal-container').style.display='flex'" style="width: 100%; background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #4a3b00; border: none; padding: 0.75rem; border-radius: 12px; font-weight: bold; font-family: 'Kanit', sans-serif; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 10px rgba(253, 185, 49, 0.4);">
-						อัปเกรดเป็น VIP ทันที
-					</button>
+					<a href="/shop" style="text-decoration: none;">
+						<button style="width: 100%; background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #4a3b00; border: none; padding: 0.75rem; border-radius: 12px; font-weight: bold; font-family: 'Kanit', sans-serif; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 10px rgba(253, 185, 49, 0.4);">
+							ซื้อสินค้ามงคลเพื่อเป็น VIP
+						</button>
+					</a>
 				</div>
 			</div>
 		}
@@ -91,7 +104,150 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
 				<p style="margin-top: 1rem; font-size: 0.85rem; color: #666; text-align: center;">สีมงคลประจำตัวของคุณที่อาจารย์เลือกให้</p>
 			</div>
 		}
+		
+		<!-- VIP Codes History -->
+		if len(myCodes) > 0 {
+			<div class="name-card" style="margin: 0; font-family: 'Kanit', sans-serif;">
+				<h2 style="font-size: 1.25rem; margin-bottom: 1.25rem; border-bottom: 1px solid #eee; padding-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+					รหัส VIP ของฉัน
+				</h2>
+				<div style="overflow-x: auto;">
+					<table style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
+						<thead>
+							<tr style="background: #f8f9fa;">
+								<th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #eee;">สินค้า</th>
+								<th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #eee;">รหัส</th>
+								<th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #eee;">สถานะ</th>
+								<th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #eee;">จัดการ</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, code := range myCodes {
+								<tr style="border-bottom: 1px solid #eee;">
+									<td style="padding: 0.75rem;">{ code.ProductName }</td>
+									<td style="padding: 0.75rem; text-align: center;">
+										<span class="code-box" style="font-family: monospace; background: #eee; padding: 2px 6px; border-radius: 4px; font-weight: bold; letter-spacing: 1px;">{ code.Code }</span>
+									</td>
+									<td style="padding: 0.75rem; text-align: center;">
+										if code.IsUsed {
+											<span style="color: #666; font-size: 0.85rem; background: #e2e8f0; padding: 2px 8px; border-radius: 10px;">ใช้งานแล้ว</span>
+										} else {
+											<span style="color: #2da44e; font-size: 0.85rem; background: #dafbe1; padding: 2px 8px; border-radius: 10px; font-weight: bold;">ยังไม่ใช้งาน</span>
+										}
+									</td>
+									<td style="padding: 0.75rem; text-align: right;">
+										if !code.IsUsed && !isVIP {
+											<button 
+												onclick={ templ.ComponentScript{ Call: fmt.Sprintf("autoRedeem('%s')", code.Code) } } 
+												style="background: #2da44e; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem;"
+											>กดใช้สิทธิ์</button>
+										} else if !code.IsUsed && isVIP {
+											<span style="color: #aaa; font-size: 0.8rem;">(เก็บไว้ใช้ภายหลังได้)</span>
+										}
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				<script>
+					function autoRedeem(code) {
+						document.getElementById('promo-code-input').value = code;
+						redeemCode();
+					}
+				</script>
+			</div>
+		}
+
+		<!-- Promotional Code Card -->
+		if !isVIP {
+			<div class="name-card" style="margin: 0; font-family: 'Kanit', sans-serif;">
+				<h2 style="font-size: 1.25rem; margin-bottom: 1.25rem; border-bottom: 1px solid #eee; padding-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h5M17 15h0M22 9.5h-5"/></svg>
+					กรอกรหัสโปรโมชัน
+				</h2>
+				<p style="font-size: 0.85rem; color: #666; margin-bottom: 1rem;">หากคุณได้รับรหัสจากการซื้อ "สิ่งของมงคล" สามารถกรอกเพื่ออัปเกรดเป็น VIP ได้ที่นี่</p>
+				<div id="redeem-container">
+					<div style="display: flex; gap: 0.5rem;">
+						<input type="text" id="promo-code-input" placeholder="กรอกรหัสที่ได้รับ" style="flex: 1; padding: 0.6rem; border: 1px solid #ddd; border-radius: 8px; font-family: 'Kanit', sans-serif;" />
+						<button 
+							onclick="redeemCode()"
+							class="btn-primary"
+							style="background: #2da44e; color: white; border: none; padding: 0.6rem 1rem; border-radius: 8px; font-weight: bold; cursor: pointer;"
+						>เปิดใช้งาน</button>
+					</div>
+					<div id="redeem-error" style="margin-top: 0.5rem; color: #dc3545; font-size: 0.85rem; display: none;"></div>
+				</div>
+				<script>
+					async function redeemCode() {
+						const input = document.getElementById('promo-code-input');
+						const errorDiv = document.getElementById('redeem-error');
+						const code = input.value.trim();
+						
+						if (!code) return;
+						
+						errorDiv.style.display = 'none';
+						
+						try {
+							const response = await fetch('/api/redeem-code', {
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json' },
+								body: JSON.stringify({ code })
+							});
+							
+							const result = await response.json();
+							
+							if (response.ok) {
+								Toastify({
+									text: result.message,
+									duration: 3000,
+									gravity: "top",
+									position: "center",
+									style: { background: "linear-gradient(to right, #00b09b, #96c93d)" }
+								}).showToast();
+								setTimeout(() => window.location.reload(), 1500);
+							} else {
+								errorDiv.innerText = result.error || 'เกิดข้อผิดพลาด';
+								errorDiv.style.display = 'block';
+							}
+						} catch (e) {
+							errorDiv.innerText = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+							errorDiv.style.display = 'block';
+						}
+					}
+				</script>
+			</div>
+		}
 	</div>
+
+	<!-- Order History Section (AJAX Loaded) -->
+	<div id="order-history-section" style="margin-bottom: 2rem; display: none;">
+		<div class="name-card" style="margin: 0; font-family: 'Kanit', sans-serif;">
+			<h2 style="font-size: 1.25rem; margin-bottom: 1.25rem; border-bottom: 1px solid #eee; padding-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+				ประวัติการสั่งซื้อ
+			</h2>
+			<div style="overflow-x: auto;">
+				<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+					<thead>
+						<tr style="background: #f8f9fa;">
+							<th style="padding: 0.75rem; text-align: left;">วันที่</th>
+							<th style="padding: 0.75rem; text-align: left;">รายการ</th>
+							<th style="padding: 0.75rem; text-align: right;">ยอดเงิน</th>
+							<th style="padding: 0.75rem; text-align: center;">สถานะ</th>
+							<th style="padding: 0.75rem; text-align: right;">Action</th>
+						</tr>
+					</thead>
+					<tbody id="order-list-body">
+						<!-- Populated by JS -->
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<!-- Saved Names Table -->
 	<div class="dashboard-table-container">
 		<div class="dashboard-table-header">
 			<div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -118,13 +274,20 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
                         style={ templ.KV("background: linear-gradient(90deg, #FFFDE7 0%, #FFF59D 100%) !important; border-bottom: 2px solid #FBC02D !important;", name.IsTopTier) }
                         onclick={ navigateToAnalyzer(name.Name, name.BirthDayRaw) }>
 						<td>
-							<div class={ "name-cell", templ.KV("name-top-tier", name.IsTopTier) } style="font-size: 1.1rem; gap: 0;">
-								for _, dc := range name.DisplayNameHTML {
-									if dc.IsBad {
-										<span class="klakini-char" style="color: #ff4757 !important;">{ dc.Char }</span>
-									} else {
-										{ dc.Char }
+							<div style="display: flex; align-items: center; gap: 0.25rem;">
+								<div class={ "name-cell", templ.KV("name-top-tier", name.IsTopTier) } style="font-size: 1.1rem;">
+									for _, dc := range name.DisplayNameHTML {
+										if dc.IsBad {
+											<span class="klakini-char" style="color: #ff4757 !important;">{ dc.Char }</span>
+										} else if name.IsTopTier {
+											<span style="color: #FF9800;">{ dc.Char }</span>
+										} else {
+											<span style="color: #2c3e50;">{ dc.Char }</span>
+										}
 									}
+								</div>
+								if name.IsTopTier {
+									<span>⭐</span>
 								}
 							</div>
 							<small style="color: #666; font-family: 'Kanit', sans-serif; display: inline-flex; align-items: center; gap: 0.25rem;">
@@ -148,9 +311,6 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
 						</td>
 						<td style="text-align: center; vertical-align: middle;">
                             <div style="display: flex; flex-direction: column; align-items: center;">
-                                if name.IsTopTier {
-                                    <span style="font-size: 0.8rem; margin-bottom: 2px; line-height: 1;">⭐</span>
-                                }
                                 <span class={ templ.KV("score-bad", name.TotalScore < 0), templ.KV("score-good", name.TotalScore >= 0) } style="font-size: 1.1rem; font-weight: normal;">
                                     if name.TotalScore > 0 {
                                         +
@@ -178,7 +338,7 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
 									hx-swap="innerHTML"
 									hx-confirm="คุณต้องการลบชื่อนี้ใช่หรือไม่?"
 								>
-									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2-2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
 								</button>
 							</div>
 						</td>
@@ -196,4 +356,250 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
 			</tbody>
 		</table>
 	</div>
+
+
+
+	<!-- Dashboard Payment Modal -->
+	<div id="dash-payment-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
+		<div style="background: white; padding: 0; border-radius: 20px; max-width: 400px; width: 100%; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+			<div style="background: #2d3748; padding: 1.5rem; color: white;">
+				<h3 id="dash-modal-title" style="margin: 0; font-size: 1.25rem;">ดำเนินรายการต่อ</h3>
+				<p style="margin: 0.25rem 0 0; font-size: 0.9rem; opacity: 0.8;">Ref No: <span id="dash-pay-ref" style="font-family: monospace;">-</span></p>
+			</div>
+			<div id="dash-pay-details" style="padding: 2rem; text-align: center;">
+				<p style="color: #718096; margin-bottom: 1rem;">สแกนเพื่อชำระเงิน</p>
+				<div style="width: 200px; height: 200px; background: #f7fafc; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; border: 1px solid #edf2f7; border-radius: 12px;">
+					<img id="dash-qr-img" src="" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;">
+				</div>
+				<h2 id="dash-pay-amount" style="font-size: 2rem; color: #2d3748; font-weight: bold; margin: 0;">0.00 ฿</h2>
+				<p style="margin-top: 0.5rem; color: #e53e3e; font-weight: bold;">
+					ชำระภายใน <span id="dash-payment-timer">10:00</span> นาที
+				</p>
+				
+				<div style="margin: 1.5rem 0; color: #4a5568;">
+					<div class="spinner" style="margin: 0 auto 1rem; width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+					<p style="font-size: 0.9rem;">กำลังตรวจสอบยอดเงิน...</p>
+					<p style="font-size: 0.85rem; color: #718096; margin-top: 0.5rem;">สามารถดูรายการได้ที่ประวัติสั่งซื้อ</p>
+				</div>
+
+				<button onclick="window.closeDashPaymentModal()" style="width: 100%; background: #edf2f7; color: #4a5568; border: none; padding: 0.75rem; border-radius: 12px; font-weight: bold; cursor: pointer;">ปิดหน้าต่าง</button>
+			</div>
+		</div>
+	</div>
+	<style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+
+	<script>
+		// --- Defined Functions First to ensure availability ---
+		window.dashTimerInterval = null;
+		window.pollInterval = null;
+
+		function startDashTimer(duration, display) {
+			var timer = duration, minutes, seconds;
+			if (window.dashTimerInterval) clearInterval(window.dashTimerInterval);
+
+			window.dashTimerInterval = setInterval(function () {
+				minutes = parseInt(timer / 60, 10);
+				seconds = parseInt(timer % 60, 10);
+
+				minutes = minutes < 10 ? "0" + minutes : minutes;
+				seconds = seconds < 10 ? "0" + seconds : seconds;
+
+				display.textContent = minutes + ":" + seconds;
+
+				if (--timer < 0) {
+					clearInterval(window.dashTimerInterval);
+					alert("หมดเวลาทำรายการ กรุณาทำรายการใหม่");
+					closeDashPaymentModal();
+				}
+			}, 1000);
+		}
+		window.startDashTimer = startDashTimer;
+
+		function startPolling(refNo) {
+			if (window.pollInterval) clearInterval(window.pollInterval);
+			
+			window.pollInterval = setInterval(async () => {
+				try {
+					const res = await fetch('/api/shop/status/' + refNo);
+					if (res.ok) {
+						const data = await res.json();
+						if (data.paid) {
+							clearInterval(window.pollInterval);
+							alert('ชำระเงินเรียบร้อย! กรุณารีเฟรชหน้าจอเพื่อดูสถานะล่าสุด');
+							window.location.reload();
+						}
+					}
+				} catch(e) { console.error(e); }
+			}, 3000);
+		}
+		window.startPolling = startPolling;
+
+		function closeDashPaymentModal() {
+			const modal = document.getElementById('dash-payment-modal');
+			if(modal) modal.style.display = 'none';
+			if (window.pollInterval) clearInterval(window.pollInterval);
+			if (window.dashTimerInterval) clearInterval(window.dashTimerInterval);
+		}
+		window.closeDashPaymentModal = closeDashPaymentModal;
+
+	async function resumePayment(event, refNo) {
+			if (event) event.preventDefault();
+			console.log("Resume Payment Triggered:", refNo);
+			
+			const modal = document.getElementById('dash-payment-modal');
+			const title = document.getElementById('dash-modal-title');
+			const details = document.getElementById('dash-pay-details');
+			const originalContent = details.innerHTML; // Hacky: assumes original content is there when loaded. Ideally we should use templates. 
+			// Better: Reset logic?
+			// Let's just reconstruct the error view if needed, or success view.
+			
+			// Reset UI first
+			if(title) title.innerText = 'กำลังโหลด...';
+			if(modal) modal.style.display = 'flex';
+
+			try {
+				const res = await fetch('/api/shop/payment-info/' + refNo);
+				if (!res.ok) {
+					const errText = await res.text();
+					console.error("Payment Info Error:", errText);
+					
+					let errMsg = 'Connection Error';
+					try {
+						const json = JSON.parse(errText);
+						errMsg = json.error || errMsg;
+					} catch(e) { errMsg = errText || errMsg; }
+
+					if(title) title.innerText = 'แจ้งเตือน';
+					if(details) {
+						details.innerHTML = `
+							<div style="color: #e53e3e; padding: 1rem;">
+								<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:0.5rem"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+								<p style="font-weight:bold;font-size:1.1rem;">ทำรายการไม่สำเร็จ</p>
+								<p style="color:#4a5568;">${errMsg}</p>
+								<button onclick="window.closeDashPaymentModal()" style="margin-top:1rem;background:#edf2f7;color:#4a5568;border:none;padding:0.5rem 1rem;border-radius:8px;cursor:pointer;">ปิด</button>
+							</div>
+						`;
+					}
+					return;
+				}
+
+				const data = await res.json();
+				console.log("Payment Info Recieved:", data);
+
+				// Restore Success UI (We need to reconstruct it because we might have overwritten it with error msg previously)
+				// Or... Simplest way: refresh the page? No.
+				// We reconstruct the Success HTML string.
+				if(title) title.innerText = 'ดำเนินรายการต่อ';
+				if(details) {
+					details.innerHTML = `
+						<p style="color: #718096; margin-bottom: 1rem;">สแกนเพื่อชำระเงิน</p>
+						<div style="width: 200px; height: 200px; background: #f7fafc; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; border: 1px solid #edf2f7; border-radius: 12px;">
+							<img id="dash-qr-img" src="${data.qr_code_url}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;">
+						</div>
+						<h2 id="dash-pay-amount" style="font-size: 2rem; color: #2d3748; font-weight: bold; margin: 0;">${data.amount.toLocaleString()} ฿</h2>
+						<p style="margin-top: 0.5rem; color: #e53e3e; font-weight: bold;">
+							ชำระภายใน <span id="dash-payment-timer">10:00</span> นาที
+						</p>
+						
+						<div style="margin: 1.5rem 0; color: #4a5568;">
+							<div class="spinner" style="margin: 0 auto 1rem; width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+							<p style="font-size: 0.9rem;">กำลังตรวจสอบยอดเงิน...</p>
+						</div>
+
+						<button onclick="window.closeDashPaymentModal()" style="width: 100%; background: #edf2f7; color: #4a5568; border: none; padding: 0.75rem; border-radius: 12px; font-weight: bold; cursor: pointer;">ปิดหน้าต่าง</button>
+					`;
+				}
+				
+				// Update Ref in Header
+				const refEl = document.getElementById('dash-pay-ref');
+				if(refEl) refEl.innerText = data.ref_no;
+
+				startPolling(data.ref_no);
+				const timerEl = document.getElementById('dash-payment-timer');
+				if(timerEl) startDashTimer(600, timerEl);
+
+			} catch(e) {
+				console.error(e);
+				if(title) title.innerText = 'ข้อผิดพลาด';
+				if(details) details.innerHTML = `<p style="color:red;padding:2rem;">Client Error: ${e.message}</p><button onclick="window.closeDashPaymentModal()">Close</button>`;
+			}
+		}
+		window.resumePayment = resumePayment;
+
+		// --- Main DOM Logic ---
+
+		let savedNames = []; 
+
+		document.addEventListener('DOMContentLoaded', async () => {
+			console.log("Dashboard Loaded");
+
+			// Logout Logic
+			const logoutBtn = document.getElementById('logout-btn');
+			if(logoutBtn) {
+				logoutBtn.addEventListener('click', async (e) => {
+					e.preventDefault();
+					try {
+						await fetch('/api/auth/logout', { method: 'POST' });
+						window.location.href = '/login';
+					} catch (err) {
+						console.error("Logout failed", err);
+						window.location.href = '/login';
+					}
+				});
+			}
+
+			// Load Order History
+			try {
+				const res = await fetch('/api/shop/my-orders');
+				if (!res.ok) return;
+				const data = await res.json();
+				const orders = data.orders || [];
+				
+				if (orders.length > 0) {
+					document.getElementById('order-history-section').style.display = 'block';
+					const tbody = document.getElementById('order-list-body');
+					tbody.innerHTML = '';
+					
+					orders.forEach(o => {
+						const date = new Date(o.created_at).toLocaleDateString('th-TH');
+						
+						let statusBadge = '';
+						let actionBtn = '';
+						
+						if (o.status === 'paid') {
+							statusBadge = '<span style="color: #2da44e; background: #dafbe1; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.8rem;">สำเร็จ</span>';
+						} else if (o.status === 'pending') {
+							statusBadge = '<span style="color: #d69e2e; background: #fefcbf; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.8rem;">รอชำระเงิน</span>';
+							actionBtn = `<button type="button" onclick="window.resumePayment(event, '${o.ref_no}')" style="background:#e53e3e;color:white;border:none;padding:5px 10px;border-radius:12px;font-size:0.8rem;cursor:pointer;font-weight:bold;">ชำระเงิน</button>`;
+						} else {
+							statusBadge = '<span style="color: #666; background: #eee; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">' + o.status + '</span>';
+						}
+
+						const tr = document.createElement('tr');
+						tr.style.borderBottom = '1px solid #eee';
+						tr.innerHTML = `
+							<td style="padding: 0.75rem;">${date}</td>
+							<td style="padding: 0.75rem;">
+							<div style="display: flex; align-items: center; gap: 12px;">
+								` + (o.product_image ? '<img src="' + o.product_image + '" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;" onerror="this.style.display=\'none\'" />' : '') + `
+								<div>
+									<div style="font-weight: 500;">${o.product_name || 'VIP Upgrade'}</div>
+									<small style="color:#999;font-family:monospace;">${o.ref_no}</small>
+								</div>
+							</div>
+						</td>
+							<td style="padding: 0.75rem; text-align: right;">${o.amount.toLocaleString()} ฿</td>
+							<td style="padding: 0.75rem; text-align: center;">${statusBadge}</td>
+							<td style="padding: 0.75rem; text-align: right;">
+                                ${o.status === 'paid' ? 
+									(o.promo_code_id ? '<span style="color:#2da44e;font-size:0.8rem;">ได้รหัสแล้ว</span>' : '<span style="color:#999;font-size:0.8rem;">สำเร็จ</span>') 
+									: actionBtn}
+                            </td>
+						`;
+						tbody.appendChild(tr);
+					});
+				}
+			} catch(e) { console.error(e); }
+		});
+	</script>
 }

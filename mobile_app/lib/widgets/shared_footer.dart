@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../screens/privacy_policy_page.dart';
+import '../screens/delete_account_page.dart';
 
 class SharedFooter extends StatelessWidget {
   final Color? textColor;
@@ -75,6 +78,45 @@ class SharedFooter extends StatelessWidget {
                  textAlign: TextAlign.center,
                  style: GoogleFonts.kanit(fontSize: 12, color: Colors.grey[600], fontStyle: FontStyle.italic),
               ),
+              const SizedBox(height: 24),
+
+              // Legal Links
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 24,
+                runSpacing: 12,
+                children: [
+                   InkWell(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const PrivacyPolicyPage()));
+                    },
+                    child: Text(
+                      'นโยบายความเป็นส่วนตัว',
+                      style: GoogleFonts.kanit(
+                        fontSize: 16, 
+                        color: textLight, 
+                        decoration: TextDecoration.underline,
+                        decorationColor: textLight,
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const DeleteAccountPage()));
+                    },
+                    child: Text(
+                      'แจ้งขอลบข้อมูลบัญชี',
+                      style: GoogleFonts.kanit(
+                        fontSize: 16, 
+                        color: textLight, 
+                        decoration: TextDecoration.underline,
+                        decorationColor: textLight,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
               const SizedBox(height: 20),
             ],
           ),

@@ -5,6 +5,7 @@ import '../utils/custom_toast.dart';
 import 'register_page.dart';
 import 'landing_page.dart';
 import 'dashboard_page.dart';
+import 'main_tab_page.dart';
 import '../widgets/shared_footer.dart';
 
 class LoginPage extends StatefulWidget {
@@ -38,7 +39,7 @@ class _LoginPageState extends State<LoginPage> {
         CustomToast.show(context, 'เข้าสู่ระบบสำเร็จ ยินดีต้อนรับกลับ!');
         
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const DashboardPage()),
+          MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 3)),
           (Route<dynamic> route) => false,
         );
       }

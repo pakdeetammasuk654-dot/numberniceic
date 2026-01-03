@@ -1,0 +1,82 @@
+package admin
+
+import (
+	"fmt"
+	"numberniceic/internal/core/domain"
+)
+
+templ Products(products []domain.Product) {
+	<div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+		<div>
+			<h1 style="font-family: 'Kanit', sans-serif;">จัดการสินค้า (Products)</h1>
+			<a href="/admin" class="link-button">&larr; กลับไปหน้า Dashboard</a>
+		</div>
+		<a href="/admin/products/create" class="button-group">
+			<button type="button" style="background-color: #28a745;">+ เพิ่มสินค้าใหม่</button>
+		</a>
+	</div>
+
+	<div class="dashboard-table-container">
+		<table class="dashboard-table">
+			<thead>
+				<tr>
+					<th>Image</th>
+					<th>SKU / Code</th>
+					<th>Name</th>
+					<th style="text-align: right;">Price</th>
+					<th style="text-align: center;">Active</th>
+					<th style="text-align: right;">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, p := range products {
+					<tr>
+						<td style="width: 80px;">
+							if p.ImagePath != "" {
+								<img src={ p.ImagePath } alt="Product Image" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: block;" />
+							} else {
+								<div style="width: 60px; height: 60px; background: #eee; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 0.8rem;">No Img</div>
+							}
+						</td>
+						<td>
+							<span style="font-family: monospace; background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">{ p.Code }</span>
+						</td>
+						<td>
+							<div style="font-weight: bold;">{ p.Name }</div>
+							<div style="font-size: 0.85rem; color: #666; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{ p.Description }</div>
+						</td>
+						<td style="text-align: right; font-weight: bold; color: #2d3748;">
+							{ fmt.Sprintf("%d ฿", p.Price) }
+						</td>
+						<td style="text-align: center;">
+							if p.IsActive {
+								<span style="color: #2da44e; background: #dafbe1; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">Active</span>
+							} else {
+								<span style="color: #666; background: #edeff2; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">Draft</span>
+							}
+						</td>
+						<td style="text-align: right;">
+							<div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+								<a href={ templ.SafeURL(fmt.Sprintf("/admin/products/edit/%d", p.ID)) } class="link-button" style="color: #007bff; text-decoration: none; padding: 0.4rem; border-radius: 6px; hover:background: #f0f0f0;">
+									<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+								</a>
+								<button class="link-button" style="color: #dc3545; background: none; border: none; padding: 0.4rem; cursor: pointer;" 
+									hx-delete={ fmt.Sprintf("/admin/products/%d", p.ID) } 
+									hx-target="closest tr" 
+									hx-swap="outerHTML" 
+									hx-confirm={ fmt.Sprintf("คุณต้องการลบสินค้า '%s' ใช่หรือไม่?", p.Name) }>
+									<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2-2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+								</button>
+							</div>
+						</td>
+					</tr>
+				}
+				if len(products) == 0 {
+					<tr>
+						<td colspan="6" style="text-align: center; padding: 2rem; color: #999;">ไม่พบข้อมูลสินค้า</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}

@@ -28,9 +28,12 @@ func main() {
 	log.Println("--- STARTING APPLICATION ---")
 
 	// --- Initialization ---
-	err := godotenv.Overload()
-	if err != nil {
-		log.Printf("Warning: Error loading .env file: %v", err)
+	// Try loading .env first (local dev)
+	godotenv.Overload()
+	// Try loading .env.production (override if exists)
+	if err := godotenv.Overload(".env.production"); err != nil {
+		// It's fine if .env.production doesn't exist locally, just log for info
+		// log.Println("Info: .env.production not found or failed to load")
 	}
 
 	apiKey := os.Getenv("GEMINI_API_KEY")
@@ -42,11 +45,13 @@ func main() {
 	defer db.Close()
 
 	// --- Services & Repos ---
-	linguisticService, _ := service.NewLinguisticService(apiKey)
+	anthropicKey := os.Getenv("ANTHROPIC_API_KEY")
+	linguisticService, _ := service.NewLinguisticService(apiKey, anthropicKey)
 	numerologyCache := setupNumerologyCache(db, "sat_nums")
 	shadowCache := setupNumerologyCache(db, "sha_nums")
 	klakiniCache := setupKlakiniCache(db)
 	numberPairCache := setupNumberPairCache(db)
+	numberCategoryCache := setupNumberCategoryCache(db)
 
 	sampleNamesRepo := repository.NewPostgresSampleNamesRepository(db)
 	sampleNamesCache := cache.NewSampleNamesCache(sampleNamesRepo)
@@ -56,13 +61,20 @@ func main() {
 	namesMiracleRepo := repository.NewPostgresNamesMiracleRepository(db)
 	numerologySvc := service.NewNumerologyService(numerologyCache, shadowCache, klakiniCache, numberPairCache)
 
+	// Re-initialize NumberPairRepository for PhoneNumberService (since setupNumberPairCache hides it)
+	numberPairRepo := repository.NewPostgresNumberPairRepository(db)
+	phoneNumberRepo := repository.NewPostgresPhoneNumberRepository(db)
+	phoneNumberSvc := service.NewPhoneNumberService(phoneNumberRepo, numberPairRepo)
+
 	memberRepo := repository.NewPostgresMemberRepository(db)
 	memberService := service.NewMemberService(memberRepo)
 	savedNameRepo := repository.NewPostgresSavedNameRepository(db)
 	savedNameService := service.NewSavedNameService(savedNameRepo)
 	articleRepo := repository.NewPostgresArticleRepository(db)
 	articleService := service.NewArticleService(articleRepo)
-	adminService := service.NewAdminService(memberRepo, articleRepo, sampleNamesRepo, namesMiracleRepo, numerologySvc)
+	productRepo := repository.NewPostgresProductRepository(db)
+	orderRepo := repository.NewPostgresOrderRepository(db)
+	adminService := service.NewAdminService(memberRepo, articleRepo, sampleNamesRepo, namesMiracleRepo, productRepo, orderRepo, numerologySvc, phoneNumberSvc)
 
 	buddhistDayRepo := repository.NewPostgresBuddhistDayRepository(db)
 	buddhistDayService := service.NewBuddhistDayService(buddhistDayRepo)
@@ -95,6 +107,7 @@ func main() {
 
 	// --- Central Middleware for Session Data ---
 	app.Use(func(c *fiber.Ctx) error {
+		fmt.Printf("DEBUG: Request: %s %s\n", c.Method(), c.Path())
 		sess, _ := store.Get(c)
 
 		// Set login status
@@ -102,6 +115,7 @@ func main() {
 		if uid, ok := sess.Get("member_id").(int); ok {
 			memberID = uid
 			c.Locals("IsLoggedIn", true)
+			c.Locals("UserID", memberID) // Make UserID available for all handlers
 		} else {
 			c.Locals("IsLoggedIn", false)
 		}
@@ -153,19 +167,25 @@ func main() {
 		return c.Next()
 	})
 
+	// Add Shipping Address Support
+	shippingAddressRepo := repository.NewPostgresShippingAddressRepository(db)
+	shippingAddressService := service.NewShippingAddressService(shippingAddressRepo)
+
 	// --- Handlers ---
 	// --- Handlers ---
-	numerologyHandler := handler.NewNumerologyHandler(numerologyCache, shadowCache, klakiniCache, numberPairCache, namesMiracleRepo, linguisticService, sampleNamesCache)
-	memberHandler := handler.NewMemberHandler(memberService, savedNameService, buddhistDayService, klakiniCache, numberPairCache, store)
+	numerologyHandler := handler.NewNumerologyHandler(numerologyCache, shadowCache, klakiniCache, numberPairCache, numberCategoryCache, namesMiracleRepo, linguisticService, sampleNamesCache)
+	promotionalCodeRepo := repository.NewPostgresPromotionalCodeRepository(db)
+	memberHandler := handler.NewMemberHandler(memberService, savedNameService, buddhistDayService, shippingAddressService, klakiniCache, numberPairCache, store, promotionalCodeRepo)
 	savedNameHandler := handler.NewSavedNameHandler(savedNameService, klakiniCache, numberPairCache, store)
 	articleHandler := handler.NewArticleHandler(articleService, store)
-	adminHandler := handler.NewAdminHandler(adminService, sampleNamesCache, store, buddhistDayService, walletColorService)
+	adminHandler := handler.NewAdminHandler(adminService, sampleNamesCache, store, buddhistDayService, walletColorService, shippingAddressService)
 
-	orderRepo := repository.NewPostgresOrderRepository(db)
-	paymentService := service.NewPaymentService(orderRepo, memberRepo)
+	paymentService := service.NewPaymentService(orderRepo, memberRepo, promotionalCodeRepo)
 	// We need to pass store to paymentHandler if we want to read session user_id
 	paymentHandler := handler.NewPaymentHandler(paymentService, store)
 	seoHandler := handler.NewSEOHandler(articleService)
+
+	promotionalCodeHandler := handler.NewPromotionalCodeHandler(promotionalCodeRepo, store)
 
 	// --- Middleware for Auth ---
 	authMiddleware := func(c *fiber.Ctx) error {
@@ -226,6 +246,7 @@ func main() {
 	app.Get("/robots.txt", seoHandler.GetRobots)
 
 	app.Get("/", func(c *fiber.Ctx) error {
+		fmt.Printf("DEBUG: HIT HOME PAGE HANDLER - Path: %s\n", c.Path())
 		// Fetch pinned articles
 		articles, err := articleService.GetAllArticles()
 		if err != nil {
@@ -234,12 +255,13 @@ func main() {
 		var pinnedArticles []domain.Article
 		if err == nil {
 			log.Printf("DEBUG: Fetched %d articles total", len(articles))
-			for _, a := range articles {
-				if a.PinOrder > 0 && a.PinOrder <= 10 {
-					pinnedArticles = append(pinnedArticles, a)
-				}
+			// Just take top 7 articles (already sorted by PinOrder DESC, PublishedAt DESC)
+			maxItems := 7
+			if len(articles) < maxItems {
+				maxItems = len(articles)
 			}
-			log.Printf("DEBUG: Found %d pinned articles", len(pinnedArticles))
+			pinnedArticles = articles[:maxItems]
+			log.Printf("DEBUG: Selected %d articles for homepage", len(pinnedArticles))
 		}
 
 		// Helper to get string from Locals safely
@@ -335,6 +357,87 @@ func main() {
 		))
 	})
 
+	// Privacy Policy
+	app.Get("/privacy-policy", func(c *fiber.Ctx) error {
+		getLocStr := func(key string) string {
+			v := c.Locals(key)
+			if v == nil || v == "<nil>" {
+				return ""
+			}
+			return fmt.Sprintf("%v", v)
+		}
+		return templ_render.Render(c, layout.Main(
+			layout.SEOProps{
+				Title:       "นโยบายความเป็นส่วนตัว",
+				Description: "นโยบายความเป็นส่วนตัวของ ชื่อดี.com",
+				Keywords:    "Privacy Policy, นโยบายความเป็นส่วนตัว",
+				Canonical:   "https://xn--b3cu8e7ah6h.com/privacy-policy",
+				OGType:      "website",
+			},
+			c.Locals("IsLoggedIn").(bool),
+			c.Locals("IsAdmin").(bool),
+			c.Locals("IsVIP").(bool),
+			"privacy",
+			getLocStr("toast_success"),
+			getLocStr("toast_error"),
+			pages.PrivacyPolicy(),
+		))
+	})
+
+	// Request Account Deletion
+	app.Get("/delete-account", func(c *fiber.Ctx) error {
+		getLocStr := func(key string) string {
+			v := c.Locals(key)
+			if v == nil || v == "<nil>" {
+				return ""
+			}
+			return fmt.Sprintf("%v", v)
+		}
+		return templ_render.Render(c, layout.Main(
+			layout.SEOProps{
+				Title:       "แจ้งขอลบข้อมูลบัญชี",
+				Description: "แจ้งความประสงค์ขอลบข้อมูลบัญชีผู้ใช้จากระบบ",
+				Keywords:    "Delete Account, ลบบัญชี",
+				Canonical:   "https://xn--b3cu8e7ah6h.com/delete-account",
+				OGType:      "website",
+			},
+			c.Locals("IsLoggedIn").(bool),
+			c.Locals("IsAdmin").(bool),
+			c.Locals("IsVIP").(bool),
+			"delete-account",
+			getLocStr("toast_success"),
+			getLocStr("toast_error"),
+			pages.DeleteAccount(),
+		))
+	})
+
+	// Shop Page (Lucky Items)
+	app.Get("/shop", func(c *fiber.Ctx) error {
+		getLocStr := func(key string) string {
+			v := c.Locals(key)
+			if v == nil || v == "<nil>" {
+				return ""
+			}
+			return fmt.Sprintf("%v", v)
+		}
+		return templ_render.Render(c, layout.Main(
+			layout.SEOProps{
+				Title:       "ร้านค้ามงคล",
+				Description: "เลือกซื้อสิ่งของมงคลเพื่อเสริมดวง และรับรหัส VIP สำหรับใช้งานในแอปฟรี",
+				Keywords:    "ร้านค้ามงคล, เสริมดวง, วัตถุมงคล",
+				Canonical:   "https://xn--b3cu8e7ah6h.com/shop",
+				OGType:      "website",
+			},
+			c.Locals("IsLoggedIn").(bool),
+			c.Locals("IsAdmin").(bool),
+			c.Locals("IsVIP").(bool),
+			"shop",
+			getLocStr("toast_success"),
+			getLocStr("toast_error"),
+			pages.Shop(),
+		))
+	})
+
 	// Analyzer Page
 	app.Get("/analyzer", numerologyHandler.AnalyzeStreaming)
 
@@ -354,6 +457,20 @@ func main() {
 	api.Get("/analyze", numerologyHandler.AnalyzeAPI)
 	api.Get("/analyze-linguistically", numerologyHandler.AnalyzeLinguisticallyAPI)
 	api.Get("/sample-names", numerologyHandler.GetSampleNamesAPI)
+	api.Get("/lucky-number", func(c *fiber.Ctx) error {
+		category := c.Query("category")
+		if category == "" {
+			return c.Status(400).JSON(fiber.Map{"error": "category is required"})
+		}
+		number, keywords, err := phoneNumberSvc.GetLuckyNumberByCategory(category)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.JSON(fiber.Map{
+			"number":   number,
+			"keywords": keywords,
+		})
+	})
 	api.Post("/saved-names", optionalAuthMiddleware, savedNameHandler.SaveName)
 	app.Delete("/api/saved-names/:id", optionalAuthMiddleware, savedNameHandler.DeleteSavedName)
 	api.Get("/payment/upgrade", optionalAuthMiddleware, paymentHandler.GetUpgradeModalAPI)
@@ -374,6 +491,26 @@ func main() {
 	app.Post("/register", memberHandler.HandleRegister)
 	app.Get("/logout", memberHandler.HandleLogout)
 
+	// Promotional Code Redemption
+	app.Post("/api/redeem-code", optionalAuthMiddleware, promotionalCodeHandler.RedeemCode)
+	app.Post("/api/admin/generate-mock-code", promotionalCodeHandler.GenerateMockCode)
+	// Shop API
+	shopHandler := handler.NewShopHandler(orderRepo, promotionalCodeRepo, memberRepo, productRepo)
+
+	// Shop & Payment API (Use direct app paths for consistency)
+	app.Get("/api/shop/products", shopHandler.GetProductsAPI)
+	app.Post("/api/shop/order", optionalAuthMiddleware, shopHandler.CreateOrder)
+	app.Get("/api/shop/status/:refNo", shopHandler.CheckOrderStatus)
+	app.Get("/api/shop/payment-info/:refNo", shopHandler.GetPaymentInfo)
+	app.Get("/api/shop/my-orders", optionalAuthMiddleware, shopHandler.GetMyOrders)
+	app.Post("/api/shop/buy", optionalAuthMiddleware, promotionalCodeHandler.BuyProduct)
+	app.Post("/api/shop/confirm", shopHandler.ConfirmPayment)
+
+	// Shipping Address API
+	api.Get("/shipping", optionalAuthMiddleware, memberHandler.GetShippingAddressesAPI)
+	api.Post("/shipping", optionalAuthMiddleware, memberHandler.SaveShippingAddressAPI)
+	api.Delete("/shipping/:id", optionalAuthMiddleware, memberHandler.DeleteShippingAddressAPI)
+
 	// Protected routes
 	dashboard := app.Group("/dashboard", authMiddleware)
 	dashboard.Get("/", memberHandler.ShowDashboard)
@@ -387,12 +524,19 @@ func main() {
 	savedNames.Get("/", savedNameHandler.GetSavedNames)
 	savedNames.Delete("/:id", optionalAuthMiddleware, savedNameHandler.DeleteSavedName)
 
+	// Shipping Address Routes
+	shipping := app.Group("/shipping-address", authMiddleware)
+	shipping.Get("/", memberHandler.ShowShippingAddressPage)
+	shipping.Post("/", memberHandler.HandleSaveAddress)
+	shipping.Post("/:id/delete", memberHandler.HandleDeleteAddress)
+
 	// Admin Routes
 	admin := app.Group("/admin", authMiddleware, adminMiddleware)
 	admin.Get("/", adminHandler.ShowDashboard)
 	admin.Get("/users", adminHandler.ShowUsersPage)
 	admin.Post("/users/:id/status", adminHandler.UpdateUserStatus)
 	admin.Delete("/users/:id", adminHandler.DeleteUser)
+	admin.Get("/users/:id/address", adminHandler.HandleViewUserAddress)
 	admin.Get("/articles", adminHandler.ShowArticlesPage)
 	admin.Get("/articles/create", adminHandler.ShowCreateArticlePage)
 	admin.Post("/articles/create", adminHandler.CreateArticle)
@@ -432,6 +576,21 @@ func main() {
 	admin.Get("/customer-color-report", adminHandler.ShowCustomerColorReportPage)
 	admin.Post("/assign-customer-colors", adminHandler.AssignCustomerColors)
 
+	// Product Management Routes
+	admin.Get("/products", adminHandler.ShowProductsPage)
+	admin.Get("/products/create", adminHandler.ShowCreateProductPage)
+	admin.Post("/products/create", adminHandler.CreateProduct)
+	admin.Get("/products/edit/:id", adminHandler.ShowEditProductPage)
+	admin.Post("/products/edit/:id", adminHandler.UpdateProduct)
+	admin.Delete("/products/:id", adminHandler.DeleteProduct)
+
+	// Order Management Routes
+	admin.Get("/orders", adminHandler.HandleManageOrders)
+	admin.Delete("/orders/:id", adminHandler.HandleDeleteOrder)
+
+	// Auspicious Numbers (New)
+	admin.Get("/auspicious-numbers", adminHandler.ShowAuspiciousNumbersPage)
+
 	// Payment Routes
 	app.Get("/payment/upgrade", paymentHandler.GetUpgradeModal)
 	app.Post("/api/mock-payment/success", paymentHandler.SimulatePaymentSuccess)
@@ -449,8 +608,23 @@ func setupDatabase() *sql.DB {
 		os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"))
 	db, _ := sql.Open("postgres", psqlInfo)
-	db.Ping()
-	fmt.Println("Successfully connected to database!")
+
+	err := db.Ping()
+	if err != nil {
+		log.Fatalf("Failed to connect to DB: %v", err)
+	}
+
+	// Auto-migrate Shop Columns
+	migrationSQL := `
+		ALTER TABLE orders ADD COLUMN IF NOT EXISTS product_name TEXT;
+		ALTER TABLE orders ADD COLUMN IF NOT EXISTS slip_url TEXT;
+		ALTER TABLE orders ADD COLUMN IF NOT EXISTS promo_code_id INTEGER;
+	`
+	if _, err := db.Exec(migrationSQL); err != nil {
+		log.Printf("Migration Warning: %v", err)
+	}
+
+	fmt.Println("Successfully connected to database and migrated schema!")
 	return db
 }
 
@@ -475,5 +649,12 @@ func setupNumberPairCache(db *sql.DB) *cache.NumberPairCache {
 	c := cache.NewNumberPairCache(repo)
 	c.EnsureLoaded()
 	fmt.Println("Number pair meaning cache is ready.")
+	return c
+}
+func setupNumberCategoryCache(db *sql.DB) *cache.NumberCategoryCache {
+	repo := repository.NewPostgresNumberCategoryRepository(db)
+	c := cache.NewNumberCategoryCache(repo)
+	c.EnsureLoaded()
+	fmt.Println("Number category cache is ready.")
 	return c
 }

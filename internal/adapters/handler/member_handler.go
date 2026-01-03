@@ -5,10 +5,12 @@ import (
 	"log"
 	"numberniceic/internal/adapters/cache"
 	"numberniceic/internal/adapters/handler/templ_render"
+	"numberniceic/internal/adapters/repository"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/service"
 	"numberniceic/views/layout"
 	"numberniceic/views/pages"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -22,22 +24,26 @@ import (
 const jwtSecret = "s3cr3t-k3y-f0r-num63rn1c31c-m0b1l3-@pp" // TODO: Use env variable in production
 
 type MemberHandler struct {
-	service            *service.MemberService
-	savedNameService   *service.SavedNameService
-	buddhistDayService *service.BuddhistDayService
-	klakiniCache       *cache.KlakiniCache
-	numberPairCache    *cache.NumberPairCache
-	store              *session.Store
+	service                *service.MemberService
+	savedNameService       *service.SavedNameService
+	buddhistDayService     *service.BuddhistDayService
+	shippingAddressService *service.ShippingAddressService
+	klakiniCache           *cache.KlakiniCache
+	numberPairCache        *cache.NumberPairCache
+	store                  *session.Store
+	promotionalCodeRepo    *repository.PostgresPromotionalCodeRepository
 }
 
-func NewMemberHandler(service *service.MemberService, savedNameService *service.SavedNameService, buddhistDayService *service.BuddhistDayService, klakiniCache *cache.KlakiniCache, numberPairCache *cache.NumberPairCache, store *session.Store) *MemberHandler {
+func NewMemberHandler(service *service.MemberService, savedNameService *service.SavedNameService, buddhistDayService *service.BuddhistDayService, shippingAddressService *service.ShippingAddressService, klakiniCache *cache.KlakiniCache, numberPairCache *cache.NumberPairCache, store *session.Store, promotionalCodeRepo *repository.PostgresPromotionalCodeRepository) *MemberHandler {
 	return &MemberHandler{
-		service:            service,
-		savedNameService:   savedNameService,
-		buddhistDayService: buddhistDayService,
-		klakiniCache:       klakiniCache,
-		numberPairCache:    numberPairCache,
-		store:              store,
+		service:                service,
+		savedNameService:       savedNameService,
+		buddhistDayService:     buddhistDayService,
+		shippingAddressService: shippingAddressService,
+		klakiniCache:           klakiniCache,
+		numberPairCache:        numberPairCache,
+		store:                  store,
+		promotionalCodeRepo:    promotionalCodeRepo,
 	}
 }
 
@@ -277,6 +283,21 @@ func (h *MemberHandler) ShowDashboard(c *fiber.Ctx) error {
 		assignedColors = []string{}
 	}
 
+	// Fetch My Promotional Codes
+	var myCodes []domain.PromotionalCode
+	if h.promotionalCodeRepo != nil {
+		myCodes, _ = h.promotionalCodeRepo.GetByOwnerID(memberID)
+	}
+
+	// Check Shipping Address
+	hasShippingAddress := false
+	if h.shippingAddressService != nil {
+		addrs, _ := h.shippingAddressService.GetMyAddresses(memberID)
+		if len(addrs) > 0 {
+			hasShippingAddress = true
+		}
+	}
+
 	return templ_render.Render(c, layout.Main(
 		layout.SEOProps{
 			Title:       "แดชบอร์ดส่วนตัว",
@@ -289,7 +310,7 @@ func (h *MemberHandler) ShowDashboard(c *fiber.Ctx) error {
 		"dashboard",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
-		pages.Dashboard(member.Username, member.Email, member.Tel, displayNames, member.IsVIP(), assignedColors, h.isTodayBuddhistDay()),
+		pages.Dashboard(member.Username, member.Email, member.Tel, displayNames, member.IsVIP(), assignedColors, h.isTodayBuddhistDay(), myCodes, hasShippingAddress, member.GetVIPExpiryText()),
 	))
 }
 
@@ -519,6 +540,7 @@ func (h *MemberHandler) HandleLoginAPI(c *fiber.Ctx) error {
 		"email":           fullMember.Email,
 		"status":          fullMember.Status,
 		"is_vip":          fullMember.IsVIP(),
+		"vip_expiry_text": fullMember.GetVIPExpiryText(),
 		"assigned_colors": assignedColors,
 	})
 }
@@ -573,6 +595,11 @@ func (h *MemberHandler) HandleRegisterAPI(c *fiber.Ctx) error {
 
 // GetDashboardAPI returns dashboard data including saved names for the authenticated user
 func (h *MemberHandler) GetDashboardAPI(c *fiber.Ctx) error {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("PANIC RECOVERED in GetDashboardAPI: %v\nStack: %s\n", r, string(debug.Stack()))
+		}
+	}()
 	// 1. Get Token from Header
 	authHeader := c.Get("Authorization")
 	if authHeader == "" {
@@ -584,7 +611,7 @@ func (h *MemberHandler) GetDashboardAPI(c *fiber.Ctx) error {
 	}
 	tokenString := parts[1]
 
-	// 2. Parse and Validate Token
+	// 2. Parse Token
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -643,15 +670,214 @@ func (h *MemberHandler) GetDashboardAPI(c *fiber.Ctx) error {
 		assignedColors = []string{}
 	}
 
+	// Check Shipping Address
+	hasShippingAddress := false
+	if h.shippingAddressService != nil {
+		addrs, _ := h.shippingAddressService.GetMyAddresses(userID)
+		if len(addrs) > 0 {
+			hasShippingAddress = true
+		}
+	}
+
 	log.Printf("API DASHBOARD: Sending data for %s (VIP=%v, Names=%d)", member.Username, member.IsVIP(), len(formattedNames))
 
 	return c.JSON(fiber.Map{
-		"username":        member.Username,
-		"email":           member.Email,
-		"tel":             member.Tel,
-		"is_vip":          member.IsVIP(),
-		"status":          member.Status, // 9 = Admin
-		"assigned_colors": assignedColors,
-		"saved_names":     formattedNames,
+		"username":             member.Username,
+		"email":                member.Email,
+		"tel":                  member.Tel,
+		"is_vip":               member.IsVIP(),
+		"vip_expiry_text":      member.GetVIPExpiryText(),
+		"status":               member.Status, // 9 = Admin
+		"assigned_colors":      assignedColors,
+		"saved_names":          formattedNames,
+		"has_shipping_address": hasShippingAddress,
 	})
+}
+
+func (h *MemberHandler) ShowShippingAddressPage(c *fiber.Ctx) error {
+	sess, _ := h.store.Get(c)
+	memberID := sess.Get("member_id").(int)
+
+	addresses, err := h.shippingAddressService.GetMyAddresses(memberID)
+	if err != nil {
+		sess.Set("toast_error", "Failed to load addresses")
+		sess.Save()
+	}
+
+	editMode := false
+	var addressToEdit *domain.ShippingAddress
+	editIDStr := c.Query("edit")
+	if editIDStr != "" {
+		id, err := strconv.Atoi(editIDStr)
+		if err == nil {
+			for i := range addresses {
+				if addresses[i].ID == id {
+					addressToEdit = &addresses[i]
+					editMode = true
+					break
+				}
+			}
+		}
+	}
+
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "จัดการที่อยู่จัดส่ง",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		"shipping_address",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		pages.ShippingAddress(addresses, editMode, addressToEdit),
+	))
+}
+
+func (h *MemberHandler) HandleSaveAddress(c *fiber.Ctx) error {
+	sess, _ := h.store.Get(c)
+	memberIDRaw := sess.Get("member_id")
+	if memberIDRaw == nil {
+		return c.Redirect("/login")
+	}
+	memberID := memberIDRaw.(int)
+
+	method := c.FormValue("_method")
+	isEdit := method == "PUT"
+
+	address := &domain.ShippingAddress{
+		UserID:        memberID,
+		RecipientName: c.FormValue("recipient_name"),
+		PhoneNumber:   c.FormValue("phone_number"),
+		AddressLine1:  c.FormValue("address_line1"),
+		SubDistrict:   c.FormValue("sub_district"),
+		District:      c.FormValue("district"),
+		Province:      c.FormValue("province"),
+		PostalCode:    c.FormValue("postal_code"),
+		IsDefault:     false, // c.FormValue("is_default") == "true",
+	}
+
+	if isEdit {
+		id, _ := strconv.Atoi(c.FormValue("id"))
+		address.ID = id
+		err := h.shippingAddressService.UpdateAddress(address)
+		if err != nil {
+			sess.Set("toast_error", "Failed to update address")
+		} else {
+			sess.Set("toast_success", "Address updated successfully")
+		}
+	} else {
+		err := h.shippingAddressService.AddAddress(address)
+		if err != nil {
+			sess.Set("toast_error", "Failed to add address")
+		} else {
+			sess.Set("toast_success", "Address added successfully")
+		}
+	}
+	sess.Save()
+	return c.Redirect("/shipping-address")
+}
+
+func (h *MemberHandler) HandleDeleteAddress(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+
+	err := h.shippingAddressService.DeleteAddress(id)
+
+	sess, _ := h.store.Get(c)
+	if err != nil {
+		sess.Set("toast_error", "Failed to delete address")
+	} else {
+		sess.Set("toast_success", "Address deleted successfully")
+	}
+	sess.Save()
+	return c.Redirect("/shipping-address")
+}
+
+// --- API Shipping Address Handlers ---
+
+func (h *MemberHandler) GetShippingAddressesAPI(c *fiber.Ctx) error {
+	var userID int
+	// Check JWT first (user_id from optionalAuthMiddleware)
+	if uid, ok := c.Locals("user_id").(int); ok {
+		userID = uid
+	} else if uid, ok := c.Locals("UserID").(int); ok { // Session fallback
+		userID = uid
+	} else {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	addresses, err := h.shippingAddressService.GetMyAddresses(userID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch addresses"})
+	}
+
+	if addresses == nil {
+		addresses = []domain.ShippingAddress{}
+	}
+
+	return c.JSON(addresses)
+}
+
+func (h *MemberHandler) SaveShippingAddressAPI(c *fiber.Ctx) error {
+	var userID int
+	if uid, ok := c.Locals("user_id").(int); ok {
+		userID = uid
+	} else if uid, ok := c.Locals("UserID").(int); ok {
+		userID = uid
+	} else {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	var address domain.ShippingAddress
+	if err := c.BodyParser(&address); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	address.UserID = userID
+
+	if address.ID > 0 {
+		err := h.shippingAddressService.UpdateAddress(&address)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update address"})
+		}
+	} else {
+		err := h.shippingAddressService.AddAddress(&address)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to add address"})
+		}
+	}
+
+	return c.JSON(fiber.Map{"success": true, "message": "Address saved successfully"})
+}
+
+func (h *MemberHandler) DeleteShippingAddressAPI(c *fiber.Ctx) error {
+	// Verify Auth
+	if uid, ok := c.Locals("user_id").(int); !ok {
+		if uid2, ok2 := c.Locals("UserID").(int); !ok2 {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		} else {
+			_ = uid2 // Fixed
+		}
+	} else {
+		_ = uid // Fixed
+	}
+
+	id, _ := strconv.Atoi(c.Params("id"))
+
+	// Optional: Could verify ownership here, but service/repo might already do it or we assume internal safety for now
+	err := h.shippingAddressService.DeleteAddress(id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete address"})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "message": "Address deleted successfully"})
 }

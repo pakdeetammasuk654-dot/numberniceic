@@ -1,0 +1,119 @@
+package admin
+
+import (
+	"fmt"
+	"numberniceic/internal/core/domain"
+)
+
+templ Orders(orders []domain.Order, currentPage int, totalPages int, query string) {
+	<div style="margin-bottom: 2rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
+		<div>
+			<h1 style="font-family: 'Kanit', sans-serif;">รายการสั่งซื้อ (Orders)</h1>
+			<a href="/admin" class="link-button">&larr; กลับไปหน้า Dashboard</a>
+		</div>
+		<div style="display: flex; gap: 1rem;">
+			<form action="/admin/orders" method="GET" style="display: flex; gap: 0.5rem;">
+				<input type="text" name="q" placeholder="Search Ref No, Customer ID..." value={ query } style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;" />
+				<button type="submit" style="background-color: #007bff; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Search</button>
+			</form>
+			<button class="button-group" onclick="location.reload()" style="background-color: #6c757d;">
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+				Refresh
+			</button>
+		</div>
+	</div>
+
+	<div class="dashboard-table-container">
+		<table class="dashboard-table">
+			<thead>
+				<tr>
+					<th>Order ID / Ref</th>
+					<th>Date</th>
+					<th>Customer (User ID)</th>
+					<th>Product</th>
+					<th style="text-align: right;">Amount</th>
+					<th style="text-align: center;">Status</th>
+					<th style="text-align: right;">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, o := range orders {
+					<tr>
+						<td>
+							<div>#{ o.ID }</div>
+							<div style="font-size: 0.8rem; font-family: monospace; color: #666;">{ o.RefNo }</div>
+						</td>
+						<td style="font-size: 0.9rem;">
+							{ o.CreatedAt.Format("02/01/2006 15:04") }
+						</td>
+						<td>
+							if o.UserID != nil {
+								<span style="background: #eef2ff; color: #4f46e5; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">
+									if o.Username != nil {
+										{ *o.Username }
+									} else {
+										User #{ fmt.Sprintf("%d", *o.UserID) }
+									}
+								</span>
+								<div style="font-size: 0.75rem; color: #999;">ID: { fmt.Sprintf("%d", *o.UserID) }</div>
+								<div style="margin-top: 4px;">
+									<a href="#" onclick={ templ.ComponentScript{ Call: fmt.Sprintf("window.open('/admin/users/%d/address', 'Address', 'width=500,height=600')", *o.UserID) } } style="font-size: 0.75rem; color: #007bff; text-decoration: none; border-bottom: 1px dashed #007bff;">
+										View Address
+									</a>
+								</div>
+							} else {
+								<span style="color: #999;">Guest</span>
+							}
+						</td>
+						<td>
+							{ o.ProductName }
+						</td>
+						<td style="text-align: right; font-weight: bold;">
+							{ fmt.Sprintf("%.2f ฿", o.Amount) }
+						</td>
+						<td style="text-align: center;">
+							if o.Status == "paid" {
+								<span style="color: #2da44e; background: #dafbe1; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">PAID</span>
+							} else if o.Status == "pending" {
+								<span style="color: #b08800; background: #fff8c5; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">PENDING</span>
+							} else if o.Status == "verified" {
+								<span style="color: #0969da; background: #ddf4ff; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">VERIFIED</span>
+							} else {
+								<span style="color: #cf222e; background: #ffebe9; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">{ o.Status }</span>
+							}
+						</td>
+						<td style="text-align: right;">
+							<button class="link-button" style="color: #dc3545; background: none; border: none; padding: 0.4rem; cursor: pointer;" 
+								hx-delete={ fmt.Sprintf("/admin/orders/%d", o.ID) } 
+								hx-target="closest tr" 
+								hx-swap="outerHTML" 
+								hx-confirm={ fmt.Sprintf("คุณต้องการลบคำสั่งซื้อ #%d (%s) ใช่หรือไม่?", o.ID, o.RefNo) }>
+								<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+							</button>
+						</td>
+					</tr>
+				}
+				if len(orders) == 0 {
+					<tr>
+						<td colspan="7" style="text-align: center; padding: 2rem; color: #999;">ไม่พบรายการสั่งซื้อ</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+
+	<!-- Pagination -->
+	if totalPages > 1 {
+		<div style="display: flex; justify-content: center; align-items: center; margin-top: 2rem; gap: 0.5rem;">
+			if currentPage > 1 {
+				<a href={ templ.SafeURL(fmt.Sprintf("/admin/orders?page=%d&q=%s", currentPage-1, query)) } style="padding: 0.5rem 1rem; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #333;">&larr; Prev</a>
+			}
+			
+			<span style="padding: 0.5rem 1rem;">Page { fmt.Sprintf("%d", currentPage) } of { fmt.Sprintf("%d", totalPages) }</span>
+
+			if currentPage < totalPages {
+				<a href={ templ.SafeURL(fmt.Sprintf("/admin/orders?page=%d&q=%s", currentPage+1, query)) } style="padding: 0.5rem 1rem; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #333;">Next &rarr;</a>
+			}
+		</div>
+	}
+}

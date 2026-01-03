@@ -1,0 +1,263 @@
+package pages
+
+templ Shop() {
+	<div style="font-family: 'Kanit', sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem 1rem;">
+		<div style="text-align: center; margin-bottom: 3rem;">
+			<h1 style="font-size: 2.5rem; color: #2d3748; margin-bottom: 1rem;">ร้านค้ามงคล</h1>
+			<p style="font-size: 1.1rem; color: #718096;">เลือกซื้อสิ่งของมงคลเพื่อเสริมดวง และรับรหัส VIP สำหรับใช้งานในแอปฟรี!</p>
+		</div>
+
+		<!-- Product Grid Container -->
+		<div id="product-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; min-height: 400px;">
+			<!-- Skeleton Loading State -->
+			<div class="skeleton-loader" style="background: white; border-radius: 20px; height: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);"></div>
+			<div class="skeleton-loader" style="background: white; border-radius: 20px; height: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);"></div>
+		</div>
+
+		<!-- Payment Modal -->
+		<div id="payment-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
+			<div style="background: white; padding: 0; border-radius: 24px; max-width: 450px; width: 100%; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+				<div style="background: #2d3748; padding: 1.5rem; color: white;">
+					<h3 style="margin: 0; font-size: 1.25rem;">ชำระเงิน</h3>
+					<p style="margin: 0.25rem 0 0; font-size: 0.9rem; opacity: 0.8;">Ref No: <span id="pay-ref-no" style="font-family: monospace;">-</span></p>
+				</div>
+				<div style="padding: 2rem;">
+					<div style="text-align: center; margin-bottom: 2rem;">
+						<p style="color: #718096; margin-bottom: 1rem;">กรุณาสแกน QR Code เพื่อชำระเงิน</p>
+						<div style="width: 200px; height: 200px; background: #f7fafc; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; border: 1px solid #edf2f7; border-radius: 12px;">
+							<img id="qr-code-img" src="" alt="PromptPay QR" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;">
+						</div>
+						<h2 id="pay-amount" style="font-size: 2rem; color: #2d3748; font-weight: bold; margin: 0;">0.00 ฿</h2>
+						<p style="margin-top: 0.5rem; color: #e53e3e; font-weight: bold;">
+							ชำระภายใน <span id="payment-timer">10:00</span> นาที
+						</p>
+					</div>
+					
+					<div style="margin-bottom: 1.5rem; text-align: center;">
+						<!-- Polling Status Overlay -->
+						<div id="payment-status-container" style="color: #4a5568;">
+							<div class="spinner" style="margin: 0 auto 1rem; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+							<p style="font-weight: bold;">กำลังรอการชำระเงิน...</p>
+							<p style="font-size: 0.85rem; color: #718096;">ระบบจะตรวจสอบยอดเงินอัตโนมัติ</p>
+						</div>
+					</div>
+
+					<button 
+						onclick="window.closePaymentModal()"
+						style="width: 100%; background: transparent; color: #718096; border: none; padding: 1rem; margin-top: 0.5rem; font-family: 'Kanit', sans-serif; cursor: pointer;"
+					>ยกเลิก</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Success Modal -->
+		<div id="shop-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1001; align-items: center; justify-content: center; padding: 1rem;">
+			<div style="background: white; padding: 2.5rem; border-radius: 24px; max-width: 450px; width: 100%; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+				<div style="width: 70px; height: 70px; background: #2da44e; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+					<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+				</div>
+				<h2 style="font-size: 1.75rem; color: #2d3748; margin-bottom: 0.5rem;">ชำระเงินสำเร็จ!</h2>
+				<p style="color: #718096; margin-bottom: 2rem;">ขอบคุณสำหรับการสั่งซื้อ</p>
+				
+				<div style="background: #f7fafc; border: 2px dashed #cbd5e0; padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem;">
+					<p style="font-size: 0.85rem; color: #718096; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px;">รหัส VIP ของคุณคือ</p>
+					<h3 id="modal-promo-code" style="font-size: 2rem; color: #2d3748; font-family: monospace; letter-spacing: 2px; margin: 0;">--------</h3>
+				</div>
+
+				<p id="shop-modal-desc" style="font-size: 0.9rem; color: #718096; margin-bottom: 2rem;">*รหัสนี้ถูกบันทึกในประวัติการสั่งซื้อของคุณแล้ว</p>
+				
+				<button 
+					onclick="window.closeShopModal()"
+					style="width: 100%; background: #edf2f7; color: #4a5568; border: none; padding: 1rem; border-radius: 12px; font-weight: bold; font-family: 'Kanit', sans-serif; cursor: pointer;"
+				>ปิดหน้าต่าง</button>
+			</div>
+		</div>
+		
+		<style>
+			@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+		</style>
+
+		<script>
+			// Helper functions (Global Scope - attached to window)
+			window.pollInterval = null;
+			window.timerInterval = null;
+
+			window.startTimer = function(duration, display) {
+				var timer = duration, minutes, seconds;
+				if (window.timerInterval) clearInterval(window.timerInterval);
+
+				window.timerInterval = setInterval(function () {
+					minutes = parseInt(timer / 60, 10);
+					seconds = parseInt(timer % 60, 10);
+
+					minutes = minutes < 10 ? "0" + minutes : minutes;
+					seconds = seconds < 10 ? "0" + seconds : seconds;
+
+					display.textContent = minutes + ":" + seconds;
+
+					if (--timer < 0) {
+						clearInterval(window.timerInterval);
+						alert("หมดเวลาทำรายการ กรุณาทำรายการใหม่");
+						window.closePaymentModal();
+					}
+				}, 1000);
+			};
+
+			window.initiatePurchase = async function(productName) {
+				console.log("Initiating purchase for:", productName);
+				// 1. Create Order via API
+				try {
+					const res = await fetch('/api/shop/order', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ product_name: productName })
+					});
+					
+					if (res.status === 401) {
+						window.location.href = '/login';
+                        return;
+					}
+
+					if (!res.ok) {
+						const errData = await res.json();
+						throw new Error(errData.error || 'Create order failed');
+					}
+					const data = await res.json();
+					console.log("Order created:", data);
+
+					// 2. Show Payment Modal
+					window.currentRefNo = data.ref_no;
+					document.getElementById('pay-ref-no').innerText = data.ref_no;
+					document.getElementById('pay-amount').innerText = data.amount.toLocaleString() + ' ฿';
+					
+					// Handle PaySolutions QR
+					const qrImg = document.getElementById('qr-code-img');
+					if (data.qr_code_url) {
+						qrImg.src = data.qr_code_url;
+						qrImg.style.display = 'block';
+					} else {
+						qrImg.style.display = 'none';
+						alert('QR Code ไม่สามารถใช้งานได้ในขณะนี้');
+					}
+					
+					document.getElementById('payment-modal').style.display = 'flex';
+
+					// 3. Start Polling & Timer (10 mins = 600s)
+					window.startPolling(data.ref_no);
+					window.startTimer(600, document.getElementById('payment-timer'));
+
+				} catch (e) {
+					alert('เกิดข้อผิดพลาด: ' + e.message);
+					console.error(e);
+				}
+			};
+
+			window.startPolling = function(refNo) {
+				if (window.pollInterval) clearInterval(window.pollInterval);
+				
+				window.pollInterval = setInterval(async () => {
+					try {
+						const res = await fetch('/api/shop/status/' + refNo);
+						if (res.ok) {
+							const data = await res.json();
+							if (data.paid) {
+								clearInterval(window.pollInterval);
+								window.closePaymentModal();
+								
+								// Show Success
+								document.getElementById('modal-promo-code').innerText = data.vip_code || 'VIP-ACTIVATED';
+								document.getElementById('shop-modal').style.display = 'flex';
+							}
+						}
+					} catch(e) {
+						console.error("Polling error", e);
+					}
+				}, 3000); // Check every 3 seconds
+			};
+
+			window.closePaymentModal = function() {
+				document.getElementById('payment-modal').style.display = 'none';
+				window.currentRefNo = '';
+				if (window.pollInterval) {
+					clearInterval(window.pollInterval);
+					window.pollInterval = null;
+				}
+				if (window.timerInterval) {
+					clearInterval(window.timerInterval);
+					window.timerInterval = null;
+				}
+			};
+			
+			window.closeShopModal = function() {
+				document.getElementById('shop-modal').style.display = 'none';
+                // Optional: Redirect to Dashboard?
+			};
+
+
+
+			// Load products on page load
+			document.addEventListener('DOMContentLoaded', async () => {
+				const grid = document.getElementById('product-grid');
+				try {
+					const res = await fetch('/api/shop/products');
+					if (!res.ok) throw new Error('Failed to load products');
+					const products = await res.json();
+					
+					grid.innerHTML = '';
+					
+					if (products.length === 0) {
+						grid.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">ไม่พบสินค้าในขณะนี้</p>';
+						return;
+					}
+
+					products.forEach(p => {
+						const card = document.createElement('div');
+						card.style.cssText = "background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #edf2f7; transition: transform 0.3s ease;";
+						
+						let imageHtml = '';
+						if (p.image_path && p.image_path.trim() !== '') {
+							// Use uploaded image
+							imageHtml = `<img src="${p.image_path}" alt="${p.name}" style="width: 100%; height: 200px; object-fit: cover; display: block;">`;
+						} else {
+							// Legacy Fallback
+							let iconSvg = '';
+							if (p.icon_type === 'bracelet') {
+								iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+							} else {
+								iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg>';
+							}
+							imageHtml = `
+								<div style="height: 200px; background: linear-gradient(135deg, ${p.image_color_1 || '#ddd'} 0%, ${p.image_color_2 || '#999'} 100%); display: flex; align-items: center; justify-content: center;">
+									${iconSvg}
+								</div>
+							`;
+						}
+
+						card.innerHTML = `
+							${imageHtml}
+							<div style="padding: 1.5rem;">
+								<h3 style="font-size: 1.5rem; color: #2d3748; margin-bottom: 0.5rem;">${p.name}</h3>
+								<p style="color: #718096; font-size: 0.95rem; margin-bottom: 1.5rem;">${p.description}</p>
+								<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+									<span style="font-size: 1.75rem; font-weight: bold; color: #2da44e;">${p.price.toLocaleString()} ฿</span>
+									<span style="background: #ebf8ff; color: #2b6cb0; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">แถมฟรี VIP Lifetime</span>
+								</div>
+								<button 
+									onclick="window.initiatePurchase('${p.name}')"
+									class="btn-buy"
+									style="width: 100%; background: #2d3748; color: white; border: none; padding: 1rem; border-radius: 12px; font-weight: bold; font-family: 'Kanit', sans-serif; cursor: pointer; transition: background 0.2s;"
+									onmouseover="this.style.background='#4a5568'"
+									onmouseout="this.style.background='#2d3748'"
+								>สั่งซื้อตอนนี้</button>
+							</div>
+						`;
+						grid.appendChild(card);
+					});
+				} catch (e) {
+					console.error(e);
+					grid.innerHTML = '<p style="text-align:center; color:red; grid-column: 1/-1;">เกิดข้อผิดพลาดในการโหลดสินค้า</p>';
+				}
+			});
+		</script>
+	</div>
+}

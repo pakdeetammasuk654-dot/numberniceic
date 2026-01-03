@@ -1,0 +1,1 @@
+ALTER TABLE member ADD COLUMN vip_expires_at TIMESTAMP NULL;

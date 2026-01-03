@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:async';
 import 'dart:convert';
 import '../services/api_service.dart';
@@ -10,6 +12,12 @@ import 'landing_page.dart';
 import 'analyzer_page.dart';
 import 'articles_page.dart';
 import 'login_page.dart';
+import 'main_tab_page.dart';
+import 'shop_page.dart';
+import 'shipping_address_page.dart';
+import 'order_history_page.dart';
+import 'privacy_policy_page.dart';
+import 'delete_account_page.dart';
 import '../widgets/shared_footer.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -30,6 +38,14 @@ class _DashboardPageState extends State<DashboardPage> {
     _loadDashboard();
     _isBuddhistDayFuture = ApiService.isBuddhistDayToday();
     _userInfoFuture = AuthService.getUserInfo();
+    // Listen for refresh signals from other pages (e.g. AnalyzerPage after saving)
+    ApiService.dashboardRefreshSignal.addListener(_loadDashboard);
+  }
+
+  @override
+  void dispose() {
+    ApiService.dashboardRefreshSignal.removeListener(_loadDashboard);
+    super.dispose();
   }
 
   void _loadDashboard() {
@@ -82,297 +98,201 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: Text('แดชบอร์ด', style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF333333),
-        elevation: 0,
-        scrolledUnderElevation: 2,
-        iconTheme: const IconThemeData(color: Colors.white),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
-          child: Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: const BoxDecoration(
-              color: Color(0xFF444444),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Buddhist Day Badge
-                FutureBuilder<bool>(
-                  future: _isBuddhistDayFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData && snapshot.data == true) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.5)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.filter_vintage_rounded, size: 18, color: Color(0xFFFFD700)),
-                            const SizedBox(width: 6),
-                            Text(
-                              'วันนี้วันพระ', 
-                              style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFFFFD700)),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                    return const SizedBox();
-                  },
-                ),
-                
-                // Green Action Button
-                FilledButton.icon(
-                  onPressed: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const AnalyzerPage()),
-                    );
-                    _loadDashboard();
-                  },
-                  icon: const Icon(Icons.analytics_rounded, size: 16),
-                  label: Text('วิเคราะห์ชื่อ', style: GoogleFonts.kanit(fontSize: 13, fontWeight: FontWeight.bold)),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF28a745),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.home_outlined),
-            onPressed: () => Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const LandingPage()),
-              (route) => false,
-            ),
-            tooltip: 'กลับหน้าหลัก',
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      drawer: Drawer(
-        child: FutureBuilder<Map<String, dynamic>>(
-          future: _userInfoFuture,
-          builder: (context, snapshot) {
-             final userInfo = snapshot.data;
-             final isLoggedIn = userInfo != null && userInfo['username'] != null;
-             
-             return ListView(
-               padding: EdgeInsets.zero,
-               children: [
-                 DrawerHeader(
-                   decoration: const BoxDecoration(
-                     gradient: LinearGradient(
-                       colors: [Color(0xFF00b09b), Color(0xFF96c93d)],
-                       begin: Alignment.topLeft,
-                       end: Alignment.bottomRight,
-                     ),
-                   ),
-                   child: Column(
-                     crossAxisAlignment: CrossAxisAlignment.start,
-                     mainAxisAlignment: MainAxisAlignment.end,
-                     children: [
-                       const CircleAvatar(
-                         radius: 30,
-                         backgroundColor: Colors.white,
-                         child: Icon(Icons.person, size: 40, color: Colors.teal),
-                       ),
-                       const SizedBox(height: 10),
-                       Text(
-                         isLoggedIn ? 'สวัสดี, ${userInfo['username']}' : 'ยินดีต้อนรับ',
-                         style: GoogleFonts.kanit(
-                           color: Colors.white,
-                           fontSize: 20,
-                           fontWeight: FontWeight.bold,
-                         ),
-                       ),
-                     ],
-                   ),
-                 ),
-                 
-                 ListTile(
-                   leading: const Icon(Icons.home),
-                   title: Text('หน้าแรก', style: GoogleFonts.kanit()),
-                   onTap: () => Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => const LandingPage()),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async => _loadDashboard(),
+          child: FutureBuilder<Map<String, dynamic>>(
+            future: _dashboardFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                // Handle Session Expired
+                if (snapshot.error.toString().contains('Session expired')) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    CustomToast.show(context, 'เซสชั่นหมดอายุ กรุณาเข้าสู่ระบบใหม่', isSuccess: false);
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 0)),
                       (route) => false,
-                   ),
-                 ),
-                 ListTile(
-                   leading: const Icon(Icons.article),
-                   title: Text('บทความ', style: GoogleFonts.kanit()),
-                   onTap: () {
-                     Navigator.pop(context);
-                     Navigator.push(
-                       context,
-                       MaterialPageRoute(builder: (context) => const ArticlesPage()),
-                     );
-                   },
-                 ),
-                 const Divider(),
-
-                 // Dashboard is already here, no need link
-                 
-                 ListTile(
-                   leading: const Icon(Icons.logout, color: Colors.deepOrange),
-                   title: Text('ออกจากระบบ', style: GoogleFonts.kanit(color: Colors.deepOrange)),
-                   onTap: () async {
-                     await AuthService.logout();
-                     if (context.mounted) {
-                        Navigator.pop(context);
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (context) => const LandingPage()),
-                          (route) => false,
-                        );
-                        CustomToast.show(context, 'ออกจากระบบเรียบร้อยแล้ว');
-                     }
-                   },
-                 ),
-               ],
-             );
-          },
-        ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async => _loadDashboard(),
-        child: FutureBuilder<Map<String, dynamic>>(
-          future: _dashboardFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              // Handle Session Expired
-              if (snapshot.error.toString().contains('Session expired')) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  CustomToast.show(context, 'เซสชั่นหมดอายุ กรุณาเข้าสู่ระบบใหม่', isSuccess: false);
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const LandingPage()),
-                    (route) => false,
-                  );
-                });
-                return const SizedBox();
+                    );
+                  });
+                  return const SizedBox();
+                }
+                return Center(child: Text('Error: ${snapshot.error}', style: GoogleFonts.kanit()));
+              } else if (!snapshot.hasData) {
+                return const Center(child: Text('ไม่มีข้อมูล', style: TextStyle(fontFamily: 'Kanit')));
               }
-              return Center(child: Text('Error: ${snapshot.error}', style: GoogleFonts.kanit()));
-            } else if (!snapshot.hasData) {
-              return const Center(child: Text('ไม่มีข้อมูล', style: TextStyle(fontFamily: 'Kanit')));
-            }
 
-            final data = snapshot.data!;
-            // Log full data for debugging to console
-            debugPrint('DASHBOARD_DATA: $data');
+              final data = snapshot.data!;
+              // Log full data for debugging to console
+              debugPrint('DASHBOARD_DATA: $data');
 
-            // Handle both snake_case and PascalCase from Go
-            final isVip = data['is_vip'] == true || data['IsVIP'] == true;
-            final statusVal = data['status'] ?? data['Status'] ?? 0;
-            final statusInt = statusVal is int ? statusVal : (statusVal is num ? statusVal.toInt() : 0);
-            final isAdmin = statusInt == 9;
+              // Handle both snake_case and PascalCase from Go
+              final isVip = data['is_vip'] == true || data['IsVIP'] == true;
+              final statusVal = data['status'] ?? data['Status'] ?? 0;
+              final statusInt = statusVal is int ? statusVal : (statusVal is num ? statusVal.toInt() : 0);
+              final isAdmin = statusInt == 9;
 
-            final savedNames = (data['saved_names'] ?? data['SavedNames']) as List<dynamic>? ?? [];
-            final assignedColorsRaw = data['assigned_colors'] ?? data['AssignedColors'] ?? [];
-            final assignedColors = List<String>.from(assignedColorsRaw);
+              final savedNames = (data['saved_names'] ?? data['SavedNames']) as List<dynamic>? ?? [];
+              final assignedColorsRaw = data['assigned_colors'] ?? data['AssignedColors'] ?? [];
+              final assignedColors = List<String>.from(assignedColorsRaw);
 
-            return SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                  // 1. User Profile Card
-                  _buildProfileCard(
-                    data['username'] ?? data['Username'] ?? '', 
-                    data['email'] ?? data['Email'] ?? '', 
-                    data['tel'] ?? data['Tel'] ?? '',
-                    isVip, 
-                    isAdmin
-                  ),
-                  
-                  const SizedBox(height: 16),
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 1. User Info Section
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'ยินดีต้อนรับ, ${data['username'] ?? ''}!',
+                                    style: GoogleFonts.kanit(
+                                      fontSize: 20, // Slightly smaller than header
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  if (isVip)
+                                    Row(
+                                      children: [
+                                        Text('สถานะ: ', style: GoogleFonts.kanit(fontSize: 16, color: Colors.black54)),
+                                        ShaderMask(
+                                          shaderCallback: (bounds) => const LinearGradient(
+                                            colors: [Color(0xFFD4AF37), Color(0xFFFFD700), Color(0xFFD4AF37)],
+                                          ).createShader(bounds),
+                                          child: Text(
+                                            'สมาชิก VIP',
+                                            style: GoogleFonts.kanit(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w800,
+                                              color: Colors.white, // Required for ShaderMask
+                                            ),
+                                          ),
+                                        ),
+                                        if (data['vip_expiry_text'] != null && data['vip_expiry_text'].toString().isNotEmpty)
+                                          Text(
+                                            ' (${data['vip_expiry_text']})',
+                                            style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[600]),
+                                          ),
+                                      ],
+                                    ),
+                                ],
+                              ),
+                              // Buddhist Day Icon (if needed, mimicking web)
+                            ],
+                          ),
+                          const SizedBox(height: 24),
 
-                  // 1.5 Privilege Card (Matching Web UI)
-                  _buildPrivilegeCard(isVip),
+                          // 2. VIP Section (Wallet Colors)
+                          if (isVip) ...[
+                            Text('สีกระเป๋ามงคลของคุณ', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 12),
+                            if (assignedColors.isNotEmpty && assignedColors.any((c) => c.isNotEmpty))
+                               _buildWalletColors(assignedColors)
+                            else
+                               Container(
+                                 padding: const EdgeInsets.all(20),
+                                 width: double.infinity,
+                                 decoration: BoxDecoration(
+                                   color: Colors.amber[50], 
+                                   borderRadius: BorderRadius.circular(16),
+                                   border: Border.all(color: Colors.amber.shade200)
+                                 ),
+                                 child: Column(
+                                   children: [
+                                     const Icon(Icons.wallet, color: Colors.amber, size: 48),
+                                     const SizedBox(height: 12),
+                                     Text('ไม่พบข้อมูลสีกระเป๋า', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.amber[900])),
+                                     const SizedBox(height: 4),
+                                     Text('อัปเดตข้อมูลวันเกิดในโปรไฟล์เพื่อรับสีกระเป๋า', style: GoogleFonts.kanit(fontSize: 13, color: Colors.amber[800])),
+                                   ],
+                                 ),
+                               ),
+                            const SizedBox(height: 24),
+                          ] else ...[
+                             const SizedBox(height: 24),
+                          ],
 
-                  const SizedBox(height: 24),
+                          // 4. Saved Names Section
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [Color(0xFFFFD700), Color(0xFFFFC107)],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.folder_open, color: Color(0xFF333333), size: 20),
+                                    const SizedBox(width: 8),
+                                    Text('รายชื่อที่บันทึกไว้', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF333333))),
+                                  ],
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x664a3b00),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: const Color(0x33000000))
+                                  ),
+                                  child: Text(
+                                    '${savedNames.length} / 12 รายชื่อ',
+                                    style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF4a3b00)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          if (savedNames.isEmpty)
+                            _buildEmptyState()
+                          else
+                            _buildSavedNamesTable(savedNames, isVip),
 
-                  // 2. VIP Section (Wallet Colors)
-                  // Show section if VIP, even if colors are loading/empty (to debug)
-                  if (isVip) ...[
-                    Text('สีกระเป๋ามงคลของคุณ', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
-                    if (assignedColors.isNotEmpty && assignedColors.any((c) => c.isNotEmpty))
-                       _buildWalletColors(assignedColors)
-                    else
-                       Container(
-                         padding: const EdgeInsets.all(20),
-                         width: double.infinity,
-                         decoration: BoxDecoration(
-                           color: Colors.amber[50], 
-                           borderRadius: BorderRadius.circular(16),
-                           border: Border.all(color: Colors.amber.shade200)
-                         ),
-                         child: Column(
-                           children: [
-                             const Icon(Icons.wallet, color: Colors.amber, size: 48),
-                             const SizedBox(height: 12),
-                             Text('ไม่พบข้อมูลสีกระเป๋า', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.amber[900])),
-                             const SizedBox(height: 4),
-                             Text('อัปเดตข้อมูลวันเกิดในโปรไฟล์เพื่อรับสีกระเป๋า', style: GoogleFonts.kanit(fontSize: 13, color: Colors.amber[800])),
-                           ],
-                         ),
-                       ),
-                    const SizedBox(height: 24),
-                  ] else ...[
-                     const SizedBox(height: 24),
-                  ],
-
-                  // 3. Saved Names Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('รายชื่อที่บันทึกไว้', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.grey.shade300)
-                        ),
-                        child: Text(
-                          '${savedNames.length} / 12 รายชื่อ',
-                          style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blueGrey),
-                        ),
+                          const SizedBox(height: 16),
+                        ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (savedNames.isEmpty)
-                    _buildEmptyState()
-                  else
-                    _buildSavedNamesTable(savedNames, isVip),
-                      ],
                     ),
-                  ),
-                  // Footer - full width outside padding
-                  const SizedBox(height: 30),
-                  const SharedFooter(),
-                ],
-              ),
-            );
-          },
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          _buildPrivilegeCard(isVip),
+                          const SizedBox(height: 24),
+                          _buildProfileCard(
+                            data['username'] ?? data['Username'] ?? '', 
+                            data['email'] ?? data['Email'] ?? '', 
+                            data['tel'] ?? data['Tel'] ?? '',
+                            isVip, 
+                            isAdmin,
+                            data['has_shipping_address'] == true || data['HasShippingAddress'] == true
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+                    const SharedFooter(),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -380,79 +300,343 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildPrivilegeCard(bool isVip) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2C3E50), Color(0xFF000000)],
+        gradient: LinearGradient(
+          colors: isVip 
+            ? [const Color(0xFF480048), const Color(0xFFC04848)] // Majestic Imperial Purple to Deep Red hint for VIP
+            : [const Color(0xFF2D0133), const Color(0xFF5D0E7D)], // Deep Royal Purple for Normal
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+          BoxShadow(
+            color: const Color(0xFF6A0DAD).withOpacity(0.3), // Royal Purple Glow
+            blurRadius: 40,
+            spreadRadius: -5,
+          ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.stars, color: Color(0xFFFFD700), size: 24),
-              const SizedBox(width: 8),
-              Text(
-                isVip ? 'สมาชิกระดับ VIP' : 'สมาชิกระดับทั่วไป',
-                style: GoogleFonts.kanit(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFFFFD700),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            // Decorative background elements
+            Positioned(
+              top: -50,
+              right: -50,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: (isVip ? const Color(0xFFEAD4AA) : Colors.blue).withOpacity(0.05),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            isVip 
-              ? 'คุณได้รับสิทธิประโยชน์ขั้นสูงสุดในการใช้งานระบบแล้ว'
-              : 'อัปเกรดเป็น VIP เพื่อเข้าถึงข้อมูลเชิงลึกและรายชื่อค้นหาพิเศษกว่า 300,000 รายชื่อ',
-            style: GoogleFonts.kanit(fontSize: 14, color: Colors.blueGrey[100]),
-          ),
-          const SizedBox(height: 16),
-          _buildPrivilegeItem('วิเคราะห์ความหมายคู่เลขไม่จำกัด'),
-          _buildPrivilegeItem('เข้าถึงฐานข้อมูล 300,000+ ชื่อ'),
-          _buildPrivilegeItem('วิเคราะห์ตามตำราโบราณครบทุกชั้น'),
-          if (!isVip) ...[
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _showUpgradeDialog,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFD700),
-                  foregroundColor: const Color(0xFF4A3B00),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 5,
-                ),
-                child: Text('อัปเกรดเป็น VIP ทันที', style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFD700).withOpacity(0.15),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3), width: 1.5),
+                        ),
+                        child: const Icon(Icons.auto_awesome, color: Color(0xFFFFD700), size: 22),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isVip ? 'สมาชิกระดับ VIP' : 'สมาชิกระดับทั่วไป',
+                              style: GoogleFonts.kanit(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFFFFD700), // Back to Vibrant Gold
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            if (isVip)
+                              Text(
+                                'PREMIUM ACCESS UNLOCKED',
+                                style: GoogleFonts.kanit(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white.withOpacity(0.5),
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    isVip 
+                      ? 'คุณได้รับสิทธิประโยชน์ขั้นสูงสุดในการใช้งานระบบแล้ว'
+                      : 'อัปเกรดเป็น VIP เพื่อเข้าถึงข้อมูลเชิงลึกและรายชื่อค้นหาพิเศษกว่า 300,000 รายชื่อ',
+                    style: GoogleFonts.kanit(
+                      fontSize: 15, 
+                      color: Colors.white.withOpacity(0.8),
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildPrivilegeItem('วิเคราะห์ความหมายคู่เลขไม่จำกัด'),
+                  _buildPrivilegeItem('เข้าถึงฐานข้อมูล 300,000+ ชื่อ'),
+                  _buildPrivilegeItem('วิเคราะห์ตามตำราโบราณครบทุกชั้น'),
+                  if (!isVip) ...[
+                    const SizedBox(height: 30),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withOpacity(0.1)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.confirmation_number_outlined, color: Colors.blueAccent, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'มีรหัสโปรโมชันหรือรหัส VIP?', 
+                                    style: GoogleFonts.kanit(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'สามารถนำรหัสที่ได้จากกิจกรรมหรือการสั่งซื้อสินค้า มากรอกเพื่อรับสิทธิ์ได้ทันที', 
+                                style: GoogleFonts.kanit(fontSize: 12, color: Colors.white60, height: 1.4),
+                              ),
+                              const SizedBox(height: 20),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFFFFD700).withOpacity(0.3),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: ElevatedButton(
+                                        onPressed: _showRedeemDialog,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFFFFD700),
+                                          foregroundColor: const Color(0xFF0F172A),
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          elevation: 0,
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            const Icon(Icons.vpn_key_outlined, size: 18),
+                                            const SizedBox(width: 8),
+                                            Text('กรอกรหัส VIP', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, fontSize: 14)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      onPressed: _goToShop,
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.white,
+                                        side: BorderSide(color: Colors.white.withOpacity(0.3), width: 1.5),
+                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(Icons.shopping_bag_outlined, size: 18),
+                                          const SizedBox(width: 8),
+                                          Text('ซื้อสินค้าร้านมาดี', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, fontSize: 14)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _goToShop() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ShopPage()),
+    );
+  }
+
+  void _showRedeemDialog() {
+    final TextEditingController codeController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('กรอกรหัส VIP', style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('นำรหัสที่ได้รับจากสินค้ามงคลหรือกิจกรรมมากรอกที่นี่', style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[600])),
+            const SizedBox(height: 16),
+            TextField(
+              controller: codeController,
+              decoration: InputDecoration(
+                hintText: 'เช่น AB12CD34',
+                hintStyle: GoogleFonts.kanit(color: Colors.grey[400]),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+                fillColor: Colors.grey[50],
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              style: GoogleFonts.kanit(letterSpacing: 1.5, fontWeight: FontWeight.bold),
+              textCapitalization: TextCapitalization.characters,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('ยกเลิก', style: GoogleFonts.kanit(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final code = codeController.text.trim();
+              if (code.isEmpty) return;
+              
+              Navigator.pop(context); // Close dialog
+              
+              // Show loading
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (ctx) => const Center(child: CircularProgressIndicator()),
+              );
+
+              try {
+                final msg = await ApiService.redeemCode(code);
+                if (context.mounted) {
+                  Navigator.pop(context); // Remove loading
+                  
+                  // Success Dialog
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Row(children: [
+                        const Icon(Icons.check_circle, color: Colors.green),
+                        const SizedBox(width: 8),
+                        Text('สำเร็จ!', style: GoogleFonts.kanit(fontWeight: FontWeight.bold))
+                      ]),
+                      content: Text(msg, style: GoogleFonts.kanit()),
+                      actions: [
+                        TextButton(
+                           onPressed: () { 
+                             Navigator.pop(ctx);
+                             _loadDashboard(); // Refresh dashboard
+                           },
+                           child: Text('ตกลง', style: GoogleFonts.kanit()),
+                        )
+                      ],
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context); // Remove loading
+                   // Error Dialog
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text('ไม่สำเร็จ', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: Colors.red)),
+                      content: Text(e.toString().replaceAll('Exception: ', ''), style: GoogleFonts.kanit()),
+                      actions: [
+                        TextButton(
+                           onPressed: () => Navigator.pop(ctx),
+                           child: Text('ตกลง', style: GoogleFonts.kanit()),
+                        )
+                      ],
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+               backgroundColor: const Color(0xFF28a745),
+               foregroundColor: Colors.white,
+               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text('ใช้งานรหัส', style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
+          ),
         ],
       ),
     );
   }
 
+
   Widget _buildPrivilegeItem(String text) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          const Icon(Icons.check_circle, color: Color(0xFFFFD700), size: 16),
-          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFD700),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.check, color: Color(0xFF0F172A), size: 12),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               text,
-              style: GoogleFonts.kanit(fontSize: 13, color: Colors.white.withOpacity(0.9)),
+              style: GoogleFonts.kanit(
+                fontSize: 14, 
+                color: Colors.white.withOpacity(0.9),
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -460,7 +644,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildProfileCard(String username, String email, String tel, bool isVip, bool isAdmin) {
+  Widget _buildProfileCard(String username, String email, String tel, bool isVip, bool isAdmin, bool hasShippingAddress) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -470,60 +654,139 @@ class _DashboardPageState extends State<DashboardPage> {
           BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: isVip ? Colors.amber[100] : Colors.teal[50],
-            child: Text(
-              username.isNotEmpty ? username[0].toUpperCase() : '?',
-              style: GoogleFonts.kanit(fontSize: 24, fontWeight: FontWeight.bold, color: isVip ? Colors.amber[800] : Colors.teal),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(username, style: GoogleFonts.kanit(fontSize: 20, fontWeight: FontWeight.bold)),
-                    if (isVip) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.amber[100],
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text('VIP', style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.amber[800])),
-                      )
-                    ],
-                    if (isAdmin) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.red[100],
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text('ADMIN', style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red[800])),
-                      )
-                    ]
-                  ],
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: isVip ? Colors.amber[100] : Colors.teal[50],
+                child: Text(
+                  username.isNotEmpty ? username[0].toUpperCase() : '?',
+                  style: GoogleFonts.kanit(fontSize: 24, fontWeight: FontWeight.bold, color: isVip ? Colors.amber[800] : Colors.teal),
                 ),
-                Text(email, style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[600])),
-                if (tel.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Row(
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Icon(Icons.phone_android_rounded, size: 14, color: Colors.grey[400]),
-                        const SizedBox(width: 4),
-                        Text(tel, style: GoogleFonts.kanit(fontSize: 13, color: Colors.grey[600])),
+                        Text(username, style: GoogleFonts.kanit(fontSize: 20, fontWeight: FontWeight.bold)),
+                        if (isVip) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.amber[100],
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text('VIP', style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.amber[800])),
+                          )
+                        ],
+                        if (isAdmin) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red[100],
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text('ADMIN', style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red[800])),
+                          )
+                        ]
                       ],
                     ),
-                  ),
+                    Text(email, style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[600])),
+                    if (tel.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Row(
+                          children: [
+                            Icon(Icons.phone_android_rounded, size: 14, color: Colors.grey[400]),
+                            const SizedBox(width: 4),
+                            Text(tel, style: GoogleFonts.kanit(fontSize: 13, color: Colors.grey[600])),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 32),
+          InkWell(
+            onTap: () async {
+              await Navigator.push(context, MaterialPageRoute(builder: (context) => const OrderHistoryPage()));
+            },
+            child: Row(
+              children: [
+                const Icon(Icons.history, size: 18, color: Colors.blueAccent),
+                const SizedBox(width: 8),
+                Text('ประวัติการสั่งซื้อ', 
+                  style: GoogleFonts.kanit(
+                    fontSize: 14, 
+                    color: Colors.blueAccent, 
+                    fontWeight: FontWeight.w500
+                  )
+                ),
+                const Spacer(),
+                const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+              ],
+            ),
+          ),
+          const Divider(height: 16),
+          InkWell(
+            onTap: () async {
+              await Navigator.push(context, MaterialPageRoute(builder: (context) => const ShippingAddressPage()));
+              _loadDashboard();
+            },
+            child: Row(
+              children: [
+                Icon(Icons.location_on_outlined, size: 18, color: hasShippingAddress ? Colors.blueAccent : Colors.orange[700]),
+                const SizedBox(width: 8),
+                Text('จัดการที่อยู่จัดส่ง', 
+                  style: GoogleFonts.kanit(
+                    fontSize: 14, 
+                    color: hasShippingAddress ? Colors.blueAccent : Colors.orange[700], 
+                    fontWeight: FontWeight.w500
+                  )
+                ),
+                if (!hasShippingAddress) ...[
+                  const SizedBox(width: 8),
+                  Icon(Icons.error_outline, size: 14, color: Colors.orange[700]),
+                ],
+                const Spacer(),
+                const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+              ],
+            ),
+          ),
+          const Divider(height: 16),
+          InkWell(
+            onTap: () async {
+                 await AuthService.logout();
+                 if (context.mounted) {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 0)),
+                      (route) => false,
+                    );
+                    CustomToast.show(context, 'ออกจากระบบเรียบร้อยแล้ว');
+                 }
+            },
+            child: Row(
+              children: [
+                const Icon(Icons.logout, size: 18, color: Colors.grey),
+                const SizedBox(width: 8),
+                Text('ออกจากระบบ', 
+                  style: GoogleFonts.kanit(
+                    fontSize: 14, 
+                    color: Colors.grey[600], 
+                    fontWeight: FontWeight.w500
+                  )
+                ),
+                const Spacer(),
+                const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
               ],
             ),
           ),
@@ -531,6 +794,7 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     );
   }
+
 
   Widget _buildWalletColors(List<String> colors) {
     // Map color names to Color objects (Simplified mapping for demo)
@@ -623,7 +887,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             child: Row(
               children: [
-                Expanded(flex: 3, child: Text('ชื่อ/วันเกิด', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey))),
+                Expanded(flex: 3, child: Text('ชื่อ/สกุล', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey))),
                 Expanded(flex: 2, child: Center(child: Text('เลข', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)))),
                 Expanded(flex: 2, child: Center(child: Text('เงา', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)))),
                 Expanded(flex: 1, child: Center(child: Text('คะแนน', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)))),
@@ -674,27 +938,41 @@ class _DashboardPageState extends State<DashboardPage> {
                                   name,
                                   style: GoogleFonts.kanit(
                                     fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                                    fontWeight: isTopTier ? FontWeight.w800 : FontWeight.bold,
+                                    color: isTopTier ? const Color(0xFFB8860B) : Colors.black87,
                                   ),
                                 )
-                              : Wrap(
-                                  children: displayNameHtml.map((charData) {
-                                    final char = charData['char'] ?? charData['Char'] ?? '';
-                                    final isBad = charData['is_bad'] == true || charData['IsBad'] == true;
-                                    return Text(
-                                      char,
-                                      style: GoogleFonts.kanit(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: isBad ? const Color(0xFFFF4757) : Colors.black87,
+                              : Row(
+                                  children: [
+                                    Flexible(
+                                      child: Wrap(
+                                        children: displayNameHtml.map((charData) {
+                                          final char = charData['char'] ?? charData['Char'] ?? '';
+                                          final isBad = charData['is_bad'] == true || charData['IsBad'] == true;
+                                          return Text(
+                                            char,
+                                            style: GoogleFonts.kanit(
+                                              fontSize: 14,
+                                              fontWeight: isTopTier ? FontWeight.w800 : FontWeight.bold,
+                                              color: isBad ? const Color(0xFFFF4757) : (isTopTier ? const Color(0xFFB8860B) : Colors.black87),
+                                            ),
+                                          );
+                                        }).toList(),
                                       ),
-                                    );
-                                  }).toList(),
+                                    ),
+                                    if (isTopTier)
+                                      const Text(' ⭐', style: TextStyle(fontSize: 12)),
+                                  ],
                                 ),
-                          Text(
-                            'วัน$birthDayThai',
-                            style: GoogleFonts.kanit(fontSize: 10, color: Colors.grey[600]),
+                          Row(
+                            children: [
+                              Icon(Icons.calendar_today, size: 10, color: Colors.grey[500]),
+                              const SizedBox(width: 4),
+                              Text(
+                                birthDayThai,
+                                style: GoogleFonts.kanit(fontSize: 10, color: Colors.grey[600]),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -729,8 +1007,6 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          if (isTopTier)
-                            const Text('⭐', style: TextStyle(fontSize: 10)),
                           Text(
                             '${totalScore > 0 ? "+" : ""}$totalScore',
                             style: GoogleFonts.kanit(

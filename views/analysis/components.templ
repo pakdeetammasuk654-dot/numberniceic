@@ -25,6 +25,7 @@ type SimilarNamesProps struct {
     ShowTop4            bool
     TotalFilteredCount  int
     IsVIP               bool
+    IsLoading           bool
 }
 
 templ Skeleton(id string) {
@@ -87,6 +88,51 @@ templ SolarSystemSkeleton() {
     </div>
 }
 
+templ Top4Skeleton() {
+    <div id="top4-skeleton" class="skeleton-container" style="margin-bottom: 2rem;">
+        <div class="skeleton-loader-compact" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #fff; border-radius: 12px; border: 1px solid #eee;">
+             <div class="skeleton-pulse" style="width: 40px; height: 40px; border-radius: 50%; background-color: #f0f0f0;"></div>
+             <div style="flex: 1;">
+                <div class="skeleton-pulse" style="width: 60%; height: 20px; margin-bottom: 8px; border-radius: 4px; background-color: #f0f0f0;"></div>
+                <div class="skeleton-pulse" style="width: 40%; height: 16px; border-radius: 4px; background-color: #f0f0f0;"></div>
+             </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-top: 1rem;">
+            <div class="skeleton-pulse" style="height: 120px; border-radius: 12px; background-color: #f0f0f0;"></div>
+            <div class="skeleton-pulse" style="height: 120px; border-radius: 12px; background-color: #f0f0f0;"></div>
+            <div class="skeleton-pulse" style="height: 120px; border-radius: 12px; background-color: #f0f0f0;"></div>
+            <div class="skeleton-pulse" style="height: 120px; border-radius: 12px; background-color: #f0f0f0;"></div>
+        </div>
+    </div>
+}
+
+script ContentSwapper(targetID string) {
+    (function() {
+        var target = document.getElementById(targetID);
+        var source = document.getElementById("swap-" + targetID);
+        if (target && source) {
+            target.innerHTML = source.innerHTML;
+            source.remove();
+            
+             // Re-init HTMX or other scripts if needed
+             if (typeof htmx !== 'undefined') {
+                // htmx.process(document.body); // heavy?
+             }
+             // If we have specific init scripts, call them here
+             if (window.toggleBestNames) {
+                 // Ensure scripts are loaded
+             }
+        }
+    })();
+}
+
+templ SwapContent(targetID string, content templ.Component) {
+    <div id={ "swap-" + targetID } style="display: none;">
+        @content
+    </div>
+    @ContentSwapper(targetID)
+}
+
 templ StreamScript(targetID string) {
     <script type="text/javascript">
         (function() {
@@ -104,7 +150,7 @@ templ StreamScript(targetID string) {
 }
 
 templ SimilarNamesTable(props SimilarNamesProps) {
-	<div class="similar-names-container fade-slide-in" id="similar-names-section">
+	<div class="similar-names-container" id="similar-names-section">
 		<div class="content-blur">
 
 			<!-- Header Section -->
@@ -143,9 +189,12 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 				</div>
 	
 				<!-- Top 4 / Last 4 Section -->
-				<!-- Top 4 / Last 4 Section -->
 				<div id="top4-section" class="top4-section-container">
-					@Top4Section(props)
+					if props.IsLoading {
+                        @Top4Skeleton()
+                    } else {
+					    @Top4Section(props)
+                    }
 				</div>
 			</div>
 
@@ -159,8 +208,7 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FDB931" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
 						</div>
 						<div>
-							<h3 class="vip-banner-title">VIP ตั้งชื่อให้คมๆ</h3>
-							<p class="vip-banner-subtitle">วิเคราะห์คนจริง +3 แสนรายชื่อ</p>
+							<h3 class="vip-banner-title">รับรหัส VIP วิเคราะห์ +3 แสนชื่อเมื่อซื้อสินค้า</h3>
 						</div>
 					</div>
 					<a href="#" 
@@ -168,7 +216,7 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 					   hx-target="#upgrade-modal-container" 
 					   hx-swap="innerHTML"
 					   onclick="event.preventDefault(); var el = document.getElementById('upgrade-modal-container'); if(!el){ el = document.createElement('div'); el.id = 'upgrade-modal-container'; el.className = 'modal-overlay'; el.style.display = 'none'; el.style.zIndex='9999'; document.body.appendChild(el); } el.style.display='flex'"
-					   class="vip-button-style">อัปเกรด</a>
+					   class="vip-button-style">ร้านมาดี</a>
 				</div>
 			} else {
 				<!-- VIP Active Banner -->
@@ -184,7 +232,11 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 			}
 
 			<div id="similar-names-list-section">
-				@SimilarNamesList(props)
+                if props.IsLoading {
+                    @Skeleton("table-skeleton-loader")
+                } else {
+				    @SimilarNamesList(props)
+                }
 			</div>
 		</div>
 	</div>
@@ -200,7 +252,7 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 	        const mainDisableKlakini = document.getElementById('main-disable-klakini');
 	        const disableKlakiniToggle = document.getElementById('disable-klakini-toggle');
 	        if (mainDisableKlakini && disableKlakiniToggle) {
-	            mainDisableKlakini.value = disableKlakiniToggle.checked;
+	            mainDisableKlakini.value = !disableKlakiniToggle.checked;
 	        }
 	    })();
 	</script>
@@ -219,64 +271,74 @@ templ Top4Section(props SimilarNamesProps) {
 				<div class="top-4-header">
 						<h3 class="top-4-title">
 							<div class="title-icon">
-								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
 							</div>
-                            <span id="best-names-title" data-total-best={ strconv.Itoa(props.TotalFilteredCount) }>
-                                <span id="best-names-prefix" class="title-prefix">
-                                    if props.ShowTop4 {
-                                        4 อันดับชื่อที่ดีที่สุดสำหรับ
-                                    } else {
-                                        แนะนำชื่อดีที่สุดลำดับ { strconv.Itoa(100 - 3) } - { strconv.Itoa(100) } สำหรับ
-                                    }
-                                </span>
-                                <span class="title-name">
-                                    <span>"</span>
-                                    for _, dc := range props.DisplayNameHTML {
-                                        if dc.Char == " " {
-                                             <span class="name-spacer">&nbsp;</span>
-                                        } else if dc.IsBad {
-                                            <span class="klakini-char">{ dc.Char }</span>
-                                        } else {
-                                            <span>{ dc.Char }</span>
+                            <div style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.3;">
+                                <span id="best-names-title" data-total-best={ strconv.Itoa(props.TotalFilteredCount) }>
+                                    <span id="best-names-prefix" class="title-prefix" style="color: #2da44e; font-weight: 800; font-size: 1.3rem;">ตั้งชื่อดีให้</span>
+                                    <span class="title-name" style="font-size: 1.3rem;">
+                                        <span>"</span>
+                                        for _, dc := range props.DisplayNameHTML {
+                                            if dc.Char == " " {
+                                                 <span class="name-spacer">&nbsp;</span>
+                                            } else if dc.IsBad {
+                                                <span class="klakini-char">{ dc.Char }</span>
+                                            } else {
+                                                <span>{ dc.Char }</span>
+                                            }
                                         }
-                                    }
-                                    <span>"</span>
+                                        <span>"</span>
+                                    </span>
                                 </span>
-                            </span>
+                                <span id="best-names-subtitle" class="subtitle" style="font-size: 1rem; color: #718096; font-weight: normal;">
+                                     if props.ShowTop4 {
+                                        ลำดับที่ #1 - #4
+                                    } else {
+                                        ลำดับที่ #{ strconv.Itoa(props.TotalFilteredCount - 3) } - #{ strconv.Itoa(props.TotalFilteredCount) }
+                                    }
+                                </span>
+                            </div>
 						</h3>
 						
 						<div class="top-4-toggles">
 							<!-- Toggle: Show Top 4 (Client Side) -->
-							<div class="toggle-item-top4">
+							<div class={ "toggle-item-top4", templ.KV("inactive-toggle", !props.ShowTop4) }>
 								<span class="toggle-label-top4">
-									<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f57f17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon-svg"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+									if props.ShowTop4 {
+										<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f57f17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon-svg"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+									} else {
+										<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#a0aec0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon-svg"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+									}
 									<span>VIP</span>
 								</span>
 								<label class="toggle-switch toggle-label-scale">
 									<input type="checkbox" id="show-top4-toggle" onchange="toggleBestNames(this.checked)"
-                                        if props.ShowTop4 {
-                                            checked
-                                        }
+                                        name="show_top4"
+                                        autocomplete="off"
+                                        hx-get="/similar-names" 
+                                        hx-target="#top4-section"
+                                        hx-swap="innerHTML" 
+                                        hx-indicator="#top4-loader"
+                                        hx-vals='js:{"section": "top4", "name": (document.getElementById("name") ? document.getElementById("name").value : ""), "day": (document.getElementById("day") ? document.getElementById("day").value : ""), "auspicious": document.getElementById("auspicious-toggle") ? document.getElementById("auspicious-toggle").checked : false, "disable_klakini_top4": document.getElementById("disable-klakini-top4-toggle") ? document.getElementById("disable-klakini-top4-toggle").checked : false, "disable_klakini": document.getElementById("disable-klakini-toggle") ? document.getElementById("disable-klakini-toggle").checked : false, "show_top4": event.target.checked}'
+                                        checked?={ props.ShowTop4 }
                                     />
 									<span class="slider"></span>
 								</label>
 							</div>
 
-						<!-- Toggle: Disable Klakini (Server Side - Top 4 ONLY) -->
+						<!-- Toggle: Show Klakini (Server Side - Top 4 ONLY) -->
 						<div class="toggle-item">
-							<span class="toggle-label toggle-label-klakini"><span>ไม่รวม</span>ชื่อกาลกิณี</span>
+							<span class="toggle-label toggle-label-klakini">แสดง<span style="color: #ff4757;">กาลกิณี</span></span>
 							<label class="toggle-switch toggle-label-scale">
 								<input type="checkbox" 
 									id="disable-klakini-top4-toggle"
 									name="disable_klakini_top4"
-									if props.DisableKlakiniTop4 {
-										checked
-									}
+									checked?={ !props.DisableKlakiniTop4 }
 									hx-get="/similar-names" 
 									hx-target="#top4-section"
 									hx-swap="innerHTML" 
 									hx-indicator="#top4-loader"
-									hx-vals='js:{"section": "top4", "name": (document.getElementById("name") ? document.getElementById("name").value : ""), "day": (document.getElementById("day") ? document.getElementById("day").value : ""), "auspicious": document.getElementById("auspicious-toggle") ? document.getElementById("auspicious-toggle").checked : false, "disable_klakini_top4": event.target.checked, "disable_klakini": document.getElementById("disable-klakini-toggle") ? document.getElementById("disable-klakini-toggle").checked : false, "show_top4": document.getElementById("show-top4-toggle") ? document.getElementById("show-top4-toggle").checked : false}'
+									hx-vals='js:{"section": "top4", "name": (document.getElementById("name") ? document.getElementById("name").value : ""), "day": (document.getElementById("day") ? document.getElementById("day").value : ""), "auspicious": document.getElementById("auspicious-toggle") ? document.getElementById("auspicious-toggle").checked : false, "disable_klakini_top4": !event.target.checked, "disable_klakini": document.getElementById("disable-klakini-toggle") ? !document.getElementById("disable-klakini-toggle").checked : false, "show_top4": document.getElementById("show-top4-toggle") ? document.getElementById("show-top4-toggle").checked : false}'
 								/>
 								<span class="slider"></span>
 							</label>
@@ -320,12 +382,16 @@ script ToggleBestNamesScript() {
 			lastView.classList.add('d-none');
 			topView.classList.remove('d-none');
 			if(prefixSpan) prefixSpan.innerText = '4 อันดับชื่อที่ดีที่สุดสำหรับ';
+			const subtitle = document.getElementById('best-names-subtitle');
+			if(subtitle) subtitle.innerText = 'ลำดับที่ #1 - #4';
 		} else {
 			lastView.classList.remove('d-none');
 			topView.classList.add('d-none');
 			const total = parseInt(title.getAttribute('data-total-best') || '0');
 			const start = Math.max(1, total - 3);
 			if(prefixSpan) prefixSpan.innerText = 'แนะนำชื่อดีที่สุดลำดับ ' + start + ' - ' + total + ' สำหรับ';
+			const subtitle = document.getElementById('best-names-subtitle');
+			if(subtitle) subtitle.innerText = 'ลำดับที่ #' + start + ' - #' + total;
 		}
 	}
     // Assign to window to ensure global availability
@@ -348,7 +414,7 @@ templ SimilarNamesList(props SimilarNamesProps) {
 					hx-get="/similar-names" hx-target="#similar-names-list-section"
 					hx-swap="innerHTML" hx-trigger="change"
 					hx-indicator="#table-loader"
-					hx-vals='js:{"section": "table", "name": (document.getElementById("name") ? document.getElementById("name").value : ""), "day": (document.getElementById("day") ? document.getElementById("day").value : ""), "auspicious": document.getElementById("auspicious-toggle").checked, "disable_klakini": document.getElementById("disable-klakini-toggle").checked, "disable_klakini_top4": document.getElementById("disable-klakini-top4-toggle") ? document.getElementById("disable-klakini-top4-toggle").checked : false, "show_top4": document.getElementById("show-top4-toggle") ? document.getElementById("show-top4-toggle").checked : false}'
+					hx-vals='js:{"section": "table", "name": (document.getElementById("name") ? document.getElementById("name").value : ""), "day": (document.getElementById("day") ? document.getElementById("day").value : ""), "auspicious": document.getElementById("auspicious-toggle").checked, "disable_klakini": !document.getElementById("disable-klakini-toggle").checked, "disable_klakini_top4": document.getElementById("disable-klakini-top4-toggle") ? !document.getElementById("disable-klakini-top4-toggle").checked : false, "show_top4": document.getElementById("show-top4-toggle") ? document.getElementById("show-top4-toggle").checked : false}'
 				>
 					<div class="toggle-item">
 						<span class="toggle-label toggle-label-auspicious">ชื่อดีเท่านั้น</span>
@@ -363,13 +429,13 @@ templ SimilarNamesList(props SimilarNamesProps) {
 					</div>
 	
 					<div class="toggle-item">
-						<span class="toggle-label toggle-label-klakini"><span>ไม่รวม</span>ชื่อกาลกิณี</span>
+						<span class="toggle-label toggle-label-klakini">แสดง<span style="color: #ff0000;">กาลกิณี</span></span>
 						<label class="toggle-switch toggle-label-scale">
 							<input type="checkbox" id="disable-klakini-toggle" name="disable_klakini"
-								if props.DisableKlakini {
+								if !props.DisableKlakini {
 									checked
 								}
-								onchange="document.getElementById('main-disable-klakini').value = this.checked"/>
+								onchange="document.getElementById('main-disable-klakini').value = !this.checked"/>
 							<span class="slider"></span>
 						</label>
 					</div>
@@ -396,6 +462,11 @@ templ SimilarNamesList(props SimilarNamesProps) {
                                 { templ.Attributes{"onclick": "selectName('" + name.ThName + "')" }... } title="คลิกเพื่อวิเคราะห์ชื่อนี้">
 								<td class="td-left-padded">
 									<div class={ "name-cell", templ.KV("name-top-tier", name.IsTopTier) }>
+                                        if name.IsTopTier {
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#FFD700" stroke="#B8860B" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 4px; filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.4));">
+                                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                            </svg>
+                                        }
 										for _, dc := range name.DisplayNameHTML {
 											if dc.IsBad {
 												<span class="klakini-char">{ dc.Char }</span>
@@ -423,9 +494,6 @@ templ SimilarNamesList(props SimilarNamesProps) {
 								</td>
 								<td class="text-center-middle">
                                     <div class="flex-col-center">
-                                        if name.IsTopTier {
-                                            <span class="text-small-star">⭐</span>
-                                        }
 									    <span class={ "score-badge", templ.KV("score-bad", name.TotalScore < 0), templ.KV("score-good", name.TotalScore >= 0) }>
 										if name.TotalScore > 0 {
 											+{ fmt.Sprintf("%d", name.TotalScore) }
@@ -455,7 +523,7 @@ templ SimilarNamesList(props SimilarNamesProps) {
 										   hx-target="#upgrade-modal-container" 
 										   hx-swap="innerHTML"
 										   onclick="event.preventDefault(); var el = document.getElementById('upgrade-modal-container'); if(!el){ el = document.createElement('div'); el.id = 'upgrade-modal-container'; el.className = 'modal-overlay'; el.style.display = 'none'; el.style.zIndex='9999'; document.body.appendChild(el); } el.style.display='flex'"
-										   class="vip-upgrade-btn">สมัครสมาชิกเพื่อดูทั้งหมด</a>
+										   class="vip-upgrade-btn">ดูรายละเอียดเพิ่มเติม</a>
 									</div>
 								</td>
 							</tr>
@@ -562,7 +630,9 @@ templ BestNameCard(name domain.SimilarNameResult, rank int, isPremium bool) {
 		<div class="card-name-container">
 			<div class={ "card-name-main", templ.KV("card-name-premium", isPremium), templ.KV("card-name-standard", !isPremium) }>
 				if name.IsTopTier {
-					<span class="card-star-icon">⭐</span>
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#FFD700" stroke="#B8860B" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 4px; filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.4));">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
 				}
 				<span>
 					for _, dc := range name.DisplayNameHTML {
@@ -611,6 +681,11 @@ templ BestNameCard(name domain.SimilarNameResult, rank int, isPremium bool) {
             </div>
 
 
+            <!-- Analysis Action Button -->
+            <div style="margin-top: 0.8rem; background: #fff9db; border-radius: 50px; padding: 6px 16px; display: inline-flex; align-items: center; gap: 8px; color: #534a1d; font-size: 1.1rem; font-weight: 800; border: none; align-self: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg>
+                วิเคราะห์
+            </div>
 		</div>
 	</div>
 }

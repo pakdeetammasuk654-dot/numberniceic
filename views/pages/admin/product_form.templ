@@ -1,0 +1,117 @@
+package admin
+
+import (
+	"fmt"
+	"numberniceic/internal/core/domain"
+)
+
+templ ProductForm(isEdit bool, product *domain.Product) {
+	<div style="max-width: 800px; margin: 0 auto;">
+		<div style="margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
+			<a href="/admin/products" class="link-button">&larr; ย้อนกลับ</a>
+			<h1 style="font-family: 'Kanit', sans-serif; margin: 0;">
+				if isEdit {
+					แก้ไขสินค้า
+				} else {
+					เพิ่มสินค้าใหม่
+				}
+			</h1>
+		</div>
+
+		<form 
+			if isEdit {
+				action={ templ.SafeURL(fmt.Sprintf("/admin/products/edit/%d", product.ID)) }
+			} else {
+				action="/admin/products/create"
+			}
+			method="POST" 
+			enctype="multipart/form-data"
+			style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);"
+		>
+			<div class="form-group" style="margin-bottom: 1.5rem;">
+				<label style="display: block; margin-bottom: 0.5rem; font-weight: bold; color: #4a5568;">รหัสสินค้า (SKU / Code) <span style="color:red">*</span></label>
+				<input type="text" name="code" required 
+					if isEdit {
+						value={ product.Code }
+					}
+					placeholder="ex. coin_002"
+					style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Kanit', sans-serif;"
+				/>
+			</div>
+
+			<div class="form-group" style="margin-bottom: 1.5rem;">
+				<label style="display: block; margin-bottom: 0.5rem; font-weight: bold; color: #4a5568;">ชื่อสินค้า <span style="color:red">*</span></label>
+				<input type="text" name="name" required 
+					if isEdit {
+						value={ product.Name }
+					}
+					placeholder="ชื่อสินค้าที่แสดงให้ลูกค้าเห็น"
+					style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Kanit', sans-serif;"
+				/>
+			</div>
+
+			<div class="form-group" style="margin-bottom: 1.5rem;">
+				<label style="display: block; margin-bottom: 0.5rem; font-weight: bold; color: #4a5568;">รายละเอียดสินค้า</label>
+				<textarea name="description" rows="4" 
+					style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Kanit', sans-serif;"
+				>
+					if isEdit {
+						{ product.Description }
+					}
+				</textarea>
+			</div>
+
+			<div class="form-group" style="margin-bottom: 1.5rem;">
+				<label style="display: block; margin-bottom: 0.5rem; font-weight: bold; color: #4a5568;">ราคา (บาท) <span style="color:red">*</span></label>
+				<input type="number" name="price" required min="0"
+					if isEdit {
+						value={ fmt.Sprintf("%d", product.Price) }
+					}
+					style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Kanit', sans-serif;"
+				/>
+			</div>
+
+			<div class="form-group" style="margin-bottom: 1.5rem;">
+				<label style="display: block; margin-bottom: 0.5rem; font-weight: bold; color: #4a5568;">รูปภาพสินค้า</label>
+				if isEdit && product.ImagePath != "" {
+					<div style="margin-bottom: 1rem;">
+						<p style="margin-bottom: 0.5rem; font-size: 0.9rem; color: #666;">รูปภาพปัจจุบัน:</p>
+						<img src={ product.ImagePath } style="max-width: 200px; border-radius: 8px; border: 1px solid #eee;" />
+						<input type="hidden" name="current_image_path" value={ product.ImagePath } />
+					</div>
+				}
+				<input type="file" name="image_file" accept="image/*" 
+					style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 8px;"
+				/>
+				<p style="font-size: 0.85rem; color: #999; margin-top: 0.25rem;">อัปโหลดรูปใหม่เพื่อแทนที่ (รองรับ .jpg, .png)</p>
+			</div>
+			
+
+
+			<div class="form-group" style="margin-bottom: 2rem;">
+				<label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+					<input type="checkbox" name="is_active" 
+						if isEdit && product.IsActive {
+							checked
+						} else if !isEdit {
+							checked 
+						}
+						style="width: 18px; height: 18px;"
+					/>
+					<span style="color: #4a5568; font-weight: 500;">เปิดใช้งานสินค้านี้ (Active)</span>
+				</label>
+			</div>
+
+			<div style="display: flex; justify-content: flex-end; gap: 1rem;">
+				<a href="/admin/products" style="padding: 0.75rem 1.5rem; color: #4a5568; text-decoration: none; font-weight: 500;">ยกเลิก</a>
+				<button type="submit" style="background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #4a3b00; border: none; padding: 0.75rem 2rem; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+					if isEdit {
+						บันทึกการแก้ไข
+					} else {
+						เพิ่มสินค้า
+					}
+				</button>
+			</div>
+		</form>
+	</div>
+}

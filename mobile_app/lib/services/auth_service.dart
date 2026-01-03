@@ -7,6 +7,7 @@ class AuthService {
   static const String keyToken = 'jwt_token';
   static const String keyUsername = 'auth_username';
   static const String keyIsVip = 'auth_is_vip';
+  static const String keyVipExpiryText = 'auth_vip_expiry_text';
 
   // Login
   static Future<Map<String, dynamic>> login(String username, String password) async {
@@ -68,6 +69,7 @@ class AuthService {
     await prefs.remove(keyToken);
     await prefs.remove(keyUsername);
     await prefs.remove(keyIsVip);
+    await prefs.remove(keyVipExpiryText);
   }
 
   // Check if logged in
@@ -82,6 +84,7 @@ class AuthService {
     return {
       'username': prefs.getString(keyUsername),
       'is_vip': prefs.getBool(keyIsVip) ?? false,
+      'vip_expiry_text': prefs.getString(keyVipExpiryText),
     };
   }
 
@@ -102,6 +105,9 @@ class AuthService {
     }
     if (data['is_vip'] != null) {
       await prefs.setBool(keyIsVip, data['is_vip']);
+    }
+    if (data['vip_expiry_text'] != null) {
+      await prefs.setString(keyVipExpiryText, data['vip_expiry_text']);
     }
   }
 }

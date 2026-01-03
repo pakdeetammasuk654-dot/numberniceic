@@ -1,0 +1,137 @@
+/* Category Breakdown Chart (Nested Donut) Styles */
+.category-breakdown-container {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f0f0f0;
+}
+
+.nested-donut-layout {
+    display: flex;
+    gap: 3rem;
+    /* เพิ่มระยะห่าง */
+    align-items: flex-start;
+    /* จัดชิดบน */
+    justify-content: center;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+    /* รองรับหน้าจอเล็กแบบสวยงาม */
+}
+
+.nested-donut-wrapper {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.nested-donut-chart {
+    width: 260px;
+    /* ปรับขนาดกราฟเล็กลงนิดนึงเพื่อให้สมดุล */
+    height: 260px;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.08));
+}
+
+/* ... existing code ... */
+
+.nested-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    flex: 1;
+    min-width: 250px;
+    max-width: 350px;
+}
+
+.legend-section {
+    background: transparent;
+    /* เอาพื้นหลังออกเพื่อความคลีน */
+    padding: 0;
+    border-radius: 0;
+}
+
+.legend-title {
+    font-family: 'Kanit', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 0.5rem 0;
+    padding-bottom: 0.3rem;
+    border-bottom: 2px solid #eee;
+}
+
+.breakdown-summary {
+    background: #fcfcfc;
+    padding: 1.2rem;
+    border-radius: 16px;
+    border: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* จัดให้ชื่ออยู่ซ้าย ตัวเลขอยู่ขวา */
+    font-family: 'Kanit', sans-serif;
+    font-size: 0.95rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px dashed #f0f0f0;
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.summary-cat {
+    font-weight: 500;
+    color: #444;
+}
+
+.summary-stats {
+    display: flex;
+    gap: 12px;
+}
+
+.summary-good,
+.summary-bad {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.summary-good {
+    color: #2E7D32;
+}
+
+.summary-bad {
+    color: #C62828;
+}
+
+@media (max-width: 768px) {
+    .nested-donut-layout {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .nested-donut-chart {
+        width: 240px;
+        height: 240px;
+    }
+
+    .nested-legend {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .donut-center-number {
+        font-size: 24px;
+    }
+}

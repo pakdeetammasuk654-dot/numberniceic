@@ -4,10 +4,102 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/article.dart';
 import '../models/sample_name.dart';
+import '../models/product_model.dart';
+import '../models/order_model.dart';
+import '../models/shipping_address_model.dart';
 import 'auth_service.dart';
 
 class ApiService {
-  static String get baseUrl => 'http://localhost:3000';
+  static final ValueNotifier<int> dashboardRefreshSignal = ValueNotifier<int>(0);
+
+  static String get baseUrl {
+    if (kIsWeb) return 'http://localhost:3000';
+    
+    // Domain จริง (Production) - Punycode Encoded for 'www.ชื่อดี.com'
+    const String productionDomain = 'www.xn--b3cu8e7ah6h.com';
+    
+    // IP สำหรับ Local Development
+    const String localIp = '192.168.1.38'; // แก้เป็น IP Mac ของคุณ
+    
+    // เลือกโหมด: หากเป็น kReleaseMode (ตอน Build App จริง) ให้ใช้ Domain
+    // หากเป็น Debug Mode ให้ใช้ IP หรือ localhost
+    // เลือกโหมด: หากเป็น kReleaseMode (ตอน Build App จริง) ให้ใช้ Domain
+    // หากเป็น Debug Mode ให้ใช้ IP หรือ localhost
+    bool useProduction = true; // Changed to true to use production server
+
+    if (useProduction || kReleaseMode) {
+      return 'https://$productionDomain';
+    }
+
+    if (Platform.isAndroid) {
+      // 10.0.2.2 คือ IP ที่ Android Emulator ใช้เรียกเครื่อง Host (localhost)
+      return 'http://10.0.2.2:3000';
+    }
+    
+    return 'http://localhost:3000';
+  }
+
+  // --- Shipping Address API ---
+
+  static Future<List<ShippingAddress>> getShippingAddresses() async {
+    final url = Uri.parse('$baseUrl/api/shipping');
+    try {
+      final token = await AuthService.getToken();
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data == null || data is! List) return [];
+        return data.map((item) => ShippingAddress.fromJson(item)).toList();
+      } else {
+        throw Exception('Failed to load addresses');
+      }
+    } catch (e) {
+      throw Exception('Connection error: $e');
+    }
+  }
+
+  static Future<bool> saveShippingAddress(ShippingAddress address) async {
+    final url = Uri.parse('$baseUrl/api/shipping');
+    try {
+      final token = await AuthService.getToken();
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode(address.toJson()),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<bool> deleteShippingAddress(int id) async {
+    final url = Uri.parse('$baseUrl/api/shipping/$id');
+    try {
+      final token = await AuthService.getToken();
+      final response = await http.delete(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
 
   static Future<List<Article>> getArticles() async {
     final url = Uri.parse('$baseUrl/api/articles');
@@ -89,13 +181,22 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> analyzeName(String name, String day, {bool auspicious = false, bool disableKlakini = false}) async {
+  static Future<Map<String, dynamic>> analyzeName(
+    String name,
+    String day, {
+    bool auspicious = false,
+    bool disableKlakini = false,
+    bool disableKlakiniTop4 = false,
+    String? section,
+  }) async {
     final queryParams = {
       'name': name,
       'day': day,
       'auspicious': auspicious.toString(),
       'disable_klakini': disableKlakini.toString(),
+      'disable_klakini_top4': disableKlakiniTop4.toString(),
     };
+    if (section != null) queryParams['section'] = section;
     final url = Uri.parse('$baseUrl/api/analyze').replace(queryParameters: queryParams);
     debugPrint('🚀 API REQUEST: GET $url');
     
@@ -120,14 +221,14 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> analyzeLinguistically(String name) async {
-    final url = Uri.parse('$baseUrl/api/analyze-linguistically?name=$name');
+    final url = Uri.parse('$baseUrl/api/analyze-linguistically').replace(queryParameters: {'name': name});
     debugPrint('🚀 API REQUEST: GET $url');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
-        throw Exception('Failed to analyze name linguistically');
+        throw Exception('Failed to analyze name linguistically: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       throw Exception('Connection error: $e');
@@ -279,4 +380,163 @@ class ApiService {
       throw Exception('Connection error: $e');
     }
   }
+
+  static Future<String> redeemCode(String code) async {
+    final url = Uri.parse('$baseUrl/api/redeem-code');
+    try {
+      final token = await AuthService.getToken();
+      
+      // Allow attempt without token if app logic requires, but ideally should be protected
+      final Map<String, String> headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token != null) headers['Authorization'] = 'Bearer $token';
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode({'code': code}),
+      );
+
+      final data = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return data['message'] ?? 'ใช้งานรหัสสำเร็จ';
+      } else {
+        throw Exception(data['error'] ?? 'ใช้งานรหัสไม่สำเร็จ');
+      }
+    } catch (e) {
+        if (e is Exception) rethrow;
+        throw Exception(e.toString());
+    }
+  }
+
+  static Future<List<ProductModel>> getProducts() async {
+    final url = Uri.parse('$baseUrl/api/shop/products');
+    debugPrint('🚀 API REQUEST: GET $url');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => ProductModel.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load products');
+      }
+    } catch (e) {
+      throw Exception('Connection error: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> buyProduct(String productName) async {
+    final url = Uri.parse('$baseUrl/api/shop/order');
+    try {
+      final token = await AuthService.getToken();
+      if (token == null) throw Exception('กรุณาเข้าสู่ระบบก่อนทำการสั่งซื้อ');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'product_name': productName}),
+      );
+
+      final data = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        // Returns {success: true, order_id: 123, ref_no: "123456789012", amount: 1, qr_code_url: "data:image/png;base64,..."}
+        return data;
+      } else {
+        throw Exception(data['error'] ?? 'สั่งซื้อไม่สำเร็จ');
+      }
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception(e.toString());
+    }
+  }
+
+  // Check payment status
+  static Future<Map<String, dynamic>> checkShopPaymentStatus(String refNo) async {
+    final url = Uri.parse('$baseUrl/api/shop/status/$refNo');
+    try {
+      final token = await AuthService.getToken();
+      if (token == null) throw Exception('กรุณาเข้าสู่ระบบ');
+
+      final response = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('ไม่สามารถตรวจสอบสถานะได้');
+      }
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception(e.toString());
+    }
+  }
+  // --- Order & Shop API ---
+
+  static Future<List<OrderModel>> getMyOrders() async {
+    final url = Uri.parse('$baseUrl/api/shop/my-orders');
+    debugPrint('Calling API: $url');
+    try {
+      final token = await AuthService.getToken();
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final contentType = response.headers['content-type'] ?? '';
+        if (!contentType.contains('application/json') && !response.body.trim().startsWith('{')) {
+           throw Exception('Unexpected response (200 OK) but not JSON. Type: $contentType. Body starts with: ${response.body.substring(0, 50)}...');
+        }
+        final data = json.decode(response.body);
+        final List<dynamic> ordersJson = data['orders'] ?? [];
+        return ordersJson.map((json) => OrderModel.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load orders');
+      }
+    } catch (e) {
+      throw Exception('Connection error: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getPaymentInfo(String refNo) async {
+    final url = Uri.parse('$baseUrl/api/shop/payment-info/$refNo');
+    try {
+      final token = await AuthService.getToken();
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        if (!response.body.trim().startsWith('{') && !response.body.trim().startsWith('[')) {
+           throw Exception('Unexpected response format. Expected JSON but got: ${response.body.substring(0, 50)}...');
+        }
+        return json.decode(response.body);
+      } else {
+        final errorData = json.decode(response.body);
+        final errorMessage = errorData['error'] ?? 'Failed to load payment info';
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+       if (e.toString().contains('FormatException') || e.toString().contains('Unexpected response')) {
+         throw Exception('Server returned invalid data. Please try again.');
+       }
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
 }
+

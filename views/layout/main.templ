@@ -17,6 +17,7 @@ templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage s
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="google-site-verification" content="AHPSlfwkrw1mcmvdhXPJGZLtaZcxxF9brzaKo_v0q-k" />
 			
 			<!-- Global site tag (gtag.js) - Google Analytics -->
 			<script async src="https://www.googletagmanager.com/gtag/js?id=G-3GZPS4KBX2"></script>
@@ -59,23 +60,12 @@ templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage s
 			<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&family=Kanit:wght@400;700&display=swap" rel="stylesheet"/>
 			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
 			<!-- Corrected CSS Path -->
-			<link rel="stylesheet" href="/css/style-v4.css?v=11"/>
+			<link rel="stylesheet" href="/css/style-v4.css?v=12"/>
 			<!-- Critical CSS Injection for Best Names Layout -->
-			<link rel="stylesheet" href="/css/analysis-v5.css?v=42"/>
+			<link rel="stylesheet" href="/css/analysis-v5.css?v=46"/>
+			<link rel="stylesheet" href="/css/category-breakdown.css?v=2"/>
 			<style>
-				/* Critical CSS Injection for Best Names Layout */
-				.best-names-grid-layout { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 0.8rem !important; width: 100% !important; justify-content: start !important; }
-				.best-names-grid-layout > div { width: 100% !important; min-width: 0 !important; max-width: none !important; }
-				.best-name-card-premium, .best-name-card-standard { display: flex !important; flex-direction: column !important; align-items: center !important; padding: 1rem !important; border-radius: 12px !important; position: relative !important; height: 100% !important; background: white !important; }
-				.best-name-card-premium { box-shadow: 0 4px 6px rgba(0,0,0,0.05), 0 0 0 2px #FFD700 !important; }
-				.best-name-card-standard { border: 1px solid #eee !important; box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important; }
-				.card-pair-circle { display: flex !important; width: 28px !important; height: 28px !important; border-radius: 50% !important; align-items: center !important; justify-content: center !important; color: white !important; font-weight: bold; }
 				.clickable-row { cursor: pointer; }
-			    .best-name-badge { position: absolute !important; left: auto !important; transform: none !important; padding: 4px 12px !important; border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; border-top-right-radius: 12px !important; font-size: 0.8rem !important; font-weight: bold; white-space: nowrap; z-index: 2; }
-			    .best-name-card-premium .best-name-badge { top: -2px !important; right: -2px !important; }
-			    .best-name-card-standard .best-name-badge { top: -1px !important; right: -1px !important; }
-			    .badge-premium { background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #4a3b00; box-shadow: -2px 2px 4px rgba(0,0,0,0.1); }
-			    .badge-standard { background: #f1f1f1 !important; color: #888 !important; border: none !important; box-shadow: none !important; }
 			    
 			    /* Global Premium Gold Text */
 			    .premium-gold-text {
@@ -181,6 +171,60 @@ templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage s
                     }).showToast();
                 });
             </script>
+			<!-- Floating Shop Button -->
+			<a href="/shop" id="floating-shop-btn" title="ไปที่ร้านค้ามงคล">
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+				<span class="fab-text">ร้านค้า</span>
+			</a>
+
+			<style>
+				#floating-shop-btn {
+					position: fixed;
+					bottom: 2rem;
+					right: 1.5rem;
+					background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
+					color: #4a3b00;
+					width: auto;
+					padding: 0.75rem 1.25rem;
+					height: auto;
+					border-radius: 50px;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					box-shadow: 0 4px 15px rgba(253, 185, 49, 0.4);
+					text-decoration: none;
+					z-index: 999;
+					transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+					gap: 0.5rem;
+					font-family: 'Kanit', sans-serif;
+					font-weight: bold;
+				}
+				#floating-shop-btn:hover {
+					transform: scale(1.1) translateY(-5px);
+					box-shadow: 0 8px 25px rgba(253, 185, 49, 0.6);
+				}
+				#floating-shop-btn svg {
+					width: 20px;
+					height: 20px;
+				}
+				@media (max-width: 600px) {
+					#floating-shop-btn {
+						bottom: 1.5rem;
+						right: 1rem;
+						padding: 0.6rem 1rem;
+						font-size: 0.9rem;
+					}
+					.fab-text {
+						display: none;
+					}
+					#floating-shop-btn {
+						width: 50px;
+						height: 50px;
+						padding: 0;
+						border-radius: 50%;
+					}
+				}
+			</style>
 		</body>
 	</html>
 }

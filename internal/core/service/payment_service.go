@@ -1,19 +1,25 @@
 package service
 
 import (
+	"fmt"
+	"math/rand"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
+
+	"github.com/google/uuid"
 )
 
 type PaymentService struct {
 	orderRepo  ports.OrderRepository
 	memberRepo ports.MemberRepository // To upgrade user status
+	promoRepo  ports.PromotionalCodeRepository
 }
 
-func NewPaymentService(orderRepo ports.OrderRepository, memberRepo ports.MemberRepository) *PaymentService {
+func NewPaymentService(orderRepo ports.OrderRepository, memberRepo ports.MemberRepository, promoRepo ports.PromotionalCodeRepository) *PaymentService {
 	return &PaymentService{
 		orderRepo:  orderRepo,
 		memberRepo: memberRepo,
+		promoRepo:  promoRepo,
 	}
 }
 
@@ -34,8 +40,8 @@ func (s *PaymentService) ProcessPaymentSuccess(refNo string, amountPaid float64)
 		return err
 	}
 
-	// 2. Validate Amount
-	// In production, check if amountPaid >= order.Amount
+	// 2. Validate Amount (Optional Check)
+	// if amountPaid < order.Amount { ... }
 
 	// 3. Update Order Status
 	err = s.orderRepo.UpdateStatus(refNo, "paid")
@@ -43,9 +49,25 @@ func (s *PaymentService) ProcessPaymentSuccess(refNo string, amountPaid float64)
 		return err
 	}
 
-	// 4. Grant VIP Status if UserID is present
+	// 4. If Shop Order (has ProductName), Generate VIP Code
+	if order.ProductName != "" {
+		vipCode := fmt.Sprintf("VIP-%s-%d", uuid.New().String()[0:4], rand.Intn(9999))
+		ownerID := 0
+		if order.UserID != nil {
+			ownerID = *order.UserID
+		}
+
+		// Create Purchase (Save Code)
+		// Assuming ports.PromotionalCodeRepository interface matches Postgres implementation
+		// We might need to confirm interface methods. Use CreatePurchase.
+		err = s.promoRepo.CreatePurchase(vipCode, ownerID, order.ProductName)
+		if err != nil {
+			return err
+		}
+	}
+
+	// 5. Grant VIP Status if UserID is present (Legacy & Shop)
 	if order.UserID != nil {
-		// Use MemberRepository to set VIP status
 		err = s.memberRepo.SetVIP(*order.UserID, true)
 		if err != nil {
 			return err
