@@ -1,7 +1,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
+import '../widgets/lucky_number_card.dart';
+import '../screens/number_analysis_page.dart'; // For navigating to analyze the number
 
 class CategoryNestedDonut extends StatefulWidget {
   final Map<String, dynamic> categoryBreakdown;
@@ -17,9 +20,25 @@ class CategoryNestedDonut extends StatefulWidget {
   State<CategoryNestedDonut> createState() => _CategoryNestedDonutState();
 }
 
-class _CategoryNestedDonutState extends State<CategoryNestedDonut> {
+class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerProviderStateMixin {
   // Track which categories are currently "Enhanced" (showing lucky number)
   final Set<String> _enhancedCategories = {};
+  AnimationController? _textShineController;
+
+  @override
+  void initState() {
+    super.initState();
+    _textShineController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _textShineController?.dispose();
+    super.dispose();
+  }
 
   void _onEnhanceChange(String category, bool isEnhanced) {
     setState(() {
@@ -84,6 +103,7 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> {
               totalPairs: widget.totalPairs,
               index: idx,
               onEnhanceChange: (isEnhanced) => _onEnhanceChange(cat.name, isEnhanced),
+              textShineController: _textShineController!,
             );
           }).toList(),
         ),
@@ -211,7 +231,7 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> {
                  ),
                  if (isEnhanced) ...[
                    const SizedBox(width: 4),
-                   const Text('✨', style: TextStyle(fontSize: 16)),
+                   const Icon(Icons.auto_awesome, color: Color(0xFF8B4513), size: 16),
                  ]
               ],
             ),
@@ -235,6 +255,7 @@ class CategoryLegendRow extends StatefulWidget {
   final int totalPairs;
   final int index;
   final Function(bool) onEnhanceChange;
+  final AnimationController textShineController;
 
   const CategoryLegendRow({
     super.key, 
@@ -242,6 +263,7 @@ class CategoryLegendRow extends StatefulWidget {
     required this.totalPairs, 
     required this.index,
     required this.onEnhanceChange,
+    required this.textShineController,
   });
 
   @override
@@ -450,13 +472,15 @@ class _CategoryLegendRowState extends State<CategoryLegendRow> {
                            const Icon(Icons.stars, color: Color(0xFF8B4513), size: 18),
                            const SizedBox(width: 8),
                            Text(
-                             'เสริมเบอร์ 100% ✨',
+                             'เสริมเบอร์ 100% ',
                              style: GoogleFonts.kanit(
                                fontSize: 14, 
                                fontWeight: FontWeight.bold,
                                color: const Color(0xFF8B4513)
                              ),
-                           )
+                           ),
+                           const Icon(Icons.auto_awesome, color: Color(0xFF8B4513), size: 16),
+
                          ],
                        ),
                      ),
@@ -469,100 +493,43 @@ class _CategoryLegendRowState extends State<CategoryLegendRow> {
   }
 
   Widget _buildLuckyCard(Map<String, dynamic> data) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.3)), // Subtle gold border
-        boxShadow: [
-          BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.15), blurRadius: 12, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Gold Gradient Phone Number with Shimmer Effect
-          GoldShimmerText(
-            text: data['number']?.toString() ?? '',
-            fontSize: 34,
-          ),
-          
-          if (data['sum'] != null && data['sum'].toString().isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              'ผลรวม: ${data['sum']}',
-              style: GoogleFonts.kanit(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF64748B),
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: LuckyNumberCard(
+        phoneNumber: data['number']?.toString() ?? '',
+        sum: int.tryParse(data['sum']?.toString() ?? '0') ?? 0,
+        isVip: true, // Show VIP based on design request
+        keywords: List<String>.from(data['keywords'] ?? []),
+        buyButtonLabel: 'ซื้อเบอร์',
+        analyzeButtonLabel: 'วิเคราะห์',
+        analyzeButtonColor: const Color(0xFF2962FF), // Blue
+        analyzeButtonBorderColor: const Color(0xFFBBDEFB),
+        onBuy: () => _showPurchaseModal(data['number']?.toString() ?? ''),
+        onAnalyze: () {
+            // Navigate to Number Analysis Page
+            // We can pass the number to auto-analyze
+            // Assuming NumberAnalysisPage has a constructor or we pass arguments
+            // Actually NumberAnalysisPage doesn't have arguments in the checked code (Step 105),
+            // but we can pass it if we update NumberAnalysisPage or just navigate and let user type?
+            // Wait, in Step 105, NumberAnalysisPage constructor was `const NumberAnalysisPage({super.key});`
+            // But I can update it to accept initial number or use a shared state.
+            // For now, I will just navigate. Ideally I should pass the number.
+            // I'll update NumberAnalysisPage in next step if needed, or pass it via constructor if I missed it.
+            // Actually, in DashboardPage (Step 156), I passed `AnalyzerPage(initialName: ..., initialDay: ...)`.
+            // But checking NumberAnalysisPage (Step 105), it handles PHONE numbers.
+            // I'll assume I can construct it or just push it. 
+            // In ShopPage (Step 80 view), onAnalyze was just a Toast. 
+            // I will update NumberAnalysisPage to accept 'initialNumber' later if needed.
+            // For now, let's navigate. 
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const NumberAnalysisPage(),
+                settings: RouteSettings(arguments: data['number']?.toString()), // Pass via settings if constructor not ready
               ),
-            ),
-          ],
-          
-          if (data['keywords'] != null && (data['keywords'] as List).isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [const Color(0xFFFFF9E5), const Color(0xFFFEF3C7)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.3)),
-              ),
-              child: ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                  colors: [Color(0xFFB45309), Color(0xFFD97706)], // Amber 700 to 600
-                ).createShader(bounds),
-                child: Text(
-                  (data['keywords'] as List).join(' • '),
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.kanit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () => _showPurchaseModal(data['number']?.toString() ?? ''),
-                icon: const Icon(Icons.shopping_cart, size: 16),
-                label: const Text('ซื้อเบอร์'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E7D32),
-                  foregroundColor: Colors.white,
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-              ),
-              const SizedBox(width: 12),
-              OutlinedButton(
-                onPressed: _handleDelete,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red[700],
-                  side: BorderSide(color: Colors.red[200]!.withOpacity(0.5)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  backgroundColor: Colors.white,
-                ),
-                child: const Text('ลบ'),
-              ),
-            ],
-          ),
-        ],
+            );
+        },
+        onClose: _handleDelete,
       ),
     );
   }
@@ -570,152 +537,151 @@ class _CategoryLegendRowState extends State<CategoryLegendRow> {
   void _showPurchaseModal(String phoneNumber) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.white, Color(0xFFF9FDF9)],
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Icon
-                Container(
-                  width: 70, height: 70,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5E9),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
-                  ),
-                  transform: Matrix4.rotationZ(-10 * 3.14159 / 180), // -10 deg
-                  child: const Center(
-                    child: Icon(Icons.shopping_cart_checkout, color: Color(0xFF2E7D32), size: 34),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                // Title
-                Text(
-                  'สั่งซื้อเบอร์มงคล',
-                  style: GoogleFonts.kanit(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1B5E20)),
-                ),
-
-                if (phoneNumber.isNotEmpty) ...[
-                   const SizedBox(height: 16),
-                   GoldShimmerText(text: phoneNumber, fontSize: 36),
-                   const SizedBox(height: 8),
-                ],
-
-                const SizedBox(height: 12),
-                
-                // Description
-                Text(
-                  'ติดต่อสอบถามหรือสั่งซื้อกับคุณทญา\nทาง LINE ได้โดยตรงผ่าน QR Code นี้ครับ',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[700], height: 1.5),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.green.withOpacity(0.1)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.phone_in_talk, size: 20, color: Color(0xFF1B5E20)),
-                      const SizedBox(width: 12),
-                      SelectableText(
-                        '093-654-4442',
-                        style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1B5E20), letterSpacing: 0.5),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                // QR Code Image
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 30, offset: const Offset(0, 10))],
-                    border: Border.all(color: Colors.black.withOpacity(0.03)),
-                  ),
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Image.network(
-                        '${ApiService.baseUrl}/images/line_qr_taya.jpg',
-                        width: 220,
-                        height: 220,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                           return Container(
-                             width: 220, height: 220,
-                             color: Colors.grey[100],
-                             child: const Center(child: Text('ไม่สามารถโหลด QR Code ได้', textAlign: TextAlign.center)),
-                           );
-                        },
-                      ),
-                      // Line Icon Badge
-                      Positioned(
-                        bottom: -10,
-                        right: -10,
-                        child: Container(
-                          width: 40, height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF06C755),
-                            shape: BoxShape.circle,
-                            boxShadow: [BoxShadow(color: const Color(0xFF06C755).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
-                          ),
-                          child: const Center(
-                             child: Icon(Icons.chat_bubble, color: Colors.white, size: 20),
+      builder: (ctx) => AlertDialog(
+        title: Text("สนใจเบอร์นี้?", style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
+        content: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // Large Scattered Watermarks
+            Positioned.fill(
+              child: Opacity(
+                opacity: 0.05,
+                child: Transform.rotate(
+                  angle: -0.5,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(3, (i) => 
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Text(
+                          "ชื่อดี.com",
+                          style: GoogleFonts.kanit(
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Close Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1B5E20),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      elevation: 4,
-                      shadowColor: const Color(0xFF1B5E20).withOpacity(0.4),
+                      )
                     ),
-                    child: Text('ตกลง', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'ขอบคุณที่ไว้วางใจให้คุณทญาดูแลครับ',
-                  style: GoogleFonts.kanit(fontSize: 10, color: Colors.grey[500]),
-                ),
-              ],
+              ),
             ),
+
+            // Actual Content
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 1. Golden Shining Phone Number inside Dialog
+                AnimatedBuilder(
+                  animation: widget.textShineController,
+                  builder: (context, child) {
+                    return ShaderMask(
+                      shaderCallback: (bounds) {
+                        return LinearGradient(
+                          colors: const [
+                            Color(0xFFAA771C), 
+                            Color(0xFFFCF6BA), 
+                            Color(0xFFFFFFFF), 
+                            Color(0xFFFCF6BA), 
+                            Color(0xFFAA771C), 
+                          ],
+                          stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+                          begin: Alignment(-2.0 + (widget.textShineController.value * 4), 0.0),
+                          end: Alignment(-0.5 + (widget.textShineController.value * 4), 0.0),
+                          tileMode: TileMode.clamp,
+                        ).createShader(bounds);
+                      },
+                      child: SelectableText(
+                        phoneNumber,
+                        style: GoogleFonts.kanit(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 1.5,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 10),
+                Text("ติดต่อซื้อเบอร์นี้ได้ที่", style: GoogleFonts.kanit(color: Colors.grey[700], fontSize: 14)),
+                const SizedBox(height: 15),
+
+                // 2. Line QR Code
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                      )
+                    ]
+                  ),
+                  child: Image.network(
+                    '${ApiService.baseUrl}/images/line_qr_taya.jpg',
+                    width: 150,
+                    height: 150,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_,__,___) => const Icon(Icons.qr_code, size: 100),
+                  ),
+                ),
+
+                const SizedBox(height: 15),
+                
+                // Line ID Section (Split into 2 lines)
+                Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.network(
+                          'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/LINE_logo.svg/480px-LINE_logo.svg.png',
+                          width: 20,
+                          height: 20,
+                          errorBuilder: (context, error, stackTrace) => 
+                            const Icon(Icons.chat_bubble, color: Color(0xFF06C755), size: 20),
+                        ),
+                        const SizedBox(width: 6),
+                        Text("Line ID: numberniceic", style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    Text("(คุณทญา)", style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[600])),
+                  ],
+                ),
+              ]
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text("ปิด", style: GoogleFonts.kanit(color: Colors.grey)),
           ),
-        );
-      },
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final url = Uri.parse('https://line.me/ti/p/~numberniceic');
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
+            child: Text("แอดไลน์", style: GoogleFonts.kanit(color: Colors.white)),
+          )
+        ],
+      )
     );
   }
 }

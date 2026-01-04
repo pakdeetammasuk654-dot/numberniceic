@@ -56,12 +56,12 @@ templ NumberAnalysis() {
     </style>
     <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div class="text-center">
-            <h1 class="text-3xl font-extrabold text-gray-900 sm:text-4xl" style="font-family: 'Kanit', sans-serif;">
-                วิเคราะห์เบอร์โทรศัพท์
-            </h1>
-            <p class="mt-4 max-w-2xl text-xl text-gray-500 mx-auto" style="font-family: 'Kanit', sans-serif;">
-                ตรวจสอบพลังตัวเลขเบอร์โทรศัพท์ เพื่อเสริมดวงชะตาและชีวิต
-            </p>
+                <h1 style="font-size: 3rem; font-weight: 900; color: #000; letter-spacing: -1px; margin-bottom: 0.5rem; line-height: 1.2;">
+                    วิเคราะห์เบอร์โทรศัพท์
+                </h1>
+                <p style="font-size: 1.125rem; color: #4B5563; font-weight: 300;">
+                    เบอร์โทรศัพท์ เลขศาสตร์ พลังเงา เปลี่ยนชีวิต
+                </p>
         </div>
 
 
@@ -117,26 +117,37 @@ templ NumberAnalysis() {
                     <div style="text-align: center; margin-bottom: 0; width: 100%; background: transparent; border: none; box-shadow: none;">
                         
                         <!-- 1. Perfect Number Layout -->
-                        <div id="perfect-layout" style="display: none; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 1.25rem; transition: all 0.7s ease; opacity: 0; transform: scale(0.95); background: transparent;">
-                             <div style="position: relative; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center;">
-                                  <!-- Premium Wreath Image (Even Smaller) -->
-                                  <img src="/images/golden_wheat_wreath.png" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;" alt="Golden Wreath"/>
-                                  
-                                  <!-- Center Content: The Best + Stars (More Compact) -->
-                                  <div style="position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: -3px;">
-                                       <span style="font-size: 26px; font-weight: 900; background: linear-gradient(to bottom, #FDE68A, #D97706, #92400E); -webkit-background-clip: text; background-clip: text; color: transparent; text-transform: uppercase; font-family: 'Kanit', sans-serif; letter-spacing: -0.5px;">The Best</span>
-                                       <div style="display: flex; gap: 2px; margin-top: 1px; align-items: center; justify-content: center;">
-                                            <span style="color: #F59E0B; font-size: 14px;">★</span>
-                                            <span style="color: #F59E0B; font-size: 14px;">★</span>
-                                            <span style="color: #F59E0B; font-size: 18px; transform: scale(1.1); position: relative; top: -1px;">★</span>
-                                            <span style="color: #F59E0B; font-size: 14px;">★</span>
-                                            <span style="color: #F59E0B; font-size: 14px;">★</span>
-                                       </div>
+                         <!-- 1. Perfect Number Layout (Restructured for Guaranteed Order) -->
+                         <div id="perfect-layout" style="display: none; width: 100%; max-width: 650px; margin: 0 auto 2rem auto; flex-direction: column; align-items: center; justify-content: center; transition: all 0.7s ease; opacity: 0; transform: scale(0.95); background: transparent;">
+                              
+                              <!-- PHONE NUMBER ON TOP -->
+                              <h2 id="golden-phone-number" class="perfect-number" style="font-size: 48px; font-weight: 800; font-family: monospace; margin-bottom: 10px; margin-top: 0; text-shadow: none;"></h2>
+
+                              <!-- WREATH BADGE BELOW -->
+                              <div style="display: flex; align-items: center; justify-content: center; width: 100%; position: relative;">
+                                  <!-- Left Wreath -->
+                                  <img src="/images/golden_laurel_right.png" style="height: 180px; width: auto; object-fit: contain; transform: scaleX(-1); margin-right: -40px;" alt="Left Wreath"/>
+
+                                  <!-- Center Info -->
+                                  <div style="display: flex; align-items: center; gap: 20px; z-index: 2; position: relative; padding: 0 10px;">
+                                      <div style="display: flex; flex-direction: column; align-items: center;">
+                                          <span id="badge-title" style="font-size: 38px; font-weight: 900; background: linear-gradient(to bottom, #FDE68A, #D97706, #92400E); -webkit-background-clip: text; background-clip: text; color: transparent; text-transform: uppercase; font-family: 'Kanit', sans-serif; letter-spacing: -0.5px; line-height: 1.0; text-align: center;">The Best</span>
+                                          <div style="display: flex; gap: 4px; margin-top: 8px; align-items: center; justify-content: center;">
+                                               <span style="color: #F59E0B; font-size: 20px;">★</span>
+                                               <span style="color: #F59E0B; font-size: 20px;">★</span>
+                                               <span style="color: #F59E0B; font-size: 28px; transform: scale(1.1); position: relative; top: -1px;">★</span>
+                                               <span style="color: #F59E0B; font-size: 20px;">★</span>
+                                               <span style="color: #F59E0B; font-size: 20px;">★</span>
+                                          </div>
+                                      </div>
+                                      
+                                      <button onclick="showBuyContact()" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; border: none; padding: 12px 28px; border-radius: 9999px; font-family: 'Kanit', sans-serif; font-weight: 700; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.05); font-size: 18px; transition: all 0.2s; white-space: nowrap; line-height: 1.2;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 15px 20px -3px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 10px 15px -3px rgba(16, 185, 129, 0.3)'">ซื้อเบอร์นี้</button>
                                   </div>
-                             </div>
-                             <!-- Golden Phone Number (Even Smaller) -->
-                             <h2 id="golden-phone-number" class="perfect-number" style="font-size: 36px; font-weight: 800; font-family: monospace; margin-top: -25px; position: relative; z-index: 5; text-shadow: none;"></h2>
-                        </div>
+
+                                  <!-- Right Wreath -->
+                                  <img src="/images/golden_laurel_right.png" style="height: 180px; width: auto; object-fit: contain; margin-left: -40px;" alt="Right Wreath"/>
+                              </div>
+                         </div>
 
                         <!-- 2. Normal Layout (Smaller) -->
                         <div id="normal-layout" style="display: block; width: 100%; text-align: center; background: transparent;">
@@ -240,7 +251,7 @@ templ NumberAnalysis() {
             }
 
             window.performNumberAnalysisV2 = function(phoneNumber) {
-                fetch(`/api/analyze-number?number=${phoneNumber}`)
+                fetch(`/api/number-analysis?number=${phoneNumber}`)
                 .then(response => response.json())
                 .then(data => {
                     const resultsDiv = document.getElementById('analysis-results');
@@ -255,51 +266,82 @@ templ NumberAnalysis() {
                     let formatted = phoneNumber;
                     displayPhoneNumber.innerText = formatted;
 
-                    // Perfect Number Logic (Gold Glow)
-                    // Criteria: All Main Pairs + Sum must be Good (Green/Teal colors)
+                    // Perfect Number Logic
                     const isGoodColor = (color) => {
                         if (!color) return false;
-                        const c = color.toUpperCase();
-                        // Backend Colors: #2E7D32 (D10), #43A047 (D8), #66BB6A (D5)
-                        // Frontend Colors: #10B981, #0D9488
-                        return c.includes('2E7D32') || c.includes('43A047') || c.includes('66BB6A') || 
-                               c.includes('10B981') || c.includes('0D9488') || c.includes('14B8A6');
+                        const c = color.toUpperCase().replace('#', '');
+                        // Colors: 2E7D32, 43A047, 66BB6A, 10B981, 0D9488, 14B8A6
+                        return ['2E7D32', '43A047', '66BB6A', '10B981', '0D9488', '14B8A6'].some(gc => c.includes(gc));
                     };
                     
                     const mainPairsData = data.main_pairs || [];
                     const sumPairData = data.sum_meaning;
                     
-                    const isMainPerfect = mainPairsData.length > 0 && mainPairsData.every(p => p.meaning && isGoodColor(p.meaning.color));
-                    const isSumPerfect = sumPairData && sumPairData.meaning && isGoodColor(sumPairData.meaning.color);
+                    let gradeTitle = null;
+                    let showGoldenBadge = false;
+
+                    console.log("Analyzing for Grade...");
+                    if (sumPairData && sumPairData.meaning && isGoodColor(sumPairData.meaning.color)) {
+                        console.log("Sum is Good!");
+                        let consecutive = 0;
+                        // Check from end to start
+                        for (let i = mainPairsData.length - 1; i >= 0; i--) {
+                            const meaning = mainPairsData[i].meaning;
+                            if (meaning && isGoodColor(meaning.color)) {
+                                consecutive++;
+                            } else {
+                                break;
+                            }
+                        }
+                        console.log("Consecutive Good Pairs:", consecutive);
+
+                        showGoldenBadge = true;
+                        if (consecutive === 0) gradeTitle = "ผลรวมดี";
+                        else if (consecutive === 1) gradeTitle = "คู่ท้ายดี";
+                        else if (consecutive === 2) gradeTitle = "คู่ท้าย Double ดี";
+                        else if (consecutive === 3) gradeTitle = "Triple ดี";
+                        else if (consecutive === 4) gradeTitle = "The Best";
+                        else if (consecutive >= 5) gradeTitle = "PERFECT";
+                        
+                        console.log("Grade Title:", gradeTitle);
+                    } else {
+                        console.log("Sum is NOT Good or Missing Data");
+                    }
 
                     const normalLayout = document.getElementById('normal-layout');
                     const perfectLayout = document.getElementById('perfect-layout');
                     const goldenPhoneEl = document.getElementById('golden-phone-number');
+                    const badgeTitleEl = document.getElementById('badge-title');
                     
-                    if (isMainPerfect && isSumPerfect) {
+                    if (showGoldenBadge && gradeTitle) {
                         // Switch to Perfect Layout
                         if(normalLayout) normalLayout.style.display = 'none';
                         if(perfectLayout) {
                              perfectLayout.style.display = 'flex';
-                             // Small delay to trigger transition
-                             setTimeout(() => {
-                                 perfectLayout.style.opacity = '1';
-                                 perfectLayout.style.transform = 'scale(1)';
-                             }, 50);
+                             // Force reflow
+                             void perfectLayout.offsetWidth;
+                             perfectLayout.style.opacity = '1';
+                             perfectLayout.style.transform = 'scale(1)';
                         }
-                        if(goldenPhoneEl) {
-                             goldenPhoneEl.innerText = formatted;
+                        // Set Grade Title
+                        if(badgeTitleEl) {
+                            badgeTitleEl.innerText = gradeTitle;
+                            console.log("Set badge title to:", gradeTitle);
+                        } else {
+                            console.error("Badge Title Element not found!");
                         }
+                        
+                        if(goldenPhoneEl) goldenPhoneEl.innerText = formatted;
                     } else {
                         // Switch to Normal Layout
+                        // HIDDEN as requested: Redundant phone number display
+                         if(normalLayout) normalLayout.style.display = 'none';
+                         
                         if(perfectLayout) {
                              perfectLayout.style.display = 'none';
                              perfectLayout.style.opacity = '0';
                              perfectLayout.style.transform = 'scale(0.95)';
                         }
-                        if(normalLayout) normalLayout.style.display = 'block';
-                        
-                        displayPhoneNumber.innerText = formatted;
                     }
                     
                     // 2. Display Sum in Sun as Badge (Label Removed)
@@ -418,6 +460,8 @@ templ NumberAnalysis() {
                         const createItemRow = (item, isSum = false) => {
                              const row = document.createElement('div');
                              row.className = 'na-row' + (isSum ? ' na-sum' : '');
+                             row.style.cursor = 'pointer'; // Add pointer cursor
+                             row.onclick = () => showMeaningDetail(item); // Add onclick handler
                              
                              const badge = createBadge(item.pair, (item.meaning && item.meaning.color) ? item.meaning.color : null);
                              
@@ -438,8 +482,13 @@ templ NumberAnalysis() {
                              }
                              content.innerHTML = htmlContent;
 
+                             const arrow = document.createElement('div');
+                             arrow.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>';
+                             arrow.style.marginLeft = 'auto';
+
                              row.appendChild(badge);
                              row.appendChild(content);
+                             row.appendChild(arrow);
                              return row;
                         };
 
@@ -502,6 +551,212 @@ templ NumberAnalysis() {
                 })
                 .catch(err => console.error(err));
             }
+
+            // Modal Functions
+            function showMeaningDetail(item) {
+                const modal = document.getElementById('meaning-modal');
+                const content = document.getElementById('meaning-modal-content');
+                if(!modal || !content) return;
+
+                const pair = item.pair;
+                const meaning = item.meaning || {};
+                const color = meaning.color || '#9E9E9E';
+                const keywords = (meaning.keywords && meaning.keywords.length > 0) ? meaning.keywords.join(' / ') : '';
+                const desc = meaning.miracle_desc || 'ไม่มีคำทำนาย';
+                const detail = meaning.miracle_detail || 'ไม่มีข้อมูลรายละเอียดเพิ่มเติม';
+
+                // Populate Content
+                document.getElementById('modal-pair').innerText = pair;
+                document.getElementById('modal-pair-bg').style.backgroundColor = color;
+                document.getElementById('modal-pair-bg').style.boxShadow = `0 4px 15px ${color}66`; // 40% opacity hex
+                
+                const keyEl = document.getElementById('modal-keywords');
+                if(keywords) {
+                    keyEl.innerText = keywords;
+                    keyEl.style.display = 'block';
+                } else {
+                    keyEl.style.display = 'none';
+                }
+
+                document.getElementById('modal-desc').innerText = desc;
+                
+                const detailEl = document.getElementById('modal-detail');
+                const detailBox = document.getElementById('modal-detail-box');
+                if(meaning.miracle_detail) {
+                    detailEl.innerText = detail;
+                    detailBox.style.display = 'block';
+                } else {
+                    detailBox.style.display = 'none';
+                }
+
+                // Show Modal
+                modal.style.display = 'flex';
+                
+                // Animation
+                content.style.transform = 'scale(0.95)';
+                content.style.opacity = '0';
+                setTimeout(() => {
+                    content.style.transform = 'scale(1)';
+                    content.style.opacity = '1';
+                }, 10);
+            }
+
+            function closeMeaningDetail() {
+                const modal = document.getElementById('meaning-modal');
+                const content = document.getElementById('meaning-modal-content');
+                if(!modal || !content) return;
+
+                content.style.transform = 'scale(0.95)';
+                content.style.opacity = '0';
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 200);
+            }
+            
+            // Close on backdrop click
+            window.onclick = function(event) {
+                const modal = document.getElementById('meaning-modal');
+                const buyModal = document.getElementById('buy-modal');
+                if (event.target == modal) {
+                    closeMeaningDetail();
+                }
+                if (event.target == buyModal) {
+                    closeBuyContact();
+                }
+            }
+
+            function showBuyContact() {
+                const modal = document.getElementById('buy-modal');
+                const content = document.getElementById('buy-modal-content');
+                if(!modal || !content) return;
+                
+                // Set Phone Number in Modal
+                const phoneText = document.getElementById('display-phone-number')?.innerText || document.getElementById('golden-phone-number')?.innerText || '';
+                const modalPhone = document.getElementById('buy-modal-phone');
+                if(modalPhone) modalPhone.innerText = phoneText;
+
+                modal.style.display = 'flex';
+                content.style.transform = 'scale(0.95)';
+                content.style.opacity = '0';
+                setTimeout(() => {
+                    content.style.transform = 'scale(1)';
+                    content.style.opacity = '1';
+                }, 10);
+            }
+
+            function closeBuyContact() {
+                const modal = document.getElementById('buy-modal');
+                const content = document.getElementById('buy-modal-content');
+                if(!modal || !content) return;
+
+                content.style.transform = 'scale(0.95)';
+                content.style.opacity = '0';
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 200);
+            }
         </script>
+
+        <!-- Meaning Modal Structure (Inline CSS No-Tailwind) -->
+        <div id="meaning-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; padding-top: 0; z-index: 1000; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+            
+            <!-- Modal Content -->
+            <div id="meaning-modal-content" style="background-color: #fff; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; position: relative; padding: 2rem; transform: scale(0.95); opacity: 0; transition: all 0.2s ease-out;">
+                
+                <!-- Close Button -->
+                <button onclick="closeMeaningDetail()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; cursor: pointer; color: #9CA3AF; transition: color 0.2s;">
+                    <svg style="width: 24px; height: 24px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <!-- Big Badge -->
+                    <div id="modal-pair-bg" style="width: 90px; height: 90px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; color: #fff; font-size: 36px; font-weight: 800; font-family: 'Kanit', sans-serif; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+                        <span id="modal-pair"></span>
+                    </div>
+
+                    <!-- Keywords -->
+                    <h3 id="modal-keywords" style="font-size: 22px; font-weight: 700; color: #111827; text-align: center; margin-bottom: 0.5rem; font-family: 'Kanit', sans-serif; line-height: 1.3;"></h3>
+
+                    <!-- Short Desc -->
+                    <p id="modal-desc" style="font-size: 16px; color: #4B5563; text-align: center; font-weight: 500; font-family: 'Kanit', sans-serif; margin-bottom: 2rem;"></p>
+
+                    <!-- Detailed Box -->
+                    <div id="modal-detail-box" style="width: 100%; background-color: #F9FAFB; border-radius: 12px; padding: 1.25rem; border: 1px solid #F3F4F6;">
+                        <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
+                            <!-- Sparkle Icon -->
+                            <svg style="width: 20px; height: 20px; color: #F59E0B; margin-right: 0.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            <span style="font-weight: 700; color: #1F2937; font-family: 'Kanit', sans-serif; font-size: 16px;">คำทำนายเจาะลึก</span>
+                        </div>
+                        <p id="modal-detail" style="color: #374151; font-size: 18px; line-height: 1.7; font-family: 'Sarabun', sans-serif; margin: 0; text-indent: 2em;"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buy Modal Structure -->
+        <div id="buy-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; padding-top: 0; z-index: 1000; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+             <div id="buy-modal-content" style="background-color: #fff; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); width: 90%; max-width: 450px; padding: 2.5rem; transform: scale(0.95); opacity: 0; transition: all 0.2s ease-out; text-align: center; position: relative; overflow: hidden;">
+                 
+                 <!-- Scattered Large Watermarks Background -->
+                 <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0.06; transform: rotate(-15deg) scale(1.2);">
+                     <div style="font-size: 80px; font-weight: 900; font-family: 'Kanit'; margin: 40px 0; white-space: nowrap;">ชื่อดี.com</div>
+                     <div style="font-size: 80px; font-weight: 900; font-family: 'Kanit'; margin: 40px 0; white-space: nowrap;">ชื่อดี.com</div>
+                 </div>
+
+                 <div style="position: relative; z-index: 1;">
+                     <h3 style="font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 1.5rem; font-family: 'Kanit', sans-serif;">สนใจเบอร์นี้?</h3>
+                     
+                     <!-- Golden Phone Number -->
+                     <style>
+                        .golden-modal-text {
+                            background: linear-gradient(to right, #8A5B0B, #FCF6BA, #FFFFFF, #FCF6BA, #8A5B0B);
+                            background-size: 200% auto;
+                            background-clip: text;
+                            -webkit-background-clip: text;
+                            -webkit-text-fill-color: transparent;
+                            animation: shine 3s linear infinite;
+                            font-family: 'Kanit', sans-serif;
+                            font-weight: 800;
+                            font-size: 42px;
+                            margin-bottom: 0.2rem;
+                            margin-top: 0.5rem;
+                            /* Sharp shadow for maximum clarity */
+                            filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.5));
+                        }
+                     </style>
+                     <h2 id="buy-modal-phone" class="golden-modal-text"></h2>
+                     
+                     <p style="font-size: 15px; color: #4B5563; margin-bottom: 1.5rem; font-family: 'Kanit', sans-serif;">ติดต่อซื้อเบอร์นี้ได้ที่</p>
+
+                     <!-- QR Code Section -->
+                     <div style="margin-bottom: 1.5rem; display: flex; justify-content: center;">
+                         <div style="padding: 10px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid #F3F4F6;">
+                             <img src="/images/line_qr_taya.jpg" alt="Line QR Code" style="width: 180px; height: 180px; display: block; border-radius: 4px;">
+                         </div>
+                     </div>
+                     
+                     <div style="background-color: #F3F4F6; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                         <div style="display: flex; align-items: center; gap: 8px;">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/LINE_logo.svg" alt="Line" style="width: 24px; height: 24px;">
+                            <p style="margin: 0; font-size: 18px; font-weight: 700; color: #1F2937; font-family: 'Kanit', sans-serif;">Line ID: numberniceic</p>
+                         </div>
+                         <p style="margin: 4px 0 0 0; font-size: 14px; color: #4B5563; font-family: 'Kanit', sans-serif;">(คุณทญา)</p>
+                     </div>
+
+                     <div style="display: flex; gap: 10px; justify-content: center;">
+                         <button onclick="closeBuyContact()" style="background: white; border: 1px solid #D1D5DB; color: #6B7280; padding: 10px 20px; border-radius: 8px; font-family: 'Kanit', sans-serif; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#F9FAFB'" onmouseout="this.style.backgroundColor='white'">ปิด</button>
+                         <a href="https://line.me/ti/p/~numberniceic" target="_blank" style="text-decoration: none; background: #06C755; color: white; padding: 10px 20px; border-radius: 8px; font-family: 'Kanit', sans-serif; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 .5C5.83.5.5 4.88.5 10.25c0 2.92 1.56 5.53 4.08 7.35-.19 1.51-.7 3.63-.78 3.96-.06.27.17.41.34.29 1.48-.96 6.37-4.11 7.15-4.63h.71c6.17 0 11.5-4.38 11.5-9.75C23.5 4.88 18.17.5 12 .5z" /></svg>
+                            แอดไลน์
+                         </a>
+                     </div>
+                 </div>
+             </div>
+        </div>
+
     </div>
 }

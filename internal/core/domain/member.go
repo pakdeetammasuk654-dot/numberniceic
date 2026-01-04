@@ -74,7 +74,7 @@ func (m *Member) GetVIPExpiryText() string {
 	}
 
 	if m.VIPExpiresAt == nil {
-		return "ตลอดชีพ"
+		return "หนึ่งปี"
 	}
 
 	days := m.GetVIPDaysRemaining()

@@ -140,18 +140,27 @@ body.auth-page {
 }
 
 .auth-footer p {
-    color: #718096;
+    color: #4a5568;
+    margin-bottom: 0.75rem;
 }
 
 .auth-link {
-    color: #d69e2e;
-    text-decoration: none;
+    color: #ff8c00;
+    text-decoration: underline;
     font-weight: bold;
+    font-size: 1.1rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 186, 0, 0.1);
+    border-radius: 20px;
+    display: inline-block;
+    transition: all 0.2s ease;
 }
 
 .auth-link:hover {
-    color: #b7791f;
-    text-decoration: underline;
+    color: #e67e22;
+    background: rgba(255, 186, 0, 0.2);
+    transform: translateY(-2px);
+    text-decoration: none;
 }
 
 .auth-input-error {

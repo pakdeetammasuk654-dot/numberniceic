@@ -117,7 +117,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
 
     _scrollController.addListener(() {
       if (_scrollController.hasClients) {
-        bool show = _scrollController.offset > 400;
+        bool show = _scrollController.offset > 150;
         if (show != _showScrollToTop) {
           setState(() {
             _showScrollToTop = show;
@@ -579,19 +579,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
     final displayName = n['display_name_html'] as List? ?? [];
     final similarity = (n['similarity'] as num? ?? 0) * 100;
     final totalScore = n['total_score'] ?? 0;
-    
-    // Calculate Sat and Sha sums from lists of strings
-    final satNums = n['sat_num'] as List? ?? [];
-    final shaNums = n['sha_num'] as List? ?? [];
-    
-    int sumSat = 0;
-    for(var s in satNums) {
-       sumSat += (int.tryParse(s.toString()) ?? 0);
-    }
-    int sumSha = 0;
-    for(var s in shaNums) {
-       sumSha += (int.tryParse(s.toString()) ?? 0);
-    }
+    final meaning = n['meaning'] ?? 'สุขภาพแข็งแรง, ปลอดภัย, มั่นคง'; // Default or from API if available
 
     return InkWell(
       onTap: () {
@@ -600,33 +588,41 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
         _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
       },
       child: Container(
+        width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFFFFFBEF), // Light yellow background (Cream)
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFFFD700), width: 2.5),
+          border: Border.all(
+            color: const Color(0xFFFFC107), // Gold border
+            width: 2,
+          ),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              offset: const Offset(0, 4),
+              blurRadius: 10,
+            ),
           ],
         ),
         child: Stack(
           children: [
-            // Top-Right Badge "Top X" with Crown (from image)
+            // Top-Right Badge "Top X"
             Positioned(
               top: 0,
               right: 0,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: const BoxDecoration(
                   color: Color(0xFFFFD700),
                   borderRadius: BorderRadius.only(
-                    topRight: Radius.circular(21), // Adjusted for Card curve
+                    topRight: Radius.circular(22),
                     bottomLeft: Radius.circular(12),
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.workspace_premium, color: Color(0xFF4A3B00), size: 12),
+                    const Icon(Icons.workspace_premium, color: Color(0xFF4A3B00), size: 14),
                     const SizedBox(width: 4),
                     Text(
                       'Top $rank',
@@ -640,75 +636,174 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
                 ),
               ),
             ),
-            
-            // Card Content
+
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Meaning / Keywords
+                  Text(
+                    'สุขภาพแข็งแรง, ปลอดภัย, มั่นคง', // Placeholder or use 'meaning' var if available
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.kanit(
+                      fontSize: 16,
+                      color: const Color(0xFF5D5D5D),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                   const SizedBox(height: 12),
-                  // Star + Name (Premium Font)
+
+                  // Name (Gradient Text)
+                  ShaderMask(
+                    shaderCallback: (bounds) => const LinearGradient(
+                      colors: [
+                        Color(0xFFD4AF37), // Metallic Gold
+                        Color(0xFFFFD700), // Yellow Gold
+                        Color(0xFFB8860B), // Dark Goldenrod
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ).createShader(bounds),
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      children: displayName.map((dc) {
+                        return Text(
+                          dc['char'] ?? '',
+                          style: GoogleFonts.kanit(
+                            fontSize: 42, // Large Size matching the phone number in image
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white, // Required for ShaderMask
+                            height: 1.0,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Badges Row (Score + VIP)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildPremiumStar(22),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Wrap(
-                          alignment: WrapAlignment.start,
-                          children: displayName.map((dc) {
-                            return Text(
-                              dc['char'] ?? '',
-                              style: GoogleFonts.kanit(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w900,
-                                color: dc['is_bad'] == true ? const Color(0xFFFF4757) : const Color(0xFFC59D00),
-                              ),
-                            );
-                          }).toList(),
+                      // Score Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFE0B2), // Light Orange/Cream
+                          borderRadius: BorderRadius.circular(20),
                         ),
+                        child: Text(
+                          'ผลรวม $totalScore',
+                          style: GoogleFonts.kanit(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF8D6E63), // Brownish
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // VIP Badge
+                      Row(
+                        children: [
+                          Text(
+                            'ชื่อ VIP',
+                            style: GoogleFonts.kanit(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF795548), // Brown
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Text('✨', style: TextStyle(fontSize: 18)),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  
-                  // Similarity & Score with Divider Dot
-                  RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                      style: GoogleFonts.kanit(fontSize: 13, color: const Color(0xFF2E7D32), fontWeight: FontWeight.w500),
-                      children: [
-                        const TextSpan(text: 'คล้าย '),
-                        TextSpan(text: '${similarity.toStringAsFixed(0)}%', style: const TextStyle(fontWeight: FontWeight.w900)),
-                        const TextSpan(text: '  •  ', style: TextStyle(color: Color(0xFFCBD5E0))),
-                        const TextSpan(text: 'คะแนน '),
-                        TextSpan(text: '$totalScore', style: const TextStyle(fontWeight: FontWeight.w900)),
-                      ],
-                    ),
+                  const SizedBox(height: 20),
+
+                  // Dashed Line (Reuse painter or create inline)
+                  CustomPaint(
+                    size: const Size(double.infinity, 1),
+                    painter: _DashedLinePainter(),
                   ),
-                  const SizedBox(height: 14),
-                  
-                  // Score and Pairs consolidated
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 4,
-                    runSpacing: 4,
+                  const SizedBox(height: 20),
+
+                  // Buttons Row
+                  Row(
                     children: [
-                       ...n['t_sat']?.asMap().entries.map((entry) {
-                          final idx = entry.key;
-                          final color = _parseColor(entry.value['color']);
-                          final numStr = (n['sat_num'] as List?)?[idx]?.toString() ?? '';
-                          return _buildScoreCircle(numStr, color);
-                       }).toList() ?? [],
-                       if ((n['t_sat'] as List?)?.isNotEmpty == true && (n['t_sha'] as List?)?.isNotEmpty == true)
-                          const SizedBox(width: 4),
-                       ...n['t_sha']?.asMap().entries.map((entry) {
-                          final idx = entry.key;
-                          final color = _parseColor(entry.value['color']);
-                          final numStr = (n['sha_num'] as List?)?[idx]?.toString() ?? '';
-                          return _buildScoreCircle(numStr, color, isShadow: true);
-                       }).toList() ?? [],
+                      // Buy Button -> "Use Name" or "Save"
+                      Expanded(
+                        flex: 3,
+                        child: ElevatedButton(
+                          onPressed: () {
+                             // Action to save name or select it
+                             _nameController.text = n['th_name'] ?? '';
+                             _analyze(); // Re-analyze/Select
+                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('เลือกชื่อนี้เรียบร้อยแล้ว')));
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981), // Vivid Green
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.check_circle_outline, size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                'เลือกใช้',
+                                style: GoogleFonts.kanit(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+
+                      // Analyze Button
+                      Expanded(
+                        flex: 2,
+                        child: OutlinedButton(
+                          onPressed: () {
+                             // Scroll to top to see details
+                             _nameController.text = n['th_name'] ?? '';
+                             _analyze();
+                             _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF2962FF), // Bright Blue
+                            side: const BorderSide(color: Color(0xFFBBDEFB), width: 1.5),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            backgroundColor: Colors.white,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.search, size: 20),
+                              const SizedBox(width: 4),
+                              Text(
+                                'วิเคราะห์',
+                                style: GoogleFonts.kanit(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -1096,6 +1191,9 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
       // Close loading dialog if it hasn't been closed by the user
       Navigator.of(context).pop();
 
+      // Dismiss keyboard before navigating
+      FocusScope.of(context).unfocus();
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -1279,6 +1377,9 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
     final name = solar['cleaned_name'];
     final isVip = _analysisResult!['is_vip'] == true;
 
+    // Dismiss keyboard before navigating
+    FocusScope.of(context).unfocus();
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -1418,17 +1519,21 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
         ),
       ),
       floatingActionButton: _showScrollToTop 
-         ? FloatingActionButton(
-             onPressed: () {
-               _scrollController.animateTo(0, duration: const Duration(milliseconds: 600), curve: Curves.easeInOut);
-             },
-             backgroundColor: Colors.white,
-             mini: true,
-             elevation: 4,
-             shape: const CircleBorder(),
-             child: const Icon(Icons.arrow_upward, color: Colors.blueGrey),
+         ? Padding(
+             padding: const EdgeInsets.only(bottom: 90),
+             child: FloatingActionButton(
+                 onPressed: () {
+                   _scrollController.animateTo(0, duration: const Duration(milliseconds: 600), curve: Curves.easeInOut);
+                 },
+                 backgroundColor: Colors.white,
+                 mini: true,
+                 elevation: 4,
+                 shape: const CircleBorder(),
+                 child: const Icon(Icons.arrow_upward, color: Colors.blueGrey),
+               ),
            ) 
          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
     );
   }
 
@@ -2440,7 +2545,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('รับรหัส VIP วิเคราะห์ +3 แสนชื่อเมื่อซื้อสินค้า', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF4A3B00))),
+                  Text('รับรหัส VIP วิเคราะห์ +3 แสนชื่อเมื่อซื้อเบอร์มงคล', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF4A3B00))),
                   // Subtitle removed to match user request for single string
                 ],
               ),
@@ -2699,23 +2804,27 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
             child: Row(
               children: [
-                // Rank Number #1, #2, #3 ...
-                Padding(
-                   padding: const EdgeInsets.only(right: 8),
-                   child: Text(
-                     '#${index + 1}',
-                     style: GoogleFonts.kanit(
-                       fontSize: 10,
-                       fontWeight: FontWeight.bold,
-                       color: Colors.grey[400],
-                     ),
-                   ),
+                // Rank and Premium Star stacked vertically to save horizontal space
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isPremium)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: _buildPremiumStar(12),
+                      ),
+                    Text(
+                      '#${index + 1}',
+                      style: GoogleFonts.kanit(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[400],
+                        height: 1.0,
+                      ),
+                    ),
+                  ],
                 ),
-                if (isPremium)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: _buildPremiumStar(14),
-                  ),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Wrap(
                     children: [
@@ -2958,4 +3067,21 @@ class SpeechBubblePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _DashedLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    double dashWidth = 5, dashSpace = 3, startX = 0;
+    final paint = Paint()
+      ..color = const Color(0xFFE0E0E0)
+      ..strokeWidth = 1.5;
+    while (startX < size.width) {
+      canvas.drawLine(Offset(startX, 0), Offset(startX + dashWidth, 0), paint);
+      startX += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

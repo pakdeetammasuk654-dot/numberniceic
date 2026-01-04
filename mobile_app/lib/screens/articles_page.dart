@@ -148,7 +148,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
                   const SizedBox(height: 4),
                   Text(
                     article.title,
-                    maxLines: 3,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.kanit(
                       fontSize: 14,

@@ -135,12 +135,10 @@ function revertLuckyNumber(containerId) {
 function openPurchaseModal(phoneNumber) {
     var modal = document.getElementById('purchase-modal');
     if (phoneNumber) {
-        var container = document.getElementById('purchase-modal-target-number');
+        var container = document.getElementById('buy-modal-phone');
         if (container) {
             container.innerText = phoneNumber;
         }
-        var input = document.getElementById('purchase-modal-number-input');
-        if (input) input.value = phoneNumber;
     }
     if (modal) modal.style.display = 'flex';
 }

@@ -94,7 +94,8 @@ class _PaymentModalState extends State<PaymentModal> {
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(20),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
               decoration: const BoxDecoration(
                 color: Color(0xFF2d3748),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -104,7 +105,7 @@ class _PaymentModalState extends State<PaymentModal> {
                   Text(
                     'ชำระเงิน',
                     style: GoogleFonts.kanit(
-                      fontSize: 20,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
@@ -113,7 +114,7 @@ class _PaymentModalState extends State<PaymentModal> {
                   Text(
                     'Ref: ${widget.refNo}',
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       color: Colors.white70,
                       fontFamily: 'monospace',
                     ),
@@ -122,29 +123,80 @@ class _PaymentModalState extends State<PaymentModal> {
               ),
             ),
             // Content
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  Text(
-                    'สแกน QR Code เพื่อชำระเงิน',
-                    style: GoogleFonts.kanit(color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 16),
-                  // QR Code
-                  Container(
-                    width: 250,
-                    height: 250,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade300),
+            Stack(
+              children: [
+                // Watermark Layer
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: 0.03,
+                    child: Center(
+                      child: Wrap(
+                        spacing: 20,
+                        runSpacing: 20,
+                        children: List.generate(20, (index) => Transform.rotate(
+                          angle: -0.4,
+                          child: Text(
+                            'ชื่อดี.com',
+                            style: GoogleFonts.kanit(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        )),
+                      ),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: _buildQRImage(),
-                    ),
                   ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Column(
+                        children: [
+                          Text(
+                            'สแกน QR Code เพื่อชำระเงิน',
+                            style: GoogleFonts.kanit(
+                              color: Colors.grey[800],
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                           'รับ Code วิเคราะห์ชื่อ VIP\nที่หน้า Dashboard',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.kanit(
+                              color: const Color(0xFFD97706),
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              height: 1.2
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // QR Code
+                      Container(
+                        width: 250,
+                        height: 250,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: _buildQRImage(),
+                        ),
+                      ),
                   const SizedBox(height: 20),
                   // Amount
                   Text(
@@ -227,15 +279,17 @@ class _PaymentModalState extends State<PaymentModal> {
                         style: GoogleFonts.kanit(fontWeight: FontWeight.bold),
                       ),
                     ),
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildQRImage() {
     if (widget.qrCodeUrl.startsWith('data:image')) {

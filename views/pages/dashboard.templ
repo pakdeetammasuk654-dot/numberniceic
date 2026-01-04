@@ -88,22 +88,7 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
 			</div>
 		}
 
-		if len(assignedColors) > 0 {
-			<div class="name-card" style="margin: 0; font-family: 'Kanit', sans-serif; display: flex; flex-direction: column;">
-				<h2 style="font-size: 1.25rem; margin-bottom: 1.25rem; border-bottom: 1px solid #eee; padding-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
-					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4"></path><path d="M4 12v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"></path><path d="M16 12a4 4 0 0 1-8 0"></path></svg>
-					สีกระเป๋าถูกโฉลก
-				</h2>
-				<div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; align-items: center; flex: 1;">
-					for _, color := range assignedColors {
-						if color != "" {
-							<div style={ "width: 50px; height: 50px; border-radius: 50%; border: 2px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.1); background-color: " + color + ";" }></div>
-						}
-					}
-				</div>
-				<p style="margin-top: 1rem; font-size: 0.85rem; color: #666; text-align: center;">สีมงคลประจำตัวของคุณที่อาจารย์เลือกให้</p>
-			</div>
-		}
+
 		
 		<!-- VIP Codes History -->
 		if len(myCodes) > 0 {

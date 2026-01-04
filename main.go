@@ -449,9 +449,9 @@ func main() {
 		}
 		return templ_render.Render(c, layout.Main(
 			layout.SEOProps{
-				Title:       "ร้านค้ามงคล",
+				Title:       "ร้านมาดี",
 				Description: "เลือกซื้อสิ่งของมงคลเพื่อเสริมดวง และรับรหัส VIP สำหรับใช้งานในแอปฟรี",
-				Keywords:    "ร้านค้ามงคล, เสริมดวง, วัตถุมงคล",
+				Keywords:    "ร้านมาดี, เสริมดวง, วัตถุมงคล",
 				Canonical:   "https://xn--b3cu8e7ah6h.com/shop",
 				OGType:      "website",
 			},
@@ -461,7 +461,7 @@ func main() {
 			"shop",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
-			pages.Shop(),
+			pages.Shop(c.Locals("IsLoggedIn").(bool)),
 		))
 	})
 

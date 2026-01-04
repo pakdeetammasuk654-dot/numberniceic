@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
+import 'package:url_launcher/url_launcher.dart';
 import '../widgets/shared_footer.dart';
 import '../services/api_service.dart';
 
@@ -11,27 +12,75 @@ class NumberAnalysisPage extends StatefulWidget {
   State<NumberAnalysisPage> createState() => _NumberAnalysisPageState();
 }
 
-class _NumberAnalysisPageState extends State<NumberAnalysisPage> {
+class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProviderStateMixin {
   final TextEditingController _phoneController = TextEditingController();
+  final FocusNode _phoneFocusNode = FocusNode();
   bool _isLoading = false;
-  List<String> _mainPairs = [];
-  List<String> _hiddenPairs = [];
   Map<String, dynamic>? _analysisData;
+
+  late AnimationController _innerOrbitController;
+  late AnimationController _outerOrbitController;
+  AnimationController? _textShineController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Inner Orbit: 20s
+    _innerOrbitController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 20),
+    )..repeat();
+
+    // Outer Orbit: 30s
+    _outerOrbitController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 30),
+    )..repeat();
+
+    // Text Shine: 2s (Initialized here for fresh starts)
+    _textShineController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is String && args.length == 10 && _phoneController.text.isEmpty) {
+      _phoneController.text = args;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _analyzeNumber(args);
+      });
+    }
+    
+    // Lazy init for Hot Reload support
+    if (_textShineController == null) {
+      _textShineController = AnimationController(
+        vsync: this,
+        duration: const Duration(seconds: 2),
+      )..repeat();
+    }
+  }
 
   @override
   void dispose() {
     _phoneController.dispose();
+    _phoneFocusNode.dispose();
+    _innerOrbitController.dispose();
+    _outerOrbitController.dispose();
+    _textShineController?.dispose();
     super.dispose();
   }
 
   void _onPhoneChanged(String value) {
     if (value.length == 10) {
+      FocusScope.of(context).unfocus();
       _analyzeNumber(value);
     } else {
-      if (_mainPairs.isNotEmpty) {
+      if (_analysisData != null) {
         setState(() {
-          _mainPairs = [];
-          _hiddenPairs = [];
           _analysisData = null;
         });
       }
@@ -42,15 +91,8 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> {
     setState(() => _isLoading = true);
     try {
       final data = await ApiService.analyzeRawNumber(number);
-      
-      List<String> extractPairs(List<dynamic> list) {
-        return list.map((e) => e['pair'] as String).toList();
-      }
-
       setState(() {
         _analysisData = data;
-        _mainPairs = extractPairs(data['main_pairs'] ?? []);
-        _hiddenPairs = extractPairs(data['hidden_pairs'] ?? []);
       });
     } catch (e) {
       print('Analysis Error: $e');
@@ -59,153 +101,63 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> {
     }
   }
 
-  Widget _buildPairBadge(String pair, bool isMain) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: isMain ? Colors.amber : Colors.grey[800],
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-            color: isMain ? Colors.amberAccent : Colors.grey[600]!, width: 1.5),
-        boxShadow: isMain
-            ? [
-                BoxShadow(
-                    color: Colors.amber.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2))
-              ]
-            : [],
-      ),
-      child: Text(
-        pair,
-        style: GoogleFonts.kanit(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: isMain ? Colors.black87 : Colors.white),
-      ),
-    );
-  }
-
-  Widget _buildCategoryRow(String title, Color color, Map<String, dynamic>? data) {
-    if (data == null) return const SizedBox.shrink();
-    
-    int good = (data['good'] is int) ? data['good'] : 0;
-    int bad = (data['bad'] is int) ? data['bad'] : 0;
-    
-    // Web Logic Match: Fixed 25% display weight if category has active numbers
-    double goodPct = good > 0 ? 25.0 : 0.0;
-    double badPct = bad > 0 ? 25.0 : 0.0;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 14, 
-                height: 14, 
-                decoration: BoxDecoration(
-                  color: color, 
-                  borderRadius: BorderRadius.circular(4)
-                )
-              ),
-              const SizedBox(width: 12),
-              Text(
-                title, 
-                style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF333333))
-              ),
-              const Spacer(),
-              if (good > 0) 
-                 Text('${goodPct.toStringAsFixed(0)}%', style: GoogleFonts.kanit(color: Colors.green[700], fontWeight: FontWeight.bold, fontSize: 20)),
-              if (bad > 0) ...[
-                 const SizedBox(width: 16),
-                 Text('${badPct.toStringAsFixed(0)}%', style: GoogleFonts.kanit(color: Colors.red[700], fontWeight: FontWeight.bold, fontSize: 20)),
-              ]
-              else if (good == 0 && bad == 0)
-                  Text('-', style: GoogleFonts.kanit(color: Colors.grey, fontSize: 20)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Align(
-            alignment: Alignment.center,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFFD700), Color(0xFFFDB931)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.amber.withOpacity(0.4),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  )
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.star, color: Colors.white, size: 18),
-                  const SizedBox(width: 6),
-                  Text(
-                    'เสริมเบอร์ 100%', 
-                    style: GoogleFonts.kanit(
-                      color: Colors.white, 
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      shadows: [
-                         const Shadow(offset: Offset(0,1), blurRadius: 2, color: Colors.black12)
-                      ]
-                    )
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  bool _isGoodColor(String? color) {
+    if (color == null) return false;
+    final c = color.replaceAll('#', '').toUpperCase();
+    // Green shades from backend/frontend
+    const goodColors = ['2E7D32', '43A047', '66BB6A', '10B981', '0D9488', '14B8A6'];
+    return goodColors.any((gc) => c.contains(gc));
   }
 
   @override
   Widget build(BuildContext context) {
-    final breakdown = _analysisData?['category_breakdown'] as Map<String, dynamic>?;
-    
-    // Calculate Total Percentage Locally (Sum of 25s)
-    double calculatedTotal = 0;
-    
-    // Prepare data for Chart
-    // 0: Health, 1: Work, 2: Finance, 3: Love
-    List<bool> activeCategories = [false, false, false, false];
-    
-    if (breakdown != null) {
-      if ((breakdown['สุขภาพ']?['good'] ?? 0) > 0) { calculatedTotal += 25; activeCategories[0] = true; }
-      if ((breakdown['การงาน']?['good'] ?? 0) > 0) { calculatedTotal += 25; activeCategories[1] = true; }
-      if ((breakdown['การเงิน']?['good'] ?? 0) > 0) { calculatedTotal += 25; activeCategories[2] = true; }
-      if ((breakdown['ความรัก']?['good'] ?? 0) > 0) { calculatedTotal += 25; activeCategories[3] = true; }
+    // Determine Grade Logic
+    String? gradeTitle;
+    bool showGoldenBadge = false;
+
+    if (_analysisData != null) {
+      final mainPairs = _analysisData!['main_pairs'] as List?;
+      final sumMeaning = _analysisData!['sum_meaning'];
+      
+      if (sumMeaning != null && _isGoodColor(sumMeaning['meaning']?['color'])) {
+          int consecutive = 0;
+          if (mainPairs != null) {
+             // Check from end to start
+             for (int i = mainPairs.length - 1; i >= 0; i--) {
+                if (_isGoodColor(mainPairs[i]['meaning']?['color'])) {
+                   consecutive++;
+                } else {
+                   break;
+                }
+             }
+          }
+
+          if (consecutive == 0) {
+             gradeTitle = "ผลรวมดี";
+             showGoldenBadge = true;
+          } else if (consecutive == 1) {
+             gradeTitle = "คู่ท้ายดี";
+             showGoldenBadge = true;
+          } else if (consecutive == 2) {
+             gradeTitle = "คู่ท้าย Double ดี";
+             showGoldenBadge = true;
+          } else if (consecutive == 3) {
+             gradeTitle = "Triple ดี";
+             showGoldenBadge = true;
+          } else if (consecutive == 4) {
+             gradeTitle = "The Best";
+             showGoldenBadge = true;
+          } else if (consecutive >= 5) {
+             gradeTitle = "PERFECT";
+             showGoldenBadge = true;
+          }
+      }
     }
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
-         title: Text('วิเคราะห์เบอร์', style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold)),
+         title: Text('วิเคราะห์เบอร์โทรศัพท์', style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold)),
          backgroundColor: const Color(0xFF333333),
          elevation: 0,
          centerTitle: true,
@@ -213,246 +165,943 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // White Header Section (Clean & Minimalist like Web)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                color: Color(0xFF333333),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 8), // Reduced top 40->32, bottom 20->8
+              color: Colors.transparent, // Transparent to show scaffold bg
               child: Column(
                 children: [
+                   // Title
                    Text(
-                    'ตรวจสอบพลังตัวเลขเบอร์โทรศัพท์',
-                    style: GoogleFonts.kanit(fontSize: 16, color: Colors.white70),
+                    'วิเคราะห์เบอร์โทรศัพท์',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.kanit(
+                      fontSize: 32, 
+                      fontWeight: FontWeight.w900, 
+                      color: Colors.black,
+                      height: 1.2
+                    ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 8), // Reduced 16->8
+                  
+                  // Subtitle
+                  Text(
+                    'เบอร์โทรศัพท์ เลขศาสตร์ พลังเงา เปลี่ยนชีวิต',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.kanit(fontSize: 16, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 12), // Reduced 32->12 (Arrow 1)
+                  
+                  // Phone Input (Card Style)
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.grey.shade200, width: 2),
                       boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
+                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 8)),
                       ],
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     child: TextField(
                       controller: _phoneController,
+                      focusNode: _phoneFocusNode,
                       keyboardType: TextInputType.phone,
                       maxLength: 10,
                       onChanged: _onPhoneChanged,
-                      style: GoogleFonts.kanit(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2),
+                      style: GoogleFonts.sourceCodePro( // Monospace-like font
+                        fontSize: 28, 
+                        fontWeight: FontWeight.w600, 
+                        letterSpacing: 4, 
+                        color: const Color(0xFF1F2937)
+                      ),
                       textAlign: TextAlign.center,
                       decoration: InputDecoration(
                         hintText: '08XXXXXXXX',
-                        hintStyle: GoogleFonts.kanit(color: Colors.grey[300]),
+                        hintStyle: GoogleFonts.sourceCodePro(color: Colors.grey[300], letterSpacing: 2),
                         border: InputBorder.none,
                         counterText: "",
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.grey),
-                          onPressed: () {
-                             _phoneController.clear();
-                             _onPhoneChanged('');
-                          },
-                        )
+                        prefixIcon: const Icon(Icons.phone_in_talk_outlined, color: Colors.grey, size: 28),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                        suffixIcon: _phoneController.text.isNotEmpty 
+                          ? IconButton(
+                              icon: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  shape: BoxShape.circle
+                                ),
+                                child: const Icon(Icons.close, color: Colors.grey, size: 18)
+                              ),
+                              onPressed: () {
+                                 _phoneController.clear();
+                                 _onPhoneChanged('');
+                              },
+                            )
+                          : null
                       ),
                     ),
                   ),
+                  const SizedBox(height: 12), // Reduced 24->12 (Arrow 2)
                   
-                  if (_isLoading)
-                     const Padding(
-                       padding: EdgeInsets.only(top: 32),
-                       child: CircularProgressIndicator(color: Colors.white),
-                     ),
-
-                  if (!_isLoading && _mainPairs.isNotEmpty) ...[
-                    const SizedBox(height: 32),
-                    Text('คู่เลขหลัก', style: GoogleFonts.kanit(color: Colors.amber, fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: _mainPairs.map((p) => _buildPairBadge(p, true)).toList(),
+                  // Status Pill (Rounded Border)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset:const Offset(0,2))
+                      ]
                     ),
-                    
-                    const SizedBox(height: 20),
-                    Text('คู่เลขแฝง', style: GoogleFonts.kanit(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: _hiddenPairs.map((p) => _buildPairBadge(p, false)).toList(),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Blinking Dot Container (Light Green Bg)
+                        Container(
+                          width: 24, height: 24,
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            shape: BoxShape.circle
+                          ),
+                          child: _BlinkingDot(),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'ระบบวิเคราะห์อัตโนมัติเมื่อครบ 10 หลัก', 
+                          style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[600])
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 20),
-                  ],
+                  ),
                 ],
               ),
             ),
-            
-            if (_analysisData != null && breakdown != null) 
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                     // Solar System Chart (Custom Painter)
-                     SizedBox(
-                       height: 200,
-                       width: 200,
-                       child: CustomPaint(
-                         painter: SolarSystemPainter(activeCategories: activeCategories),
-                         child: Center(
-                           child: Column(
-                             mainAxisSize: MainAxisSize.min,
-                             children: [
-                               Text(
-                                 '${calculatedTotal.toStringAsFixed(0)}%',
-                                 style: GoogleFonts.kanit(
-                                   fontSize: 28, 
-                                   fontWeight: FontWeight.bold,
-                                   color: const Color(0xFF333333)
-                                 ),
-                               ),
-                               Text(
-                                 'คะแนนรวม',
-                                 style: GoogleFonts.kanit(
-                                   fontSize: 12, 
-                                   color: Colors.grey[600]
-                                 ),
-                               ),
-                             ],
-                           ),
-                         ),
-                       ),
-                     ),
-                     const SizedBox(height: 32),
 
-                     _buildCategoryRow('สุขภาพ', const Color(0xFF80CBC4), breakdown['สุขภาพ']),
-                     _buildCategoryRow('การงาน', const Color(0xFF90CAF9), breakdown['การงาน']),
-                     _buildCategoryRow('การเงิน', const Color(0xFFFFCC80), breakdown['การเงิน']),
-                     _buildCategoryRow('ความรัก', const Color(0xFFF48FB1), breakdown['ความรัก']),
-                     
-                     const SizedBox(height: 20),
-                     // Total Score
-                     Container(
-                       width: double.infinity,
-                       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                       decoration: BoxDecoration(
-                         gradient: const LinearGradient(
-                           colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
-                           begin: Alignment.centerLeft,
-                           end: Alignment.centerRight,
-                         ),
-                         borderRadius: BorderRadius.circular(16),
-                         border: Border.all(color: const Color(0xFFFCD34D), width: 2),
-                         boxShadow: [
-                           BoxShadow(
-                             color: Colors.amber.withOpacity(0.1),
-                             blurRadius: 10,
-                             offset: const Offset(0, 4),
-                           ),
-                         ]
-                       ),
-                       child: Row(
-                         mainAxisAlignment: MainAxisAlignment.center,
-                         children: [
-                           if (calculatedTotal > 0)
-                              const Icon(Icons.star_rounded, color: Color(0xFFDAA520), size: 36)
-                           else 
-                              const Icon(Icons.cancel, color: Colors.red, size: 36),
-                              
-                           const SizedBox(width: 12),
-                           Column(
-                             crossAxisAlignment: CrossAxisAlignment.start,
-                             children: [
-                               Text('รวม % ดี', style: GoogleFonts.kanit(fontSize: 14, color: const Color(0xFF92400E), fontWeight: FontWeight.w600)),
-                               Text('${calculatedTotal.toStringAsFixed(0)}%', style: GoogleFonts.kanit(fontSize: 32, color: const Color(0xFF92400E), fontWeight: FontWeight.bold, height: 1.0)),
-                             ],
-                           ),
-                         ],
-                       ),
-                     ),
-                  ],
-                ),
-              )
-            else if (!_isLoading)
-             Padding(
-               padding: const EdgeInsets.fromLTRB(24, 40, 24, 0),
-               child: Column(
-                 children: [
-                   Icon(Icons.analytics_outlined, size: 80, color: Colors.grey[300]),
-                   const SizedBox(height: 16),
-                   Text(
-                     'รู้อิทธิพลของตัวเลขในเบอร์โทรศัพท์\nเพื่อเสริมดวงชะตาและชีวิต',
-                     textAlign: TextAlign.center,
-                     style: GoogleFonts.kanit(fontSize: 16, color: Colors.grey[500]),
-                   ),
-                 ],
+            if (_isLoading)
+               const Padding(
+                 padding: EdgeInsets.only(top: 20),
+                 child: CircularProgressIndicator(),
                ),
-             ),
 
-            const SizedBox(height: 60),
+            if (!_isLoading && _analysisData != null) ...[
+                const SizedBox(height: 0), // Reduced 8->0 (Arrow 3 part 1)
+                
+                // 1. Grade Badge (Conditional)
+                if (showGoldenBadge && gradeTitle != null)
+                  _buildGradeBadge(_phoneController.text, gradeTitle!),
+
+                const SizedBox(height: 8), // Reduced 16->8 (Arrow 3 part 2)
+
+                // 2. Solar System Widget
+                _SolarSystem(
+                   data: _analysisData!, 
+                   innerController: _innerOrbitController, 
+                   outerController: _outerOrbitController
+                ),
+                
+                const SizedBox(height: 32),
+                
+                // 3. Meaning Analysis Section
+                _buildMeaningSection(_analysisData!),
+                
+                const SizedBox(height: 40),
+            ],
+
             const SharedFooter(),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildGradeBadge(String phoneNumber, String title) {
+    return Column(
+      children: [
+        // 1. Golden Glowing Animated Phone Number
+        AnimatedBuilder(
+          animation: _textShineController!,
+          builder: (context, child) {
+            return ShaderMask(
+              shaderCallback: (bounds) {
+                return LinearGradient(
+                  colors: const [
+                    Color(0xFFAA771C), // Darker
+                    Color(0xFFFCF6BA), // Light
+                    Color(0xFFFFFFFF), // Shimmer White
+                    Color(0xFFFCF6BA), // Light
+                    Color(0xFFAA771C), // Darker
+                  ],
+                  stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+                  // Move the gradient from left to right
+                  begin: Alignment(-2.0 + (_textShineController!.value * 4), 0.0),
+                  end: Alignment(-0.5 + (_textShineController!.value * 4), 0.0),
+                  tileMode: TileMode.clamp,
+                ).createShader(bounds);
+              },
+              child: Text(
+                phoneNumber,
+                style: GoogleFonts.kanit(
+                  fontSize: 42,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 2,
+                  shadows: [
+                     Shadow(
+                       color: Colors.amber.withOpacity(0.5),
+                       blurRadius: 15,
+                       offset: const Offset(0, 0),
+                     ),
+                  ]
+                ),
+              ),
+            );
+          },
+        ),
+
+        // Reduced spacing to keep it tight
+        const SizedBox(height: 8), 
+
+        // 2. Title (PERFECT) + Stars + Buy Button Row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+             // Grade & Stars Column
+             Column(
+               mainAxisSize: MainAxisSize.min,
+               children: [
+                  ShaderMask(
+                     shaderCallback: (bounds) => const LinearGradient(
+                       colors: [Color(0xFFFDE68A), Color(0xFFD97706), Color(0xFF92400E)],
+                       begin: Alignment.topCenter,
+                       end: Alignment.bottomCenter,
+                     ).createShader(bounds),
+                     child: Text(
+                       title,
+                       style: GoogleFonts.kanit(
+                         fontSize: 30,
+                         fontWeight: FontWeight.w900,
+                         color: Colors.white, // Masked
+                         height: 1.0, 
+                       ),
+                       textAlign: TextAlign.center,
+                     ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                     mainAxisSize: MainAxisSize.min,
+                     children: List.generate(5, (index) => 
+                        Icon(Icons.star, color: const Color(0xFFF59E0B), size: index == 2 ? 26 : 20)
+                     ),
+                  )
+               ],
+             ),
+
+             const SizedBox(width: 12),
+
+             // Buy Button
+             ElevatedButton(
+                onPressed: () {
+                   // Show Contact Dialog
+                   showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                         title: Text("สนใจเบอร์นี้?", style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
+                         content: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                               // Large Scattered Watermarks
+                               Positioned.fill(
+                                 child: Opacity(
+                                   opacity: 0.05,
+                                   child: Transform.rotate(
+                                     angle: -0.5,
+                                     child: Column(
+                                       mainAxisAlignment: MainAxisAlignment.center,
+                                       children: List.generate(3, (i) => 
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(vertical: 20),
+                                            child: Text(
+                                              "ชื่อดี.com",
+                                              style: GoogleFonts.kanit(
+                                                fontSize: 40,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          )
+                                       ),
+                                     ),
+                                   ),
+                                 ),
+                               ),
+
+                               // Actual Content
+                               Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                     // 1. Golden Shining Phone Number inside Dialog
+                                     AnimatedBuilder(
+                                        animation: _textShineController!,
+                                        builder: (context, child) {
+                                          return ShaderMask(
+                                            shaderCallback: (bounds) {
+                                              return LinearGradient(
+                                                colors: const [
+                                                  Color(0xFFAA771C), 
+                                                  Color(0xFFFCF6BA), 
+                                                  Color(0xFFFFFFFF), 
+                                                  Color(0xFFFCF6BA), 
+                                                  Color(0xFFAA771C), 
+                                                ],
+                                                stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+                                                begin: Alignment(-2.0 + (_textShineController!.value * 4), 0.0),
+                                                end: Alignment(-0.5 + (_textShineController!.value * 4), 0.0),
+                                                tileMode: TileMode.clamp,
+                                              ).createShader(bounds);
+                                            },
+                                            child: SelectableText(
+                                              phoneNumber,
+                                              style: GoogleFonts.kanit(
+                                                fontSize: 30,
+                                                fontWeight: FontWeight.w800,
+                                                color: Colors.white,
+                                                letterSpacing: 1.5,
+                                                shadows: [
+                                                   // Subtle sharp shadow for readability instead of broad glow
+                                                   Shadow(
+                                                     color: Colors.black.withOpacity(0.3),
+                                                     blurRadius: 4,
+                                                     offset: const Offset(0, 2),
+                                                   ),
+                                                ]
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                     ),
+
+                                     const SizedBox(height: 10),
+                                     Text("ติดต่อซื้อเบอร์นี้ได้ที่", style: GoogleFonts.kanit(color: Colors.grey[700], fontSize: 14)),
+                                     const SizedBox(height: 15),
+
+                                     // 2. Line QR Code
+                                     Container(
+                                       padding: const EdgeInsets.all(8),
+                                       decoration: BoxDecoration(
+                                         color: Colors.white,
+                                         borderRadius: BorderRadius.circular(12),
+                                         boxShadow: [
+                                           BoxShadow(
+                                             color: Colors.black.withOpacity(0.1),
+                                             blurRadius: 10,
+                                           )
+                                         ]
+                                       ),
+                                       child: Image.network(
+                                         '${ApiService.baseUrl}/images/line_qr_taya.jpg',
+                                         width: 150,
+                                         height: 150,
+                                         fit: BoxFit.contain,
+                                         errorBuilder: (_,__,___) => const Icon(Icons.qr_code, size: 100),
+                                       ),
+                                     ),
+
+                                     const SizedBox(height: 15),
+                                     
+                                     // Line ID Section (Split into 2 lines)
+                                     Column(
+                                       children: [
+                                         Row(
+                                           mainAxisAlignment: MainAxisAlignment.center,
+                                           children: [
+                                             Image.network(
+                                               'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/LINE_logo.svg/480px-LINE_logo.svg.png',
+                                               width: 20,
+                                               height: 20,
+                                               errorBuilder: (context, error, stackTrace) => 
+                                                  const Icon(Icons.chat_bubble, color: Color(0xFF06C755), size: 20),
+                                             ),
+                                             const SizedBox(width: 6),
+                                             Text("Line ID: numberniceic", style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold)),
+                                           ],
+                                         ),
+                                         Text("(คุณทญา)", style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[600])),
+                                       ],
+                                     ),
+                                  ]
+                               ),
+                            ],
+                         ),
+                         actions: [
+                            TextButton(
+                               onPressed: () => Navigator.pop(ctx),
+                               child: Text("ปิด", style: GoogleFonts.kanit(color: Colors.grey)),
+                            ),
+                            ElevatedButton(
+                               onPressed: () async {
+                                 Navigator.pop(ctx);
+                                 final url = Uri.parse('https://line.me/ti/p/~numberniceic');
+                                 if (await canLaunchUrl(url)) {
+                                   await launchUrl(url, mode: LaunchMode.externalApplication);
+                                 }
+                               },
+                               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
+                               child: Text("แอดไลน์", style: GoogleFonts.kanit(color: Colors.white)),
+                            )
+                         ],
+                      )
+                   );
+                },
+                style: ElevatedButton.styleFrom(
+                   backgroundColor: const Color(0xFF10B981), // Emerald Green
+                   foregroundColor: Colors.white,
+                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                   shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                   ),
+                   elevation: 4,
+                ),
+                child: Text(
+                   "ซื้อเบอร์นี้",
+                   style: GoogleFonts.kanit(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      height: 1.0,
+                   ),
+                ),
+             )
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMeaningSection(Map<String, dynamic> data) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Icon(Icons.description, color: Color(0xFF4F46E5)),
+                const SizedBox(width: 8),
+                Text(
+                  'คำทำนายและความหมาย',
+                  style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1F2937)),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          
+          Padding(
+             padding: const EdgeInsets.all(16),
+             child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // SUM
+                  if (data['sum_meaning'] != null) ...[
+                     _SectionHeader(icon: Icons.functions, title: 'ผลรวม (SUM)', color: const Color(0xFFD97706)),
+                     const SizedBox(height: 8),
+                     _MeaningCard(
+                       item: data['sum_meaning'], 
+                       isSum: true,
+                       onDismissKeyboard: () => _phoneFocusNode.unfocus(),
+                     ),
+                     const SizedBox(height: 24),
+                  ],
+
+                  // MAIN PAIRS
+                  _SectionHeader(icon: Icons.verified_user, title: 'คู่เลขหลัก (MAIN PAIRS)', color: const Color(0xFF4F46E5)),
+                  const SizedBox(height: 8),
+                  if (data['main_pairs'] != null)
+                    ...(data['main_pairs'] as List).map((p) => _MeaningCard(
+                      item: p,
+                      onDismissKeyboard: () => _phoneFocusNode.unfocus(),
+                    )),
+                  
+                  const SizedBox(height: 24),
+
+                  // HIDDEN PAIRS
+                  _SectionHeader(icon: Icons.visibility_off, title: 'คู่เลขแฝง (HIDDEN PAIRS)', color: const Color(0xFF6B7280)),
+                  const SizedBox(height: 8),
+                  if (data['hidden_pairs'] != null)
+                    ...(data['hidden_pairs'] as List).map((p) => _MeaningCard(
+                      item: p,
+                      onDismissKeyboard: () => _phoneFocusNode.unfocus(),
+                    )),
+                ],
+             ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class SolarSystemPainter extends CustomPainter {
-  final List<bool> activeCategories; // [Health, Work, Finance, Love]
-
-  SolarSystemPainter({required this.activeCategories});
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Color color;
+  const _SectionHeader({required this.icon, required this.title, required this.color});
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-    final strokeWidth = 30.0;
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 6),
+        Text(title, style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+      ],
+    );
+  }
+}
+
+class _MeaningCard extends StatelessWidget {
+  final Map<String, dynamic> item;
+  final bool isSum;
+  final VoidCallback? onDismissKeyboard;
+
+  const _MeaningCard({required this.item, this.isSum = false, this.onDismissKeyboard});
+
+  @override
+  Widget build(BuildContext context) {
+    final pair = item['pair']?.toString() ?? '';
+    final meaning = item['meaning'] as Map<String, dynamic>?;
+    final colorHex = meaning?['color']?.toString() ?? '#9E9E9E';
+    final desc = meaning?['miracle_desc']?.toString() ?? '-';
+    final detail = meaning?['miracle_detail']?.toString() ?? '';
+    final keywords = (meaning?['keywords'] as List?)?.join(' / ');
     
-    final bgPaint = Paint()
-      ..color = Colors.grey[200]!
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
+    final color = _parseColor(colorHex);
 
-    // Draw background circle
-    canvas.drawCircle(center, radius - strokeWidth/2, bgPaint);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          // Dismiss keyboard before showing detail
+          onDismissKeyboard?.call();
+          
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => _MeaningDetailSheet(
+              pair: pair,
+              color: color,
+              keywords: keywords ?? '',
+              desc: desc,
+              detail: detail,
+            ),
+          ).then((_) {
+            // Ensure keyboard stays dismissed after closing bottom sheet
+            onDismissKeyboard?.call();
+          });
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isSum ? const Color(0xFFFFFBEB) : Colors.white,
+            border: Border.all(color: isSum ? const Color(0xFFFEF3C7) : Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: isSum ? [] : [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset:const Offset(0,2))],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Badge
+              Container(
+                width: 36, height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                   color: color,
+                   shape: BoxShape.circle,
+                   boxShadow: [BoxShadow(color: color.withOpacity(0.3), blurRadius: 4, offset: const Offset(0,2))]
+                ),
+                child: Text(
+                  pair, 
+                  style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Text Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (keywords != null && keywords.isNotEmpty)
+                       Text(
+                         keywords,
+                         style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF1F2937))
+                       ),
+                    Text(
+                      desc,
+                      style: GoogleFonts.kanit(fontSize: 12, color: const Color(0xFF6B7280)),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-    final rect = Rect.fromCircle(center: center, radius: radius - strokeWidth/2);
+  Color _parseColor(String hex) {
+     try {
+       String clean = hex.replaceAll('#', '');
+       if (clean.length == 6) clean = 'FF$clean';
+       return Color(int.parse(clean, radix: 16));
+     } catch(e) {
+       return Colors.grey;
+     }
+  }
+}
+
+class _MeaningDetailSheet extends StatelessWidget {
+  final String pair;
+  final Color color;
+  final String keywords;
+  final String desc;
+  final String detail;
+
+  const _MeaningDetailSheet({
+    required this.pair,
+    required this.color,
+    required this.keywords,
+    required this.desc,
+    required this.detail,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag Handle
+          Container(
+            width: 40, height: 4,
+            margin: const EdgeInsets.only(bottom: 24),
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2)
+            ),
+          ),
+          
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Big Badge
+                  Container(
+                    width: 80, height: 80,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(color: color.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 8))
+                      ]
+                    ),
+                    child: Text(
+                      pair,
+                      style: GoogleFonts.kanit(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  if (keywords.isNotEmpty) ...[
+                    Text(
+                      keywords,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.kanit(fontSize: 20, fontWeight: FontWeight.bold, color: const Color(0xFF1F2937)),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
+                  Text(
+                    desc,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.w500, color: const Color(0xFF4B5563)),
+                  ),
+                  
+                  if (detail.isNotEmpty) ...[
+                    const SizedBox(height: 32),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFAFAFA),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFF3F4F6)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.auto_awesome, size: 20, color: Color(0xFFF59E0B)),
+                              const SizedBox(width: 8),
+                              Text(
+                                'คำทำนายเจาะลึก',
+                                style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1F2937)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            "     " + detail, // Added indentation using spaces
+                            style: GoogleFonts.sarabun( // Changed to Sarabun
+                                fontSize: 18, // Increased size
+                                color: const Color(0xFF374151), 
+                                height: 1.6
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SolarSystem extends StatelessWidget {
+  final Map<String, dynamic> data;
+  final AnimationController innerController;
+  final AnimationController outerController;
+
+  const _SolarSystem({required this.data, required this.innerController, required this.outerController});
+
+  @override
+  Widget build(BuildContext context) {
+    // Sum Badge (Sun)
+    final sumPair = data['sum_meaning']?['pair']?.toString() ?? '00';
+    final sumColor = _parseColor(data['sum_meaning']?['meaning']?['color']);
+
+    final mainPairs = (data['main_pairs'] as List?) ?? [];
+    final hiddenPairs = (data['hidden_pairs'] as List?) ?? [];
+
+    return SizedBox(
+      width: 300, 
+      height: 300,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+           // Sun
+           Container(
+             width: 100, height: 100,
+             decoration: BoxDecoration(
+               color: const Color(0xFFFFD700),
+               shape: BoxShape.circle,
+               boxShadow: [
+                 BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.5), blurRadius: 20, spreadRadius: 5)
+               ]
+             ),
+             alignment: Alignment.center,
+             child: Container(
+               width: 44, height: 44,
+               decoration: BoxDecoration(
+                 color: sumColor,
+                 shape: BoxShape.circle,
+                 border: Border.all(color: Colors.white, width: 2),
+                 boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black26)]
+               ),
+               alignment: Alignment.center,
+               child: Text(sumPair, style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold))
+             ),
+           ),
+
+           // Orbits
+           _buildOrbit(160, Colors.orange.withOpacity(0.3)),
+           _buildOrbit(260, Colors.orange.withOpacity(0.2)),
+
+           // Inner Planets (Main Pairs)
+           ...List.generate(mainPairs.length, (index) {
+              return _Planet(
+                controller: innerController, 
+                index: index, 
+                total: mainPairs.length, 
+                radius: 80, // 160/2 
+                item: mainPairs[index],
+                isReverse: false,
+              );
+           }),
+
+           // Outer Planets (Hidden Pairs)
+           ...List.generate(hiddenPairs.length, (index) {
+              return _Planet(
+                controller: outerController, 
+                index: index, 
+                total: hiddenPairs.length, 
+                radius: 130, // 260/2
+                item: hiddenPairs[index],
+                isReverse: false, // Web logic: planets counter-rotate, but here we orbit
+                // Actually web: container spins, planets anti-spin to stay upright.
+                // Simplified: Just orbit them. Text rotation correction handled in _Planet if needed.
+              );
+           }),
+           
+           // Legend
+           Positioned(
+             bottom: 0,
+             child: Text('วงใน: คู่เลขหลัก | วงนอก: คู่เลขแฝง', style: GoogleFonts.kanit(fontSize: 12, color: Colors.grey[500])),
+           )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrbit(double diameter, Color color) {
+    return Container(
+      width: diameter,
+      height: diameter,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: color, style: BorderStyle.solid, width: 1), // Dashed hard in basic container, solid fine
+      ),
+    );
+  }
+  
+  Color _parseColor(dynamic hex) {
+     if (hex == null) return Colors.grey;
+     try {
+       String clean = hex.toString().replaceAll('#', '');
+       if (clean.length == 6) clean = 'FF$clean';
+       return Color(int.parse(clean, radix: 16));
+     } catch(e) {
+       return Colors.grey;
+     }
+  }
+}
+
+class _Planet extends StatelessWidget {
+  final AnimationController controller;
+  final int index;
+  final int total;
+  final double radius;
+  final Map<String, dynamic> item;
+  final bool isReverse;
+
+  const _Planet({
+    required this.controller, 
+    required this.index, 
+    required this.total, 
+    required this.radius,
+    required this.item,
+    required this.isReverse
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final pair = item['pair']?.toString() ?? '';
+    final colorHex = item['meaning']?['color']?.toString() ?? '#9E9E9E';
     
-    // Define colors to match Web App
-    final colors = [
-      const Color(0xFF80CBC4), // Health
-      const Color(0xFF90CAF9), // Work
-      const Color(0xFFFFCC80), // Finance
-      const Color(0xFFF48FB1), // Love
-    ];
+    // Calculate initial angle based on index
+    final double initialAngle = (2 * math.pi * index) / total;
 
-    // Starting from top (-pi/2)
-    double startAngle = -math.pi / 2;
-    double sweepAngle = math.pi / 2; // 90 degrees per category
-
-    for (int i = 0; i < 4; i++) {
-      if (activeCategories[i]) {
-        final paint = Paint()
-          ..color = colors[i]
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.butt;
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, child) {
+        // Orbit rotation
+        final double currentAngle = initialAngle + (controller.value * 2 * math.pi);
         
-        canvas.drawArc(rect, startAngle, sweepAngle, false, paint);
-      }
-      startAngle += sweepAngle;
-    }
+        // Polar to Cartesian
+        final double x = radius * math.cos(currentAngle);
+        final double y = radius * math.sin(currentAngle);
+
+        return Transform.translate(
+          offset: Offset(x, y),
+          child: Container(
+            width: 30, height: 30,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: _parseColor(colorHex),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black26)]
+            ),
+            child: Text(pair, style: GoogleFonts.kanit(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        );
+      },
+    );
+  }
+  
+    Color _parseColor(String hex) {
+     try {
+       String clean = hex.replaceAll('#', '');
+       if (clean.length == 6) clean = 'FF$clean';
+       return Color(int.parse(clean, radix: 16));
+     } catch(e) {
+       return Colors.grey;
+     }
+  }
+}
+
+class _BlinkingDot extends StatefulWidget {
+  @override
+  State<_BlinkingDot> createState() => __BlinkingDotState();
+}
+
+class __BlinkingDotState extends State<_BlinkingDot> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 1))..repeat(reverse: true);
+  }
+  
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _controller,
+      child: Container(
+        width: 10, height: 10,
+        decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+      ),
+    );
   }
 }

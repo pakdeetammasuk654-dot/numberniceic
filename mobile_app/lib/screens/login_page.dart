@@ -179,11 +179,13 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
 
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                const SizedBox(height: 32),
+                Column(
                   children: [
-                    Text('ยังไม่มีบัญชี? ', style: GoogleFonts.kanit(color: Colors.white70)),
+                    Text('ยังไม่มีบัญชีใช่หรือไม่?', 
+                      style: GoogleFonts.kanit(color: Colors.white, fontSize: 16)
+                    ),
+                    const SizedBox(height: 8),
                     GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -191,12 +193,21 @@ class _LoginPageState extends State<LoginPage> {
                           MaterialPageRoute(builder: (context) => const RegisterPage()),
                         );
                       },
-                      child: Text(
-                        'ลงทะเบียนที่นี่',
-                        style: GoogleFonts.kanit(
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFFFFBA00),
-                          decoration: TextDecoration.underline,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: const Color(0xFFFFBA00).withOpacity(0.5)),
+                        ),
+                        child: Text(
+                          'ลงทะเบียนที่นี่',
+                          style: GoogleFonts.kanit(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: const Color(0xFFFFBA00),
+                            decoration: TextDecoration.underline,
+                          ),
                         ),
                       ),
                     ),

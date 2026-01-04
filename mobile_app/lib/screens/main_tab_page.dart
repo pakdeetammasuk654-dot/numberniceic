@@ -106,6 +106,27 @@ class _MainTabPageState extends State<MainTabPage> {
           ],
         ),
       ),
+      floatingActionButton: _currentIndex == 3 
+        ? null 
+        : FloatingActionButton(
+            onPressed: () => setState(() => _currentIndex = 3),
+            backgroundColor: Colors.transparent,
+            elevation: 10,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFFD700), Color(0xFFFDB931)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: const Icon(Icons.shopping_cart, color: Color(0xFF4A3B00), size: 28),
+            ),
+          ),
     );
   }
 }

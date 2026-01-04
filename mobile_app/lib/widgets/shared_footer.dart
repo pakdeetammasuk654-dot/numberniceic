@@ -68,9 +68,26 @@ class SharedFooter extends StatelessWidget {
               const SizedBox(height: 40),
               
               // Contact
-              _buildContactItem(Icons.email_outlined, 'o_ye@hotmail.com', iconColor, textLight),
+              _buildContactItem(Icons.email_outlined, 'msaccess2013@gmail.com', iconColor, textLight),
               const SizedBox(height: 12),
               _buildContactItem(Icons.phone_outlined, '0936544442 (คุณทญา)', iconColor, textLight),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.network(
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/LINE_logo.svg/480px-LINE_logo.svg.png',
+                    width: 18,
+                    height: 18,
+                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.chat_bubble, color: Color(0xFF06C755), size: 18),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Line ID: numberniceic',
+                    style: GoogleFonts.kanit(fontSize: 14, color: textLight),
+                  ),
+                ],
+              ),
               
               const SizedBox(height: 20),
               Text(

@@ -19,6 +19,7 @@ import 'order_history_page.dart';
 import 'privacy_policy_page.dart';
 import 'delete_account_page.dart';
 import '../widgets/shared_footer.dart';
+import '../widgets/lucky_number_card.dart'; // Import for Saved Number Display
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -134,8 +135,7 @@ class _DashboardPageState extends State<DashboardPage> {
               final isAdmin = statusInt == 9;
 
               final savedNames = (data['saved_names'] ?? data['SavedNames']) as List<dynamic>? ?? [];
-              final assignedColorsRaw = data['assigned_colors'] ?? data['AssignedColors'] ?? [];
-              final assignedColors = List<String>.from(assignedColorsRaw);
+
 
               return SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -193,35 +193,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                           const SizedBox(height: 24),
 
-                          // 2. VIP Section (Wallet Colors)
-                          if (isVip) ...[
-                            Text('สีกระเป๋ามงคลของคุณ', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 12),
-                            if (assignedColors.isNotEmpty && assignedColors.any((c) => c.isNotEmpty))
-                               _buildWalletColors(assignedColors)
-                            else
-                               Container(
-                                 padding: const EdgeInsets.all(20),
-                                 width: double.infinity,
-                                 decoration: BoxDecoration(
-                                   color: Colors.amber[50], 
-                                   borderRadius: BorderRadius.circular(16),
-                                   border: Border.all(color: Colors.amber.shade200)
-                                 ),
-                                 child: Column(
-                                   children: [
-                                     const Icon(Icons.wallet, color: Colors.amber, size: 48),
-                                     const SizedBox(height: 12),
-                                     Text('ไม่พบข้อมูลสีกระเป๋า', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.amber[900])),
-                                     const SizedBox(height: 4),
-                                     Text('อัปเดตข้อมูลวันเกิดในโปรไฟล์เพื่อรับสีกระเป๋า', style: GoogleFonts.kanit(fontSize: 13, color: Colors.amber[800])),
-                                   ],
-                                 ),
-                               ),
-                            const SizedBox(height: 24),
-                          ] else ...[
-                             const SizedBox(height: 24),
-                          ],
+
 
                           // 4. Saved Names Section
                           Container(
@@ -796,74 +768,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
 
-  Widget _buildWalletColors(List<String> colors) {
-    // Map color names to Color objects (Simplified mapping for demo)
-    Color getColor(String colorStr) {
-      colorStr = colorStr.toLowerCase().trim();
-      
-      // Handle Hex strings like #FFFFFF
-      if (colorStr.startsWith('#')) {
-        try {
-          String hex = colorStr.replaceAll('#', '');
-          if (hex.length == 6) hex = 'FF' + hex; // Add alpha if missing
-          return Color(int.parse(hex, radix: 16));
-        } catch (e) {
-          return Colors.grey.shade300;
-        }
-      }
 
-      // Fallback to Thai name mapping
-      if (colorStr.contains('แดง')) return Colors.red;
-      if (colorStr.contains('เหลือง')) return Colors.yellow;
-      if (colorStr.contains('ชมพู')) return Colors.pinkAccent;
-      if (colorStr.contains('เขียว')) return Colors.green;
-      if (colorStr.contains('ส้ม') || colorStr.contains('แสด')) return Colors.orange;
-      if (colorStr.contains('ฟ้า') || colorStr.contains('น้ำเงิน')) return Colors.blue;
-      if (colorStr.contains('ม่วง')) return Colors.purple;
-      if (colorStr.contains('ดำ')) return Colors.black;
-      if (colorStr.contains('ขาว')) return Colors.white;
-      if (colorStr.contains('เทา')) return Colors.grey;
-      return Colors.grey.shade300;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.amber.shade200),
-        boxShadow: [
-           BoxShadow(color: Colors.amber.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Wrap(
-        spacing: 16,
-        runSpacing: 16,
-        alignment: WrapAlignment.center,
-        children: colors.map((c) {
-          final isHex = c.startsWith('#');
-          return Column(
-            children: [
-              Container(
-                width: 48, height: 48,
-                decoration: BoxDecoration(
-                  color: getColor(c),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey.shade300, width: 2),
-                  boxShadow: [BoxShadow(blurRadius: 6, color: Colors.black.withOpacity(0.1), offset: const Offset(0, 2))]
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (!isHex)
-                 Text(c, style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.w500))
-              else
-                 const SizedBox(height: 12), // Spacer if no text
-            ],
-          );
-        }).toList(),
-      ),
-    );
-  }
 
   Widget _buildSavedNamesTable(List<dynamic> savedNames, bool isUserVip) {
     return Container(
@@ -910,6 +815,50 @@ class _DashboardPageState extends State<DashboardPage> {
             final satPairs = (nameData['sat_pairs'] ?? nameData['SatPairs'] ?? []) as List<dynamic>;
             final shaPairs = (nameData['sha_pairs'] ?? nameData['ShaPairs'] ?? []) as List<dynamic>;
             final id = nameData['id'] ?? nameData['ID'] ?? 0;
+            
+            // ----------------------------------------------------
+            // Check if this saved item is a PHONE NUMBER (for Gold Card display)
+            // ----------------------------------------------------
+            final isPhone = name.length == 10 && int.tryParse(name) != null;
+
+            if (isPhone) {
+                // Calculate Sum
+                int sum = 0;
+                try {
+                  sum = name.split('').fold(0, (p, c) => p + int.parse(c));
+                } catch (_) {}
+                
+                // Keywords: For saved items, maybe we don't have analysis breakdown unless we fetch it.
+                // But the image shows "Health, Safety, Stability". 
+                // We'll use a placeholder or derived if available in saved data?
+                // Saved data structure might not hold keywords.
+                // We will use Meaning if available or generic.
+                List<String> keywords = [ 'ความมั่งคั่ง', 'บารมี', 'โชคลาภ' ]; // Default positive keywords
+                if (nameData['meaning'] != null) keywords = [ nameData['meaning'].toString() ];
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+                  child: LuckyNumberCard(
+                    phoneNumber: name,
+                    sum: sum,
+                    isVip: true, // Show VIP badge as per image
+                    keywords: keywords,
+                    buyButtonLabel: 'ซื้อเบอร์',
+                    // secondary button: Analyze (Navigate to details)
+                    analyzeButtonLabel: 'วิเคราะห์',
+                    analyzeButtonColor: const Color(0xFF2962FF),
+                    analyzeButtonBorderColor: const Color(0xFFBBDEFB),
+                    onBuy: () {
+                       Navigator.push(context, MaterialPageRoute(builder: (context) => const ShopPage()));
+                    },
+                    onAnalyze: () async {
+                       await Navigator.push(context, MaterialPageRoute(builder: (context) => AnalyzerPage(initialName: name, initialDay: birthDayRaw)));
+                       _loadDashboard();
+                    },
+                    onClose: () => _confirmDelete(id), // Delete via X button
+                  ),
+                );
+            }
 
             return InkWell(
               onTap: () async {

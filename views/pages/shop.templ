@@ -1,22 +1,62 @@
 package pages
 
-templ Shop() {
-	<div style="font-family: 'Kanit', sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem 1rem;">
-		<div style="text-align: center; margin-bottom: 3rem;">
-			<h1 style="font-size: 2.5rem; color: #2d3748; margin-bottom: 1rem;">ร้านค้ามงคล</h1>
-			<p style="font-size: 1.1rem; color: #718096;">เลือกซื้อสิ่งของมงคลเพื่อเสริมดวง และรับรหัส VIP สำหรับใช้งานในแอปฟรี!</p>
+templ Shop(isLoggedIn bool) {
+	if isLoggedIn {
+		<div id="shop-config" data-is-logged-in="true" style="display: none;"></div>
+	} else {
+		<div id="shop-config" data-is-logged-in="false" style="display: none;"></div>
+	}
+	<div style="font-family: 'Kanit', sans-serif; width: 100%; margin: 0; padding: 0;">
+		<div style="text-align: center; padding: 4rem 1rem; background: #f7fafc;">
+			<h1 style="font-size: 3rem; color: #2d3748; margin-bottom: 1rem; font-weight: bold;">ร้านมาดี</h1>
+			<p style="font-size: 1.2rem; color: #718096; max-width: 600px; margin: 0 auto;">เลือกซื้อสิ่งของมงคลเพื่อเสริมดวง และรับรหัส VIP สำหรับใช้งานในแอปฟรี!</p>
 		</div>
 
-		<!-- Product Grid Container -->
-		<div id="product-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; min-height: 400px;">
-			<!-- Skeleton Loading State -->
-			<div class="skeleton-loader" style="background: white; border-radius: 20px; height: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);"></div>
-			<div class="skeleton-loader" style="background: white; border-radius: 20px; height: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);"></div>
+		<!-- Product Grid Container: FLUSH -->
+		<div id="product-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 0; width: 100%;">
+			<!-- Loading State -->
+			<div style="background: #eee; height: 500px; width: 100%;"></div>
+			<div style="background: #ddd; height: 500px; width: 100%;"></div>
+		</div>
+
+		<!-- Modals and Styles REMAIN THE SAME or slightly adjusted for lack of radius -->
+		<style>
+			#confirm-modal > div, #payment-modal > div, #shop-modal > div { border-radius: 0 !important; }
+            .btn-buy { border-radius: 0 !important; }
+		</style>
+
+		<!-- Confirmation Modal -->
+		<div id="confirm-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
+			<div style="background: white; padding: 2rem; border-radius: 0; max-width: 450px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+				<h2 style="font-size: 1.5rem; color: #2d3748; margin-bottom: 1rem; font-weight: bold;">ยืนยันการสั่งซื้อ</h2>
+				<p style="color: #4a5568; margin-bottom: 1.5rem;">คุณต้องการสั่งซื้อสินค้าชิ้นนี้ใช่หรือไม่?</p>
+				
+				<div style="background: #f7fafc; padding: 1.25rem; border-radius: 16px; margin-bottom: 1.5rem; border: 1px solid #edf2f7;">
+					<h3 id="confirm-product-name" style="font-size: 1.25rem; color: #2d3748; margin-bottom: 0.25rem; font-weight: bold;">-</h3>
+					<div id="confirm-product-price" style="font-size: 1.5rem; color: #2da44e; font-weight: bold; margin-bottom: 1rem;">0.00 ฿</div>
+					
+					<div style="background: #ebf8ff; color: #2b6cb0; padding: 0.75rem; border-radius: 12px; display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; font-weight: bold; border: 1px solid #bee3f8;">
+						<span style="font-size: 1.25rem;">⭐</span>
+						<span>แถมฟรี! รหัส VIP 1 ปี</span>
+					</div>
+				</div>
+
+				<div style="display: flex; gap: 1rem;">
+					<button 
+						onclick="window.closeConfirmModal()"
+						style="flex: 1; background: #edf2f7; color: #4a5568; border: none; padding: 1rem; border-radius: 0; font-weight: bold; font-family: 'Kanit', sans-serif; cursor: pointer; transition: background 0.2s;"
+					>ยกเลิก</button>
+					<button 
+						id="btn-confirm-order"
+						style="flex: 2; background: #2d3748; color: white; border: none; padding: 1rem; border-radius: 0; font-weight: bold; font-family: 'Kanit', sans-serif; cursor: pointer; transition: background 0.2s;"
+					>ยืนยันคำสั่งซื้อ</button>
+				</div>
+			</div>
 		</div>
 
 		<!-- Payment Modal -->
 		<div id="payment-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
-			<div style="background: white; padding: 0; border-radius: 24px; max-width: 450px; width: 100%; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+			<div style="background: white; padding: 0; border-radius: 0; max-width: 450px; width: 100%; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
 				<div style="background: #2d3748; padding: 1.5rem; color: white;">
 					<h3 style="margin: 0; font-size: 1.25rem;">ชำระเงิน</h3>
 					<p style="margin: 0.25rem 0 0; font-size: 0.9rem; opacity: 0.8;">Ref No: <span id="pay-ref-no" style="font-family: monospace;">-</span></p>
@@ -75,12 +115,58 @@ templ Shop() {
 		
 		<style>
 			@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+			
+			#scroll-to-top-btn {
+				position: fixed;
+				bottom: 90px;
+				right: 20px;
+				z-index: 2147483647;
+				background: #2d3748;
+				color: white;
+				width: 45px;
+				height: 45px;
+				border-radius: 50%;
+				display: none;
+				align-items: center;
+				justify-content: center;
+				box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+				cursor: pointer;
+				transition: all 0.3s ease;
+				border: none;
+			}
+			#scroll-to-top-btn:hover {
+				transform: translateY(-5px);
+				box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+				background: #4a5568;
+			}
 		</style>
 
+		<!-- Scroll to Top Button -->
+		<div id="scroll-to-top-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="กลับไปด้านบน">
+			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+		</div>
+
 		<script>
+			// Scroll to Top visibility logic
+			function toggleScrollTopBtn() {
+				const btn = document.getElementById('scroll-to-top-btn');
+				if (!btn) return;
+				if (window.pageYOffset > 100 || document.documentElement.scrollTop > 100) {
+					btn.style.display = 'flex';
+				} else {
+					btn.style.display = 'none';
+				}
+			}
+
+			window.addEventListener('scroll', toggleScrollTopBtn);
+			// Initial check
+			toggleScrollTopBtn();
+
 			// Helper functions (Global Scope - attached to window)
 			window.pollInterval = null;
 			window.timerInterval = null;
+
+			window.isLoggedIn = document.getElementById('shop-config').getAttribute('data-is-logged-in') === 'true';
 
 			window.startTimer = function(duration, display) {
 				var timer = duration, minutes, seconds;
@@ -103,8 +189,29 @@ templ Shop() {
 				}, 1000);
 			};
 
-			window.initiatePurchase = async function(productName) {
-				console.log("Initiating purchase for:", productName);
+			window.initiatePurchase = function(productName, price) {
+				if (!window.isLoggedIn) {
+					window.location.href = '/login';
+					return;
+				}
+				console.log("Showing confirm for:", productName);
+				document.getElementById('confirm-product-name').innerText = productName;
+				document.getElementById('confirm-product-price').innerText = price.toLocaleString() + ' ฿';
+				
+				const btn = document.getElementById('btn-confirm-order');
+				btn.onclick = () => window.executePurchase(productName);
+				
+				document.getElementById('confirm-modal').style.display = 'flex';
+			};
+
+			window.closeConfirmModal = function() {
+				document.getElementById('confirm-modal').style.display = 'none';
+			};
+
+			window.executePurchase = async function(productName) {
+				console.log("Executing purchase for:", productName);
+				window.closeConfirmModal();
+
 				// 1. Create Order via API
 				try {
 					const res = await fetch('/api/shop/order', {
@@ -196,68 +303,88 @@ templ Shop() {
 
 
 			// Load products on page load
-			document.addEventListener('DOMContentLoaded', async () => {
+			(async function() {
 				const grid = document.getElementById('product-grid');
-				try {
-					const res = await fetch('/api/shop/products');
-					if (!res.ok) throw new Error('Failed to load products');
-					const products = await res.json();
-					
-					grid.innerHTML = '';
-					
-					if (products.length === 0) {
-						grid.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">ไม่พบสินค้าในขณะนี้</p>';
-						return;
-					}
+                if (!grid) {
+                    // Fallback in case script runs before element is in DOM
+                    document.addEventListener('DOMContentLoaded', loadProducts);
+                    return;
+                }
+                await loadProducts();
 
-					products.forEach(p => {
-						const card = document.createElement('div');
-						card.style.cssText = "background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #edf2f7; transition: transform 0.3s ease;";
-						
-						let imageHtml = '';
-						if (p.image_path && p.image_path.trim() !== '') {
-							// Use uploaded image
-							imageHtml = `<img src="${p.image_path}" alt="${p.name}" style="width: 100%; height: 200px; object-fit: cover; display: block;">`;
-						} else {
-							// Legacy Fallback
-							let iconSvg = '';
-							if (p.icon_type === 'bracelet') {
-								iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
-							} else {
-								iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg>';
-							}
-							imageHtml = `
-								<div style="height: 200px; background: linear-gradient(135deg, ${p.image_color_1 || '#ddd'} 0%, ${p.image_color_2 || '#999'} 100%); display: flex; align-items: center; justify-content: center;">
-									${iconSvg}
-								</div>
-							`;
-						}
+                async function loadProducts() {
+                    const grid = document.getElementById('product-grid');
+                    try {
+                        const res = await fetch('/api/shop/products');
+                        if (!res.ok) throw new Error('Failed to load products');
+                        const products = await res.json();
+                        
+                        grid.innerHTML = '';
+                        
+                        if (products.length === 0) {
+                            grid.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">ไม่พบสินค้าในขณะนี้</p>';
+                            return;
+                        }
 
-						card.innerHTML = `
-							${imageHtml}
-							<div style="padding: 1.5rem;">
-								<h3 style="font-size: 1.5rem; color: #2d3748; margin-bottom: 0.5rem;">${p.name}</h3>
-								<p style="color: #718096; font-size: 0.95rem; margin-bottom: 1.5rem;">${p.description}</p>
-								<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-									<span style="font-size: 1.75rem; font-weight: bold; color: #2da44e;">${p.price.toLocaleString()} ฿</span>
-									<span style="background: #ebf8ff; color: #2b6cb0; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">แถมฟรี VIP Lifetime</span>
-								</div>
-								<button 
-									onclick="window.initiatePurchase('${p.name}')"
-									class="btn-buy"
-									style="width: 100%; background: #2d3748; color: white; border: none; padding: 1rem; border-radius: 12px; font-weight: bold; font-family: 'Kanit', sans-serif; cursor: pointer; transition: background 0.2s;"
-									onmouseover="this.style.background='#4a5568'"
-									onmouseout="this.style.background='#2d3748'"
-								>สั่งซื้อตอนนี้</button>
-							</div>
-						`;
-						grid.appendChild(card);
-					});
-				} catch (e) {
-					console.error(e);
-					grid.innerHTML = '<p style="text-align:center; color:red; grid-column: 1/-1;">เกิดข้อผิดพลาดในการโหลดสินค้า</p>';
-				}
-			});
+                        products.forEach(p => {
+                            const card = document.createElement('div');
+                            card.style.cssText = `
+                                position: relative;
+                                height: 600px;
+                                overflow: hidden;
+                                background: linear-gradient(135deg, ${p.image_color_1 || '#ddd'} 0%, ${p.image_color_2 || '#999'} 100%);
+                                cursor: default;
+                            `;
+                            
+                            let imageHtml = '';
+                            if (p.image_path && p.image_path.trim() !== '') {
+                                imageHtml = `
+                                    <img src="${p.image_path}" alt="${p.name}" 
+                                         style="position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1;">
+                                `;
+                            } else {
+                                let iconSvg = (p.icon_type === 'coin') 
+                                    ? '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="white" opacity="0.2" stroke-width="1"><circle cx="12" cy="12" r="10"/><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg>'
+                                    : '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="white" opacity="0.2" stroke-width="1"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+                                imageHtml = `
+                                    <div style="position: absolute; top:0; left:0; width:100%; height:100%; display: flex; align-items: center; justify-content: center; z-index: 1;">
+                                        ${iconSvg}
+                                    </div>
+                                `;
+                            }
+
+                            card.innerHTML = `
+                                ${imageHtml}
+                                <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(transparent 40%, rgba(0,0,0,0.8) 100%); z-index: 2;"></div>
+                                <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 2.5rem; z-index: 3; box-sizing: border-box; color: white;">
+                                    <div style="margin-bottom: 1rem; opacity: 0.9;">
+                                        <span style="border: 1px solid rgba(255,255,255,0.4); padding: 4px 12px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">แถมฟรี VIP 1 ปี</span>
+                                    </div>
+                                    <h3 style="font-size: 2.5rem; margin: 0 0 0.5rem; font-weight: bold; line-height: 1.1; text-shadow: 0 4px 10px rgba(0,0,0,0.5);">${p.name}</h3>
+                                    <p style="font-size: 1.1rem; opacity: 0.8; margin-bottom: 2rem; max-width: 90%; font-weight: 300;">${p.description}</p>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                                        <div>
+                                            <div style="font-size: 0.8rem; opacity: 0.6; letter-spacing: 2px;">PRICE</div>
+                                            <div style="font-size: 2.5rem; font-weight: bold;">${p.price.toLocaleString()} ฿</div>
+                                        </div>
+                                        <button 
+                                            onclick="window.initiatePurchase('${p.name}', ${p.price})"
+                                            class="btn-buy"
+                                            style="background: white; color: #1a202c; border: none; padding: 1.25rem 2.5rem; font-size: 1.1rem; font-weight: bold; font-family: 'Kanit', sans-serif; cursor: pointer; transition: transform 0.2s;"
+                                            onmouseover="this.style.transform='scale(1.05)'"
+                                            onmouseout="this.style.transform='scale(1)'"
+                                        >สั่งซื้อตอนนี้</button>
+                                    </div>
+                                </div>
+                            `;
+                            grid.appendChild(card);
+                        });
+                    } catch (e) {
+                        console.error(e);
+                        grid.innerHTML = '<p style="text-align:center; color:red; grid-column: 1/-1;">เกิดข้อผิดพลาดในการโหลดสินค้า</p>';
+                    }
+                }
+			})();
 		</script>
 	</div>
 }
