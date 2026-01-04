@@ -14,6 +14,7 @@ class LuckyNumberCard extends StatelessWidget {
   final String? analyzeButtonLabel;
   final Color? analyzeButtonColor;
   final Color? analyzeButtonBorderColor;
+  final Color? themeColor; // New: Color from Category
 
   const LuckyNumberCard({
     super.key,
@@ -28,10 +29,14 @@ class LuckyNumberCard extends StatelessWidget {
     this.analyzeButtonLabel,
     this.analyzeButtonColor,
     this.analyzeButtonBorderColor,
+    this.themeColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Default theme color if not provided
+    final primaryColor = themeColor ?? const Color(0xFFD4AF37);
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -39,10 +44,11 @@ class LuckyNumberCard extends StatelessWidget {
         borderRadius: BorderRadius.zero,
       ),
       child: Stack(
+        clipBehavior: Clip.none, // Allow overflow
         children: [
           // Content
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -51,13 +57,14 @@ class LuckyNumberCard extends StatelessWidget {
                   keywords.join(', '),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.kanit(
-                    fontSize: 16,
+                    fontSize: 14,
                     color: const Color(0xFF5D5D5D),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
+                // Phone Number (Golden Gradient)
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   child: ShaderMask(
@@ -73,15 +80,15 @@ class LuckyNumberCard extends StatelessWidget {
                     child: Text(
                       _formatPhoneNumber(phoneNumber),
                       style: GoogleFonts.kanit(
-                        fontSize: 40, // Reduced from 48
-                        fontWeight: FontWeight.bold,
+                        fontSize: 36, 
+                        fontWeight: FontWeight.w900,
                         color: Colors.white, // Required for ShaderMask
                         height: 1.0,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Badges Row
                 Row(
@@ -89,130 +96,119 @@ class LuckyNumberCard extends StatelessWidget {
                   children: [
                     // Sum Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFE0B2), // Light Orange/Cream
+                        color: primaryColor.withOpacity(0.15), // Light Tint
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         'ผลรวม $sum',
                         style: GoogleFonts.kanit(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF8D6E63), // Brownish
+                          color: primaryColor.withOpacity(0.8), // Darker Tint
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    // VIP Badge
-                    if (isVip)
-                      Row(
-                        children: [
-                          Text(
-                            'เบอร์ VIP',
-                            style: GoogleFonts.kanit(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF795548), // Brown
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          // Use text emoji for closer match to design, or keep Icon but colored differently
-                          const Icon(Icons.auto_awesome, size: 20, color: Color(0xFFD4AF37)), 
-                        ],
-                      ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
                 // Dashed Line
                 CustomPaint(
                   size: const Size(double.infinity, 1),
                   painter: DashedLinePainter(),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-                // Buttons Column
-                Column(
+                // Buttons Row
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        // Buy Button
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: onBuy,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF10B981), // Vivid Green (Success)
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.shopping_cart_outlined, size: 20),
-                                const SizedBox(width: 8),
-                                Text(
-                                  buyButtonLabel ?? 'ซื้อเลย',
-                                  style: GoogleFonts.kanit(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                    // Button Group (Buy + Analyze)
+                    Expanded(
+                      child: Row(
+                        children: [
+                          // Buy Button
+                          Expanded(
+                            flex: 3,
+                            child: ElevatedButton(
+                              onPressed: onBuy,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF10B981), 
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        // Close Button
-                        Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFEBEE), // Light Red
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFFFCDD2)),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.close, color: Color(0xFFE57373)),
-                            onPressed: onClose,
-                            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    // Analyze Button Row
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: onAnalyze,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: analyzeButtonColor ?? const Color(0xFF2962FF), // Default Blue
-                          side: BorderSide(color: analyzeButtonBorderColor ?? const Color(0xFFBBDEFB), width: 1.5),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          backgroundColor: Colors.white,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if ((analyzeButtonLabel ?? '').contains('ลบ'))
-                              Icon(Icons.delete_outline, size: 20, color: analyzeButtonColor)
-                            else
-                              const Icon(Icons.search, size: 20),
-                            const SizedBox(width: 8),
-                            Text(
-                              analyzeButtonLabel ?? 'วิเคราะห์เบอร์นี้',
-                              style: GoogleFonts.kanit(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                elevation: 0,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.shopping_cart_outlined, size: 18),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    buyButtonLabel ?? 'ซื้อเลย',
+                                    style: GoogleFonts.kanit(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
+                          ),
+                          const SizedBox(width: 8),
+                          // Analyze Button
+                          Expanded(
+                            flex: 2,
+                            child: OutlinedButton(
+                              onPressed: onAnalyze,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: analyzeButtonColor ?? const Color(0xFF64748B),
+                                side: BorderSide(color: analyzeButtonBorderColor ?? const Color(0xFFCBD5E1), width: 1.5),
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                backgroundColor: Colors.white,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.analytics_outlined, size: 18),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'วิเคราะห์', 
+                                    style: GoogleFonts.kanit(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(width: 8),
+                    
+                    // Close Button (Pushed out)
+                    Transform.translate(
+                      offset: const Offset(12, 0), // Push out to the right slightly
+                      child: Container(
+                        width: 44, height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFEBEE),
+                          borderRadius: BorderRadius.circular(12), // Fixed duplication
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.close, color: Color(0xFFE57373)),
+                          onPressed: onClose,
+                          padding: EdgeInsets.zero,
+                          iconSize: 20,
                         ),
                       ),
                     ),
@@ -227,7 +223,8 @@ class LuckyNumberCard extends StatelessWidget {
   }
 
   String _formatPhoneNumber(String number) {
-    if (number.length == 10) {
+    if (number.length >= 10) {
+      // 099-999-9999
       return '${number.substring(0, 3)}${number.substring(3, 6)}${number.substring(6)}';
     }
     return number;

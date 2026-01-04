@@ -25,7 +25,7 @@ class ApiService {
     // หากเป็น Debug Mode ให้ใช้ IP หรือ localhost
     // เลือกโหมด: หากเป็น kReleaseMode (ตอน Build App จริง) ให้ใช้ Domain
     // หากเป็น Debug Mode ให้ใช้ IP หรือ localhost
-    bool useProduction = false; // Changed to false to use local IP
+    const bool useProduction = false; // Set to true for production builds
 
     if (useProduction || kReleaseMode) {
       return 'https://$productionDomain';
@@ -494,30 +494,7 @@ class ApiService {
       throw Exception(e.toString());
     }
   }
-  static Future<Map<String, dynamic>> getLuckyNumber(String category, int index) async {
-    final url = Uri.parse('$baseUrl/api/lucky-number').replace(queryParameters: {
-      'category': category,
-      'index': index.toString(),
-    });
-    try {
-      final token = await AuthService.getToken();
-      final response = await http.get(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-      );
 
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        throw Exception('Failed to load lucky number');
-      }
-    } catch (e) {
-      throw Exception('Connection error: $e');
-    }
-  }
 
   // --- Order & Shop API ---
 
@@ -579,5 +556,29 @@ class ApiService {
       throw Exception(e.toString().replaceAll('Exception: ', ''));
     }
   }
-}
+  // --- Lucky Number API ---
+  static Future<Map<String, dynamic>?> getLuckyNumber(String category, {int index = 0}) async {
+    final url = Uri.parse('$baseUrl/api/lucky-number?category=${Uri.encodeComponent(category)}&index=$index');
+    try {
+      final token = await AuthService.getToken();
+      final response = await http.get(
+        url,
+        headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+        }
+      );
 
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data is Map<String, dynamic>) {
+           return data;
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Fetch Lucky Number Error: $e');
+      return null;
+    }
+  }
+}
