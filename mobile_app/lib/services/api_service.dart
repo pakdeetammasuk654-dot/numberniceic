@@ -25,7 +25,7 @@ class ApiService {
     // หากเป็น Debug Mode ให้ใช้ IP หรือ localhost
     // เลือกโหมด: หากเป็น kReleaseMode (ตอน Build App จริง) ให้ใช้ Domain
     // หากเป็น Debug Mode ให้ใช้ IP หรือ localhost
-    bool useProduction = true; // Changed to true to use production server
+    bool useProduction = false; // Changed to false to use local IP
 
     if (useProduction || kReleaseMode) {
       return 'https://$productionDomain';
@@ -33,10 +33,11 @@ class ApiService {
 
     if (Platform.isAndroid) {
       // 10.0.2.2 คือ IP ที่ Android Emulator ใช้เรียกเครื่อง Host (localhost)
-      return 'http://10.0.2.2:3000';
+      // return 'http://10.0.2.2:3000'; // For Emulator
+      return 'http://$localIp:3000'; // For Real Device via LAN
     }
     
-    return 'http://localhost:3000';
+    return 'http://$localIp:3000'; // For iOS Real Device / LAN
   }
 
   // --- Shipping Address API ---
@@ -229,6 +230,21 @@ class ApiService {
         return json.decode(response.body);
       } else {
         throw Exception('Failed to analyze name linguistically: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Connection error: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> analyzeRawNumber(String number) async {
+    final url = Uri.parse('$baseUrl/api/number-analysis').replace(queryParameters: {'number': number});
+    debugPrint('🚀 API REQUEST: GET $url');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to analyze number: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Connection error: $e');
@@ -478,6 +494,31 @@ class ApiService {
       throw Exception(e.toString());
     }
   }
+  static Future<Map<String, dynamic>> getLuckyNumber(String category, int index) async {
+    final url = Uri.parse('$baseUrl/api/lucky-number').replace(queryParameters: {
+      'category': category,
+      'index': index.toString(),
+    });
+    try {
+      final token = await AuthService.getToken();
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to load lucky number');
+      }
+    } catch (e) {
+      throw Exception('Connection error: $e');
+    }
+  }
+
   // --- Order & Shop API ---
 
   static Future<List<OrderModel>> getMyOrders() async {

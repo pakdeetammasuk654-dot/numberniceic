@@ -74,238 +74,76 @@ func (p SolarSystemProps) GetLinguisticScoreColor() string {
 	return "#2E7D32"
 }
 
+// GetActiveCategories returns list of categories present in the name
+func (p SolarSystemProps) GetActiveCategories() []string {
+	active := []string{}
+	for _, cat := range []string{"สุขภาพ", "การงาน", "การเงิน", "ความรัก"} {
+		// Only count as "Active" for the Positive Graph if there are GOOD numbers in it.
+		// If a category has only BAD numbers, it shouldn't contribute to the Positive Score/Graph.
+		if breakdown, exists := p.CategoryBreakdown[cat]; exists && breakdown.Good > 0 {
+			active = append(active, cat)
+		}
+	}
+	return active
+}
+func (p SolarSystemProps) GetBaseCategoryPercentage() float64 {
+	return float64(len(p.GetActiveCategories())) * 25.0
+}
+
+// GetActiveCategoriesJSON returns JSON of active categories for JavaScript
+func (p SolarSystemProps) GetActiveCategoriesJSON() string {
+	active := p.GetActiveCategories()
+	b, _ := json.Marshal(active)
+	return string(b)
+}
+
 func getCategoryColor(cat string) string {
 	switch cat {
 	case "การงาน":
-		return "#4158D0"
+		return "#90CAF9"
 	case "สุขภาพ":
-		return "#00DBDE"
+		return "#80CBC4"
 	case "การเงิน":
-		return "#FB8C00"
+		return "#FFCC80"
 	case "ความรัก":
-		return "#D4145A"
+		return "#F48FB1"
 	default:
 		return "#A0A0A0"
 	}
 }
 
-func DrawNestedDonut(id string, data string) templ.ComponentScript {
-	return templ.ComponentScript{
-		Name: `__templ_DrawNestedDonut_ed4d`,
-		Function: `function __templ_DrawNestedDonut_ed4d(id, data){(function() {
-		setTimeout(() => {
-			try {
-				console.log('[Nested Donut] Starting for ID:', id);
-			
-			const breakdown = JSON.parse(atob(data));
-			console.log('[Nested Donut] Breakdown data:', breakdown);
-			
-			const svg = document.getElementById(id);
-			if (!svg) {
-				console.error('[Nested Donut] SVG not found:', id);
-				return;
-			}
-			
-			const innerRing = svg.querySelector('.inner-ring');
-			const outerRing = svg.querySelector('.outer-ring');
-			
-			// Calculate totals
-			let totalPairs = 0;
-			const categories = [];
-			for (const [cat, counts] of Object.entries(breakdown)) {
-				const total = counts.good + counts.bad;
-				totalPairs += total;
-				// counts now includes 'color' field from Go
-				categories.push({ name: cat, good: counts.good, bad: counts.bad, color: counts.color, total });
-			}
-			
-			// If no pairs, show placeholder
-			if (totalPairs === 0) {
-				console.warn('[Nested Donut] No pairs to display');
-				// Draw a gray circle as placeholder
-				const placeholderPath = createArcPath(100, 100, 45, 18, -90, 270);
-				const pathElem = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-				pathElem.setAttribute('d', placeholderPath);
-				pathElem.setAttribute('fill', '#E0E0E0');
-				innerRing.appendChild(pathElem);
-				
-				// Still set legend colors even if no data
-				categories.forEach(cat => {
-					const legendBox = document.querySelector(` + "`" + `[data-category="${cat.name}"]` + "`" + `);
-					if (legendBox) {
-						legendBox.style.background = cat.color || '#A0A0A0';
-					}
-				});
-				return;
-			}
-			
-			// Set legend colors for ALL categories first
-			categories.forEach(cat => {
-				const legendBox = document.querySelector(` + "`" + `[data-category="${cat.name}"]` + "`" + `);
-				if (legendBox) {
-					legendBox.style.background = cat.color || '#A0A0A0';
-				}
-			});
-			
-			// Hide center text elements as they will be covered by the pie chart
-			const centerNumber = svg.querySelector('.donut-center-number');
-			const centerLabel = svg.querySelector('.donut-center-label');
-			if (centerNumber) centerNumber.style.display = 'none';
-			if (centerLabel) centerLabel.style.display = 'none';
-
-			// Draw inner ring (categories) - PIE CHART Style
-			let currentAngle = -45; // Start from -45 degrees for diagonal split
-			const innerRadius = 0; // Pie chart starts from center
-			const innerThickness = 50; // Radius of the pie
-			
-			categories.forEach((cat, index) => {
-				if (cat.total === 0) return; // Skip categories with 0 total
-				
-				const percentage = cat.total / totalPairs;
-				const angle = percentage * 360;
-				// Use color from Go backend, fallback to gray
-				const color = cat.color || '#A0A0A0';
-				console.log('[Nested Donut] Cat:', cat.name, 'Color:', color);
-				
-				const path = createArcPath(100, 100, innerRadius, innerThickness, currentAngle, currentAngle + angle);
-				const pathElem = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-				pathElem.setAttribute('d', path);
-				pathElem.setAttribute('fill', color);
-				pathElem.setAttribute('class', 'donut-segment');
-				pathElem.setAttribute('stroke', '#fff'); // Add white border
-				pathElem.setAttribute('stroke-width', '1');
-				
-				// Fix Thai encoding issue by using textContent
-				const titleElem = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-				titleElem.textContent = ` + "`" + `${cat.name}: ${cat.total} คู่` + "`" + `;
-				pathElem.appendChild(titleElem);
-				
-				innerRing.appendChild(pathElem);
-
-				// Add Percentage Label
-				if (percentage > 0.05) { // Only show label if > 5%
-					// Calculate position at 60% of radius (middle of the slice area roughly)
-					const labelRadius = innerThickness * 0.6; 
-					const midAngle = currentAngle + (angle / 2);
-					const midRad = (midAngle * Math.PI) / 180;
-					
-					const tx = 100 + labelRadius * Math.cos(midRad);
-					const ty = 100 + labelRadius * Math.sin(midRad);
-					
-					// Determine label color: Red if Bad > Good
-					let labelColor = '#fff';
-					let textShadow = '0px 1px 2px rgba(0,0,0,0.4)';
-					
-					// If Bad is significantly higher than Good (or just higher), alert with Red
-					if (cat.bad > cat.good) {
-						labelColor = '#ffeb3b'; // Use Yellow for better visibility on dark backgrounds? Or Red #ff3b30?
-						// User asked for "Red", but Red on Red (Love) is bad.
-						// Let's try explicit bright Red/Yellow hybrid or just Red with white stroke.
-						labelColor = '#ff0000';
-						textShadow = '0px 0px 3px #fff, 0px 0px 5px #fff'; // White glow to generate contrast
-					}
-
-					const textElem = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-					textElem.setAttribute('x', tx);
-					textElem.setAttribute('y', ty);
-					textElem.setAttribute('text-anchor', 'middle');
-					textElem.setAttribute('dominant-baseline', 'middle');
-					textElem.setAttribute('fill', labelColor);
-					textElem.setAttribute('font-size', '11px');
-					textElem.setAttribute('font-weight', 'bold');
-					textElem.setAttribute('style', ` + "`" + `pointer-events: none; text-shadow: ${textShadow};` + "`" + `);
-					textElem.textContent = Math.round(percentage * 100) + '%';
-					innerRing.appendChild(textElem);
-				}
-				
-				// Update legend color
-				const legendBox = document.querySelector(` + "`" + `[data-category="${cat.name}"]` + "`" + `);
-				if (legendBox) legendBox.style.background = color;
-				
-				currentAngle += angle;
-			});
-			
-			// Draw outer ring (good/bad for each category)
-			currentAngle = -90;
-			const outerRadius = 55; // Gap from pie (50 + 5 gap)
-			const outerThickness = 15;
-			
-			categories.forEach(cat => {
-				if (cat.total === 0) return; // Skip categories with 0 total
-				
-				const catPercentage = cat.total / totalPairs;
-				const catAngle = catPercentage * 360;
-				
-				if (cat.good > 0) {
-					const goodPercentage = cat.good / cat.total;
-					const goodAngle = catAngle * goodPercentage;
-					const path = createArcPath(100, 100, outerRadius, outerThickness, currentAngle, currentAngle + goodAngle);
-					const pathElem = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-					pathElem.setAttribute('d', path);
-					pathElem.setAttribute('fill', '#4CAF50');
-					pathElem.setAttribute('class', 'donut-segment outer');
-					pathElem.innerHTML = ` + "`" + `<title>${cat.name} - เลขดี: ${cat.good} คู่</title>` + "`" + `;
-					outerRing.appendChild(pathElem);
-					currentAngle += goodAngle;
-				}
-				
-				if (cat.bad > 0) {
-					const badPercentage = cat.bad / cat.total;
-					const badAngle = catAngle * badPercentage;
-					const path = createArcPath(100, 100, outerRadius, outerThickness, currentAngle, currentAngle + badAngle);
-					const pathElem = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-					pathElem.setAttribute('d', path);
-					pathElem.setAttribute('fill', '#F44336');
-					pathElem.setAttribute('class', 'donut-segment outer');
-					pathElem.innerHTML = ` + "`" + `<title>${cat.name} - เลขร้าย: ${cat.bad} คู่</title>` + "`" + `;
-					outerRing.appendChild(pathElem);
-					currentAngle += badAngle;
-				}
-			});
-			
-			
-			console.log('[Nested Donut] ✓ Chart rendered successfully');
-
-			
-			// Helper function to create SVG arc path
-			function createArcPath(cx, cy, radius, thickness, startAngle, endAngle) {
-				// Handle full circle case
-				if (endAngle - startAngle >= 359.9) {
-					endAngle = startAngle + 359.99;
-				}
-
-				const innerRadius = radius;
-				const outerRadius = radius + thickness;
-				
-				const startRad = (startAngle * Math.PI) / 180;
-				const endRad = (endAngle * Math.PI) / 180;
-				
-				const x1 = cx + outerRadius * Math.cos(startRad);
-				const y1 = cy + outerRadius * Math.sin(startRad);
-				const x2 = cx + outerRadius * Math.cos(endRad);
-				const y2 = cy + outerRadius * Math.sin(endRad);
-				const x3 = cx + innerRadius * Math.cos(endRad);
-				const y3 = cy + innerRadius * Math.sin(endRad);
-				const x4 = cx + innerRadius * Math.cos(startRad);
-				const y4 = cy + innerRadius * Math.sin(startRad);
-				
-				const largeArc = endAngle - startAngle > 180 ? 1 : 0;
-				
-				return ` + "`" + `M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4} Z` + "`" + `;
-			}
-
-		} catch (error) {
-			console.error('[Nested Donut] Error:', error);
+func hasBadChars(chars []domain.DisplayChar) bool {
+	for _, c := range chars {
+		if c.IsBad {
+			return true
 		}
-		}, 0);
-	})();
+	}
+	return false
+}
+
+func getBadChars(chars []domain.DisplayChar) []domain.DisplayChar {
+	var bad []domain.DisplayChar
+	seen := make(map[string]bool)
+	for _, c := range chars {
+		if c.IsBad && c.Char != " " && !seen[c.Char] {
+			bad = append(bad, c)
+			seen[c.Char] = true
+		}
+	}
+	return bad
+}
+
+func DrawNestedDonut(id string, data string, activeCategoriesJSON string) templ.ComponentScript {
+	return templ.ComponentScript{
+		Name: `__templ_DrawNestedDonut_38f6`,
+		Function: `function __templ_DrawNestedDonut_38f6(id, data, activeCategoriesJSON){window.initNestedDonut(id, data, activeCategoriesJSON);
 }`,
-		Call:       templ.SafeScript(`__templ_DrawNestedDonut_ed4d`, id, data),
-		CallInline: templ.SafeScriptInline(`__templ_DrawNestedDonut_ed4d`, id, data),
+		Call:       templ.SafeScript(`__templ_DrawNestedDonut_38f6`, id, data, activeCategoriesJSON),
+		CallInline: templ.SafeScriptInline(`__templ_DrawNestedDonut_38f6`, id, data, activeCategoriesJSON),
 	}
 }
 
-func SolarSystem(props SolarSystemProps) templ.Component {
+func SolarSystemAndRefresh(props SolarSystemProps, name string, day string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -326,6 +164,39 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = SolarSystem(props).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = RefreshResults(name, day).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func SolarSystem(props SolarSystemProps) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<style>\n\t\t@keyframes shimmer {\n\t\t\t0% { background-position: -200% 0; }\n\t\t\t100% { background-position: 200% 0; }\n\t\t}\n\t\t.sparkling-gold {\n\t\t\tbackground: linear-gradient(90deg, #FFD700, #FFF8DC, #FFD700, #DAA520, #FFD700);\n\t\t\tbackground-size: 200% auto;\n\t\t\tcolor: #8B4513 !important;\n\t\t\tborder: 1px solid #DAA520 !important;\n\t\t\tfont-weight: 800 !important;\n\t\t\ttext-shadow: 0 0 2px rgba(255, 255, 255, 0.8);\n\t\t\tanimation: shimmer 6s linear infinite;\n\t\t\tbox-shadow: 0 0 8px rgba(255, 215, 0, 0.4);\n\t\t}\n\t\t.sparkling-gold svg {\n\t\t\tfilter: drop-shadow(0 0 1px rgba(139, 69, 19, 0.5));\n\t\t}\n\t</style><div class=\"solar-dashboard-layout\" style=\"display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 2rem; flex-wrap: wrap-reverse; margin-bottom: 2rem;\"><!-- LEFT: Stats & Controls --><div class=\"stats-control-panel fade-slide-in\" style=\"display: flex; flex-direction: column; gap: 1rem; align-items: center;\"><!-- Good / Bad Pills --><div class=\"score-pills\" style=\"display: flex; flex-direction: column; gap: 0.5rem; width: 100%;\"><div class=\"score-badge-positive\" style=\"justify-content: center; font-size: 1rem;\">ดี  ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -335,22 +206,22 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var2 string
-			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", props.NumPositiveScore+props.ShaPositiveScore))
+			var templ_7745c5c3_Var3 string
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", props.NumPositiveScore+props.ShaPositiveScore))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 330, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 171, Col: 75}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", props.NumPositiveScore+props.ShaPositiveScore))
+			var templ_7745c5c3_Var4 string
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", props.NumPositiveScore+props.ShaPositiveScore))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 332, Col: 74}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 173, Col: 74}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -359,12 +230,12 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", props.NumNegativeScore+props.ShaNegativeScore))
+		var templ_7745c5c3_Var5 string
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", props.NumNegativeScore+props.ShaNegativeScore))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 336, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 177, Col: 86}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -372,10 +243,10 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var5 = []any{"score-summary-value",
+		var templ_7745c5c3_Var6 = []any{"score-summary-value",
 			templ.KV("score-negative", props.GrandTotalScore < 0),
 			templ.KV("score-positive", props.GrandTotalScore >= 0)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var5...)
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var6...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -383,12 +254,12 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var5).String())
+		var templ_7745c5c3_Var7 string
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var6).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -401,12 +272,12 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", props.GrandTotalScore))
+			var templ_7745c5c3_Var8 string
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", props.GrandTotalScore))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 356, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 197, Col: 50}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -419,12 +290,12 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", props.GrandTotalScore))
+			var templ_7745c5c3_Var9 string
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", props.GrandTotalScore))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 368, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 209, Col: 49}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -437,21 +308,21 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var9 string
-		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(`{"name": "%s", "birth_day": "%s", "total_score": "%d", "sat_sum": "%d", "sha_sum": "%d"}`, props.CleanedName, props.InputDayRaw, props.GrandTotalScore, props.TotalNumerologyValue, props.TotalShadowValue))
+		var templ_7745c5c3_Var10 string
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(`{"name": "%s", "birth_day": "%s", "total_score": "%d", "sat_sum": "%d", "sha_sum": "%d"}`, props.CleanedName, props.InputDayRaw, props.GrandTotalScore, props.TotalNumerologyValue, props.TotalShadowValue))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 376, Col: 230}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 217, Col: 230}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" hx-swap=\"none\" class=\"action-btn-premium btn-save\" style=\"width: 100%; justify-content: center; padding: 0.6rem 1.2rem; font-size: 1rem;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z\"></path> <polyline points=\"17 21 17 13 7 13 7 21\"></polyline> <polyline points=\"7 3 7 8 15 8\"></polyline></svg> <span class=\"btn-label\">บันทึก</span></button></div><!-- RIGHT: Solar System Chart --><div class=\"solar-system-container fade-slide-in\" style=\"flex: 0 0 auto;\"><div class=\"solar-system\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var10 = []any{"sun", templ.KV("sun-dead", props.IsSunDead)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var10...)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" hx-swap=\"none\" class=\"action-btn-premium btn-save\" style=\"width: 100%; justify-content: center; padding: 0.6rem 1.2rem; font-size: 1rem;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z\"></path> <polyline points=\"17 21 17 13 7 13 7 21\"></polyline> <polyline points=\"7 3 7 8 15 8\"></polyline></svg> <span class=\"btn-label\">บันทึกชื่อนี้</span></button></div><!-- RIGHT: Solar System Chart --><div class=\"solar-system-container fade-slide-in\" style=\"flex: 0 0 auto;\"><div class=\"solar-system\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var11 = []any{"sun", templ.KV("sun-dead", props.IsSunDead)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var11...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -459,12 +330,12 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var11 string
-		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var10).String())
+		var templ_7745c5c3_Var12 string
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var11).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -483,12 +354,12 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var12 string
-					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
+					var templ_7745c5c3_Var13 string
+					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 401, Col: 46}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 242, Col: 46}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -497,12 +368,12 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					var templ_7745c5c3_Var13 string
-					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
+					var templ_7745c5c3_Var14 string
+					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 403, Col: 19}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 244, Col: 19}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -528,12 +399,12 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var14 string
-				templ_7745c5c3_Var14, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("animation-delay: -%.2fs;", mul(float64(i), div(20.0, float64(len(props.NumerologyPairs))))))
+				var templ_7745c5c3_Var15 string
+				templ_7745c5c3_Var15, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("animation-delay: -%.2fs;", mul(float64(i), div(20.0, float64(len(props.NumerologyPairs))))))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 421, Col: 160}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 262, Col: 160}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -541,12 +412,12 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var15 string
-				templ_7745c5c3_Var15, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("background-color: %s; animation-delay: -%.2fs;", pair.Meaning.Color, mul(float64(i), div(20.0, float64(len(props.NumerologyPairs))))))
+				var templ_7745c5c3_Var16 string
+				templ_7745c5c3_Var16, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("background-color: %s; animation-delay: -%.2fs;", pair.Meaning.Color, mul(float64(i), div(20.0, float64(len(props.NumerologyPairs))))))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 423, Col: 162}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 264, Col: 162}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -554,12 +425,12 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var16 string
-				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(pair.Meaning.MiracleDesc)
+				var templ_7745c5c3_Var17 string
+				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(pair.Meaning.MiracleDesc)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 424, Col: 40}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 265, Col: 40}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -567,12 +438,12 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var17 string
-				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(pair.PairNumber)
+				var templ_7745c5c3_Var18 string
+				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(pair.PairNumber)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 425, Col: 25}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 266, Col: 25}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -592,12 +463,12 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var18 string
-				templ_7745c5c3_Var18, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("animation-delay: -%.2fs;", mul(float64(i), div(30.0, float64(len(props.ShadowPairs))))))
+				var templ_7745c5c3_Var19 string
+				templ_7745c5c3_Var19, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("animation-delay: -%.2fs;", mul(float64(i), div(30.0, float64(len(props.ShadowPairs))))))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 434, Col: 156}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 275, Col: 156}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -605,12 +476,12 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var19 string
-				templ_7745c5c3_Var19, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("background-color: %s; animation-delay: -%.2fs;", pair.Meaning.Color, mul(float64(i), div(30.0, float64(len(props.ShadowPairs))))))
+				var templ_7745c5c3_Var20 string
+				templ_7745c5c3_Var20, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("background-color: %s; animation-delay: -%.2fs;", pair.Meaning.Color, mul(float64(i), div(30.0, float64(len(props.ShadowPairs))))))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 436, Col: 158}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 277, Col: 158}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -618,12 +489,12 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var20 string
-				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(pair.Meaning.MiracleDesc)
+				var templ_7745c5c3_Var21 string
+				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(pair.Meaning.MiracleDesc)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 437, Col: 40}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 278, Col: 40}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -631,12 +502,12 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var21 string
-				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(pair.PairNumber)
+				var templ_7745c5c3_Var22 string
+				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(pair.PairNumber)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 438, Col: 25}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 279, Col: 25}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -646,7 +517,7 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</div></div></div><!-- Compact Result Card (Empty container for structure if needed, or removed) --><div class=\"result-box-premium fade-slide-in\" style=\"box-shadow: none; background: transparent; padding: 0;\"><!-- Action Buttons --><div class=\"action-buttons-container\"><!-- Numerology Button --><button type=\"button\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</div></div></div><!-- Compact Result Card (Empty container for structure if needed, or removed) --><div class=\"result-box-premium fade-slide-in\" style=\"box-shadow: none; background: transparent; padding: 0;\"><div class=\"header-with-actions\" style=\"display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 2rem; flex-wrap: wrap; margin-bottom: 2rem;\"><!-- Action Buttons (Left) --><div class=\"action-buttons-container\" style=\"display: flex; flex-direction: column; gap: 1rem;\"><!-- Numerology Button --><button type=\"button\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -654,7 +525,7 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, " class=\"action-btn-premium btn-numerology\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"8\" y=\"2\" width=\"8\" height=\"4\" rx=\"1\" ry=\"1\"></rect> <path d=\"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2\"></path> <path d=\"M12 11h4\"></path> <path d=\"M12 16h4\"></path> <path d=\"M8 11h.01\"></path> <path d=\"M8 16h.01\"></path></svg> <span class=\"btn-label-text\">เลขศาสตร์</span></button><!-- Linguistic Button --><!-- Linguistic Button --><button type=\"button\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, " class=\"action-btn-premium btn-numerology\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"8\" y=\"2\" width=\"8\" height=\"4\" rx=\"1\" ry=\"1\"></rect> <path d=\"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2\"></path> <path d=\"M12 11h4\"></path> <path d=\"M12 16h4\"></path> <path d=\"M8 11h.01\"></path> <path d=\"M8 16h.01\"></path></svg> <span class=\"btn-label-text\">เลขศาสตร์</span></button><!-- Linguistic Button --><button type=\"button\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -662,381 +533,383 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, " class=\"action-btn-premium btn-linguistic\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"></path> <path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"></path></svg> <span class=\"btn-label-text\">ภาษาศาสตร์</span></button></div><!-- Category Chart Section - Nested Donut (Categories + Good/Bad) -->")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if len(props.CategoryBreakdown) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<div class=\"category-breakdown-container fade-slide-in\"><div class=\"nested-donut-layout\" style=\"display: flex; flex-direction: row; gap: 1.5rem; align-items: center; justify-content: center; flex-wrap: wrap;\"><div class=\"nested-donut-wrapper\"><svg class=\"nested-donut-chart\" viewBox=\"0 0 200 200\" id=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var22 string
-			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs("nested-donut-" + props.CleanedName)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 490, Col: 100}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" style=\"width: 200px; height: 200px;\"><!-- Inner ring (categories) will be drawn by JS --><g class=\"inner-ring\"></g><!-- Outer ring (good/bad) will be drawn by JS --><!-- Center text --><text x=\"100\" y=\"95\" text-anchor=\"middle\" class=\"donut-center-number\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var23 string
-			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(props.NumerologyPairs)+len(props.ShadowPairs)))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 497, Col: 80}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</text> <text x=\"100\" y=\"110\" text-anchor=\"middle\" class=\"donut-center-label\">คู่เลข</text></svg></div><div class=\"nested-legend\" style=\"min-width: 250px;\"><div class=\"breakdown-summary\" style=\"margin-top: 0.5rem;\"><table style=\"width: 100%; border-collapse: collapse; font-size: 0.9rem;\"><thead><tr style=\"border-bottom: 2px solid #f0f0f0;\"><th style=\"text-align: left; padding: 8px; color: #555;\">หมวดหมู่</th><th style=\"text-align: right; padding: 8px; color: #333; width: 60px;\">%ดี</th><th style=\"text-align: right; padding: 8px; color: #333; width: 60px;\">%ร้าย</th><th style=\"text-align: center; padding: 8px; color: #333; width: 80px;\">เสริมเบอร์</th></tr></thead> <tbody>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			for i, cat := range []string{"สุขภาพ", "การงาน", "การเงิน", "ความรัก"} {
-				if breakdown, ok := props.CategoryBreakdown[cat]; ok {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, " <tr style=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var24 string
-					templ_7745c5c3_Var24, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("background-color: %s;", func() string {
-						if i%2 != 0 {
-							return "#f8f9fa"
-						}
-						return "#ffffff"
-					}()))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 517, Col: 131}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "\"><td style=\"padding: 12px 8px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					if cat == "การงาน" {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<span style=\"display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #4158D0;\"></span> ")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					} else if cat == "การเงิน" {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<span style=\"display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #FB8C00;\"></span> ")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					} else if cat == "ความรัก" {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<span style=\"display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #D4145A;\"></span> ")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					} else if cat == "สุขภาพ" {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<span style=\"display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #00DBDE;\"></span> ")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<span style=\"display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #A0A0A0;\"></span> ")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					}
-					var templ_7745c5c3_Var25 string
-					templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(cat)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 530, Col: 18}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</td><td style=\"text-align: right; padding: 12px 8px;\" id=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var26 string
-					templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("good-score-container-%s-%s", props.CleanedName, cat))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 532, Col: 132}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\" data-base-good=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var27 string
-					templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f", (float64(breakdown.Good)/float64(len(props.NumerologyPairs)+len(props.ShadowPairs)))*100))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 532, Col: 267}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					if breakdown.Good > 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<span class=\"good-score-wrap\" style=\"color: #2E7D32; font-weight: 700; font-size: 1.1em; display: flex; align-items: center; justify-content: flex-end; gap: 4px;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"20 6 9 17 4 12\"></polyline></svg> <span class=\"good-value-text\">")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						var templ_7745c5c3_Var28 string
-						templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", (float64(breakdown.Good)/float64(len(props.NumerologyPairs)+len(props.ShadowPairs)))*100))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 536, Col: 164}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</span></span>")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<span class=\"good-score-wrap\" style=\"color: #ccc;\">-</span>")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</td><td style=\"text-align: right; padding: 12px 8px;\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					if breakdown.Bad > 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<span style=\"color: #C62828; font-weight: 700; font-size: 1.1em; display: flex; align-items: center; justify-content: flex-end; gap: 4px;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line><line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line></svg> ")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						var templ_7745c5c3_Var29 string
-						templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", (float64(breakdown.Bad)/float64(len(props.NumerologyPairs)+len(props.ShadowPairs)))*100))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 546, Col: 133}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</span>")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "<span style=\"color: #ccc;\">-</span>")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</td><td style=\"text-align: center; padding: 12px 8px;\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("toggleLuckyNumber", cat, fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat)))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<button class=\"btn-icon-lucky\" style=\"display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; border: none; background-color: #f5f5f5; color: #666; cursor: pointer; transition: all 0.2s;\" onclick=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var30 templ.ComponentScript = templ.JSFuncCall("toggleLuckyNumber", cat, fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat))
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30.Call)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"5\" y=\"2\" width=\"14\" height=\"20\" rx=\"2\" ry=\"2\"></rect> <line x1=\"12\" y1=\"18\" x2=\"12.01\" y2=\"18\"></line></svg></button></td></tr> <tr style=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var31 string
-					templ_7745c5c3_Var31, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("border-bottom: 1px solid #eee; background-color: %s;", func() string {
-						if i%2 != 0 {
-							return "#f8f9fa"
-						}
-						return "#ffffff"
-					}()))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 566, Col: 162}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\"><td colspan=\"4\" style=\"padding: 0 12px 12px 12px;\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					if len(breakdown.Keywords) > 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<div style=\"font-size: 0.8rem; color: #64748b; margin-bottom: 8px; line-height: 1.4; padding-left: 22px; border-left: 2px solid rgba(0,0,0,0.05);\">")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						var templ_7745c5c3_Var32 string
-						templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(strings.Join(breakdown.Keywords, ", "))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 570, Col: 55}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</div>")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<div id=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var33 string
-					templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 573, Col: 83}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\" style=\"width: 100%; display: flex; justify-content: center;\"><!-- Placeholder or small sparkler for 100% -->")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("toggleLuckyNumber", cat, fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat)))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<span class=\"sparkling-gold\" style=\"font-size: 0.7rem; display: flex; align-items: center; gap: 2px; padding: 2px 8px; border-radius: 10px; cursor: pointer; opacity: 0.8;\" onclick=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var34 templ.ComponentScript = templ.JSFuncCall("toggleLuckyNumber", cat, fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat))
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var34.Call)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\" viewBox=\"0 0 24 24\" fill=\"#8B4513\" stroke=\"none\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"></polygon></svg> เสริมเบอร์ 100% ✨</span></div></td></tr>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<!-- Total Score Row --><tr style=\"border-top: 2px solid #e2e8f0; background: linear-gradient(to right, #f8faff, #eff6ff); border-bottom: 2px solid #e2e8f0;\"><td style=\"padding: 14px 10px; font-weight: 800; color: #1e293b; font-size: 1rem; text-align: left;\" colspan=\"1\">%รวม</td><td style=\"text-align: center; padding: 14px 10px;\" colspan=\"3\"><div id=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var35 string
-			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("total-score-%s", props.CleanedName))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 591, Col: 69}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "\" data-base-score=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var36 string
-			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f", props.GetLinguisticTotalScore()))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 591, Col: 142}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "\" style=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var37 string
-			templ_7745c5c3_Var37, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("font-weight: 900; font-size: 1.4rem; color: %s; display: flex; align-items: center; justify-content: center; gap: 8px; text-shadow: 0 1px 2px rgba(0,0,0,0.05);", props.GetLinguisticScoreColor()))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 591, Col: 360}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "\"><span class=\"score-icon\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if props.GetLinguisticTotalScore() > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"#FFD700\" stroke=\"#B8860B\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));\"><path d=\"M6 9H4.5a2.5 2.5 0 0 1 0-5H6\"></path> <path d=\"M18 9h1.5a2.5 2.5 0 0 0 0-5H18\"></path> <path d=\"M4 22h16\"></path> <path d=\"M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22\"></path> <path d=\"M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22\"></path> <path d=\"M18 2H6v7a6 6 0 0 0 12 0V2Z\"></path></svg>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"#e0e0e0\" stroke=\"#bdbdbd\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"filter: grayscale(1); opacity: 0.7;\"><path d=\"M6 9H4.5a2.5 2.5 0 0 1 0-5H6\"></path> <path d=\"M18 9h1.5a2.5 2.5 0 0 0 0-5H18\"></path> <path d=\"M4 22h16\"></path> <path d=\"M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22\"></path> <path d=\"M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22\"></path> <path d=\"M18 2H6v7a6 6 0 0 0 12 0V2Z\"></path></svg>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</span> <span class=\"score-value\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var38 string
-			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", props.GetLinguisticTotalScore()))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 613, Col: 94}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "</span></div></td><td style=\"background: transparent;\"></td></tr></tbody></table></div></div></div></div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = DrawNestedDonut("nested-donut-"+props.CleanedName, props.GetCategoryBreakdownJSON()).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "</div><!-- Modals --><div id=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var39 string
-		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs("meaning-modal-" + props.CleanedName)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 630, Col: 47}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "\" class=\"modal-overlay\" onclick=\"this.style.display='none'\"><div class=\"modal-content\" onclick=\"event.stopPropagation()\"><div class=\"modal-header\"><h2 class=\"modal-header-title\" style=\"display: flex; align-items: center; gap: 2px;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"margin-right: 6px;\"><path d=\"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2\"></path> <rect x=\"8\" y=\"2\" width=\"8\" height=\"4\" rx=\"1\" ry=\"1\"></rect> <path d=\"M12 11h4\"></path> <path d=\"M12 16h4\"></path> <path d=\"M8 11h.01\"></path> <path d=\"M8 16h.01\"></path></svg> <span style=\"margin-right: 4px;\">เลขศาสตร์ของ</span><div style=\"display: flex;\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, " class=\"action-btn-premium btn-linguistic\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"></path> <path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"></path></svg> <span class=\"btn-label-text\">ภาษาศาสตร์</span></button></div><!-- Name Analysis Header (Right) --><div class=\"name-analysis-header\" style=\"text-align: center;\"><h1 style=\"font-size: 2.5rem; font-weight: 800; color: #2D3748; margin-bottom: 0.5rem; line-height: 1.2;\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, dc := range props.SunDisplayNameHTML {
 			if dc.IsBad {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<span class=\"klakini-char klakini-red\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<span style=\"color: #dc2626;\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var40 string
-				templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
+				var templ_7745c5c3_Var23 string
+				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 647, Col: 55}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 329, Col: 46}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var24 string
+				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 331, Col: 22}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</h1><div style=\"display: flex; justify-content: center; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap;\"><div style=\"padding: 6px 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 6px;\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = DayIcon(props.InputDayRaw).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<span style=\"font-family: 'Kanit', sans-serif; font-weight: 500; color: #4a5568;\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var25 string
+		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(props.InputDayRaw)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 338, Col: 107}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</span></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if hasBadChars(props.SunDisplayNameHTML) {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<div style=\"padding: 6px 12px; background: #fee2e2; border: 1px solid #fecaca; border-radius: 20px; display: flex; align-items: center; gap: 6px; color: #dc2626; font-weight: 600;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z\"></path><line x1=\"12\" y1=\"9\" x2=\"12\" y2=\"13\"></line><line x1=\"12\" y1=\"17\" x2=\"12.01\" y2=\"17\"></line></svg> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, dc := range getBadChars(props.SunDisplayNameHTML) {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<span style=\"margin-right: 2px;\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var26 string
+				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 345, Col: 50}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<div style=\"padding: 6px 12px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 20px; display: flex; align-items: center; gap: 6px; color: #15803D; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.05);\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 11.08V12a10 10 0 1 1-5.93-9.14\"></path><polyline points=\"22 4 12 14.01 9 11.01\"></polyline></svg> <span>ไม่มีกาลกิณี</span></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if hasBadChars(props.SunDisplayNameHTML) {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<p style=\"margin-top: 12px; font-size: 0.9rem; color: #718096; font-family: 'Kanit', sans-serif;\">พยัญชนะหรือสระ<span style=\"color: #dc2626; font-weight: bold;\">สีแดง</span>คือกาลกิณี</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</div></div><!-- Category Chart Section - Nested Donut (Categories + Good/Bad) -->")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if len(props.CategoryBreakdown) > 0 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<div class=\"category-breakdown-container fade-slide-in\"><div class=\"nested-donut-layout\" style=\"display: flex; flex-direction: row; gap: 1.5rem; align-items: center; justify-content: center; flex-wrap: wrap;\"><div class=\"nested-donut-wrapper\"><svg class=\"nested-donut-chart\" viewBox=\"0 0 200 200\" id=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var27 string
+			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs("nested-donut-" + props.CleanedName)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 371, Col: 100}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "\" style=\"width: 200px; height: 200px;\"><!-- Inner ring (categories) will be drawn by JS --><g class=\"inner-ring\"></g><!-- Outer ring (good/bad) will be drawn by JS --><g class=\"outer-ring\"></g><!-- Center text --><text x=\"100\" y=\"95\" text-anchor=\"middle\" class=\"donut-center-number\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var28 string
+			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(props.NumerologyPairs)+len(props.ShadowPairs)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 379, Col: 80}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</text> <text x=\"100\" y=\"110\" text-anchor=\"middle\" class=\"donut-center-label\">คู่เลข</text></svg></div><div class=\"nested-legend\" style=\"min-width: 340px; flex: 1;\"><div class=\"breakdown-summary\" style=\"margin-top: 0.5rem;\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = DrawNestedDonut("nested-donut-"+props.CleanedName, props.GetCategoryBreakdownJSON(), props.GetActiveCategoriesJSON()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<table style=\"width: 100%; border-collapse: separate; border-spacing: 0;\"><thead><tr style=\"background: linear-gradient(to right, #334155, #1e293b); color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);\"><th style=\"text-align: left; padding: 14px 12px; font-weight: 800; width: 30%; white-space: nowrap; border-top-left-radius: 8px;\">หมวดหมู่</th><th style=\"text-align: right; padding: 14px 12px; font-weight: 800; width: 20%; white-space: nowrap;\">%ดี</th><th style=\"text-align: right; padding: 14px 12px; font-weight: 800; width: 20%; white-space: nowrap;\">%ร้าย</th><th style=\"text-align: center; padding: 14px 12px; font-weight: 800; width: 30%; white-space: nowrap; border-top-right-radius: 8px;\">เสริมเบอร์</th></tr></thead> <tbody style=\"display: table-row-group !important;\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for i, cat := range []string{"สุขภาพ", "การงาน", "การเงิน", "ความรัก"} {
+				if breakdown, ok := props.CategoryBreakdown[cat]; ok {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "<tr style=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var29 string
+					templ_7745c5c3_Var29, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("display: table-row !important; background-color: %s;", func() string {
+						if i%2 != 0 {
+							return "#f8f9fa"
+						}
+						return "#ffffff"
+					}()))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 399, Col: 239}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "\"><td style=\"display: table-cell !important; width: 35%; padding: 12px 8px; font-weight: 700; color: #1e293b; vertical-align: middle;\"><div style=\"display: flex; align-items: center; gap: 8px;\"><span style=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var30 string
+					templ_7745c5c3_Var30, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: " + getCategoryColor(cat) + ";")
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 402, Col: 263}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "\"></span> ")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var31 string
+					templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(cat)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 403, Col: 117}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "</div></td><td style=\"display: table-cell !important; width: 25%; text-align: right; padding: 12px 8px; vertical-align: middle;\" id=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var32 string
+					templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("good-score-container-%s-%s", props.CleanedName, cat))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 406, Col: 284}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\"><span class=\"category-pct-display\" data-category=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var33 string
+					templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(cat)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 407, Col: 158}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "\" style=\"color: #2E7D32; font-weight: 700; font-size: 1.1em; display: flex; align-items: center; justify-content: flex-end; gap: 4px;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"check-icon\" style=\"display: none;\"><polyline points=\"20 6 9 17 4 12\"></polyline></svg> <span class=\"value-text\">-</span></span></td><td style=\"display: table-cell !important; width: 20%; text-align: right; padding: 12px 8px; vertical-align: middle;\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					if breakdown.Bad > 0 {
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<span style=\"color: #C62828; font-weight: 700; font-size: 1.1em;\">25%</span>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+					} else {
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<span style=\"color: #ccc;\">-</span>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "</td><td style=\"display: table-cell !important; width: 20%; text-align: center; padding: 12px 8px; vertical-align: middle;\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("window.handleLuckyClick", cat, fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat), "nested-donut-"+props.CleanedName))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<button class=\"btn-icon-lucky\" title=\"คลิกเพื่อดูเบอร์มงคล\" style=\"display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; border: none; background: linear-gradient(135deg, #FFD700, #FDB931); color: white; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 6px rgba(255, 215, 0, 0.3);\" onclick=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var34 templ.ComponentScript = templ.JSFuncCall("window.handleLuckyClick", cat, fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat), "nested-donut-"+props.CleanedName)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var34.Call)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2\"></path></svg></button></td></tr><tr style=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var35 string
+					templ_7745c5c3_Var35, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("display: table-row !important; border-bottom: 1px solid #eee; background-color: %s;", func() string {
+						if i%2 != 0 {
+							return "#f8f9fa"
+						}
+						return "#ffffff"
+					}()))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 425, Col: 270}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "\"><td colspan=\"4\" style=\"display: table-cell !important; padding: 0 12px 12px 12px; vertical-align: top;\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					if len(breakdown.Keywords) > 0 {
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "<div style=\"font-size: 0.8rem; color: #64748b; margin-bottom: 8px; line-height: 1.4; padding-left: 22px; border-left: 2px solid rgba(0,0,0,0.05);\">")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						var templ_7745c5c3_Var36 string
+						templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(strings.Join(breakdown.Keywords, ", "))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 429, Col: 160}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "</div>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "<div id=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var37 string
+					templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 432, Col: 174}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "\" style=\"width: 100%; display: flex; justify-content: center;\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("window.handleLuckyClick", cat, fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat), "nested-donut-"+props.CleanedName))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "<span class=\"sparkling-gold\" style=\"font-size: 0.7rem; display: flex; align-items: center; gap: 2px; padding: 2px 8px; border-radius: 10px; cursor: pointer; opacity: 0.8;\" onclick=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var38 templ.ComponentScript = templ.JSFuncCall("window.handleLuckyClick", cat, fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat), "nested-donut-"+props.CleanedName)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var38.Call)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\" viewBox=\"0 0 24 24\" fill=\"#8B4513\" stroke=\"none\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"></polygon></svg> เสริมเบอร์ 100% ✨</span></div></td></tr>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "<tr style=\"display: table-row !important; border-top: 2px solid #FCD34D; background: linear-gradient(to right, #FFFBEB, #FEF3C7); border-bottom: 2px solid #FCD34D; box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);\"><td style=\"display: table-cell !important; padding: 16px 10px; font-weight: 800; color: #92400E; font-size: 1.1rem; text-align: left;\" colspan=\"1\">รวม % ดี</td><td style=\"display: table-cell !important; text-align: center; padding: 14px 10px;\" colspan=\"3\"><div id=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var39 string
+			templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("total-score-%s", props.CleanedName))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 445, Col: 146}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "\" data-base-score=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var40 string
+			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f", props.GetBaseCategoryPercentage()))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 445, Col: 221}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "\" style=\"padding: 10px; display: flex; align-items: center; justify-content: center; gap: 12px;\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if props.GetBaseCategoryPercentage() > 0 {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<span class=\"score-icon\" style=\"display: flex; align-items: center;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"#DAA520\" stroke=\"none\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"></polygon></svg></span> <span class=\"score-value\" style=\"font-weight: 900; font-size: 1.8rem; letter-spacing: 1px; color: #DAA520; text-shadow: 0px 1px 2px rgba(0,0,0,0.1);\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var41 string
+				templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", props.GetBaseCategoryPercentage()))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 450, Col: 312}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1045,16 +918,16 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "<span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "<span class=\"score-icon\" style=\"display: flex; align-items: center;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#C62828\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"15\" y1=\"9\" x2=\"9\" y2=\"15\"></line><line x1=\"9\" y1=\"9\" x2=\"15\" y2=\"15\"></line></svg></span> <span class=\"score-value\" style=\"font-weight: 900; font-size: 1.8rem; letter-spacing: 1px; color: #8B4513;\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var41 string
-				templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
+				var templ_7745c5c3_Var42 string
+				templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", props.GetBaseCategoryPercentage()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 649, Col: 22}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 455, Col: 270}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1063,8 +936,72 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "</div></td></tr></tbody></table><div style=\"padding: 8px 12px; font-size: 0.75rem; color: #64748B; text-align: center; font-style: italic; display: flex; align-items: center; justify-content: center; gap: 4px;\">💡 คลิกไอคอน <span style=\"display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #FFD700, #FDB931); box-shadow: 0 1px 3px rgba(255, 215, 0, 0.3);\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2\"></path></svg></span> ซ้ำเพื่อเปลี่ยนเบอร์มงคล</div></div></div></div></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = DrawNestedDonut("nested-donut-"+props.CleanedName, props.GetCategoryBreakdownJSON(), props.GetActiveCategoriesJSON()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "</div></h2><button class=\"close-btn\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "</div><div id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var43 string
+		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs("meaning-modal-" + props.CleanedName)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 478, Col: 47}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "\" class=\"modal-overlay\" onclick=\"this.style.display='none'\"><div class=\"modal-content\" onclick=\"event.stopPropagation()\"><div class=\"modal-header\"><h2 class=\"modal-header-title\" style=\"display: flex; align-items: center; gap: 2px;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"margin-right: 6px;\"><path d=\"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2\"></path> <rect x=\"8\" y=\"2\" width=\"8\" height=\"4\" rx=\"1\" ry=\"1\"></rect> <path d=\"M12 11h4\"></path> <path d=\"M12 16h4\"></path> <path d=\"M8 11h.01\"></path> <path d=\"M8 16h.01\"></path></svg> <span style=\"margin-right: 4px;\">เลขศาสตร์ของ</span><div style=\"display: flex;\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, dc := range props.SunDisplayNameHTML {
+			if dc.IsBad {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "<span class=\"klakini-char klakini-red\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var44 string
+				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 495, Col: 55}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "<span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var45 string
+				templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 497, Col: 22}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "</div></h2><button class=\"close-btn\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1072,372 +1009,317 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, ">&times;</button></div><div class=\"modal-body\"><!-- Category Chart in Modal - Nested Donut -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, ">&times;</button></div><div class=\"modal-body\"><!-- Category Chart in Modal - Nested Donut -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(props.CategoryBreakdown) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<div class=\"category-breakdown-container\" style=\"margin-bottom: 2rem; background: #fbfbfb;\"><div class=\"nested-donut-layout\" style=\"display: flex; flex-direction: row; gap: 1.5rem; align-items: center; justify-content: center; flex-wrap: wrap;\"><div class=\"nested-donut-wrapper\"><svg class=\"nested-donut-chart\" viewBox=\"0 0 200 200\" id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "<div class=\"category-breakdown-container\" style=\"margin-bottom: 2rem; background: #fbfbfb;\"><div class=\"nested-donut-layout\" style=\"display: flex; flex-direction: row; gap: 1.5rem; align-items: center; justify-content: center; flex-wrap: wrap;\"><div class=\"nested-donut-wrapper\"><svg class=\"nested-donut-chart\" viewBox=\"0 0 200 200\" id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var42 string
-			templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs("modal-nested-donut-" + props.CleanedName)
+			var templ_7745c5c3_Var46 string
+			templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs("modal-nested-donut-" + props.CleanedName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 664, Col: 108}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 512, Col: 108}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "\" style=\"width: 200px; height: 200px;\"><g class=\"inner-ring\"></g> <text x=\"100\" y=\"95\" text-anchor=\"middle\" class=\"donut-center-number\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var43 string
-			templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(props.NumerologyPairs)+len(props.ShadowPairs)))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 668, Col: 82}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "\" style=\"width: 200px; height: 200px;\"><g class=\"inner-ring\"></g> <g class=\"outer-ring\"></g> <text x=\"100\" y=\"95\" text-anchor=\"middle\" class=\"donut-center-number\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "</text> <text x=\"100\" y=\"110\" text-anchor=\"middle\" class=\"donut-center-label\">คู่เลข</text></svg></div><div class=\"nested-legend\" style=\"min-width: 250px;\"><div class=\"breakdown-summary\" style=\"margin-top: 0.5rem;\"><table style=\"width: 100%; border-collapse: collapse; font-size: 0.9rem;\"><thead><tr style=\"border-bottom: 2px solid #f0f0f0;\"><th style=\"text-align: left; padding: 8px; color: #555;\">หมวดหมู่</th><th style=\"text-align: right; padding: 8px; color: #333; width: 60px;\">%ดี</th><th style=\"text-align: right; padding: 8px; color: #333; width: 60px;\">%ร้าย</th><th style=\"text-align: center; padding: 8px; color: #333; width: 80px;\">เสริมเบอร์</th></tr></thead> <tbody>")
+			var templ_7745c5c3_Var47 string
+			templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(props.NumerologyPairs)+len(props.ShadowPairs)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 517, Col: 82}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "</text> <text x=\"100\" y=\"110\" text-anchor=\"middle\" class=\"donut-center-label\">คู่เลข</text></svg></div><div class=\"nested-legend\" style=\"min-width: 250px;\"><div class=\"breakdown-summary\" style=\"margin-top: 0.5rem;\"><table style=\"width: 100%; border-collapse: collapse; font-size: 0.9rem;\"><thead><tr style=\"background: linear-gradient(to right, #334155, #1e293b); color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);\"><th style=\"text-align: left; padding: 14px 12px; font-weight: 800; width: 30%; white-space: nowrap; border-top-left-radius: 8px;\">หมวดหมู่</th><th style=\"text-align: right; padding: 14px 12px; font-weight: 800; width: 20%; white-space: nowrap;\">%ดี</th><th style=\"text-align: right; padding: 14px 12px; font-weight: 800; width: 20%; white-space: nowrap;\">%ร้าย</th><th style=\"text-align: center; padding: 14px 12px; font-weight: 800; width: 30%; white-space: nowrap; border-top-right-radius: 8px;\">เสริมเบอร์</th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for i, cat := range []string{"สุขภาพ", "การงาน", "การเงิน", "ความรัก"} {
 				if breakdown, ok := props.CategoryBreakdown[cat]; ok {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, " <tr style=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "<tr style=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var44 string
-					templ_7745c5c3_Var44, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("background-color: %s;", func() string {
+					var templ_7745c5c3_Var48 string
+					templ_7745c5c3_Var48, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("background-color: %s;", func() string {
 						if i%2 != 0 {
 							return "#f8f9fa"
 						}
 						return "#ffffff"
 					}()))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 688, Col: 131}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 537, Col: 131}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "\"><td style=\"padding: 12px 8px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "\"><td style=\"padding: 12px 8px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if cat == "การงาน" {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "<span style=\"display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #4158D0;\"></span> ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "<span style=\"display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #4158D0;\"></span> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else if cat == "การเงิน" {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "<span style=\"display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #FB8C00;\"></span> ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<span style=\"display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #FB8C00;\"></span> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else if cat == "ความรัก" {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "<span style=\"display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #D4145A;\"></span> ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "<span style=\"display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #D4145A;\"></span> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else if cat == "สุขภาพ" {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "<span style=\"display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #00DBDE;\"></span> ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "<span style=\"display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #00DBDE;\"></span> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<span style=\"display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #A0A0A0;\"></span> ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "<span style=\"display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #A0A0A0;\"></span> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					var templ_7745c5c3_Var45 string
-					templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(cat)
+					var templ_7745c5c3_Var49 string
+					templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(cat)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 701, Col: 18}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 550, Col: 18}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "</td><td style=\"text-align: right; padding: 12px 8px;\" id=\"")
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var46 string
-					templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("modal-good-score-container-%s-%s", props.CleanedName, cat))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 703, Col: 138}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "</td><td style=\"text-align: right; padding: 12px 8px;\" id=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "\" data-base-good=\"")
+					var templ_7745c5c3_Var50 string
+					templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("modal-good-score-container-%s-%s", props.CleanedName, cat))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 552, Col: 138}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var47 string
-					templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f", (float64(breakdown.Good)/float64(len(props.NumerologyPairs)+len(props.ShadowPairs)))*100))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 703, Col: 273}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					if breakdown.Good > 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<span class=\"good-score-wrap\" style=\"color: #2E7D32; font-weight: 700; font-size: 1.1em; display: flex; align-items: center; justify-content: flex-end; gap: 4px;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"20 6 9 17 4 12\"></polyline></svg> <span class=\"good-value-text\">")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						var templ_7745c5c3_Var48 string
-						templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", (float64(breakdown.Good)/float64(len(props.NumerologyPairs)+len(props.ShadowPairs)))*100))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 707, Col: 164}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "</span></span>")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "<span class=\"good-score-wrap\" style=\"color: #ccc;\">-</span>")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "</td><td style=\"text-align: right; padding: 12px 8px;\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					if breakdown.Bad > 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "<span style=\"color: #C62828; font-weight: 700; font-size: 1.1em; display: flex; align-items: center; justify-content: flex-end; gap: 4px;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line><line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line></svg> ")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						var templ_7745c5c3_Var49 string
-						templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", (float64(breakdown.Bad)/float64(len(props.NumerologyPairs)+len(props.ShadowPairs)))*100))
-						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 717, Col: 133}
-						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "</span>")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					} else {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "<span style=\"color: #ccc;\">-</span>")
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
-						}
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "</td><td style=\"text-align: center; padding: 12px 8px;\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("toggleLuckyNumber", cat, fmt.Sprintf("modal-lucky-container-%s-%s", props.CleanedName, cat)))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "<button class=\"btn-icon-lucky\" style=\"display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; border: none; background-color: #f5f5f5; color: #666; cursor: pointer; transition: all 0.2s;\" onclick=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var50 templ.ComponentScript = templ.JSFuncCall("toggleLuckyNumber", cat, fmt.Sprintf("modal-lucky-container-%s-%s", props.CleanedName, cat))
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var50.Call)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"5\" y=\"2\" width=\"14\" height=\"20\" rx=\"2\" ry=\"2\"></rect> <line x1=\"12\" y1=\"18\" x2=\"12.01\" y2=\"18\"></line></svg></button></td></tr> <tr style=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "\" data-base-good=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var51 string
-					templ_7745c5c3_Var51, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("border-bottom: 1px solid #eee; background-color: %s;", func() string {
-						if i%2 != 0 {
-							return "#f8f9fa"
-						}
-						return "#ffffff"
-					}()))
+					templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f", (float64(breakdown.Good)/float64(len(props.NumerologyPairs)+len(props.ShadowPairs)))*100))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 737, Col: 162}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 552, Col: 273}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "\"><td colspan=\"4\" style=\"padding: 0 12px 12px 12px;\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					if len(breakdown.Keywords) > 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "<div style=\"font-size: 0.8rem; color: #64748b; margin-bottom: 8px; line-height: 1.4; padding-left: 22px; border-left: 2px solid rgba(0,0,0,0.05);\">")
+					if breakdown.Good > 0 {
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "<span class=\"good-score-wrap\" style=\"color: #2E7D32; font-weight: 700; font-size: 1.1em; display: flex; align-items: center; justify-content: flex-end; gap: 4px;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"20 6 9 17 4 12\"></polyline></svg> <span class=\"good-value-text\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var52 string
-						templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(strings.Join(breakdown.Keywords, ", "))
+						templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", (float64(breakdown.Good)/float64(len(props.NumerologyPairs)+len(props.ShadowPairs)))*100))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 741, Col: 55}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 556, Col: 164}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "</div>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "</span></span>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+					} else {
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "<span class=\"good-score-wrap\" style=\"color: #ccc;\">-</span>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "<div id=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "</td><td style=\"text-align: right; padding: 12px 8px;\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var53 string
-					templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("modal-lucky-container-%s-%s", props.CleanedName, cat))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 744, Col: 89}
+					if breakdown.Bad > 0 {
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "<span style=\"color: #C62828; font-weight: 700; font-size: 1.1em; display: flex; align-items: center; justify-content: flex-end; gap: 4px;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line><line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line></svg> ")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						var templ_7745c5c3_Var53 string
+						templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", (float64(breakdown.Bad)/float64(len(props.NumerologyPairs)+len(props.ShadowPairs)))*100))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 566, Col: 133}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "</span>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+					} else {
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "<span style=\"color: #ccc;\">-</span>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "</td><td style=\"text-align: center; padding: 12px 8px;\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "\" style=\"width: 100%; display: flex; justify-content: center;\">")
+					templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("handleLuckyClick", cat, fmt.Sprintf("modal-lucky-container-%s-%s", props.CleanedName, cat), "modal-nested-donut-"+props.CleanedName))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("toggleLuckyNumber", cat, fmt.Sprintf("modal-lucky-container-%s-%s", props.CleanedName, cat)))
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "<button class=\"btn-icon-lucky\" style=\"display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; border: none; background: linear-gradient(135deg, #FFD700, #FDB931); color: white; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 6px rgba(255, 215, 0, 0.3);\" onclick=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "<span class=\"sparkling-gold\" style=\"font-size: 0.7rem; display: flex; align-items: center; gap: 2px; padding: 2px 8px; border-radius: 10px; cursor: pointer; opacity: 0.8;\" onclick=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var54 templ.ComponentScript = templ.JSFuncCall("toggleLuckyNumber", cat, fmt.Sprintf("modal-lucky-container-%s-%s", props.CleanedName, cat))
+					var templ_7745c5c3_Var54 templ.ComponentScript = templ.JSFuncCall("handleLuckyClick", cat, fmt.Sprintf("modal-lucky-container-%s-%s", props.CleanedName, cat), "modal-nested-donut-"+props.CleanedName)
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var54.Call)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\" viewBox=\"0 0 24 24\" fill=\"#8B4513\" stroke=\"none\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"></polygon></svg> เสริมเบอร์ 100% ✨</span></div></td></tr>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2\"></path></svg></button></td></tr><tr style=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var55 string
+					templ_7745c5c3_Var55, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("border-bottom: 1px solid #eee; background-color: %s;", func() string {
+						if i%2 != 0 {
+							return "#f8f9fa"
+						}
+						return "#ffffff"
+					}()))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 582, Col: 162}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "\"><td colspan=\"4\" style=\"padding: 0 12px 12px 12px;\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					if len(breakdown.Keywords) > 0 {
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "<div style=\"font-size: 0.8rem; color: #64748b; margin-bottom: 8px; line-height: 1.4; padding-left: 22px; border-left: 2px solid rgba(0,0,0,0.05);\">")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						var templ_7745c5c3_Var56 string
+						templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(strings.Join(breakdown.Keywords, ", "))
+						if templ_7745c5c3_Err != nil {
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 586, Col: 55}
+						}
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "</div>")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 114, "<div id=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var57 string
+					templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("modal-lucky-container-%s-%s", props.CleanedName, cat))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 589, Col: 89}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, "\" style=\"width: 100%; display: flex; justify-content: center;\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("handleLuckyClick", cat, fmt.Sprintf("modal-lucky-container-%s-%s", props.CleanedName, cat), "modal-nested-donut-"+props.CleanedName))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "<span class=\"sparkling-gold\" style=\"font-size: 0.7rem; display: flex; align-items: center; gap: 2px; padding: 2px 8px; border-radius: 10px; cursor: pointer; opacity: 0.8;\" onclick=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var58 templ.ComponentScript = templ.JSFuncCall("handleLuckyClick", cat, fmt.Sprintf("modal-lucky-container-%s-%s", props.CleanedName, cat), "modal-nested-donut-"+props.CleanedName)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var58.Call)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 117, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\" viewBox=\"0 0 24 24\" fill=\"#8B4513\" stroke=\"none\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"></polygon></svg> เสริมเบอร์ 100% ✨</span></div></td></tr>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "<!-- Total Score Row --><tr style=\"border-top: 2px solid #e2e8f0; background: linear-gradient(to right, #f8faff, #eff6ff); border-bottom: 2px solid #e2e8f0;\"><td style=\"padding: 14px 10px; font-weight: 800; color: #1e293b; font-size: 1rem; text-align: left;\" colspan=\"1\">%รวม</td><td style=\"text-align: center; padding: 14px 10px;\" colspan=\"3\"><div id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 118, "<!-- Total Score Row --><tr style=\"display: table-row !important; border-top: 2px solid #FCD34D; background: linear-gradient(to right, #FFFBEB, #FEF3C7); border-bottom: 2px solid #FCD34D; box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);\"><td style=\"display: table-cell !important; padding: 16px 10px; font-weight: 800; color: #92400E; font-size: 1.1rem; text-align: left;\" colspan=\"1\">รวม % ดี</td><td style=\"display: table-cell !important; text-align: center; padding: 14px 10px;\" colspan=\"3\"><div id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var55 string
-			templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("modal-total-score-%s", props.CleanedName))
+			var templ_7745c5c3_Var59 string
+			templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("modal-total-score-%s", props.CleanedName))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 761, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 606, Col: 75}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "\" data-base-score=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var56 string
-			templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f", props.GetLinguisticTotalScore()))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 761, Col: 148}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 119, "\" data-base-score=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "\" style=\"")
+			var templ_7745c5c3_Var60 string
+			templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f", props.GetBaseCategoryPercentage()))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 606, Col: 150}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var57 string
-			templ_7745c5c3_Var57, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("font-weight: 900; font-size: 1.4rem; color: %s; display: flex; align-items: center; justify-content: center; gap: 8px; text-shadow: 0 1px 2px rgba(0,0,0,0.05);", props.GetLinguisticScoreColor()))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 761, Col: 366}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "\" style=\"padding: 10px; display: flex; align-items: center; justify-content: center; gap: 12px;\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 114, "\"><span class=\"score-icon\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if props.GetLinguisticTotalScore() > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"#FFD700\" stroke=\"#B8860B\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));\"><path d=\"M6 9H4.5a2.5 2.5 0 0 1 0-5H6\"></path> <path d=\"M18 9h1.5a2.5 2.5 0 0 0 0-5H18\"></path> <path d=\"M4 22h16\"></path> <path d=\"M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22\"></path> <path d=\"M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22\"></path> <path d=\"M18 2H6v7a6 6 0 0 0 12 0V2Z\"></path></svg>")
+			if props.GetBaseCategoryPercentage() > 0 {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 121, "<span class=\"score-icon\" style=\"display: flex; align-items: center;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"#DAA520\" stroke=\"none\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"></polygon></svg></span> <span class=\"score-value\" style=\"font-weight: 900; font-size: 1.8rem; letter-spacing: 1px; color: #DAA520; text-shadow: 0px 1px 2px rgba(0,0,0,0.1);\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"#e0e0e0\" stroke=\"#bdbdbd\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"filter: grayscale(1); opacity: 0.7;\"><path d=\"M6 9H4.5a2.5 2.5 0 0 1 0-5H6\"></path> <path d=\"M18 9h1.5a2.5 2.5 0 0 0 0-5H18\"></path> <path d=\"M4 22h16\"></path> <path d=\"M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22\"></path> <path d=\"M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22\"></path> <path d=\"M18 2H6v7a6 6 0 0 0 12 0V2Z\"></path></svg>")
+				var templ_7745c5c3_Var61 string
+				templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", props.GetBaseCategoryPercentage()))
 				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 611, Col: 221}
 				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 117, "</span> <span class=\"score-value\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var58 string
-			templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", props.GetLinguisticTotalScore()))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 783, Col: 94}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 118, "</span></div></td><td style=\"background: transparent;\"></td></tr></tbody></table></div></div></div></div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = DrawNestedDonut("modal-nested-donut-"+props.CleanedName, props.GetCategoryBreakdownJSON()).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 119, "<h3>รายละเอียดตัวอักษร</h3><table class=\"similar-names-table\"><thead><tr><th>ตัวอักษร</th><th>เลขศาสตร์</th><th>พลังเงา</th></tr></thead> <tbody>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		for _, part := range props.DecodedParts {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "<tr><td>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if part.IsKlakini {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 121, "<span class=\"klakini-char\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var59 string
-				templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(part.Character)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 811, Col: 53}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1446,159 +1328,208 @@ func SolarSystem(props SolarSystemProps) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				var templ_7745c5c3_Var60 string
-				templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(part.Character)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 123, "<span class=\"score-icon\" style=\"display: flex; align-items: center;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#C62828\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"15\" y1=\"9\" x2=\"9\" y2=\"15\"></line><line x1=\"9\" y1=\"9\" x2=\"15\" y2=\"15\"></line></svg></span> <span class=\"score-value\" style=\"font-weight: 900; font-size: 1.8rem; letter-spacing: 1px; color: #8B4513;\">")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 813, Col: 26}
+					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
+				var templ_7745c5c3_Var62 string
+				templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.0f%%", props.GetBaseCategoryPercentage()))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 616, Col: 179}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 123, "</td><td>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "</div></td></tr></tbody></table></div></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var61 string
-			templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", part.NumerologyValue))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 816, Col: 53}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "</td><td>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var62 string
-			templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", part.ShadowValue))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 817, Col: 49}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "</td></tr>")
+			templ_7745c5c3_Err = DrawNestedDonut("modal-nested-donut-"+props.CleanedName, props.GetCategoryBreakdownJSON(), props.GetActiveCategoriesJSON()).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, "</tbody></table><h3 class=\"modal-section-title\">ความหมายคู่เลข</h3>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, "<h3>รายละเอียดตัวอักษร</h3><table class=\"similar-names-table\"><thead><tr><th>ตัวอักษร</th><th>เลขศาสตร์</th><th>พลังเงา</th></tr></thead> <tbody>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, part := range props.DecodedParts {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 127, "<tr><td>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if part.IsKlakini {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, "<span class=\"klakini-char\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var63 string
+				templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinStringErrs(part.Character)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 644, Col: 53}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 129, "</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				var templ_7745c5c3_Var64 string
+				templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(part.Character)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 646, Col: 26}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 130, "</td><td>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var65 string
+			templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", part.NumerologyValue))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 649, Col: 53}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 131, "</td><td>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var66 string
+			templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", part.ShadowValue))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 650, Col: 49}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var66))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 132, "</td></tr>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 133, "</tbody></table><h3 class=\"modal-section-title\">ความหมายคู่เลข</h3>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(props.AllUniquePairs) > 0 {
 			for i, pair := range props.AllUniquePairs {
 				if props.IsVIP || i <= 2 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 127, "<div class=\"meaning-item\"><div class=\"meaning-header\"><span class=\"pair-number-badge\" style=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var63 string
-					templ_7745c5c3_Var63, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pair.Meaning.Color + ";")
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 829, Col: 95}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, "\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var64 string
-					templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(pair.PairNumber)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 829, Col: 115}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 129, "</span> <span class=\"pair-desc\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var65 string
-					templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(pair.Meaning.MiracleDesc)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 830, Col: 58}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 130, "</span></div>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var66 = []any{"meaning-content", templ.KV("blur-content", !props.IsVIP && i >= 2), templ.KV("user-select-none", !props.IsVIP && i >= 2)}
-					templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var66...)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 131, "<div class=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 134, "<div class=\"meaning-item\"><div class=\"meaning-header\"><span class=\"pair-number-badge\" style=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var67 string
-					templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var66).String())
+					templ_7745c5c3_Var67, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pair.Meaning.Color + ";")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 1, Col: 0}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 662, Col: 95}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var67))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 132, "\"><p>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 135, "\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var68 string
-					templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.JoinStringErrs(pair.Meaning.MiracleDetail)
+					templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.JoinStringErrs(pair.PairNumber)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 834, Col: 39}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 662, Col: 115}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var68))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 133, "</p></div></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 136, "</span> <span class=\"pair-desc\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var69 string
+					templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.JoinStringErrs(pair.Meaning.MiracleDesc)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 663, Col: 58}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var69))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 137, "</span></div>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var70 = []any{"meaning-content", templ.KV("blur-content", !props.IsVIP && i >= 2), templ.KV("user-select-none", !props.IsVIP && i >= 2)}
+					templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var70...)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 138, "<div class=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var71 string
+					templ_7745c5c3_Var71, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var70).String())
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 1, Col: 0}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var71))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 139, "\"><p>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var72 string
+					templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.JoinStringErrs(pair.Meaning.MiracleDetail)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/solar_system.templ`, Line: 667, Col: 39}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var72))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 140, "</p></div></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 134, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 141, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if !props.IsVIP && len(props.AllUniquePairs) > 2 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 135, "<div class=\"vip-upgrade-overlay vip-overlay-container\"><div class=\"vip-lock-badge\">🔒 เนื้อหานี้สำหรับสมาชิก VIP</div><div class=\"vip-link-container\"><a href=\"#\" hx-get=\"/payment/upgrade\" hx-target=\"#upgrade-modal-container\" hx-swap=\"innerHTML\" onclick=\"event.preventDefault(); document.getElementById('upgrade-modal-container').style.display='flex'\" class=\"vip-link\">สมัครสมาชิก VIP เพื่ออ่านต่อ</a></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 142, "<div class=\"vip-upgrade-overlay vip-overlay-container\"><div class=\"vip-lock-badge\">🔒 เนื้อหานี้สำหรับสมาชิก VIP</div><div class=\"vip-link-container\"><a href=\"#\" hx-get=\"/payment/upgrade\" hx-target=\"#upgrade-modal-container\" hx-swap=\"innerHTML\" onclick=\"event.preventDefault(); document.getElementById('upgrade-modal-container').style.display='flex'\" class=\"vip-link\">สมัครสมาชิก VIP เพื่ออ่านต่อ</a></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 136, "<p>ไม่พบข้อมูล</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 143, "<p>ไม่พบข้อมูล</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 137, "</div></div></div><div id=\"linguistic-modal-container\" class=\"modal-overlay\" onclick=\"this.style.display='none'\" style=\"z-index: 10000;\"><div id=\"linguistic-modal-content\" class=\"modal-content\" onclick=\"event.stopPropagation()\"><div id=\"linguistic-loader\" class=\"htmx-indicator linguistic-loader-container\"><svg class=\"spinner\" width=\"40px\" height=\"40px\" viewBox=\"0 0 66 66\" xmlns=\"http://www.w3.org/2000/svg\"><circle class=\"path stroke-primary-important\" fill=\"none\" stroke-width=\"6\" stroke-linecap=\"round\" cx=\"33\" cy=\"33\" r=\"30\"></circle></svg><p class=\"linguistic-loading-text\">กำลังค้นหาข้อมูลภาษาศาสตร์...</p></div></div></div><!-- Purchase Modal --><div id=\"purchase-modal\" class=\"modal-overlay\" onclick=\"this.style.display='none'\" style=\"z-index: 10001;\"><div class=\"modal-content\" onclick=\"event.stopPropagation()\" style=\"max-width: 400px; text-align: center; padding: 2rem; border-radius: 24px; background: linear-gradient(135deg, #ffffff 0%, #f9fdf9 100%);\"><div style=\"margin-bottom: 1.5rem;\"><div style=\"width: 70px; height: 70px; background: #E8F5E9; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.2rem; transform: rotate(-10deg); box-shadow: 0 4px 10px rgba(46, 125, 50, 0.1);\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"34\" height=\"34\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#2E7D32\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"21\" r=\"1\"></circle><circle cx=\"20\" cy=\"21\" r=\"1\"></circle><path d=\"M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6\"></path></svg></div><h2 style=\"color: #1B5E20; margin-bottom: 0.8rem; font-size: 1.6rem; font-weight: 800;\">สั่งซื้อเบอร์มงคล</h2><p style=\"color: #444; font-size: 0.95rem; line-height: 1.6;\">ติดต่อสอบถามหรือสั่งซื้อกับคุณทญา <br>ทาง LINE ได้โดยตรงผ่าน QR Code นี้ครับ</p></div><div style=\"background: white; padding: 12px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); display: inline-block; margin-bottom: 1.8rem; border: 1px solid rgba(0,0,0,0.03); position: relative;\"><img src=\"/images/line_qr_taya.jpg\" alt=\"LINE QR Code\" style=\"width: 220px; height: 220px; display: block; border-radius: 12px;\"><div style=\"position: absolute; bottom: -10px; right: -10px; background: #06C755; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(6, 199, 85, 0.3);\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.036 9.608.391.084.922.258 1.183.593.227.292.149.75.073 1.047l-.314 1.328c-.095.402-.439 1.574 1.887.859 2.327-.715 12.553-7.391 12.553-13.435z\"></path></svg></div></div><div style=\"display: flex; flex-direction: column; gap: 12px; width: 100%;\"><button onclick=\"document.getElementById('purchase-modal').style.display='none'\" style=\"background: #1B5E20; color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 1rem; box-shadow: 0 4px 12px rgba(27, 94, 32, 0.2);\">ตกลง</button><p style=\"font-size: 0.75rem; color: #999;\">ขอบคุณที่ไว้วางใจให้คุณทญาดูแลครับ</p></div></div></div><script>\n\t\tfunction openMeaningModal(name) {\n\t\t\tdocument.getElementById('meaning-modal-' + name).style.display = 'flex';\n\t\t}\n\t\t\n\t\tfunction loadLinguisticAnalysis(name) {\n\t\t\t// 1. Show Modal & Loader\n\t\t\tconst modal = document.getElementById('linguistic-modal-container');\n\t\t\tconst contentDiv = document.getElementById('linguistic-modal-content');\n\t\t\t\n\t\t\tmodal.style.display = 'flex';\n\t\t\tmodal.style.zIndex = '10000';\n\t\t\t\n\t\t\t// Reset content to loader\n\t\t\t// Reset content to loader with premium design\n\t\t\t// Reset content to loader with premium design\n\t\t\tcontentDiv.innerHTML = `\n\t\t\t\t<div id=\"linguistic-loader\" class=\"linguistic-loader-container\" style=\"display: flex !important; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 2rem; min-height: 300px;\">\n\t\t\t\t\t<div class=\"loader-spinner\" style=\"\n\t\t\t\t\t\tborder: 4px solid #f3f3f3;\n\t\t\t\t\t\tborder-top: 4px solid #DB4437;\n\t\t\t\t\t\tborder-radius: 50%;\n\t\t\t\t\t\twidth: 50px;\n\t\t\t\t\t\theight: 50px;\n\t\t\t\t\t\tanimation: spin 1s linear infinite;\n\t\t\t\t\t\tmargin-bottom: 20px;\n\t\t\t\t\t\"></div>\n\t\t\t\t\t<h3 style=\"color: #333; margin-bottom: 10px; font-weight: 600;\">กำลังวิเคราะห์ข้อมูล...</h3>\n\t\t\t\t\t<p class=\"linguistic-loading-text\" style=\"color: #666; font-size: 0.9em; text-align: center;\">ระบบกำลังประมวลผลความหมายทางภาษาศาสตร์และรากศัพท์<br>กรุณารอสักครู่...</p>\n\t\t\t\t\t<style>\n\t\t\t\t\t\t@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }\n\t\t\t\t\t</style>\n\t\t\t\t</div>\n\t\t\t`;\n\n\t\t\t// 2. Fetch Data\n\t\t\tfetch('/linguistic-analysis?name=' + encodeURIComponent(name))\n\t\t\t\t.then(async response => {\n\t\t\t\t\tif (!response.ok) {\n\t\t\t\t\t\t// Try to get error text from server\n\t\t\t\t\t\tconst errorText = await response.text();\n\t\t\t\t\t\tthrow new Error(errorText || 'Network response was not ok');\n\t\t\t\t\t}\n\t\t\t\t\treturn response.text();\n\t\t\t\t})\n\t\t\t\t.then(html => {\n\t\t\t\t\t// 3. Update Content\n\t\t\t\t\tcontentDiv.innerHTML = html;\n\t\t\t\t})\n\t\t\t\t.catch(error => {\n\t\t\t\t\tconsole.error('Error fetching linguistic analysis:', error);\n\t\t\t\t\t// Display detailed error message\n\t\t\t\t\tcontentDiv.innerHTML = `\n\t\t\t\t\t\t<div class=\"modal-body\" style=\"text-align: center; padding: 2rem; color: #d32f2f;\">\n\t\t\t\t\t\t\t<p>เกิดข้อผิดพลาดในการโหลดข้อมูล</p>\n\t\t\t\t\t\t\t<p style=\"font-size: 0.8em; color: #555; margin-top: 10px;\">${error.message}</p>\n\t\t\t\t\t\t\t<button class=\"action-btn-premium\" onclick=\"document.getElementById('linguistic-modal-container').style.display='none'\" style=\"margin-top: 1rem;\">ปิด</button>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t`;\n\t\t\t\t});\n\t\t}\n\t\tfunction closeMeaningModal(name) {\n\t\t\tdocument.getElementById('meaning-modal-' + name).style.display = 'none';\n\t\t}\n\t</script><script>\n\t\twindow.defaultLuckyIcons = window.defaultLuckyIcons || {};\n\n\t\tfunction updateScores(containerId) {\n\t\t\t// containerId format: \"lucky-container-{name}-{cat}\" or \"modal-lucky-container-{name}-{cat}\"\n\t\t\tlet isModal = containerId.startsWith('modal-');\n\t\t\tlet parts = containerId.split('-');\n\t\t\t\n\t\t\tlet prefixLen = isModal ? 3 : 2;\n\t\t\tlet name = parts.slice(prefixLen, -1).join('-');\n\t\t\tlet cat = parts[parts.length - 1];\n\t\t\t\n\t\t\t// 1. Update Total Score (%รวม)\n\t\t\tlet scoreId = isModal ? `modal-total-score-${name}` : `total-score-${name}`;\n\t\t\tlet scoreElement = document.getElementById(scoreId);\n\t\t\tif (scoreElement) {\n\t\t\t\tlet baseScore = parseInt(scoreElement.getAttribute('data-base-score') || '0');\n\t\t\t\tlet prefix = isModal ? `modal-lucky-container-${name}-` : `lucky-container-${name}-`;\n\t\t\t\tlet activeLuckyCount = 0;\n\t\t\t\tdocument.querySelectorAll(`[id^=\"${prefix}\"]`).forEach(el => {\n\t\t\t\t\tif (el.getAttribute('data-showing-number') === 'true') {\n\t\t\t\t\t\tactiveLuckyCount++;\n\t\t\t\t\t}\n\t\t\t\t});\n\n\t\t\t\tlet newScore = baseScore + (activeLuckyCount * 100);\n\t\t\t\t\n\t\t\t\t// Handle Sparkling Effect for Total Score\n\t\t\t\tif (activeLuckyCount > 0) {\n\t\t\t\t\tscoreElement.classList.add('sparkling-gold');\n\t\t\t\t\tscoreElement.style.padding = '10px 20px';\n\t\t\t\t\tscoreElement.style.borderRadius = '15px';\n\t\t\t\t} else {\n\t\t\t\t\tscoreElement.classList.remove('sparkling-gold');\n\t\t\t\t\tscoreElement.style.padding = '';\n\t\t\t\t\tscoreElement.style.borderRadius = '';\n\t\t\t\t}\n\n\t\t\t\tlet valueSpan = scoreElement.querySelector('.score-value');\n\t\t\t\tif (valueSpan) {\n\t\t\t\t\tvalueSpan.textContent = newScore + '%' + (activeLuckyCount > 0 ? ' ✨' : '');\n\t\t\t\t}\n\n\t\t\t\tlet iconSpan = scoreElement.querySelector('.score-icon');\n\t\t\t\tif (iconSpan) {\n\t\t\t\t\tif (activeLuckyCount > 0) {\n\t\t\t\t\t\ticonSpan.innerHTML = '';\n\t\t\t\t\t} else {\n\t\t\t\t\t\tif (newScore > 0) {\n\t\t\t\t\t\t\ticonSpan.innerHTML = `\n\t\t\t\t\t\t\t\t<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"#FFD700\" stroke=\"#B8860B\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));\">\n\t\t\t\t\t\t\t\t\t<path d=\"M6 9H4.5a2.5 2.5 0 0 1 0-5H6\"></path>\n\t\t\t\t\t\t\t\t\t<path d=\"M18 9h1.5a2.5 2.5 0 0 0 0-5H18\"></path>\n\t\t\t\t\t\t\t\t\t<path d=\"M4 22h16\"></path>\n\t\t\t\t\t\t\t\t\t<path d=\"M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22\"></path>\n\t\t\t\t\t\t\t\t\t<path d=\"M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22\"></path>\n\t\t\t\t\t\t\t\t\t<path d=\"M18 2H6v7a6 6 0 0 0 12 0V2Z\"></path>\n\t\t\t\t\t\t\t\t</svg>\n\t\t\t\t\t\t\t`;\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\ticonSpan.innerHTML = `\n\t\t\t\t\t\t\t\t<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"#e0e0e0\" stroke=\"#bdbdbd\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"filter: grayscale(1); opacity: 0.7;\">\n\t\t\t\t\t\t\t\t\t<path d=\"M6 9H4.5a2.5 2.5 0 0 1 0-5H6\"></path>\n\t\t\t\t\t\t\t\t\t<path d=\"M18 9h1.5a2.5 2.5 0 0 0 0-5H18\"></path>\n\t\t\t\t\t\t\t\t\t<path d=\"M4 22h16\"></path>\n\t\t\t\t\t\t\t\t\t<path d=\"M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22\"></path>\n\t\t\t\t\t\t\t\t\t<path d=\"M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22\"></path>\n\t\t\t\t\t\t\t\t\t<path d=\"M18 2H6v7a6 6 0 0 0 12 0V2Z\"></path>\n\t\t\t\t\t\t\t\t</svg>\n\t\t\t\t\t\t\t`;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// 2. Update Category %ดี\n\t\t\tlet goodId = isModal ? `modal-good-score-container-${name}-${cat}` : `good-score-container-${name}-${cat}`;\n\t\t\tlet goodContainer = document.getElementById(goodId);\n\t\t\tif (goodContainer) {\n\t\t\t\tlet baseGood = parseInt(goodContainer.getAttribute('data-base-good') || '0');\n\t\t\t\tlet luckyContainer = document.getElementById(containerId);\n\t\t\t\tlet isShowing = luckyContainer.getAttribute('data-showing-number') === 'true';\n\t\t\t\tlet newGood = baseGood + (isShowing ? 100 : 0);\n\t\t\t\t\n\t\t\t\tif (newGood > 0) {\n\t\t\t\t\tlet isLuckySelection = luckyContainer.getAttribute('data-showing-number') === 'true';\n\t\t\t\t\tlet goldClass = isLuckySelection ? 'sparkling-gold' : '';\n\t\t\t\t\tlet goldStyle = isLuckySelection ? 'padding: 2px 8px; border-radius: 12px;' : '';\n\t\t\t\t\t\n\t\t\t\t\tgoodContainer.innerHTML = `\n\t\t\t\t\t\t<span class=\"good-score-wrap ${goldClass}\" style=\"color: #2E7D32; font-weight: 700; font-size: 1.1em; display: flex; align-items: center; justify-content: flex-end; gap: 4px; ${goldStyle}\">\n\t\t\t\t\t\t\t${isLuckySelection ? '' : '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"20 6 9 17 4 12\"></polyline></svg>'}\n\t\t\t\t\t\t\t<span class=\"good-value-text\">${newGood}%</span>\n\t\t\t\t\t\t\t${isLuckySelection ? '✨' : ''}\n\t\t\t\t\t\t</span>\n\t\t\t\t\t`;\n\t\t\t\t} else {\n\t\t\t\t\tgoodContainer.innerHTML = '<span class=\"good-score-wrap\" style=\"color: #ccc;\">-</span>';\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\tfunction revertLuckyNumber(containerId) {\n\t\t\tconst container = document.getElementById(containerId);\n\t\t\tif (container && window.defaultLuckyIcons[containerId]) {\n\t\t\t\tcontainer.innerHTML = window.defaultLuckyIcons[containerId];\n\t\t\t\tcontainer.setAttribute('data-showing-number', 'false');\n\t\t\t\tupdateScores(containerId);\n\t\t\t}\n\t\t}\n\n\t\tasync function toggleLuckyNumber(category, containerId) {\n\t\t\tconsole.log(\"Toggling lucky number for:\", category, \"at\", containerId);\n\t\t\tconst container = document.getElementById(containerId);\n\t\t\tif (!container) return;\n\n\t\t\t// Store default state if not already stored\n\t\t\tif (!window.defaultLuckyIcons[containerId]) {\n\t\t\t\twindow.defaultLuckyIcons[containerId] = container.innerHTML;\n\t\t\t}\n\n\t\t\t// If it's already showing a number, revert to default icon\n\t\t\tif (container.getAttribute('data-showing-number') === 'true') {\n\t\t\t\trevertLuckyNumber(containerId);\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\ttry {\n\t\t\t\t// Loading state\n\t\t\t\tcontainer.innerHTML = '<div class=\"animate-spin\" style=\"width: 16px; height: 16px; border: 2px solid #ccc; border-top-color: #333; border-radius: 50%;\"></div>';\n\n\n\t\t\t\tconst response = await fetch(`/api/lucky-number?category=${encodeURIComponent(category)}`);\n\t\t\t\tconst data = await response.json();\n\n\t\t\t\tif (data && data.number) {\n\t\t\t\t\tconsole.log(\"Found lucky number:\", data.number, \"with keywords:\", data.keywords);\n\t\t\t\t\t\n\t\t\t\t\tlet keywordsHtml = \"\";\n\t\t\t\t\tif (data.keywords && data.keywords.length > 0) {\n\t\t\t\t\t\tkeywordsHtml = `\n\t\t\t\t\t\t\t<div style=\"font-size: 0.7rem; color: #558B2F; font-weight: 500; line-height: 1.3; text-align: center; width: 100%; max-width: 250px; background: rgba(255,255,255,0.5); padding: 4px 8px; border-radius: 6px;\">\n\t\t\t\t\t\t\t\t${data.keywords.join(' • ')}\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t`;\n\t\t\t\t\t}\n\n\t\t\t\t\tcontainer.innerHTML = `\n\t\t\t\t\t\t<div class=\"lucky-card\" style=\"position: relative; display: flex; width: 100%; box-sizing: border-box; flex-direction: column; align-items: center; background: #F1F8E9; padding: 16px 12px; border-radius: 12px; border: 1px solid #C8E6C9; animation: fadeIn 0.3s; gap: 8px; box-shadow: 0 4px 12px rgba(46, 125, 50, 0.08);\">\n\t\t\t\t\t\t\t<div style=\"font-weight: 900; color: #1B5E20; font-size: 1.2rem; white-space: nowrap; line-height: 1; letter-spacing: 0.8px; text-shadow: 0 1px 0 white;\">\n\t\t\t\t\t\t\t\t${data.number}\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t${keywordsHtml}\n\t\t\t\t\t\t\t<div style=\"display: flex; gap: 6px; width: 100%; justify-content: center; margin-top: 4px;\">\n\t\t\t\t\t\t\t\t<button onclick=\"event.stopPropagation(); openPurchaseModal()\" style=\"background: #2E7D32; color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s; border: 1px solid #1B5E20; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;\">\n\t\t\t\t\t\t\t\t\t<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"21\" r=\"1\"/><circle cx=\"20\" cy=\"21\" r=\"1\"/><path d=\"M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6\"/></svg>\n\t\t\t\t\t\t\t\t\tซื้อเบอร์\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t\t<button onclick=\"event.stopPropagation(); revertLuckyNumber('${containerId}')\" style=\"background: #fff; color: #D32F2F; padding: 6px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer; border: 1px solid #FFCDD2; display: inline-flex; align-items: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);\">\n\t\t\t\t\t\t\t\t\tลบ\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t`;\n\t\t\t\t\tcontainer.setAttribute('data-showing-number', 'true');\n\t\t\t\t\tupdateScores(containerId);\n\t\t\t\t} else {\n\t\t\t\t\tconsole.warn(\"No lucky number found for category:\", category);\n\t\t\t\t\trevertLuckyNumber(containerId);\n\t\t\t\t\talert('ไม่พบเบอร์มงคลในหมวดหมู่ข้อมูลนี้');\n\t\t\t\t}\n\t\t\t} catch (error) {\n\t\t\t\tconsole.error('Error fetching lucky number:', error);\n\t\t\t\trevertLuckyNumber(containerId);\n\t\t\t}\n\t\t}\n\t\tfunction openPurchaseModal() {\n\t\t\tdocument.getElementById('purchase-modal').style.display = 'flex';\n\t\t}\n\t</script><!-- Auto-trigger similar names update when solar system renders -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 144, "</div></div></div><div id=\"linguistic-modal-container\" class=\"modal-overlay\" onclick=\"this.style.display='none'\" style=\"z-index: 10000;\"><div id=\"linguistic-modal-content\" class=\"modal-content\" onclick=\"event.stopPropagation()\"><div id=\"linguistic-loader\" class=\"htmx-indicator linguistic-loader-container\"><svg class=\"spinner\" width=\"40px\" height=\"40px\" viewBox=\"0 0 66 66\" xmlns=\"http://www.w3.org/2000/svg\"><circle class=\"path stroke-primary-important\" fill=\"none\" stroke-width=\"6\" stroke-linecap=\"round\" cx=\"33\" cy=\"33\" r=\"30\"></circle></svg><p class=\"linguistic-loading-text\">กำลังค้นหาข้อมูลภาษาศาสตร์...</p></div></div></div><!-- Purchase Modal --><div id=\"purchase-modal\" class=\"modal-overlay\" onclick=\"this.style.display='none'\" style=\"z-index: 10001;\"><div class=\"modal-content\" onclick=\"event.stopPropagation()\" style=\"max-width: 400px; text-align: center; padding: 2rem; border-radius: 24px; background: linear-gradient(135deg, #ffffff 0%, #f9fdf9 100%);\"><div style=\"margin-bottom: 1.5rem;\"><div style=\"width: 70px; height: 70px; background: #E8F5E9; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.2rem; transform: rotate(-10deg); box-shadow: 0 4px 10px rgba(46, 125, 50, 0.1);\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"34\" height=\"34\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#2E7D32\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"21\" r=\"1\"></circle><circle cx=\"20\" cy=\"21\" r=\"1\"></circle><path d=\"M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6\"></path></svg></div><h2 style=\"color: #1B5E20; margin-bottom: 0.8rem; font-size: 1.6rem; font-weight: 800;\">สั่งซื้อเบอร์มงคล</h2><!-- Target Number Display --><div id=\"purchase-modal-target-number\" style=\"display:none; margin-bottom: 1rem;\"></div><p style=\"color: #444; font-size: 0.95rem; line-height: 1.6;\">ติดต่อสอบถามหรือสั่งซื้อกับคุณทญา <br>ทาง LINE ได้โดยตรงผ่าน QR Code นี้ครับ</p><div style=\"background: rgba(46, 125, 50, 0.05); border: 1px solid rgba(46, 125, 50, 0.1); border-radius: 12px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 8px; margin-top: 12px;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1B5E20\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.05 12.05 0 0 0 .57 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.05 12.05 0 0 0 2.81.57A2 2 0 0 1 22 16.92z\"></path></svg> <a href=\"tel:0936544442\" style=\"font-size: 1.1rem; font-weight: 700; color: #1B5E20; text-decoration: none; letter-spacing: 0.5px;\">093-654-4442</a></div></div><div style=\"background: white; padding: 12px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); display: inline-block; margin-bottom: 1.8rem; border: 1px solid rgba(0,0,0,0.03); position: relative;\"><img src=\"/images/line_qr_taya.jpg\" alt=\"LINE QR Code\" style=\"width: 220px; height: 220px; display: block; border-radius: 12px;\"><div style=\"position: absolute; bottom: -10px; right: -10px; background: #06C755; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(6, 199, 85, 0.3);\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.036 9.608.391.084.922.258 1.183.593.227.292.149.75.073 1.047l-.314 1.328c-.095.402-.439 1.574 1.887.859 2.327-.715 12.553-7.391 12.553-13.435z\"></path></svg></div></div><div style=\"display: flex; flex-direction: column; gap: 12px; width: 100%;\"><button onclick=\"document.getElementById('purchase-modal').style.display='none'\" style=\"background: #1B5E20; color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 1rem; box-shadow: 0 4px 12px rgba(27, 94, 32, 0.2);\">ตกลง</button><p style=\"font-size: 0.75rem; color: #999;\">ขอบคุณที่ไว้วางใจให้คุณทญาดูแลครับ</p></div></div></div><script>\n\t\tfunction openMeaningModal(name) {\n\t\t\tdocument.getElementById('meaning-modal-' + name).style.display = 'flex';\n\t\t}\n\t\t\n\t\tfunction loadLinguisticAnalysis(name) {\n\t\t\t// 1. Show Modal & Loader\n\t\t\tconst modal = document.getElementById('linguistic-modal-container');\n\t\t\tconst contentDiv = document.getElementById('linguistic-modal-content');\n\t\t\t\n\t\t\tmodal.style.display = 'flex';\n\t\t\tmodal.style.zIndex = '10000';\n\t\t\t\n\t\t\t// Reset content to loader\n\t\t\t// Reset content to loader with premium design\n\t\t\t// Reset content to loader with premium design\n\t\t\tcontentDiv.innerHTML = `\n\t\t\t\t<div id=\"linguistic-loader\" class=\"linguistic-loader-container\" style=\"display: flex !important; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 2rem; min-height: 300px;\">\n\t\t\t\t\t<div class=\"loader-spinner\" style=\"\n\t\t\t\t\t\tborder: 4px solid #f3f3f3;\n\t\t\t\t\t\tborder-top: 4px solid #DB4437;\n\t\t\t\t\t\tborder-radius: 50%;\n\t\t\t\t\t\twidth: 50px;\n\t\t\t\t\t\theight: 50px;\n\t\t\t\t\t\tanimation: spin 1s linear infinite;\n\t\t\t\t\t\tmargin-bottom: 20px;\n\t\t\t\t\t\"></div>\n\t\t\t\t\t<h3 style=\"color: #333; margin-bottom: 10px; font-weight: 600;\">กำลังวิเคราะห์ข้อมูล...</h3>\n\t\t\t\t\t<p class=\"linguistic-loading-text\" style=\"color: #666; font-size: 0.9em; text-align: center;\">ระบบกำลังประมวลผลความหมายทางภาษาศาสตร์และรากศัพท์<br>กรุณารอสักครู่...</p>\n\t\t\t\t\t<style>\n\t\t\t\t\t\t@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }\n\t\t\t\t\t</style>\n\t\t\t\t</div>\n\t\t\t`;\n\n\t\t\t// 2. Fetch Data\n\t\t\tfetch('/linguistic-analysis?name=' + encodeURIComponent(name))\n\t\t\t\t.then(async response => {\n\t\t\t\t\tif (!response.ok) {\n\t\t\t\t\t\t// Try to get error text from server\n\t\t\t\t\t\tconst errorText = await response.text();\n\t\t\t\t\t\tthrow new Error(errorText || 'Network response was not ok');\n\t\t\t\t\t}\n\t\t\t\t\treturn response.text();\n\t\t\t\t})\n\t\t\t\t.then(html => {\n\t\t\t\t\t// 3. Update Content\n\t\t\t\t\tcontentDiv.innerHTML = html;\n\t\t\t\t})\n\t\t\t\t.catch(error => {\n\t\t\t\t\tconsole.error('Error fetching linguistic analysis:', error);\n\t\t\t\t\t// Display detailed error message\n\t\t\t\t\tcontentDiv.innerHTML = `\n\t\t\t\t\t\t<div class=\"modal-body\" style=\"text-align: center; padding: 2rem; color: #d32f2f;\">\n\t\t\t\t\t\t\t<p>เกิดข้อผิดพลาดในการโหลดข้อมูล</p>\n\t\t\t\t\t\t\t<p style=\"font-size: 0.8em; color: #555; margin-top: 10px;\">${error.message}</p>\n\t\t\t\t\t\t\t<button class=\"action-btn-premium\" onclick=\"document.getElementById('linguistic-modal-container').style.display='none'\" style=\"margin-top: 1rem;\">ปิด</button>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t`;\n\t\t\t\t});\n\t\t}\n\t\tfunction closeMeaningModal(name) {\n\t\t\tdocument.getElementById('meaning-modal-' + name).style.display = 'none';\n\t\t}\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
-		}
-		if !props.SkipTrigger {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 138, "<div class=\"display-none\" hx-get=\"/similar-names\" hx-trigger=\"load\" hx-include=\"#name-form\" hx-target=\"#results\" hx-indicator=\"#results-wrapper\"></div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
 		}
 		return nil
 	})

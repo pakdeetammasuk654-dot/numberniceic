@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../services/auth_service.dart';
 import 'landing_page.dart';
 import 'analyzer_page.dart';
+import 'number_analysis_page.dart';
 import 'login_page.dart';
 import 'dashboard_page.dart';
 import 'shop_page.dart';
@@ -37,12 +38,13 @@ class _MainTabPageState extends State<MainTabPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Determine the 4th page based on login status
+    // Determine the last page based on login status
     final Widget dashboardPage = _isLoggedIn ? const DashboardPage() : const LoginPage();
     
     final List<Widget> pages = [
       const LandingPage(),
       const AnalyzerPage(),
+      const NumberAnalysisPage(),
       const ShopPage(),
       dashboardPage,
     ];
@@ -61,8 +63,8 @@ class _MainTabPageState extends State<MainTabPage> {
           backgroundColor: const Color(0xFF333333),
           currentIndex: _currentIndex,
           onTap: (index) async {
-              // Now Dashboard/Login is index 3
-              if(index == 3) {
+              // Now Dashboard/Login is index 4
+              if(index == 4) {
                   await _checkLoginStatus(); 
               }
             setState(() {
@@ -82,9 +84,14 @@ class _MainTabPageState extends State<MainTabPage> {
               label: 'หน้าแรก',
             ),
             const BottomNavigationBarItem(
-              icon: Icon(Icons.analytics_outlined),
-              activeIcon: Icon(Icons.analytics),
-              label: 'วิเคราะห์',
+              icon: Icon(Icons.badge_outlined),
+              activeIcon: Icon(Icons.badge),
+              label: 'วิเคราะห์ชื่อ',
+            ),
+             const BottomNavigationBarItem(
+              icon: Icon(Icons.dialpad_outlined),
+              activeIcon: Icon(Icons.dialpad),
+              label: 'วิเคราะห์เบอร์',
             ),
              const BottomNavigationBarItem(
               icon: Icon(Icons.storefront_outlined),

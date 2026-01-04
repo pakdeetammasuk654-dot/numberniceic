@@ -200,7 +200,7 @@
     border: 1px solid #fdd835;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(253, 216, 53, 0.15);
-    padding: 1rem;
+    padding: 1rem 1rem 2.8rem 1rem;
 }
 
 .best-name-card-premium:hover {
@@ -224,7 +224,7 @@
     border: 1px solid #c5e1a5;
     border-radius: 12px;
     box-shadow: 0 4px 10px rgba(51, 105, 30, 0.1);
-    padding: 1rem;
+    padding: 1rem 1rem 2.8rem 1rem;
 }
 
 .best-name-card-standard:hover {
@@ -1651,7 +1651,7 @@ body {
     height: 100%;
     border-radius: 50%;
     transition: all 0.5s ease;
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .pie-center {
@@ -1667,7 +1667,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
 .total-pairs {
@@ -1732,17 +1732,21 @@ body {
     .chart-layout {
         gap: 1.5rem;
     }
+
     .pie-chart-wrapper {
         width: 130px;
         height: 130px;
     }
+
     .pie-center {
         width: 70px;
         height: 70px;
     }
+
     .total-pairs {
         font-size: 1.1rem;
     }
+
     .chart-legend {
         grid-template-columns: 1fr;
         width: 100%;

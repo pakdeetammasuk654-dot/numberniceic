@@ -1,0 +1,6 @@
+#!/usr/bin/expect
+set timeout 20
+spawn ssh -M -S /Users/tayap/.ssh/control-43.228.85.200-tayap -fN -o StrictHostKeyChecking=no tayap@43.228.85.200
+expect "password:"
+send "IntelliP24.X\r"
+expect eof

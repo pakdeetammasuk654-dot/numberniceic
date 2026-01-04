@@ -56,17 +56,27 @@ class NumerologyDetailPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
-            child: Text(p['pair_number'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)),
+            child: Text(
+              p['pair_number'], 
+              style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(p['meaning']['miracle_desc'] ?? '', style: GoogleFonts.sarabun(fontWeight: FontWeight.bold)),
-                Text(p['meaning']['miracle_detail'] ?? '', style: GoogleFonts.sarabun(color: Colors.grey[600], fontSize: 13)),
+                Text(
+                  p['meaning']['miracle_desc'] ?? '', 
+                  style: GoogleFonts.sarabun(fontWeight: FontWeight.bold, fontSize: 16, color: const Color(0xFF2D3748))
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  p['meaning']['miracle_detail'] ?? '', 
+                  style: GoogleFonts.sarabun(color: const Color(0xFF4A5568), fontSize: 14, height: 1.6)
+                ),
               ],
             ),
           ),

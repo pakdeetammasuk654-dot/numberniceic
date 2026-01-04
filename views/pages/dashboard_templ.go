@@ -366,226 +366,239 @@ func Dashboard(username string, email string, tel string, savedNames []domain.Sa
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "\"><td><div style=\"display: flex; align-items: center; gap: 0.25rem;\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "\"><td><div style=\"display: flex; align-items: center; gap: 0.25rem;\"><span style=\"font-size: 0.9em; font-weight: 300; color: #cbd5e0; margin-right: 8px;\">#")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var16 = []any{"name-cell", templ.KV("name-top-tier", name.IsTopTier)}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var16...)
+			var templ_7745c5c3_Var16 string
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", i+1))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 279, Col: 61}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<div class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var17 string
-			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var16).String())
+			var templ_7745c5c3_Var17 = []any{"name-cell", templ.KV("name-top-tier", name.IsTopTier)}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var17...)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<div class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var18 string
+			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var17).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "\" style=\"font-size: 1.1rem;\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\" style=\"font-size: 1.1rem;\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, dc := range name.DisplayNameHTML {
 				if dc.IsBad {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<span class=\"klakini-char\" style=\"color: #ff4757 !important;\">")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var18 string
-					templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 281, Col: 82}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</span>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				} else if name.IsTopTier {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<span style=\"color: #FF9800;\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<span class=\"klakini-char\" style=\"color: #ff4757 !important;\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var19 string
 					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 283, Col: 50}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 284, Col: 82}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<span style=\"color: #2c3e50;\">")
+				} else if name.IsTopTier {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<span style=\"color: #FF9800;\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var20 string
 					templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 285, Col: 50}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 286, Col: 50}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</span>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				} else {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<span style=\"color: #2c3e50;\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var21 string
+					templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(dc.Char)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 288, Col: 50}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if name.IsTopTier {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<span>⭐</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "<span>⭐</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</div><small style=\"color: #666; font-family: 'Kanit', sans-serif; display: inline-flex; align-items: center; gap: 0.25rem;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\" ry=\"2\"></rect><line x1=\"16\" y1=\"2\" x2=\"16\" y2=\"6\"></line><line x1=\"8\" y1=\"2\" x2=\"8\" y2=\"6\"></line><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"></line></svg> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</div><small style=\"color: #666; font-family: 'Kanit', sans-serif; display: inline-flex; align-items: center; gap: 0.25rem;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\" ry=\"2\"></rect><line x1=\"16\" y1=\"2\" x2=\"16\" y2=\"6\"></line><line x1=\"8\" y1=\"2\" x2=\"8\" y2=\"6\"></line><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"></line></svg> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var21 string
-			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(name.BirthDayThai)
+			var templ_7745c5c3_Var22 string
+			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(name.BirthDayThai)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 295, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 298, Col: 27}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</small></td><td><div class=\"table-pairs-container\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</small></td><td><div class=\"table-pairs-container\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, pair := range name.SatPairs {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<span class=\"table-pair-circle\" style=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var22 string
-				templ_7745c5c3_Var22, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pair.Color + ";")
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 301, Col: 88}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<span class=\"table-pair-circle\" style=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var23 string
-				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(pair.Number)
+				templ_7745c5c3_Var23, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pair.Color + ";")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 301, Col: 104}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 304, Col: 88}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</span>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</div></td><td><div class=\"table-pairs-container\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			for _, pair := range name.ShaPairs {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<span class=\"table-pair-circle\" style=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var24 string
-				templ_7745c5c3_Var24, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pair.Color + ";")
+				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(pair.Number)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 308, Col: 88}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 304, Col: 104}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</div></td><td><div class=\"table-pairs-container\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, pair := range name.ShaPairs {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<span class=\"table-pair-circle\" style=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var25 string
-				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(pair.Number)
+				templ_7745c5c3_Var25, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + pair.Color + ";")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 308, Col: 104}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 311, Col: 88}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var26 string
+				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(pair.Number)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 311, Col: 104}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "</div></td><td style=\"text-align: center; vertical-align: middle;\"><div style=\"display: flex; flex-direction: column; align-items: center;\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</div></td><td style=\"text-align: center; vertical-align: middle;\"><div style=\"display: flex; flex-direction: column; align-items: center;\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var26 = []any{templ.KV("score-bad", name.TotalScore < 0), templ.KV("score-good", name.TotalScore >= 0)}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var26...)
+			var templ_7745c5c3_Var27 = []any{templ.KV("score-bad", name.TotalScore < 0), templ.KV("score-good", name.TotalScore >= 0)}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var27...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "<span class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<span class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var27 string
-			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var26).String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 1, Col: 0}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "\" style=\"font-size: 1.1rem; font-weight: normal;\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if name.TotalScore > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "+ ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
 			}
 			var templ_7745c5c3_Var28 string
-			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", name.TotalScore))
+			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var27).String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 318, Col: 72}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 1, Col: 0}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "</span></div></td><td style=\"text-align: center;\" onclick=\"event.stopPropagation()\"><div style=\"display: flex; gap: 0.5rem; justify-content: center;\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "\" style=\"font-size: 1.1rem; font-weight: normal;\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if name.TotalScore > 0 {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "+ ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			var templ_7745c5c3_Var29 string
+			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", name.TotalScore))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 321, Col: 72}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "</span></div></td><td style=\"text-align: center;\" onclick=\"event.stopPropagation()\"><div style=\"display: flex; gap: 0.5rem; justify-content: center;\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -593,40 +606,40 @@ func Dashboard(username string, email string, tel string, savedNames []domain.Sa
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "<button class=\"link-button\" style=\"color: #007bff;\" title=\"วิเคราะห์ชื่อนี้ใหม่\" onclick=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<button class=\"link-button\" style=\"color: #007bff;\" title=\"วิเคราะห์ชื่อนี้ใหม่\" onclick=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var29 templ.ComponentScript = navigateToAnalyzer(name.Name, name.BirthDayRaw)
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var29.Call)
+			var templ_7745c5c3_Var30 templ.ComponentScript = navigateToAnalyzer(name.Name, name.BirthDayRaw)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30.Call)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><line x1=\"21\" y1=\"21\" x2=\"16.65\" y2=\"16.65\"></line></svg></button> <button class=\"link-button\" style=\"color: #dc3545;\" title=\"ลบชื่อนี้\" hx-delete=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><line x1=\"21\" y1=\"21\" x2=\"16.65\" y2=\"16.65\"></line></svg></button> <button class=\"link-button\" style=\"color: #dc3545;\" title=\"ลบชื่อนี้\" hx-delete=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var30 string
-			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs("/saved-names/" + fmt.Sprintf("%d", name.ID))
+			var templ_7745c5c3_Var31 string
+			templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs("/saved-names/" + fmt.Sprintf("%d", name.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 336, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/dashboard.templ`, Line: 339, Col: 65}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "\" hx-target=\"#saved-names-list\" hx-swap=\"innerHTML\" hx-confirm=\"คุณต้องการลบชื่อนี้ใช่หรือไม่?\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"3 6 5 6 21 6\"></polyline><path d=\"M19 6v14a2 2 0 0 1-2-2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"></path><line x1=\"10\" y1=\"11\" x2=\"10\" y2=\"17\"></line><line x1=\"14\" y1=\"11\" x2=\"14\" y2=\"17\"></line></svg></button></div></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "\" hx-target=\"#saved-names-list\" hx-swap=\"innerHTML\" hx-confirm=\"คุณต้องการลบชื่อนี้ใช่หรือไม่?\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"3 6 5 6 21 6\"></polyline><path d=\"M19 6v14a2 2 0 0 1-2-2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"></path><line x1=\"10\" y1=\"11\" x2=\"10\" y2=\"17\"></line><line x1=\"14\" y1=\"11\" x2=\"14\" y2=\"17\"></line></svg></button></div></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if len(savedNames) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "<tr><td colspan=\"5\" style=\"text-align: center; padding: 3rem; color: #999;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"48\" height=\"48\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"margin-bottom: 1rem;\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"></path><polyline points=\"14 2 14 8 20 8\"></polyline><line x1=\"12\" y1=\"18\" x2=\"12\" y2=\"12\"></line><line x1=\"9\" y1=\"15\" x2=\"15\" y2=\"15\"></line></svg><br>ยังไม่มีรายชื่อที่บันทึกไว้</td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "<tr><td colspan=\"5\" style=\"text-align: center; padding: 3rem; color: #999;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"48\" height=\"48\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"margin-bottom: 1rem;\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"></path><polyline points=\"14 2 14 8 20 8\"></polyline><line x1=\"12\" y1=\"18\" x2=\"12\" y2=\"12\"></line><line x1=\"9\" y1=\"15\" x2=\"15\" y2=\"15\"></line></svg><br>ยังไม่มีรายชื่อที่บันทึกไว้</td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "</tbody></table></div><!-- Dashboard Payment Modal --><div id=\"dash-payment-modal\" style=\"display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;\"><div style=\"background: white; padding: 0; border-radius: 20px; max-width: 400px; width: 100%; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.2);\"><div style=\"background: #2d3748; padding: 1.5rem; color: white;\"><h3 id=\"dash-modal-title\" style=\"margin: 0; font-size: 1.25rem;\">ดำเนินรายการต่อ</h3><p style=\"margin: 0.25rem 0 0; font-size: 0.9rem; opacity: 0.8;\">Ref No: <span id=\"dash-pay-ref\" style=\"font-family: monospace;\">-</span></p></div><div id=\"dash-pay-details\" style=\"padding: 2rem; text-align: center;\"><p style=\"color: #718096; margin-bottom: 1rem;\">สแกนเพื่อชำระเงิน</p><div style=\"width: 200px; height: 200px; background: #f7fafc; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; border: 1px solid #edf2f7; border-radius: 12px;\"><img id=\"dash-qr-img\" src=\"\" style=\"width: 100%; height: 100%; object-fit: contain; border-radius: 12px;\"></div><h2 id=\"dash-pay-amount\" style=\"font-size: 2rem; color: #2d3748; font-weight: bold; margin: 0;\">0.00 ฿</h2><p style=\"margin-top: 0.5rem; color: #e53e3e; font-weight: bold;\">ชำระภายใน <span id=\"dash-payment-timer\">10:00</span> นาที</p><div style=\"margin: 1.5rem 0; color: #4a5568;\"><div class=\"spinner\" style=\"margin: 0 auto 1rem; width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;\"></div><p style=\"font-size: 0.9rem;\">กำลังตรวจสอบยอดเงิน...</p><p style=\"font-size: 0.85rem; color: #718096; margin-top: 0.5rem;\">สามารถดูรายการได้ที่ประวัติสั่งซื้อ</p></div><button onclick=\"window.closeDashPaymentModal()\" style=\"width: 100%; background: #edf2f7; color: #4a5568; border: none; padding: 0.75rem; border-radius: 12px; font-weight: bold; cursor: pointer;\">ปิดหน้าต่าง</button></div></div></div><style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style><script>\n\t\t// --- Defined Functions First to ensure availability ---\n\t\twindow.dashTimerInterval = null;\n\t\twindow.pollInterval = null;\n\n\t\tfunction startDashTimer(duration, display) {\n\t\t\tvar timer = duration, minutes, seconds;\n\t\t\tif (window.dashTimerInterval) clearInterval(window.dashTimerInterval);\n\n\t\t\twindow.dashTimerInterval = setInterval(function () {\n\t\t\t\tminutes = parseInt(timer / 60, 10);\n\t\t\t\tseconds = parseInt(timer % 60, 10);\n\n\t\t\t\tminutes = minutes < 10 ? \"0\" + minutes : minutes;\n\t\t\t\tseconds = seconds < 10 ? \"0\" + seconds : seconds;\n\n\t\t\t\tdisplay.textContent = minutes + \":\" + seconds;\n\n\t\t\t\tif (--timer < 0) {\n\t\t\t\t\tclearInterval(window.dashTimerInterval);\n\t\t\t\t\talert(\"หมดเวลาทำรายการ กรุณาทำรายการใหม่\");\n\t\t\t\t\tcloseDashPaymentModal();\n\t\t\t\t}\n\t\t\t}, 1000);\n\t\t}\n\t\twindow.startDashTimer = startDashTimer;\n\n\t\tfunction startPolling(refNo) {\n\t\t\tif (window.pollInterval) clearInterval(window.pollInterval);\n\t\t\t\n\t\t\twindow.pollInterval = setInterval(async () => {\n\t\t\t\ttry {\n\t\t\t\t\tconst res = await fetch('/api/shop/status/' + refNo);\n\t\t\t\t\tif (res.ok) {\n\t\t\t\t\t\tconst data = await res.json();\n\t\t\t\t\t\tif (data.paid) {\n\t\t\t\t\t\t\tclearInterval(window.pollInterval);\n\t\t\t\t\t\t\talert('ชำระเงินเรียบร้อย! กรุณารีเฟรชหน้าจอเพื่อดูสถานะล่าสุด');\n\t\t\t\t\t\t\twindow.location.reload();\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t} catch(e) { console.error(e); }\n\t\t\t}, 3000);\n\t\t}\n\t\twindow.startPolling = startPolling;\n\n\t\tfunction closeDashPaymentModal() {\n\t\t\tconst modal = document.getElementById('dash-payment-modal');\n\t\t\tif(modal) modal.style.display = 'none';\n\t\t\tif (window.pollInterval) clearInterval(window.pollInterval);\n\t\t\tif (window.dashTimerInterval) clearInterval(window.dashTimerInterval);\n\t\t}\n\t\twindow.closeDashPaymentModal = closeDashPaymentModal;\n\n\tasync function resumePayment(event, refNo) {\n\t\t\tif (event) event.preventDefault();\n\t\t\tconsole.log(\"Resume Payment Triggered:\", refNo);\n\t\t\t\n\t\t\tconst modal = document.getElementById('dash-payment-modal');\n\t\t\tconst title = document.getElementById('dash-modal-title');\n\t\t\tconst details = document.getElementById('dash-pay-details');\n\t\t\tconst originalContent = details.innerHTML; // Hacky: assumes original content is there when loaded. Ideally we should use templates. \n\t\t\t// Better: Reset logic?\n\t\t\t// Let's just reconstruct the error view if needed, or success view.\n\t\t\t\n\t\t\t// Reset UI first\n\t\t\tif(title) title.innerText = 'กำลังโหลด...';\n\t\t\tif(modal) modal.style.display = 'flex';\n\n\t\t\ttry {\n\t\t\t\tconst res = await fetch('/api/shop/payment-info/' + refNo);\n\t\t\t\tif (!res.ok) {\n\t\t\t\t\tconst errText = await res.text();\n\t\t\t\t\tconsole.error(\"Payment Info Error:\", errText);\n\t\t\t\t\t\n\t\t\t\t\tlet errMsg = 'Connection Error';\n\t\t\t\t\ttry {\n\t\t\t\t\t\tconst json = JSON.parse(errText);\n\t\t\t\t\t\terrMsg = json.error || errMsg;\n\t\t\t\t\t} catch(e) { errMsg = errText || errMsg; }\n\n\t\t\t\t\tif(title) title.innerText = 'แจ้งเตือน';\n\t\t\t\t\tif(details) {\n\t\t\t\t\t\tdetails.innerHTML = `\n\t\t\t\t\t\t\t<div style=\"color: #e53e3e; padding: 1rem;\">\n\t\t\t\t\t\t\t\t<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"48\" height=\"48\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"margin-bottom:0.5rem\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"12\" y1=\"8\" x2=\"12\" y2=\"12\"></line><line x1=\"12\" y1=\"16\" x2=\"12.01\" y2=\"16\"></line></svg>\n\t\t\t\t\t\t\t\t<p style=\"font-weight:bold;font-size:1.1rem;\">ทำรายการไม่สำเร็จ</p>\n\t\t\t\t\t\t\t\t<p style=\"color:#4a5568;\">${errMsg}</p>\n\t\t\t\t\t\t\t\t<button onclick=\"window.closeDashPaymentModal()\" style=\"margin-top:1rem;background:#edf2f7;color:#4a5568;border:none;padding:0.5rem 1rem;border-radius:8px;cursor:pointer;\">ปิด</button>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t`;\n\t\t\t\t\t}\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\tconst data = await res.json();\n\t\t\t\tconsole.log(\"Payment Info Recieved:\", data);\n\n\t\t\t\t// Restore Success UI (We need to reconstruct it because we might have overwritten it with error msg previously)\n\t\t\t\t// Or... Simplest way: refresh the page? No.\n\t\t\t\t// We reconstruct the Success HTML string.\n\t\t\t\tif(title) title.innerText = 'ดำเนินรายการต่อ';\n\t\t\t\tif(details) {\n\t\t\t\t\tdetails.innerHTML = `\n\t\t\t\t\t\t<p style=\"color: #718096; margin-bottom: 1rem;\">สแกนเพื่อชำระเงิน</p>\n\t\t\t\t\t\t<div style=\"width: 200px; height: 200px; background: #f7fafc; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; border: 1px solid #edf2f7; border-radius: 12px;\">\n\t\t\t\t\t\t\t<img id=\"dash-qr-img\" src=\"${data.qr_code_url}\" style=\"width: 100%; height: 100%; object-fit: contain; border-radius: 12px;\">\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<h2 id=\"dash-pay-amount\" style=\"font-size: 2rem; color: #2d3748; font-weight: bold; margin: 0;\">${data.amount.toLocaleString()} ฿</h2>\n\t\t\t\t\t\t<p style=\"margin-top: 0.5rem; color: #e53e3e; font-weight: bold;\">\n\t\t\t\t\t\t\tชำระภายใน <span id=\"dash-payment-timer\">10:00</span> นาที\n\t\t\t\t\t\t</p>\n\t\t\t\t\t\t\n\t\t\t\t\t\t<div style=\"margin: 1.5rem 0; color: #4a5568;\">\n\t\t\t\t\t\t\t<div class=\"spinner\" style=\"margin: 0 auto 1rem; width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;\"></div>\n\t\t\t\t\t\t\t<p style=\"font-size: 0.9rem;\">กำลังตรวจสอบยอดเงิน...</p>\n\t\t\t\t\t\t</div>\n\n\t\t\t\t\t\t<button onclick=\"window.closeDashPaymentModal()\" style=\"width: 100%; background: #edf2f7; color: #4a5568; border: none; padding: 0.75rem; border-radius: 12px; font-weight: bold; cursor: pointer;\">ปิดหน้าต่าง</button>\n\t\t\t\t\t`;\n\t\t\t\t}\n\t\t\t\t\n\t\t\t\t// Update Ref in Header\n\t\t\t\tconst refEl = document.getElementById('dash-pay-ref');\n\t\t\t\tif(refEl) refEl.innerText = data.ref_no;\n\n\t\t\t\tstartPolling(data.ref_no);\n\t\t\t\tconst timerEl = document.getElementById('dash-payment-timer');\n\t\t\t\tif(timerEl) startDashTimer(600, timerEl);\n\n\t\t\t} catch(e) {\n\t\t\t\tconsole.error(e);\n\t\t\t\tif(title) title.innerText = 'ข้อผิดพลาด';\n\t\t\t\tif(details) details.innerHTML = `<p style=\"color:red;padding:2rem;\">Client Error: ${e.message}</p><button onclick=\"window.closeDashPaymentModal()\">Close</button>`;\n\t\t\t}\n\t\t}\n\t\twindow.resumePayment = resumePayment;\n\n\t\t// --- Main DOM Logic ---\n\n\t\tlet savedNames = []; \n\n\t\tdocument.addEventListener('DOMContentLoaded', async () => {\n\t\t\tconsole.log(\"Dashboard Loaded\");\n\n\t\t\t// Logout Logic\n\t\t\tconst logoutBtn = document.getElementById('logout-btn');\n\t\t\tif(logoutBtn) {\n\t\t\t\tlogoutBtn.addEventListener('click', async (e) => {\n\t\t\t\t\te.preventDefault();\n\t\t\t\t\ttry {\n\t\t\t\t\t\tawait fetch('/api/auth/logout', { method: 'POST' });\n\t\t\t\t\t\twindow.location.href = '/login';\n\t\t\t\t\t} catch (err) {\n\t\t\t\t\t\tconsole.error(\"Logout failed\", err);\n\t\t\t\t\t\twindow.location.href = '/login';\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Load Order History\n\t\t\ttry {\n\t\t\t\tconst res = await fetch('/api/shop/my-orders');\n\t\t\t\tif (!res.ok) return;\n\t\t\t\tconst data = await res.json();\n\t\t\t\tconst orders = data.orders || [];\n\t\t\t\t\n\t\t\t\tif (orders.length > 0) {\n\t\t\t\t\tdocument.getElementById('order-history-section').style.display = 'block';\n\t\t\t\t\tconst tbody = document.getElementById('order-list-body');\n\t\t\t\t\ttbody.innerHTML = '';\n\t\t\t\t\t\n\t\t\t\t\torders.forEach(o => {\n\t\t\t\t\t\tconst date = new Date(o.created_at).toLocaleDateString('th-TH');\n\t\t\t\t\t\t\n\t\t\t\t\t\tlet statusBadge = '';\n\t\t\t\t\t\tlet actionBtn = '';\n\t\t\t\t\t\t\n\t\t\t\t\t\tif (o.status === 'paid') {\n\t\t\t\t\t\t\tstatusBadge = '<span style=\"color: #2da44e; background: #dafbe1; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.8rem;\">สำเร็จ</span>';\n\t\t\t\t\t\t} else if (o.status === 'pending') {\n\t\t\t\t\t\t\tstatusBadge = '<span style=\"color: #d69e2e; background: #fefcbf; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.8rem;\">รอชำระเงิน</span>';\n\t\t\t\t\t\t\tactionBtn = `<button type=\"button\" onclick=\"window.resumePayment(event, '${o.ref_no}')\" style=\"background:#e53e3e;color:white;border:none;padding:5px 10px;border-radius:12px;font-size:0.8rem;cursor:pointer;font-weight:bold;\">ชำระเงิน</button>`;\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tstatusBadge = '<span style=\"color: #666; background: #eee; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;\">' + o.status + '</span>';\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\tconst tr = document.createElement('tr');\n\t\t\t\t\t\ttr.style.borderBottom = '1px solid #eee';\n\t\t\t\t\t\ttr.innerHTML = `\n\t\t\t\t\t\t\t<td style=\"padding: 0.75rem;\">${date}</td>\n\t\t\t\t\t\t\t<td style=\"padding: 0.75rem;\">\n\t\t\t\t\t\t\t<div style=\"display: flex; align-items: center; gap: 12px;\">\n\t\t\t\t\t\t\t\t` + (o.product_image ? '<img src=\"' + o.product_image + '\" style=\"width: 50px; height: 50px; object-fit: cover; border-radius: 8px;\" onerror=\"this.style.display=\\'none\\'\" />' : '') + `\n\t\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t\t<div style=\"font-weight: 500;\">${o.product_name || 'VIP Upgrade'}</div>\n\t\t\t\t\t\t\t\t\t<small style=\"color:#999;font-family:monospace;\">${o.ref_no}</small>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</td>\n\t\t\t\t\t\t\t<td style=\"padding: 0.75rem; text-align: right;\">${o.amount.toLocaleString()} ฿</td>\n\t\t\t\t\t\t\t<td style=\"padding: 0.75rem; text-align: center;\">${statusBadge}</td>\n\t\t\t\t\t\t\t<td style=\"padding: 0.75rem; text-align: right;\">\n                                ${o.status === 'paid' ? \n\t\t\t\t\t\t\t\t\t(o.promo_code_id ? '<span style=\"color:#2da44e;font-size:0.8rem;\">ได้รหัสแล้ว</span>' : '<span style=\"color:#999;font-size:0.8rem;\">สำเร็จ</span>') \n\t\t\t\t\t\t\t\t\t: actionBtn}\n                            </td>\n\t\t\t\t\t\t`;\n\t\t\t\t\t\ttbody.appendChild(tr);\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t} catch(e) { console.error(e); }\n\t\t});\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "</tbody></table></div><!-- Dashboard Payment Modal --><div id=\"dash-payment-modal\" style=\"display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;\"><div style=\"background: white; padding: 0; border-radius: 20px; max-width: 400px; width: 100%; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.2);\"><div style=\"background: #2d3748; padding: 1.5rem; color: white;\"><h3 id=\"dash-modal-title\" style=\"margin: 0; font-size: 1.25rem;\">ดำเนินรายการต่อ</h3><p style=\"margin: 0.25rem 0 0; font-size: 0.9rem; opacity: 0.8;\">Ref No: <span id=\"dash-pay-ref\" style=\"font-family: monospace;\">-</span></p></div><div id=\"dash-pay-details\" style=\"padding: 2rem; text-align: center;\"><p style=\"color: #718096; margin-bottom: 1rem;\">สแกนเพื่อชำระเงิน</p><div style=\"width: 200px; height: 200px; background: #f7fafc; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; border: 1px solid #edf2f7; border-radius: 12px;\"><img id=\"dash-qr-img\" src=\"\" style=\"width: 100%; height: 100%; object-fit: contain; border-radius: 12px;\"></div><h2 id=\"dash-pay-amount\" style=\"font-size: 2rem; color: #2d3748; font-weight: bold; margin: 0;\">0.00 ฿</h2><p style=\"margin-top: 0.5rem; color: #e53e3e; font-weight: bold;\">ชำระภายใน <span id=\"dash-payment-timer\">10:00</span> นาที</p><div style=\"margin: 1.5rem 0; color: #4a5568;\"><div class=\"spinner\" style=\"margin: 0 auto 1rem; width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;\"></div><p style=\"font-size: 0.9rem;\">กำลังตรวจสอบยอดเงิน...</p><p style=\"font-size: 0.85rem; color: #718096; margin-top: 0.5rem;\">สามารถดูรายการได้ที่ประวัติสั่งซื้อ</p></div><button onclick=\"window.closeDashPaymentModal()\" style=\"width: 100%; background: #edf2f7; color: #4a5568; border: none; padding: 0.75rem; border-radius: 12px; font-weight: bold; cursor: pointer;\">ปิดหน้าต่าง</button></div></div></div><style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style><script>\n\t\t// --- Defined Functions First to ensure availability ---\n\t\twindow.dashTimerInterval = null;\n\t\twindow.pollInterval = null;\n\n\t\tfunction startDashTimer(duration, display) {\n\t\t\tvar timer = duration, minutes, seconds;\n\t\t\tif (window.dashTimerInterval) clearInterval(window.dashTimerInterval);\n\n\t\t\twindow.dashTimerInterval = setInterval(function () {\n\t\t\t\tminutes = parseInt(timer / 60, 10);\n\t\t\t\tseconds = parseInt(timer % 60, 10);\n\n\t\t\t\tminutes = minutes < 10 ? \"0\" + minutes : minutes;\n\t\t\t\tseconds = seconds < 10 ? \"0\" + seconds : seconds;\n\n\t\t\t\tdisplay.textContent = minutes + \":\" + seconds;\n\n\t\t\t\tif (--timer < 0) {\n\t\t\t\t\tclearInterval(window.dashTimerInterval);\n\t\t\t\t\talert(\"หมดเวลาทำรายการ กรุณาทำรายการใหม่\");\n\t\t\t\t\tcloseDashPaymentModal();\n\t\t\t\t}\n\t\t\t}, 1000);\n\t\t}\n\t\twindow.startDashTimer = startDashTimer;\n\n\t\tfunction startPolling(refNo) {\n\t\t\tif (window.pollInterval) clearInterval(window.pollInterval);\n\t\t\t\n\t\t\twindow.pollInterval = setInterval(async () => {\n\t\t\t\ttry {\n\t\t\t\t\tconst res = await fetch('/api/shop/status/' + refNo);\n\t\t\t\t\tif (res.ok) {\n\t\t\t\t\t\tconst data = await res.json();\n\t\t\t\t\t\tif (data.paid) {\n\t\t\t\t\t\t\tclearInterval(window.pollInterval);\n\t\t\t\t\t\t\talert('ชำระเงินเรียบร้อย! กรุณารีเฟรชหน้าจอเพื่อดูสถานะล่าสุด');\n\t\t\t\t\t\t\twindow.location.reload();\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t} catch(e) { console.error(e); }\n\t\t\t}, 3000);\n\t\t}\n\t\twindow.startPolling = startPolling;\n\n\t\tfunction closeDashPaymentModal() {\n\t\t\tconst modal = document.getElementById('dash-payment-modal');\n\t\t\tif(modal) modal.style.display = 'none';\n\t\t\tif (window.pollInterval) clearInterval(window.pollInterval);\n\t\t\tif (window.dashTimerInterval) clearInterval(window.dashTimerInterval);\n\t\t}\n\t\twindow.closeDashPaymentModal = closeDashPaymentModal;\n\n\tasync function resumePayment(event, refNo) {\n\t\t\tif (event) event.preventDefault();\n\t\t\tconsole.log(\"Resume Payment Triggered:\", refNo);\n\t\t\t\n\t\t\tconst modal = document.getElementById('dash-payment-modal');\n\t\t\tconst title = document.getElementById('dash-modal-title');\n\t\t\tconst details = document.getElementById('dash-pay-details');\n\t\t\tconst originalContent = details.innerHTML; // Hacky: assumes original content is there when loaded. Ideally we should use templates. \n\t\t\t// Better: Reset logic?\n\t\t\t// Let's just reconstruct the error view if needed, or success view.\n\t\t\t\n\t\t\t// Reset UI first\n\t\t\tif(title) title.innerText = 'กำลังโหลด...';\n\t\t\tif(modal) modal.style.display = 'flex';\n\n\t\t\ttry {\n\t\t\t\tconst res = await fetch('/api/shop/payment-info/' + refNo);\n\t\t\t\tif (!res.ok) {\n\t\t\t\t\tconst errText = await res.text();\n\t\t\t\t\tconsole.error(\"Payment Info Error:\", errText);\n\t\t\t\t\t\n\t\t\t\t\tlet errMsg = 'Connection Error';\n\t\t\t\t\ttry {\n\t\t\t\t\t\tconst json = JSON.parse(errText);\n\t\t\t\t\t\terrMsg = json.error || errMsg;\n\t\t\t\t\t} catch(e) { errMsg = errText || errMsg; }\n\n\t\t\t\t\tif(title) title.innerText = 'แจ้งเตือน';\n\t\t\t\t\tif(details) {\n\t\t\t\t\t\tdetails.innerHTML = `\n\t\t\t\t\t\t\t<div style=\"color: #e53e3e; padding: 1rem;\">\n\t\t\t\t\t\t\t\t<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"48\" height=\"48\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"margin-bottom:0.5rem\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"12\" y1=\"8\" x2=\"12\" y2=\"12\"></line><line x1=\"12\" y1=\"16\" x2=\"12.01\" y2=\"16\"></line></svg>\n\t\t\t\t\t\t\t\t<p style=\"font-weight:bold;font-size:1.1rem;\">ทำรายการไม่สำเร็จ</p>\n\t\t\t\t\t\t\t\t<p style=\"color:#4a5568;\">${errMsg}</p>\n\t\t\t\t\t\t\t\t<button onclick=\"window.closeDashPaymentModal()\" style=\"margin-top:1rem;background:#edf2f7;color:#4a5568;border:none;padding:0.5rem 1rem;border-radius:8px;cursor:pointer;\">ปิด</button>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t`;\n\t\t\t\t\t}\n\t\t\t\t\treturn;\n\t\t\t\t}\n\n\t\t\t\tconst data = await res.json();\n\t\t\t\tconsole.log(\"Payment Info Recieved:\", data);\n\n\t\t\t\t// Restore Success UI (We need to reconstruct it because we might have overwritten it with error msg previously)\n\t\t\t\t// Or... Simplest way: refresh the page? No.\n\t\t\t\t// We reconstruct the Success HTML string.\n\t\t\t\tif(title) title.innerText = 'ดำเนินรายการต่อ';\n\t\t\t\tif(details) {\n\t\t\t\t\tdetails.innerHTML = `\n\t\t\t\t\t\t<p style=\"color: #718096; margin-bottom: 1rem;\">สแกนเพื่อชำระเงิน</p>\n\t\t\t\t\t\t<div style=\"width: 200px; height: 200px; background: #f7fafc; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; border: 1px solid #edf2f7; border-radius: 12px;\">\n\t\t\t\t\t\t\t<img id=\"dash-qr-img\" src=\"${data.qr_code_url}\" style=\"width: 100%; height: 100%; object-fit: contain; border-radius: 12px;\">\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<h2 id=\"dash-pay-amount\" style=\"font-size: 2rem; color: #2d3748; font-weight: bold; margin: 0;\">${data.amount.toLocaleString()} ฿</h2>\n\t\t\t\t\t\t<p style=\"margin-top: 0.5rem; color: #e53e3e; font-weight: bold;\">\n\t\t\t\t\t\t\tชำระภายใน <span id=\"dash-payment-timer\">10:00</span> นาที\n\t\t\t\t\t\t</p>\n\t\t\t\t\t\t\n\t\t\t\t\t\t<div style=\"margin: 1.5rem 0; color: #4a5568;\">\n\t\t\t\t\t\t\t<div class=\"spinner\" style=\"margin: 0 auto 1rem; width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;\"></div>\n\t\t\t\t\t\t\t<p style=\"font-size: 0.9rem;\">กำลังตรวจสอบยอดเงิน...</p>\n\t\t\t\t\t\t</div>\n\n\t\t\t\t\t\t<button onclick=\"window.closeDashPaymentModal()\" style=\"width: 100%; background: #edf2f7; color: #4a5568; border: none; padding: 0.75rem; border-radius: 12px; font-weight: bold; cursor: pointer;\">ปิดหน้าต่าง</button>\n\t\t\t\t\t`;\n\t\t\t\t}\n\t\t\t\t\n\t\t\t\t// Update Ref in Header\n\t\t\t\tconst refEl = document.getElementById('dash-pay-ref');\n\t\t\t\tif(refEl) refEl.innerText = data.ref_no;\n\n\t\t\t\tstartPolling(data.ref_no);\n\t\t\t\tconst timerEl = document.getElementById('dash-payment-timer');\n\t\t\t\tif(timerEl) startDashTimer(600, timerEl);\n\n\t\t\t} catch(e) {\n\t\t\t\tconsole.error(e);\n\t\t\t\tif(title) title.innerText = 'ข้อผิดพลาด';\n\t\t\t\tif(details) details.innerHTML = `<p style=\"color:red;padding:2rem;\">Client Error: ${e.message}</p><button onclick=\"window.closeDashPaymentModal()\">Close</button>`;\n\t\t\t}\n\t\t}\n\t\twindow.resumePayment = resumePayment;\n\n\t\t// --- Main DOM Logic ---\n\n\t\tlet savedNames = []; \n\n\t\tdocument.addEventListener('DOMContentLoaded', async () => {\n\t\t\tconsole.log(\"Dashboard Loaded\");\n\n\t\t\t// Logout Logic\n\t\t\tconst logoutBtn = document.getElementById('logout-btn');\n\t\t\tif(logoutBtn) {\n\t\t\t\tlogoutBtn.addEventListener('click', async (e) => {\n\t\t\t\t\te.preventDefault();\n\t\t\t\t\ttry {\n\t\t\t\t\t\tawait fetch('/api/auth/logout', { method: 'POST' });\n\t\t\t\t\t\twindow.location.href = '/login';\n\t\t\t\t\t} catch (err) {\n\t\t\t\t\t\tconsole.error(\"Logout failed\", err);\n\t\t\t\t\t\twindow.location.href = '/login';\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Load Order History\n\t\t\ttry {\n\t\t\t\tconst res = await fetch('/api/shop/my-orders');\n\t\t\t\tif (!res.ok) return;\n\t\t\t\tconst data = await res.json();\n\t\t\t\tconst orders = data.orders || [];\n\t\t\t\t\n\t\t\t\tif (orders.length > 0) {\n\t\t\t\t\tdocument.getElementById('order-history-section').style.display = 'block';\n\t\t\t\t\tconst tbody = document.getElementById('order-list-body');\n\t\t\t\t\ttbody.innerHTML = '';\n\t\t\t\t\t\n\t\t\t\t\torders.forEach(o => {\n\t\t\t\t\t\tconst date = new Date(o.created_at).toLocaleDateString('th-TH');\n\t\t\t\t\t\t\n\t\t\t\t\t\tlet statusBadge = '';\n\t\t\t\t\t\tlet actionBtn = '';\n\t\t\t\t\t\t\n\t\t\t\t\t\tif (o.status === 'paid') {\n\t\t\t\t\t\t\tstatusBadge = '<span style=\"color: #2da44e; background: #dafbe1; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.8rem;\">สำเร็จ</span>';\n\t\t\t\t\t\t} else if (o.status === 'pending') {\n\t\t\t\t\t\t\tstatusBadge = '<span style=\"color: #d69e2e; background: #fefcbf; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.8rem;\">รอชำระเงิน</span>';\n\t\t\t\t\t\t\tactionBtn = `<button type=\"button\" onclick=\"window.resumePayment(event, '${o.ref_no}')\" style=\"background:#e53e3e;color:white;border:none;padding:5px 10px;border-radius:12px;font-size:0.8rem;cursor:pointer;font-weight:bold;\">ชำระเงิน</button>`;\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tstatusBadge = '<span style=\"color: #666; background: #eee; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;\">' + o.status + '</span>';\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\tconst tr = document.createElement('tr');\n\t\t\t\t\t\ttr.style.borderBottom = '1px solid #eee';\n\t\t\t\t\t\ttr.innerHTML = `\n\t\t\t\t\t\t\t<td style=\"padding: 0.75rem;\">${date}</td>\n\t\t\t\t\t\t\t<td style=\"padding: 0.75rem;\">\n\t\t\t\t\t\t\t<div style=\"display: flex; align-items: center; gap: 12px;\">\n\t\t\t\t\t\t\t\t` + (o.product_image ? '<img src=\"' + o.product_image + '\" style=\"width: 50px; height: 50px; object-fit: cover; border-radius: 8px;\" onerror=\"this.style.display=\\'none\\'\" />' : '') + `\n\t\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t\t<div style=\"font-weight: 500;\">${o.product_name || 'VIP Upgrade'}</div>\n\t\t\t\t\t\t\t\t\t<small style=\"color:#999;font-family:monospace;\">${o.ref_no}</small>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</td>\n\t\t\t\t\t\t\t<td style=\"padding: 0.75rem; text-align: right;\">${o.amount.toLocaleString()} ฿</td>\n\t\t\t\t\t\t\t<td style=\"padding: 0.75rem; text-align: center;\">${statusBadge}</td>\n\t\t\t\t\t\t\t<td style=\"padding: 0.75rem; text-align: right;\">\n                                ${o.status === 'paid' ? \n\t\t\t\t\t\t\t\t\t(o.promo_code_id ? '<span style=\"color:#2da44e;font-size:0.8rem;\">ได้รหัสแล้ว</span>' : '<span style=\"color:#999;font-size:0.8rem;\">สำเร็จ</span>') \n\t\t\t\t\t\t\t\t\t: actionBtn}\n                            </td>\n\t\t\t\t\t\t`;\n\t\t\t\t\t\ttbody.appendChild(tr);\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t} catch(e) { console.error(e); }\n\t\t});\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

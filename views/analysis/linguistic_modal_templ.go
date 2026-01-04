@@ -8,6 +8,19 @@ package analysis
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
+import (
+	"bytes"
+	"github.com/yuin/goldmark"
+)
+
+func parseMarkdown(source string) string {
+	var buf bytes.Buffer
+	if err := goldmark.Convert([]byte(source), &buf); err != nil {
+		return source
+	}
+	return buf.String()
+}
+
 func LinguisticModal(name string, analysis string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -36,21 +49,21 @@ func LinguisticModal(name string, analysis string) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/linguistic_modal.templ`, Line: 10, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/analysis/linguistic_modal.templ`, Line: 23, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"</h2><button class=\"close-btn\" onclick=\"document.getElementById('linguistic-modal-container').style.display='none'\">&times;</button></div><div class=\"modal-body gemini-content\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"</h2><button class=\"close-btn\" onclick=\"document.getElementById('linguistic-modal-container').style.display='none'\">&times;</button></div><div class=\"modal-body gemini-content linguistic-content\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.Raw(analysis).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templ.Raw(parseMarkdown(analysis)).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div><style>\n\t\t.linguistic-content {\n\t\t\tfont-family: 'Sarabun', sans-serif;\n\t\t\tcolor: #2d3748;\n\t\t\tline-height: 1.8;\n\t\t}\n\t\t.linguistic-content h1, \n\t\t.linguistic-content h2, \n\t\t.linguistic-content h3 {\n\t\t\tfont-family: 'Sarabun', sans-serif;\n\t\t\tfont-weight: 700;\n\t\t\tcolor: #1a202c;\n\t\t\tmargin-top: 1.5em;\n\t\t\tmargin-bottom: 0.8em;\n\t\t}\n\t\t.linguistic-content h1 { font-size: 1.8rem; }\n\t\t.linguistic-content h2 { font-size: 1.5rem; border-bottom: 2px solid #edf2f7; padding-bottom: 0.5rem; }\n\t\t.linguistic-content h3 { font-size: 1.25rem; }\n\t\t.linguistic-content p {\n\t\t\tfont-size: 1rem;\n\t\t\tmargin-bottom: 1.2em;\n\t\t\ttext-align: justify;\n\t\t}\n\t\t.linguistic-content ul, .linguistic-content ol {\n\t\t\tmargin-bottom: 1.2em;\n\t\t\tpadding-left: 1.5em;\n\t\t}\n\t\t.linguistic-content li {\n\t\t\tmargin-bottom: 0.5em;\n\t\t}\n\t\t.linguistic-content strong {\n\t\t\tcolor: #2d3748;\n\t\t\tfont-weight: 700;\n\t\t}\n\t</style>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

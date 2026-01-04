@@ -63,14 +63,56 @@ func (p SolarSystemProps) GetLinguisticScoreColor() string {
 	return "#2E7D32"
 }
 
+// GetActiveCategories returns list of categories present in the name
+func (p SolarSystemProps) GetActiveCategories() []string {
+    active := []string{}
+    for _, cat := range []string{"สุขภาพ", "การงาน", "การเงิน", "ความรัก"} {
+        // Only count as "Active" for the Positive Graph if there are GOOD numbers in it.
+        // If a category has only BAD numbers, it shouldn't contribute to the Positive Score/Graph.
+        if breakdown, exists := p.CategoryBreakdown[cat]; exists && breakdown.Good > 0 {
+            active = append(active, cat)
+        }
+    }
+    return active
+}
+func (p SolarSystemProps) GetBaseCategoryPercentage() float64 {
+	return float64(len(p.GetActiveCategories())) * 25.0
+}
+
+// GetActiveCategoriesJSON returns JSON of active categories for JavaScript
+func (p SolarSystemProps) GetActiveCategoriesJSON() string {
+	active := p.GetActiveCategories()
+	b, _ := json.Marshal(active)
+	return string(b)
+}
+
 func getCategoryColor(cat string) string {
 	switch cat {
-	case "การงาน": return "#4158D0"
-	case "สุขภาพ": return "#00DBDE"
-	case "การเงิน": return "#FB8C00"
-	case "ความรัก": return "#D4145A"
+	case "การงาน": return "#90CAF9"
+	case "สุขภาพ": return "#80CBC4"
+	case "การเงิน": return "#FFCC80"
+	case "ความรัก": return "#F48FB1"
 	default: return "#A0A0A0"
 	}
+}
+
+func hasBadChars(chars []domain.DisplayChar) bool {
+	for _, c := range chars {
+		if c.IsBad { return true }
+	}
+	return false
+}
+
+func getBadChars(chars []domain.DisplayChar) []domain.DisplayChar {
+	var bad []domain.DisplayChar
+	seen := make(map[string]bool)
+	for _, c := range chars {
+		if c.IsBad && c.Char != " " && !seen[c.Char] {
+			bad = append(bad, c)
+			seen[c.Char] = true
+		}
+	}
+	return bad
 }
 
 
@@ -84,214 +126,13 @@ func getCategoryColor(cat string) string {
 
 
 
-script DrawNestedDonut(id string, data string) {
-	(function() {
-		setTimeout(() => {
-			try {
-				console.log('[Nested Donut] Starting for ID:', id);
-			
-			const breakdown = JSON.parse(atob(data));
-			console.log('[Nested Donut] Breakdown data:', breakdown);
-			
-			const svg = document.getElementById(id);
-			if (!svg) {
-				console.error('[Nested Donut] SVG not found:', id);
-				return;
-			}
-			
-			const innerRing = svg.querySelector('.inner-ring');
-			const outerRing = svg.querySelector('.outer-ring');
-			
-			// Calculate totals
-			let totalPairs = 0;
-			const categories = [];
-			for (const [cat, counts] of Object.entries(breakdown)) {
-				const total = counts.good + counts.bad;
-				totalPairs += total;
-				// counts now includes 'color' field from Go
-				categories.push({ name: cat, good: counts.good, bad: counts.bad, color: counts.color, total });
-			}
-			
-			// If no pairs, show placeholder
-			if (totalPairs === 0) {
-				console.warn('[Nested Donut] No pairs to display');
-				// Draw a gray circle as placeholder
-				const placeholderPath = createArcPath(100, 100, 45, 18, -90, 270);
-				const pathElem = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-				pathElem.setAttribute('d', placeholderPath);
-				pathElem.setAttribute('fill', '#E0E0E0');
-				innerRing.appendChild(pathElem);
-				
-				// Still set legend colors even if no data
-				categories.forEach(cat => {
-					const legendBox = document.querySelector(`[data-category="${cat.name}"]`);
-					if (legendBox) {
-						legendBox.style.background = cat.color || '#A0A0A0';
-					}
-				});
-				return;
-			}
-			
-			// Set legend colors for ALL categories first
-			categories.forEach(cat => {
-				const legendBox = document.querySelector(`[data-category="${cat.name}"]`);
-				if (legendBox) {
-					legendBox.style.background = cat.color || '#A0A0A0';
-				}
-			});
-			
-			// Hide center text elements as they will be covered by the pie chart
-			const centerNumber = svg.querySelector('.donut-center-number');
-			const centerLabel = svg.querySelector('.donut-center-label');
-			if (centerNumber) centerNumber.style.display = 'none';
-			if (centerLabel) centerLabel.style.display = 'none';
+script DrawNestedDonut(id string, data string, activeCategoriesJSON string) {
+	window.initNestedDonut(id, data, activeCategoriesJSON);
+}
 
-			// Draw inner ring (categories) - PIE CHART Style
-			let currentAngle = -45; // Start from -45 degrees for diagonal split
-			const innerRadius = 0; // Pie chart starts from center
-			const innerThickness = 50; // Radius of the pie
-			
-			categories.forEach((cat, index) => {
-				if (cat.total === 0) return; // Skip categories with 0 total
-				
-				const percentage = cat.total / totalPairs;
-				const angle = percentage * 360;
-				// Use color from Go backend, fallback to gray
-				const color = cat.color || '#A0A0A0';
-				console.log('[Nested Donut] Cat:', cat.name, 'Color:', color);
-				
-				const path = createArcPath(100, 100, innerRadius, innerThickness, currentAngle, currentAngle + angle);
-				const pathElem = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-				pathElem.setAttribute('d', path);
-				pathElem.setAttribute('fill', color);
-				pathElem.setAttribute('class', 'donut-segment');
-				pathElem.setAttribute('stroke', '#fff'); // Add white border
-				pathElem.setAttribute('stroke-width', '1');
-				
-				// Fix Thai encoding issue by using textContent
-				const titleElem = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-				titleElem.textContent = `${cat.name}: ${cat.total} คู่`;
-				pathElem.appendChild(titleElem);
-				
-				innerRing.appendChild(pathElem);
-
-				// Add Percentage Label
-				if (percentage > 0.05) { // Only show label if > 5%
-					// Calculate position at 60% of radius (middle of the slice area roughly)
-					const labelRadius = innerThickness * 0.6; 
-					const midAngle = currentAngle + (angle / 2);
-					const midRad = (midAngle * Math.PI) / 180;
-					
-					const tx = 100 + labelRadius * Math.cos(midRad);
-					const ty = 100 + labelRadius * Math.sin(midRad);
-					
-					// Determine label color: Red if Bad > Good
-					let labelColor = '#fff';
-					let textShadow = '0px 1px 2px rgba(0,0,0,0.4)';
-					
-					// If Bad is significantly higher than Good (or just higher), alert with Red
-					if (cat.bad > cat.good) {
-						labelColor = '#ffeb3b'; // Use Yellow for better visibility on dark backgrounds? Or Red #ff3b30?
-						// User asked for "Red", but Red on Red (Love) is bad.
-						// Let's try explicit bright Red/Yellow hybrid or just Red with white stroke.
-						labelColor = '#ff0000';
-						textShadow = '0px 0px 3px #fff, 0px 0px 5px #fff'; // White glow to generate contrast
-					}
-
-					const textElem = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-					textElem.setAttribute('x', tx);
-					textElem.setAttribute('y', ty);
-					textElem.setAttribute('text-anchor', 'middle');
-					textElem.setAttribute('dominant-baseline', 'middle');
-					textElem.setAttribute('fill', labelColor);
-					textElem.setAttribute('font-size', '11px');
-					textElem.setAttribute('font-weight', 'bold');
-					textElem.setAttribute('style', `pointer-events: none; text-shadow: ${textShadow};`);
-					textElem.textContent = Math.round(percentage * 100) + '%';
-					innerRing.appendChild(textElem);
-				}
-				
-				// Update legend color
-				const legendBox = document.querySelector(`[data-category="${cat.name}"]`);
-				if (legendBox) legendBox.style.background = color;
-				
-				currentAngle += angle;
-			});
-			
-			// Draw outer ring (good/bad for each category)
-			currentAngle = -90;
-			const outerRadius = 55; // Gap from pie (50 + 5 gap)
-			const outerThickness = 15;
-			
-			categories.forEach(cat => {
-				if (cat.total === 0) return; // Skip categories with 0 total
-				
-				const catPercentage = cat.total / totalPairs;
-				const catAngle = catPercentage * 360;
-				
-				if (cat.good > 0) {
-					const goodPercentage = cat.good / cat.total;
-					const goodAngle = catAngle * goodPercentage;
-					const path = createArcPath(100, 100, outerRadius, outerThickness, currentAngle, currentAngle + goodAngle);
-					const pathElem = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-					pathElem.setAttribute('d', path);
-					pathElem.setAttribute('fill', '#4CAF50');
-					pathElem.setAttribute('class', 'donut-segment outer');
-					pathElem.innerHTML = `<title>${cat.name} - เลขดี: ${cat.good} คู่</title>`;
-					outerRing.appendChild(pathElem);
-					currentAngle += goodAngle;
-				}
-				
-				if (cat.bad > 0) {
-					const badPercentage = cat.bad / cat.total;
-					const badAngle = catAngle * badPercentage;
-					const path = createArcPath(100, 100, outerRadius, outerThickness, currentAngle, currentAngle + badAngle);
-					const pathElem = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-					pathElem.setAttribute('d', path);
-					pathElem.setAttribute('fill', '#F44336');
-					pathElem.setAttribute('class', 'donut-segment outer');
-					pathElem.innerHTML = `<title>${cat.name} - เลขร้าย: ${cat.bad} คู่</title>`;
-					outerRing.appendChild(pathElem);
-					currentAngle += badAngle;
-				}
-			});
-			
-			
-			console.log('[Nested Donut] ✓ Chart rendered successfully');
-
-			
-			// Helper function to create SVG arc path
-			function createArcPath(cx, cy, radius, thickness, startAngle, endAngle) {
-				// Handle full circle case
-				if (endAngle - startAngle >= 359.9) {
-					endAngle = startAngle + 359.99;
-				}
-
-				const innerRadius = radius;
-				const outerRadius = radius + thickness;
-				
-				const startRad = (startAngle * Math.PI) / 180;
-				const endRad = (endAngle * Math.PI) / 180;
-				
-				const x1 = cx + outerRadius * Math.cos(startRad);
-				const y1 = cy + outerRadius * Math.sin(startRad);
-				const x2 = cx + outerRadius * Math.cos(endRad);
-				const y2 = cy + outerRadius * Math.sin(endRad);
-				const x3 = cx + innerRadius * Math.cos(endRad);
-				const y3 = cy + innerRadius * Math.sin(endRad);
-				const x4 = cx + innerRadius * Math.cos(startRad);
-				const y4 = cy + innerRadius * Math.sin(startRad);
-				
-				const largeArc = endAngle - startAngle > 180 ? 1 : 0;
-				
-				return `M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4} Z`;
-			}
-
-		} catch (error) {
-			console.error('[Nested Donut] Error:', error);
-		}
-		}, 0);
-	})();
+templ SolarSystemAndRefresh(props SolarSystemProps, name string, day string) {
+    @SolarSystem(props)
+    @RefreshResults(name, day)
 }
 
 templ SolarSystem(props SolarSystemProps) {
@@ -383,7 +224,7 @@ templ SolarSystem(props SolarSystemProps) {
 					<polyline points="17 21 17 13 7 13 7 21"></polyline>
 					<polyline points="7 3 7 8 15 8"></polyline>
 				</svg>
-				<span class="btn-label">บันทึก</span>
+				<span class="btn-label">บันทึกชื่อนี้</span>
 			</button>
 
 		</div>
@@ -449,35 +290,75 @@ templ SolarSystem(props SolarSystemProps) {
 	<div class="result-box-premium fade-slide-in" style="box-shadow: none; background: transparent; padding: 0;">
 
 
-		<!-- Action Buttons -->
-		<div class="action-buttons-container">
-			<!-- Numerology Button -->
-			<button type="button" { templ.Attributes{"onclick": fmt.Sprintf("openMeaningModal('%s')", props.CleanedName)}... }
-				class="action-btn-premium btn-numerology">
-				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-					stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-					<rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-					<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-					<path d="M12 11h4"></path>
-					<path d="M12 16h4"></path>
-					<path d="M8 11h.01"></path>
-					<path d="M8 16h.01"></path>
-				</svg>
-				<span class="btn-label-text">เลขศาสตร์</span>
-			</button>
+		<div class="header-with-actions" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 2rem; flex-wrap: wrap; margin-bottom: 2rem;">
+			<!-- Action Buttons (Left) -->
+			<div class="action-buttons-container" style="display: flex; flex-direction: column; gap: 1rem;">
+				<!-- Numerology Button -->
+				<button type="button" { templ.Attributes{"onclick": fmt.Sprintf("openMeaningModal('%s')", props.CleanedName)}... }
+					class="action-btn-premium btn-numerology">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+						stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+						<rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+						<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+						<path d="M12 11h4"></path>
+						<path d="M12 16h4"></path>
+						<path d="M8 11h.01"></path>
+						<path d="M8 16h.01"></path>
+					</svg>
+					<span class="btn-label-text">เลขศาสตร์</span>
+				</button>
 
-			<!-- Linguistic Button -->
-			<!-- Linguistic Button -->
-			<button type="button" 
-				{ templ.Attributes{"onclick": fmt.Sprintf("loadLinguisticAnalysis('%s')", props.CleanedName)}... }
-				class="action-btn-premium btn-linguistic">
-				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-					stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-					<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-				</svg>
-				<span class="btn-label-text">ภาษาศาสตร์</span>
-			</button>
+				<!-- Linguistic Button -->
+				<button type="button" 
+					{ templ.Attributes{"onclick": fmt.Sprintf("loadLinguisticAnalysis('%s')", props.CleanedName)}... }
+					class="action-btn-premium btn-linguistic">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+						stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+						<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+					</svg>
+					<span class="btn-label-text">ภาษาศาสตร์</span>
+				</button>
+			</div>
+
+			<!-- Name Analysis Header (Right) -->
+			<div class="name-analysis-header" style="text-align: center;">
+				<h1 style="font-size: 2.5rem; font-weight: 800; color: #2D3748; margin-bottom: 0.5rem; line-height: 1.2;">
+					for _, dc := range props.SunDisplayNameHTML {
+						if dc.IsBad {
+							<span style="color: #dc2626;">{ dc.Char }</span>
+						} else {
+							<span>{ dc.Char }</span>
+						}
+					}
+				</h1>
+				<div style="display: flex; justify-content: center; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap;">
+					<div style="padding: 6px 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 6px;">
+						@DayIcon(props.InputDayRaw)
+						<span style="font-family: 'Kanit', sans-serif; font-weight: 500; color: #4a5568;">{ props.InputDayRaw }</span>
+					</div>
+					
+					if hasBadChars(props.SunDisplayNameHTML) {
+						<div style="padding: 6px 12px; background: #fee2e2; border: 1px solid #fecaca; border-radius: 20px; display: flex; align-items: center; gap: 6px; color: #dc2626; font-weight: 600;">
+							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+							for _, dc := range getBadChars(props.SunDisplayNameHTML) {
+								<span style="margin-right: 2px;">{ dc.Char }</span>
+							}
+						</div>
+					} else {
+						<div style="padding: 6px 12px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 20px; display: flex; align-items: center; gap: 6px; color: #15803D; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+							<span>ไม่มีกาลกิณี</span>
+						</div>
+					}
+				</div>
+				
+				if hasBadChars(props.SunDisplayNameHTML) {
+					<p style="margin-top: 12px; font-size: 0.9rem; color: #718096; font-family: 'Kanit', sans-serif;">
+						พยัญชนะหรือสระ<span style="color: #dc2626; font-weight: bold;">สีแดง</span>คือกาลกิณี
+					</p>
+				}
+			</div>
 		</div>
 
 
@@ -491,6 +372,7 @@ templ SolarSystem(props SolarSystemProps) {
 							<!-- Inner ring (categories) will be drawn by JS -->
 							<g class="inner-ring"></g>
 							<!-- Outer ring (good/bad) will be drawn by JS -->
+                                                        <g class="outer-ring"></g>
 
 							<!-- Center text -->
 							<text x="100" y="95" text-anchor="middle" class="donut-center-number">
@@ -499,134 +381,100 @@ templ SolarSystem(props SolarSystemProps) {
 							<text x="100" y="110" text-anchor="middle" class="donut-center-label">คู่เลข</text>
 						</svg>
 					</div>
-					<div class="nested-legend" style="min-width: 250px;">
+					<div class="nested-legend" style="min-width: 340px; flex: 1;">
 						<div class="breakdown-summary" style="margin-top: 0.5rem;">
-							<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-								<thead>
-									<tr style="border-bottom: 2px solid #f0f0f0;">
-										<th style="text-align: left; padding: 8px; color: #555;">หมวดหมู่</th>
-										<th style="text-align: right; padding: 8px; color: #333; width: 60px;">%ดี</th>
-										<th style="text-align: right; padding: 8px; color: #333; width: 60px;">%ร้าย</th>
-										<th style="text-align: center; padding: 8px; color: #333; width: 80px;">เสริมเบอร์</th>
-									</tr>
-								</thead>
-								<tbody>
-									for i, cat := range []string{"สุขภาพ", "การงาน", "การเงิน", "ความรัก"} {
-										if breakdown, ok := props.CategoryBreakdown[cat]; ok {
-											// Row 1: Metrics & Toggle
-											<tr style={ fmt.Sprintf("background-color: %s;", func() string { if i%2 != 0 { return "#f8f9fa" }; return "#ffffff" }()) }>
-												<td style="padding: 12px 8px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
-													if cat == "การงาน" {
-														<span style="display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #4158D0;"></span>
-													} else if cat == "การเงิน" {
-														<span style="display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #FB8C00;"></span>
-													} else if cat == "ความรัก" {
-														<span style="display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #D4145A;"></span>
-													} else if cat == "สุขภาพ" {
-														<span style="display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #00DBDE;"></span>
-													} else {
-														<span style="display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: #A0A0A0;"></span>
-													}
-													{ cat }
-												</td>
-												<td style="text-align: right; padding: 12px 8px;" id={ fmt.Sprintf("good-score-container-%s-%s", props.CleanedName, cat) } data-base-good={ fmt.Sprintf("%.0f", (float64(breakdown.Good) / float64(len(props.NumerologyPairs) + len(props.ShadowPairs))) * 100) }>
-													if breakdown.Good > 0 {
-														<span class="good-score-wrap" style="color: #2E7D32; font-weight: 700; font-size: 1.1em; display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
-															<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-															<span class="good-value-text">{ fmt.Sprintf("%.0f%%", (float64(breakdown.Good) / float64(len(props.NumerologyPairs) + len(props.ShadowPairs))) * 100) }</span>
-														</span>
-													} else {
-														<span class="good-score-wrap" style="color: #ccc;">-</span>
-													}
-												</td>
-												<td style="text-align: right; padding: 12px 8px;">
-													if breakdown.Bad > 0 {
-														<span style="color: #C62828; font-weight: 700; font-size: 1.1em; display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
-															<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-															{ fmt.Sprintf("%.0f%%", (float64(breakdown.Bad) / float64(len(props.NumerologyPairs) + len(props.ShadowPairs))) * 100) }
-														</span>
-													} else {
-														<span style="color: #ccc;">-</span>
-													}
-												</td>
-												<td style="text-align: center; padding: 12px 8px;">
-													<button 
-														class="btn-icon-lucky" 
-														style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; border: none; background-color: #f5f5f5; color: #666; cursor: pointer; transition: all 0.2s;"
-														onclick={ templ.JSFuncCall("toggleLuckyNumber", cat, fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat)) }
-													>
-														<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-															<rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-															<line x1="12" y1="18" x2="12.01" y2="18"></line>
-														</svg>
-													</button>
-												</td>
-											</tr>
-											// Row 2: Content (Keywords & Lucky Card) - Full Width
-											<tr style={ fmt.Sprintf("border-bottom: 1px solid #eee; background-color: %s;", func() string { if i%2 != 0 { return "#f8f9fa" }; return "#ffffff" }()) }>
-												<td colspan="4" style="padding: 0 12px 12px 12px;">
-													if len(breakdown.Keywords) > 0 {
-														<div style="font-size: 0.8rem; color: #64748b; margin-bottom: 8px; line-height: 1.4; padding-left: 22px; border-left: 2px solid rgba(0,0,0,0.05);">
-															{ strings.Join(breakdown.Keywords, ", ") }
-														</div>
-													}
-													<div id={ fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat) } style="width: 100%; display: flex; justify-content: center;">
-														<!-- Placeholder or small sparkler for 100% -->
-														<span class="sparkling-gold" 
-															style="font-size: 0.7rem; display: flex; align-items: center; gap: 2px; padding: 2px 8px; border-radius: 10px; cursor: pointer; opacity: 0.8;"
-															onclick={ templ.JSFuncCall("toggleLuckyNumber", cat, fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat)) }
-														>
-															<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="#8B4513" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-															เสริมเบอร์ 100% ✨
-														</span>
-													</div>
-												</td>
-											</tr>
-										}
-									}
-									<!-- Total Score Row -->
-									<tr style="border-top: 2px solid #e2e8f0; background: linear-gradient(to right, #f8faff, #eff6ff); border-bottom: 2px solid #e2e8f0;">
-										<td style="padding: 14px 10px; font-weight: 800; color: #1e293b; font-size: 1rem; text-align: left;" colspan="1">%รวม</td>
-										<td style="text-align: center; padding: 14px 10px;" colspan="3">
-											<div id={ fmt.Sprintf("total-score-%s", props.CleanedName) } data-base-score={ fmt.Sprintf("%.0f", props.GetLinguisticTotalScore()) } style={ fmt.Sprintf("font-weight: 900; font-size: 1.4rem; color: %s; display: flex; align-items: center; justify-content: center; gap: 8px; text-shadow: 0 1px 2px rgba(0,0,0,0.05);", props.GetLinguisticScoreColor()) }>
-												<span class="score-icon">
-													if props.GetLinguisticTotalScore() > 0 {
-														<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#B8860B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));">
-															<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-															<path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-															<path d="M4 22h16"></path>
-															<path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-															<path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-															<path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-														</svg>
-													} else {
-														<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#e0e0e0" stroke="#bdbdbd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: grayscale(1); opacity: 0.7;">
-															<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-															<path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-															<path d="M4 22h16"></path>
-															<path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-															<path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-															<path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-														</svg>
-													}
-												</span>
-												<span class="score-value">{ fmt.Sprintf("%.0f%%", props.GetLinguisticTotalScore()) }</span>
-											</div>
-										</td>
-										<td style="background: transparent;"></td>
-									</tr>
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
-			</div>
-			@DrawNestedDonut("nested-donut-" + props.CleanedName, props.GetCategoryBreakdownJSON())
-		}
-
-		</div>
-
-	<!-- Modals -->
+			@DrawNestedDonut("nested-donut-" + props.CleanedName, props.GetCategoryBreakdownJSON(), props.GetActiveCategoriesJSON())
+                                                        <table style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                                                                <thead>
+                                                                        <tr style="background: linear-gradient(to right, #334155, #1e293b); color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                                                                                <th style="text-align: left; padding: 14px 12px; font-weight: 800; width: 30%; white-space: nowrap; border-top-left-radius: 8px;">หมวดหมู่</th>
+                                                                                <th style="text-align: right; padding: 14px 12px; font-weight: 800; width: 20%; white-space: nowrap;">%ดี</th>
+                                                                                <th style="text-align: right; padding: 14px 12px; font-weight: 800; width: 20%; white-space: nowrap;">%ร้าย</th>
+                                                                                <th style="text-align: center; padding: 14px 12px; font-weight: 800; width: 30%; white-space: nowrap; border-top-right-radius: 8px;">เสริมเบอร์</th>
+                                                                        </tr>
+                                                                </thead>
+                                                                <tbody style="display: table-row-group !important;">
+                                                                        for i, cat := range []string{"สุขภาพ", "การงาน", "การเงิน", "ความรัก"} {
+                                                                                if breakdown, ok := props.CategoryBreakdown[cat]; ok {
+                                                                                        <tr style={ fmt.Sprintf("display: table-row !important; background-color: %s;", func() string { if i%2 != 0 { return "#f8f9fa" }; return "#ffffff" }()) }>
+                                                                                                <td style="display: table-cell !important; width: 35%; padding: 12px 8px; font-weight: 700; color: #1e293b; vertical-align: middle;">
+                                                                                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                                                                                                <span style={ "display: inline-block; width: 14px; height: 14px; min-width: 14px; border-radius: 4px; background-color: " + getCategoryColor(cat) + ";" }></span>
+                                                                                                                { cat }
+                                                                                                        </div>
+                                                                                                </td>
+                                                                                                <td style="display: table-cell !important; width: 25%; text-align: right; padding: 12px 8px; vertical-align: middle;" id={ fmt.Sprintf("good-score-container-%s-%s", props.CleanedName, cat) }>
+                                                                                                        <span class="category-pct-display" data-category={ cat } style="color: #2E7D32; font-weight: 700; font-size: 1.1em; display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
+                                                                                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="check-icon" style="display: none;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                                                                <span class="value-text">-</span>
+                                                                                                        </span>
+                                                                                                </td>
+                                                                                                <td style="display: table-cell !important; width: 20%; text-align: right; padding: 12px 8px; vertical-align: middle;">
+                                                                                                        if breakdown.Bad > 0 {
+                                                                                                                <span style="color: #C62828; font-weight: 700; font-size: 1.1em;">25%</span>
+                                                                                                        } else {
+                                                                                                                <span style="color: #ccc;">-</span>
+                                                                                                        }
+                                                                                                </td>
+                                                                                                <td style="display: table-cell !important; width: 20%; text-align: center; padding: 12px 8px; vertical-align: middle;">
+                                                                                                        <button class="btn-icon-lucky" title="คลิกเพื่อดูเบอร์มงคล" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; border: none; background: linear-gradient(135deg, #FFD700, #FDB931); color: white; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 6px rgba(255, 215, 0, 0.3);" onclick={ templ.JSFuncCall("window.handleLuckyClick", cat, fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat), "nested-donut-" + props.CleanedName) }>
+                                                                                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                                                                                                        </button>
+                                                                                                </td>
+                                                                                        </tr>
+                                                                                        <tr style={ fmt.Sprintf("display: table-row !important; border-bottom: 1px solid #eee; background-color: %s;", func() string { if i%2 != 0 { return "#f8f9fa" }; return "#ffffff" }()) }>
+                                                                                                <td colspan="4" style="display: table-cell !important; padding: 0 12px 12px 12px; vertical-align: top;">
+                                                                                                        if len(breakdown.Keywords) > 0 {
+                                                                                                                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 8px; line-height: 1.4; padding-left: 22px; border-left: 2px solid rgba(0,0,0,0.05);">
+                                                                                                                        { strings.Join(breakdown.Keywords, ", ") }
+                                                                                                                </div>
+                                                                                                        }
+                                                                                                        <div id={ fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat) } style="width: 100%; display: flex; justify-content: center;">
+                                                                                                                <span class="sparkling-gold" style="font-size: 0.7rem; display: flex; align-items: center; gap: 2px; padding: 2px 8px; border-radius: 10px; cursor: pointer; opacity: 0.8;" onclick={ templ.JSFuncCall("window.handleLuckyClick", cat, fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat), "nested-donut-" + props.CleanedName) }>
+                                                                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="#8B4513" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                                                                                                        เสริมเบอร์ 100% ✨
+                                                                                                                </span>
+                                                                                                        </div>
+                                                                                                </td>
+                                                                                        </tr>
+                                                                                }
+                                                                        }
+                                                                        <tr style="display: table-row !important; border-top: 2px solid #FCD34D; background: linear-gradient(to right, #FFFBEB, #FEF3C7); border-bottom: 2px solid #FCD34D; box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);">
+                                                                                <td style="display: table-cell !important; padding: 16px 10px; font-weight: 800; color: #92400E; font-size: 1.1rem; text-align: left;" colspan="1">รวม % ดี</td>
+                                                                                <td style="display: table-cell !important; text-align: center; padding: 14px 10px;" colspan="3">
+                                                                                        <div id={ fmt.Sprintf("total-score-%s", props.CleanedName) } data-base-score={ fmt.Sprintf("%.0f", props.GetBaseCategoryPercentage()) } style="padding: 10px; display: flex; align-items: center; justify-content: center; gap: 12px;">
+                                                                                                if props.GetBaseCategoryPercentage() > 0 {
+                                                                                                        <span class="score-icon" style="display: flex; align-items: center;">
+                                                                                                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="#DAA520" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                                                                                        </span>
+                                                                                                        <span class="score-value" style="font-weight: 900; font-size: 1.8rem; letter-spacing: 1px; color: #DAA520; text-shadow: 0px 1px 2px rgba(0,0,0,0.1);">{ fmt.Sprintf("%.0f%%", props.GetBaseCategoryPercentage()) }</span>
+                                                                                                } else {
+                                                                                                        <span class="score-icon" style="display: flex; align-items: center;">
+                                                                                                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                                                                                        </span>
+                                                                                                        <span class="score-value" style="font-weight: 900; font-size: 1.8rem; letter-spacing: 1px; color: #8B4513;">{ fmt.Sprintf("%.0f%%", props.GetBaseCategoryPercentage()) }</span>
+                                                                                                }
+                                                                                        </div>
+                                                                                </td>
+                                                                        </tr>
+                                                                </tbody>
+                                                        </table>
+                                                        <div style="padding: 8px 12px; font-size: 0.75rem; color: #64748B; text-align: center; font-style: italic; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                                                💡 คลิกไอคอน
+                                                                <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #FFD700, #FDB931); box-shadow: 0 1px 3px rgba(255, 215, 0, 0.3);">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                                                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                                                                        </svg>
+                                                                </span>
+                                                                ซ้ำเพื่อเปลี่ยนเบอร์มงคล
+                                                        </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @DrawNestedDonut("nested-donut-" + props.CleanedName, props.GetCategoryBreakdownJSON(), props.GetActiveCategoriesJSON())
+    }
+    </div>
 	<div id={ "meaning-modal-" + props.CleanedName } class="modal-overlay" onclick="this.style.display='none'">
 		<div class="modal-content" onclick="event.stopPropagation()">
 			<div class="modal-header">
@@ -663,6 +511,7 @@ templ SolarSystem(props SolarSystemProps) {
 							<div class="nested-donut-wrapper">
 								<svg class="nested-donut-chart" viewBox="0 0 200 200" id={ "modal-nested-donut-" + props.CleanedName } style="width: 200px; height: 200px;">
 									<g class="inner-ring"></g>
+                                                                        <g class="outer-ring"></g>
 
 									<text x="100" y="95" text-anchor="middle" class="donut-center-number">
 										{ fmt.Sprintf("%d", len(props.NumerologyPairs) + len(props.ShadowPairs)) }
@@ -674,17 +523,17 @@ templ SolarSystem(props SolarSystemProps) {
 						<div class="breakdown-summary" style="margin-top: 0.5rem;">
 									<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
 								<thead>
-									<tr style="border-bottom: 2px solid #f0f0f0;">
-										<th style="text-align: left; padding: 8px; color: #555;">หมวดหมู่</th>
-										<th style="text-align: right; padding: 8px; color: #333; width: 60px;">%ดี</th>
-										<th style="text-align: right; padding: 8px; color: #333; width: 60px;">%ร้าย</th>
-										<th style="text-align: center; padding: 8px; color: #333; width: 80px;">เสริมเบอร์</th>
-									</tr>
+										<tr style="background: linear-gradient(to right, #334155, #1e293b); color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+												<th style="text-align: left; padding: 14px 12px; font-weight: 800; width: 30%; white-space: nowrap; border-top-left-radius: 8px;">หมวดหมู่</th>
+												<th style="text-align: right; padding: 14px 12px; font-weight: 800; width: 20%; white-space: nowrap;">%ดี</th>
+												<th style="text-align: right; padding: 14px 12px; font-weight: 800; width: 20%; white-space: nowrap;">%ร้าย</th>
+												<th style="text-align: center; padding: 14px 12px; font-weight: 800; width: 30%; white-space: nowrap; border-top-right-radius: 8px;">เสริมเบอร์</th>
+										</tr>
 								</thead>
 								<tbody>
 									for i, cat := range []string{"สุขภาพ", "การงาน", "การเงิน", "ความรัก"} {
 										if breakdown, ok := props.CategoryBreakdown[cat]; ok {
-											// Row 1: Metrics & Toggle
+											
 											<tr style={ fmt.Sprintf("background-color: %s;", func() string { if i%2 != 0 { return "#f8f9fa" }; return "#ffffff" }()) }>
 												<td style="padding: 12px 8px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
 													if cat == "การงาน" {
@@ -723,17 +572,13 @@ templ SolarSystem(props SolarSystemProps) {
 												<td style="text-align: center; padding: 12px 8px;">
 													<button 
 														class="btn-icon-lucky" 
-														style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; border: none; background-color: #f5f5f5; color: #666; cursor: pointer; transition: all 0.2s;"
-														onclick={ templ.JSFuncCall("toggleLuckyNumber", cat, fmt.Sprintf("modal-lucky-container-%s-%s", props.CleanedName, cat)) }
+														style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; border: none; background: linear-gradient(135deg, #FFD700, #FDB931); color: white; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 6px rgba(255, 215, 0, 0.3);"
+														onclick={ templ.JSFuncCall("handleLuckyClick", cat, fmt.Sprintf("modal-lucky-container-%s-%s", props.CleanedName, cat), "modal-nested-donut-" + props.CleanedName) }
 													>
-														<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-															<rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-															<line x1="12" y1="18" x2="12.01" y2="18"></line>
-														</svg>
+														<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
 													</button>
 												</td>
 											</tr>
-											// Row 2: Content (Keywords & Lucky Card) - Full Width
 											<tr style={ fmt.Sprintf("border-bottom: 1px solid #eee; background-color: %s;", func() string { if i%2 != 0 { return "#f8f9fa" }; return "#ffffff" }()) }>
 												<td colspan="4" style="padding: 0 12px 12px 12px;">
 													if len(breakdown.Keywords) > 0 {
@@ -744,7 +589,7 @@ templ SolarSystem(props SolarSystemProps) {
 													<div id={ fmt.Sprintf("modal-lucky-container-%s-%s", props.CleanedName, cat) } style="width: 100%; display: flex; justify-content: center;">
 														<span class="sparkling-gold" 
 															style="font-size: 0.7rem; display: flex; align-items: center; gap: 2px; padding: 2px 8px; border-radius: 10px; cursor: pointer; opacity: 0.8;"
-															onclick={ templ.JSFuncCall("toggleLuckyNumber", cat, fmt.Sprintf("modal-lucky-container-%s-%s", props.CleanedName, cat)) }
+															onclick={ templ.JSFuncCall("handleLuckyClick", cat, fmt.Sprintf("modal-lucky-container-%s-%s", props.CleanedName, cat), "modal-nested-donut-" + props.CleanedName) }
 														>
 															<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="#8B4513" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
 															เสริมเบอร์ 100% ✨
@@ -755,35 +600,23 @@ templ SolarSystem(props SolarSystemProps) {
 										}
 									}
 									<!-- Total Score Row -->
-									<tr style="border-top: 2px solid #e2e8f0; background: linear-gradient(to right, #f8faff, #eff6ff); border-bottom: 2px solid #e2e8f0;">
-										<td style="padding: 14px 10px; font-weight: 800; color: #1e293b; font-size: 1rem; text-align: left;" colspan="1">%รวม</td>
-										<td style="text-align: center; padding: 14px 10px;" colspan="3">
-											<div id={ fmt.Sprintf("modal-total-score-%s", props.CleanedName) } data-base-score={ fmt.Sprintf("%.0f", props.GetLinguisticTotalScore()) } style={ fmt.Sprintf("font-weight: 900; font-size: 1.4rem; color: %s; display: flex; align-items: center; justify-content: center; gap: 8px; text-shadow: 0 1px 2px rgba(0,0,0,0.05);", props.GetLinguisticScoreColor()) }>
-												<span class="score-icon">
-													if props.GetLinguisticTotalScore() > 0 {
-														<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#B8860B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));">
-															<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-															<path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-															<path d="M4 22h16"></path>
-															<path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-															<path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-															<path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-														</svg>
-													} else {
-														<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#e0e0e0" stroke="#bdbdbd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: grayscale(1); opacity: 0.7;">
-															<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-															<path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-															<path d="M4 22h16"></path>
-															<path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-															<path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-															<path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-														</svg>
-													}
-												</span>
-												<span class="score-value">{ fmt.Sprintf("%.0f%%", props.GetLinguisticTotalScore()) }</span>
+									<tr style="display: table-row !important; border-top: 2px solid #FCD34D; background: linear-gradient(to right, #FFFBEB, #FEF3C7); border-bottom: 2px solid #FCD34D; box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);">
+										<td style="display: table-cell !important; padding: 16px 10px; font-weight: 800; color: #92400E; font-size: 1.1rem; text-align: left;" colspan="1">รวม % ดี</td>
+										<td style="display: table-cell !important; text-align: center; padding: 14px 10px;" colspan="3">
+											<div id={ fmt.Sprintf("modal-total-score-%s", props.CleanedName) } data-base-score={ fmt.Sprintf("%.0f", props.GetBaseCategoryPercentage()) } style="padding: 10px; display: flex; align-items: center; justify-content: center; gap: 12px;">
+												if props.GetBaseCategoryPercentage() > 0 {
+													<span class="score-icon" style="display: flex; align-items: center;">
+														<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="#DAA520" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+													</span>
+													<span class="score-value" style="font-weight: 900; font-size: 1.8rem; letter-spacing: 1px; color: #DAA520; text-shadow: 0px 1px 2px rgba(0,0,0,0.1);">{ fmt.Sprintf("%.0f%%", props.GetBaseCategoryPercentage()) }</span>
+												} else {
+													<span class="score-icon" style="display: flex; align-items: center;">
+														<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+													</span>
+													<span class="score-value" style="font-weight: 900; font-size: 1.8rem; letter-spacing: 1px; color: #8B4513;">{ fmt.Sprintf("%.0f%%", props.GetBaseCategoryPercentage()) }</span>
+												}
 											</div>
 										</td>
-										<td style="background: transparent;"></td>
 									</tr>
 								</tbody>
 									</table>
@@ -791,7 +624,7 @@ templ SolarSystem(props SolarSystemProps) {
 							</div>
 						</div>
 					</div>
-					@DrawNestedDonut("modal-nested-donut-" + props.CleanedName, props.GetCategoryBreakdownJSON())
+					@DrawNestedDonut("modal-nested-donut-" + props.CleanedName, props.GetCategoryBreakdownJSON(), props.GetActiveCategoriesJSON())
 				}
 
 				<h3>รายละเอียดตัวอักษร</h3>
@@ -877,7 +710,15 @@ templ SolarSystem(props SolarSystemProps) {
 					<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
 				</div>
 				<h2 style="color: #1B5E20; margin-bottom: 0.8rem; font-size: 1.6rem; font-weight: 800;">สั่งซื้อเบอร์มงคล</h2>
+				
+				<!-- Target Number Display -->
+				<div id="purchase-modal-target-number" style="display:none; margin-bottom: 1rem;"></div>
+
 				<p style="color: #444; font-size: 0.95rem; line-height: 1.6;">ติดต่อสอบถามหรือสั่งซื้อกับคุณทญา <br/>ทาง LINE ได้โดยตรงผ่าน QR Code นี้ครับ</p>
+				<div style="background: rgba(46, 125, 50, 0.05); border: 1px solid rgba(46, 125, 50, 0.1); border-radius: 12px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 8px; margin-top: 12px;">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1B5E20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.05 12.05 0 0 0 .57 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.05 12.05 0 0 0 2.81.57A2 2 0 0 1 22 16.92z"></path></svg>
+					<a href="tel:0936544442" style="font-size: 1.1rem; font-weight: 700; color: #1B5E20; text-decoration: none; letter-spacing: 0.5px;">093-654-4442</a>
+				</div>
 			</div>
 			
 			<div style="background: white; padding: 12px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); display: inline-block; margin-bottom: 1.8rem; border: 1px solid rgba(0,0,0,0.03); position: relative;">
@@ -961,198 +802,5 @@ templ SolarSystem(props SolarSystemProps) {
 		function closeMeaningModal(name) {
 			document.getElementById('meaning-modal-' + name).style.display = 'none';
 		}
-	</script>
-
-	<script>
-		window.defaultLuckyIcons = window.defaultLuckyIcons || {};
-
-		function updateScores(containerId) {
-			// containerId format: "lucky-container-{name}-{cat}" or "modal-lucky-container-{name}-{cat}"
-			let isModal = containerId.startsWith('modal-');
-			let parts = containerId.split('-');
-			
-			let prefixLen = isModal ? 3 : 2;
-			let name = parts.slice(prefixLen, -1).join('-');
-			let cat = parts[parts.length - 1];
-			
-			// 1. Update Total Score (%รวม)
-			let scoreId = isModal ? `modal-total-score-${name}` : `total-score-${name}`;
-			let scoreElement = document.getElementById(scoreId);
-			if (scoreElement) {
-				let baseScore = parseInt(scoreElement.getAttribute('data-base-score') || '0');
-				let prefix = isModal ? `modal-lucky-container-${name}-` : `lucky-container-${name}-`;
-				let activeLuckyCount = 0;
-				document.querySelectorAll(`[id^="${prefix}"]`).forEach(el => {
-					if (el.getAttribute('data-showing-number') === 'true') {
-						activeLuckyCount++;
-					}
-				});
-
-				let newScore = baseScore + (activeLuckyCount * 100);
-				
-				// Handle Sparkling Effect for Total Score
-				if (activeLuckyCount > 0) {
-					scoreElement.classList.add('sparkling-gold');
-					scoreElement.style.padding = '10px 20px';
-					scoreElement.style.borderRadius = '15px';
-				} else {
-					scoreElement.classList.remove('sparkling-gold');
-					scoreElement.style.padding = '';
-					scoreElement.style.borderRadius = '';
-				}
-
-				let valueSpan = scoreElement.querySelector('.score-value');
-				if (valueSpan) {
-					valueSpan.textContent = newScore + '%' + (activeLuckyCount > 0 ? ' ✨' : '');
-				}
-
-				let iconSpan = scoreElement.querySelector('.score-icon');
-				if (iconSpan) {
-					if (activeLuckyCount > 0) {
-						iconSpan.innerHTML = '';
-					} else {
-						if (newScore > 0) {
-							iconSpan.innerHTML = `
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#B8860B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));">
-									<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-									<path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-									<path d="M4 22h16"></path>
-									<path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-									<path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-									<path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-								</svg>
-							`;
-						} else {
-							iconSpan.innerHTML = `
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#e0e0e0" stroke="#bdbdbd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: grayscale(1); opacity: 0.7;">
-									<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-									<path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-									<path d="M4 22h16"></path>
-									<path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-									<path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-									<path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-								</svg>
-							`;
-						}
-					}
-				}
-			}
-
-			// 2. Update Category %ดี
-			let goodId = isModal ? `modal-good-score-container-${name}-${cat}` : `good-score-container-${name}-${cat}`;
-			let goodContainer = document.getElementById(goodId);
-			if (goodContainer) {
-				let baseGood = parseInt(goodContainer.getAttribute('data-base-good') || '0');
-				let luckyContainer = document.getElementById(containerId);
-				let isShowing = luckyContainer.getAttribute('data-showing-number') === 'true';
-				let newGood = baseGood + (isShowing ? 100 : 0);
-				
-				if (newGood > 0) {
-					let isLuckySelection = luckyContainer.getAttribute('data-showing-number') === 'true';
-					let goldClass = isLuckySelection ? 'sparkling-gold' : '';
-					let goldStyle = isLuckySelection ? 'padding: 2px 8px; border-radius: 12px;' : '';
-					
-					goodContainer.innerHTML = `
-						<span class="good-score-wrap ${goldClass}" style="color: #2E7D32; font-weight: 700; font-size: 1.1em; display: flex; align-items: center; justify-content: flex-end; gap: 4px; ${goldStyle}">
-							${isLuckySelection ? '' : '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'}
-							<span class="good-value-text">${newGood}%</span>
-							${isLuckySelection ? '✨' : ''}
-						</span>
-					`;
-				} else {
-					goodContainer.innerHTML = '<span class="good-score-wrap" style="color: #ccc;">-</span>';
-				}
-			}
-		}
-
-		function revertLuckyNumber(containerId) {
-			const container = document.getElementById(containerId);
-			if (container && window.defaultLuckyIcons[containerId]) {
-				container.innerHTML = window.defaultLuckyIcons[containerId];
-				container.setAttribute('data-showing-number', 'false');
-				updateScores(containerId);
-			}
-		}
-
-		async function toggleLuckyNumber(category, containerId) {
-			console.log("Toggling lucky number for:", category, "at", containerId);
-			const container = document.getElementById(containerId);
-			if (!container) return;
-
-			// Store default state if not already stored
-			if (!window.defaultLuckyIcons[containerId]) {
-				window.defaultLuckyIcons[containerId] = container.innerHTML;
-			}
-
-			// If it's already showing a number, revert to default icon
-			if (container.getAttribute('data-showing-number') === 'true') {
-				revertLuckyNumber(containerId);
-				return;
-			}
-
-			try {
-				// Loading state
-				container.innerHTML = '<div class="animate-spin" style="width: 16px; height: 16px; border: 2px solid #ccc; border-top-color: #333; border-radius: 50%;"></div>';
-
-
-				const response = await fetch(`/api/lucky-number?category=${encodeURIComponent(category)}`);
-				const data = await response.json();
-
-				if (data && data.number) {
-					console.log("Found lucky number:", data.number, "with keywords:", data.keywords);
-					
-					let keywordsHtml = "";
-					if (data.keywords && data.keywords.length > 0) {
-						keywordsHtml = `
-							<div style="font-size: 0.7rem; color: #558B2F; font-weight: 500; line-height: 1.3; text-align: center; width: 100%; max-width: 250px; background: rgba(255,255,255,0.5); padding: 4px 8px; border-radius: 6px;">
-								${data.keywords.join(' • ')}
-							</div>
-						`;
-					}
-
-					container.innerHTML = `
-						<div class="lucky-card" style="position: relative; display: flex; width: 100%; box-sizing: border-box; flex-direction: column; align-items: center; background: #F1F8E9; padding: 16px 12px; border-radius: 12px; border: 1px solid #C8E6C9; animation: fadeIn 0.3s; gap: 8px; box-shadow: 0 4px 12px rgba(46, 125, 50, 0.08);">
-							<div style="font-weight: 900; color: #1B5E20; font-size: 1.2rem; white-space: nowrap; line-height: 1; letter-spacing: 0.8px; text-shadow: 0 1px 0 white;">
-								${data.number}
-							</div>
-							${keywordsHtml}
-							<div style="display: flex; gap: 6px; width: 100%; justify-content: center; margin-top: 4px;">
-								<button onclick="event.stopPropagation(); openPurchaseModal()" style="background: #2E7D32; color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s; border: 1px solid #1B5E20; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;">
-									<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-									ซื้อเบอร์
-								</button>
-								<button onclick="event.stopPropagation(); revertLuckyNumber('${containerId}')" style="background: #fff; color: #D32F2F; padding: 6px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer; border: 1px solid #FFCDD2; display: inline-flex; align-items: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-									ลบ
-								</button>
-							</div>
-						</div>
-					`;
-					container.setAttribute('data-showing-number', 'true');
-					updateScores(containerId);
-				} else {
-					console.warn("No lucky number found for category:", category);
-					revertLuckyNumber(containerId);
-					alert('ไม่พบเบอร์มงคลในหมวดหมู่ข้อมูลนี้');
-				}
-			} catch (error) {
-				console.error('Error fetching lucky number:', error);
-				revertLuckyNumber(containerId);
-			}
-		}
-		function openPurchaseModal() {
-			document.getElementById('purchase-modal').style.display = 'flex';
-		}
-	</script>
-
-
-	<!-- Auto-trigger similar names update when solar system renders -->
-	if !props.SkipTrigger {
-		<div class="display-none" 
-			hx-get="/similar-names" 
-			hx-trigger="load" 
-			hx-include="#name-form" 
-			hx-target="#results" 
-			hx-indicator="#results-wrapper">
-		</div>
-	}
+</script>
 }

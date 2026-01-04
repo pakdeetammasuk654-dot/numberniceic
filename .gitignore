@@ -48,3 +48,27 @@ deploy_chuedee.sh
 
 # Migration tool (if compiled locally)
 run_migration
+
+# Logs
+*.log
+
+# Environment
+.env.*
+
+# Binaries
+main
+numberniceic-linux
+numberniceic-test
+
+# Deploy archives
+deploy.tar.gz
+
+
+# Temporary files
+*.tmp
+.gemini/
+
+# Build directories
+build/
+**/build/
+

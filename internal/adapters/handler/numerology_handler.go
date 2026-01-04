@@ -38,6 +38,7 @@ type NumerologyHandler struct {
 	namesMiracleRepo    ports.NamesMiracleRepository
 	linguisticService   *service.LinguisticService
 	sampleNamesCache    *cache.SampleNamesCache
+	phoneNumberService  *service.PhoneNumberService
 }
 
 func NewNumerologyHandler(
@@ -48,6 +49,7 @@ func NewNumerologyHandler(
 	namesRepo ports.NamesMiracleRepository,
 	lingoService *service.LinguisticService,
 	sampleCache *cache.SampleNamesCache,
+	phoneNumberService *service.PhoneNumberService,
 ) *NumerologyHandler {
 	return &NumerologyHandler{
 		numerologyCache:     numCache,
@@ -58,11 +60,128 @@ func NewNumerologyHandler(
 		namesMiracleRepo:    namesRepo,
 		linguisticService:   lingoService,
 		sampleNamesCache:    sampleCache,
+		phoneNumberService:  phoneNumberService,
 	}
 }
 
 func isHtmxRequest(c *fiber.Ctx) bool {
 	return c.Get("HX-Request") == "true"
+}
+
+func (h *NumerologyHandler) AnalyzePhoneNumberAPI(c *fiber.Ctx) error {
+	number := c.Query("number")
+	if number == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Number is required"})
+	}
+
+	mainPairs, hiddenPairs, sumMeaning := h.phoneNumberService.AnalyzeRawNumber(number)
+
+	// Combine all pairs for category analysis
+	var allPairs []string
+	for _, p := range mainPairs {
+		allPairs = append(allPairs, p.Pair)
+	}
+	for _, p := range hiddenPairs {
+		allPairs = append(allPairs, p.Pair)
+	}
+
+	// Calculate Category counts & Breakdown
+	counts := map[string]int{
+		"การงาน":  0,
+		"การเงิน": 0,
+		"ความรัก": 0,
+		"สุขภาพ":  0,
+	}
+
+	breakdown := make(map[string]domain.CategoryBreakdown)
+	for cat := range counts {
+		color := "#A0A0A0"
+		switch cat {
+		case "การงาน":
+			color = "#90CAF9"
+		case "การเงิน":
+			color = "#FFCC80"
+		case "ความรัก":
+			color = "#F48FB1"
+		case "สุขภาพ":
+			color = "#80CBC4"
+		}
+		breakdown[cat] = domain.CategoryBreakdown{Good: 0, Bad: 0, Color: color}
+	}
+
+	allowedCategories := map[string]bool{
+		"การงาน":  true,
+		"การเงิน": true,
+		"ความรัก": true,
+		"สุขภาพ":  true,
+	}
+
+	categoryKeywords := make(map[string]map[string]bool)
+	for cat := range counts {
+		categoryKeywords[cat] = make(map[string]bool)
+	}
+
+	for _, pairNumber := range allPairs {
+		if cats, ok := h.numberCategoryCache.GetCategories(pairNumber); ok {
+			keywords := h.numberCategoryCache.GetKeywords(pairNumber)
+			for _, c := range cats {
+				if !allowedCategories[c] {
+					continue
+				}
+				counts[c]++ // Update count
+
+				numberType := h.numberCategoryCache.GetNumberType(pairNumber)
+				current := breakdown[c]
+				if numberType == "ดี" {
+					current.Good++
+				} else if numberType == "ร้าย" {
+					current.Bad++
+				}
+
+				for _, kw := range keywords {
+					if kw != "" {
+						categoryKeywords[c][kw] = true
+					}
+				}
+				breakdown[c] = current
+			}
+		}
+	}
+
+	// Consolidate keywords
+	for cat, kwMap := range categoryKeywords {
+		if entry, exists := breakdown[cat]; exists {
+			var kws []string
+			for kw := range kwMap {
+				kws = append(kws, kw)
+			}
+			sort.Strings(kws)
+			entry.Keywords = kws
+			breakdown[cat] = entry
+		}
+	}
+
+	// Calculate Total Score % (Base Category Percentage logic)
+	// Web Logic: (TotalGood - TotalBad) / TotalPairs * 100 ??
+	// Actually current web logic uses "GetBaseCategoryPercentage" which is:
+	// length(ActiveCategories) * 25.0
+	// Active Category = Has > 0 Good numbers.
+
+	totalBasePercent := 0.0
+	for _, cat := range []string{"สุขภาพ", "การงาน", "การเงิน", "ความรัก"} {
+		if bd, ok := breakdown[cat]; ok && bd.Good > 0 {
+			totalBasePercent += 25.0
+		}
+	}
+
+	return c.JSON(fiber.Map{
+		"number":             number,
+		"main_pairs":         mainPairs,
+		"hidden_pairs":       hiddenPairs,
+		"sum_meaning":        sumMeaning,
+		"category_breakdown": breakdown,
+		"total_percent":      totalBasePercent,
+	})
 }
 
 func (h *NumerologyHandler) AnalyzeAPI(c *fiber.Ctx) error {
@@ -677,11 +796,21 @@ func (h *NumerologyHandler) calculateScoresAndHighlights(names []domain.SimilarN
 
 		names[i].TSat = make([]domain.PairTypeInfo, len(satMeanings))
 		for j, meaning := range satMeanings {
-			names[i].TSat[j] = domain.PairTypeInfo{Type: meaning.Meaning.PairType, Color: meaning.Meaning.Color}
+			color := meaning.Meaning.Color
+			// Force RED for bad pairs to fix "sad brown" color issue
+			if service.IsBadPairType(meaning.Meaning.PairType) {
+				color = "#D32F2F"
+			}
+			names[i].TSat[j] = domain.PairTypeInfo{Type: meaning.Meaning.PairType, Color: color}
 		}
 		names[i].TSha = make([]domain.PairTypeInfo, len(shaMeanings))
 		for j, meaning := range shaMeanings {
-			names[i].TSha[j] = domain.PairTypeInfo{Type: meaning.Meaning.PairType, Color: meaning.Meaning.Color}
+			color := meaning.Meaning.Color
+			// Force RED for bad pairs to fix "sad brown" color issue
+			if service.IsBadPairType(meaning.Meaning.PairType) {
+				color = "#D32F2F"
+			}
+			names[i].TSha[j] = domain.PairTypeInfo{Type: meaning.Meaning.PairType, Color: color}
 		}
 	}
 }
@@ -967,7 +1096,8 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 	solarProps, _ := h.getSolarSystemProps(name, day, !disableKlakini, isVIP)
 	solarProps.DisableKlakini = disableKlakini
 
-	return templ_render.Render(c, analysis.SolarSystem(solarProps))
+	// Render SolarSystem AND trigger OOB refresh for bottom content
+	return templ_render.Render(c, analysis.SolarSystemAndRefresh(solarProps, name, day))
 }
 
 func (h *NumerologyHandler) getBestNames(candidates []domain.SimilarNameResult, limit int, allowKlakini bool) ([]domain.SimilarNameResult, []domain.SimilarNameResult, int) {
@@ -1176,6 +1306,10 @@ func getMeaningsAndScores(pairs []string, pairCache *cache.NumberPairCache) ([]d
 	var posScore, negScore int
 	for _, p := range pairs {
 		if meaning, ok := pairCache.GetMeaning(p); ok {
+			// Force RED color for bad pairs to fix "sad brown" display issue globally
+			if service.IsBadPairType(meaning.PairType) {
+				meaning.Color = "#D32F2F"
+			}
 			meanings = append(meanings, domain.PairMeaningResult{PairNumber: p, Meaning: meaning})
 			if meaning.PairPoint > 0 {
 				posScore += meaning.PairPoint
@@ -1297,13 +1431,13 @@ func (h *NumerologyHandler) getSolarSystemProps(name, day string, repoAllowKlaki
 		color := "#A0A0A0"
 		switch cat {
 		case "การงาน":
-			color = "#4158D0"
+			color = "#90CAF9"
 		case "การเงิน":
-			color = "#FB8C00"
+			color = "#FFCC80"
 		case "ความรัก":
-			color = "#D4145A"
+			color = "#F48FB1"
 		case "สุขภาพ":
-			color = "#00DBDE"
+			color = "#80CBC4"
 		}
 		breakdown[cat] = domain.CategoryBreakdown{Good: 0, Bad: 0, Color: color}
 	}

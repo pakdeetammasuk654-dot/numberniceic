@@ -4,6 +4,7 @@ import (
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -136,10 +137,10 @@ func (s *PhoneNumberService) GetSellNumbers() ([]domain.PhoneNumberAnalysis, err
 	return results, nil
 }
 
-func (s *PhoneNumberService) GetLuckyNumberByCategory(category string) (string, []string, error) {
+func (s *PhoneNumberService) GetLuckyNumberByCategory(category string, index int) (string, string, []string, error) {
 	numbers, err := s.repo.GetAll()
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 
 	category = strings.TrimSpace(category)
@@ -164,7 +165,7 @@ func (s *PhoneNumberService) GetLuckyNumberByCategory(category string) (string, 
 	}
 
 	if len(matchingNumbers) == 0 {
-		return "", nil, nil
+		return "", "", nil, nil
 	}
 
 	// Sort matching numbers by price descending
@@ -172,7 +173,12 @@ func (s *PhoneNumberService) GetLuckyNumberByCategory(category string) (string, 
 		return matchingNumbers[i].num.PNumberPrice > matchingNumbers[j].num.PNumberPrice
 	})
 
-	return matchingNumbers[0].num.PNumberNum, matchingNumbers[0].keywords, nil
+	if index < 0 {
+		index = 0
+	}
+	selectedIndex := index % len(matchingNumbers)
+
+	return matchingNumbers[selectedIndex].num.PNumberNum, matchingNumbers[selectedIndex].num.PNumberSum, matchingNumbers[selectedIndex].keywords, nil
 }
 
 func (s *PhoneNumberService) ExtractPairs(num string) []string {
@@ -186,4 +192,73 @@ func (s *PhoneNumberService) ExtractPairs(num string) []string {
 		pairs = append(pairs, cleaned[i:i+2])
 	}
 	return pairs
+}
+
+// AnalyzeRawNumber analyzes a raw phone number string (e.g. "0859995924")
+// and returns the main pairs, hidden pairs, and sum meaning with colors.
+func (s *PhoneNumberService) AnalyzeRawNumber(number string) (mainPairs []domain.PhoneNumberPairMeaning, hiddenPairs []domain.PhoneNumberPairMeaning, sumMeaning domain.PhoneNumberPairMeaning) {
+	cleaned := strings.ReplaceAll(number, "-", "")
+	cleaned = strings.TrimSpace(cleaned)
+
+	n := len(cleaned)
+
+	getPairMeaning := func(p string) domain.PhoneNumberPairMeaning {
+		meaning, ok := s.pairCache[p]
+		if !ok {
+			meaning = domain.NumberPairMeaning{
+				PairNumber: p,
+				Color:      "#9E9E9E",
+			}
+		}
+		if meaning.Color == "" {
+			meaning.Color = GetPairTypeColor(meaning.PairType)
+		}
+		return domain.PhoneNumberPairMeaning{
+			Pair:    p,
+			Meaning: meaning,
+		}
+	}
+
+	// Calculate Main Pairs (01, 23, 45...)
+	for i := 0; i < n; i += 2 {
+		if i+1 < n {
+			p := cleaned[i : i+2]
+			mainPairs = append(mainPairs, getPairMeaning(p))
+		}
+	}
+
+	// Calculate Hidden Pairs (12, 34, 56...)
+	for i := 1; i < n; i += 2 {
+		if i+1 < n {
+			p := cleaned[i : i+2]
+			hiddenPairs = append(hiddenPairs, getPairMeaning(p))
+		}
+	}
+
+	// Calculate Sum
+	sumVal := 0
+	for _, r := range cleaned {
+		if r >= '0' && r <= '9' {
+			sumVal += int(r - '0')
+		}
+	}
+	sumStr := strconv.Itoa(sumVal)
+
+	// Get Sum Meaning
+	m, ok := s.pairCache[sumStr]
+	if !ok {
+		m = domain.NumberPairMeaning{
+			PairNumber: sumStr,
+			Color:      "#9E9E9E",
+		}
+	}
+	if m.Color == "" {
+		m.Color = GetPairTypeColor(m.PairType)
+	}
+	sumMeaning = domain.PhoneNumberPairMeaning{
+		Pair:    sumStr,
+		Meaning: m,
+	}
+
+	return mainPairs, hiddenPairs, sumMeaning
 }

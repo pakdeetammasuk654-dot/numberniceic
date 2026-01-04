@@ -933,37 +933,54 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          displayNameHtml.isEmpty
-                              ? Text(
-                                  name,
+                          Row(
+                            children: [
+                               Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: Text(
+                                  '#${index + 1}',
                                   style: GoogleFonts.kanit(
-                                    fontSize: 14,
-                                    fontWeight: isTopTier ? FontWeight.w800 : FontWeight.bold,
-                                    color: isTopTier ? const Color(0xFFB8860B) : Colors.black87,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[400],
                                   ),
-                                )
-                              : Row(
-                                  children: [
-                                    Flexible(
-                                      child: Wrap(
-                                        children: displayNameHtml.map((charData) {
-                                          final char = charData['char'] ?? charData['Char'] ?? '';
-                                          final isBad = charData['is_bad'] == true || charData['IsBad'] == true;
-                                          return Text(
-                                            char,
-                                            style: GoogleFonts.kanit(
-                                              fontSize: 14,
-                                              fontWeight: isTopTier ? FontWeight.w800 : FontWeight.bold,
-                                              color: isBad ? const Color(0xFFFF4757) : (isTopTier ? const Color(0xFFB8860B) : Colors.black87),
-                                            ),
-                                          );
-                                        }).toList(),
-                                      ),
-                                    ),
-                                    if (isTopTier)
-                                      const Text(' ⭐', style: TextStyle(fontSize: 12)),
-                                  ],
                                 ),
+                              ),
+                              Expanded(
+                                child: displayNameHtml.isEmpty
+                                  ? Text(
+                                      name,
+                                      style: GoogleFonts.kanit(
+                                        fontSize: 14,
+                                        fontWeight: isTopTier ? FontWeight.w800 : FontWeight.bold,
+                                        color: isTopTier ? const Color(0xFFB8860B) : Colors.black87,
+                                      ),
+                                    )
+                                  : Row(
+                                      children: [
+                                        Flexible(
+                                          child: Wrap(
+                                            children: displayNameHtml.map((charData) {
+                                              final char = charData['char'] ?? charData['Char'] ?? '';
+                                              final isBad = charData['is_bad'] == true || charData['IsBad'] == true;
+                                              return Text(
+                                                char,
+                                                style: GoogleFonts.kanit(
+                                                  fontSize: 14,
+                                                  fontWeight: isTopTier ? FontWeight.w800 : FontWeight.bold,
+                                                  color: isBad ? const Color(0xFFFF4757) : (isTopTier ? const Color(0xFFB8860B) : Colors.black87),
+                                                ),
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ),
+                                        if (isTopTier)
+                                          const Text(' ⭐', style: TextStyle(fontSize: 12)),
+                                      ],
+                                    ),
+                              ),
+                            ],
+                          ),
                           Row(
                             children: [
                               Icon(Icons.calendar_today, size: 10, color: Colors.grey[500]),

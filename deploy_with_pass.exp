@@ -1,0 +1,13 @@
+#!/usr/bin/expect
+set timeout 600
+set password "IntelliP24.X"
+spawn ./deploy_ubuntu.sh
+
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r"; exp_continue }
+    "Password:" { send "$password\r"; exp_continue }
+    eof
+}
+catch wait result
+exit [lindex $result 3]

@@ -58,7 +58,9 @@ templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage s
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 			<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&family=Kanit:wght@400;700&display=swap" rel="stylesheet"/>
+			<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+			<script src="/js/category-pie-chart.js?v=4"></script>
 			<!-- Corrected CSS Path -->
 			<link rel="stylesheet" href="/css/style-v4.css?v=12"/>
 			<!-- Critical CSS Injection for Best Names Layout -->
@@ -174,26 +176,25 @@ templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage s
 			<!-- Floating Shop Button -->
 			<a href="/shop" id="floating-shop-btn" title="ไปที่ร้านค้ามงคล">
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-				<span class="fab-text">ร้านค้า</span>
 			</a>
 
 			<style>
 				#floating-shop-btn {
 					position: fixed;
-					bottom: 2rem;
-					right: 1.5rem;
+					bottom: 90px !important;
+					right: 20px !important;
+					z-index: 9999 !important;
 					background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
 					color: #4a3b00;
-					width: auto;
-					padding: 0.75rem 1.25rem;
-					height: auto;
-					border-radius: 50px;
+					width: 50px !important;
+					height: 50px !important;
+					border-radius: 50% !important;
+					padding: 0 !important;
 					display: flex;
 					align-items: center;
 					justify-content: center;
 					box-shadow: 0 4px 15px rgba(253, 185, 49, 0.4);
 					text-decoration: none;
-					z-index: 999;
 					transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 					gap: 0.5rem;
 					font-family: 'Kanit', sans-serif;
@@ -207,21 +208,11 @@ templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage s
 					width: 20px;
 					height: 20px;
 				}
-				@media (max-width: 600px) {
+				@media (max-width: 850px) {
 					#floating-shop-btn {
-						bottom: 1.5rem;
-						right: 1rem;
-						padding: 0.6rem 1rem;
-						font-size: 0.9rem;
-					}
-					.fab-text {
-						display: none;
-					}
-					#floating-shop-btn {
-						width: 50px;
-						height: 50px;
-						padding: 0;
-						border-radius: 50%;
+						bottom: 90px !important;
+						right: 20px !important;
+						left: auto !important;
 					}
 				}
 			</style>

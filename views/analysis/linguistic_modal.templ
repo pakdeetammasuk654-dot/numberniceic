@@ -1,5 +1,18 @@
 package analysis
 
+import (
+	"bytes"
+	"github.com/yuin/goldmark"
+)
+
+func parseMarkdown(source string) string {
+	var buf bytes.Buffer
+	if err := goldmark.Convert([]byte(source), &buf); err != nil {
+		return source
+	}
+	return buf.String()
+}
+
 templ LinguisticModal(name string, analysis string) {
 	<div class="modal-header">
 		<h2 class="modal-header-title">
@@ -11,7 +24,43 @@ templ LinguisticModal(name string, analysis string) {
 		</h2>
 		<button class="close-btn" onclick="document.getElementById('linguistic-modal-container').style.display='none'">&times;</button>
 	</div>
-	<div class="modal-body gemini-content">
-		@templ.Raw(analysis)
+	<div class="modal-body gemini-content linguistic-content">
+		@templ.Raw(parseMarkdown(analysis))
 	</div>
+		
+	<style>
+		.linguistic-content {
+			font-family: 'Sarabun', sans-serif;
+			color: #2d3748;
+			line-height: 1.8;
+		}
+		.linguistic-content h1, 
+		.linguistic-content h2, 
+		.linguistic-content h3 {
+			font-family: 'Sarabun', sans-serif;
+			font-weight: 700;
+			color: #1a202c;
+			margin-top: 1.5em;
+			margin-bottom: 0.8em;
+		}
+		.linguistic-content h1 { font-size: 1.8rem; }
+		.linguistic-content h2 { font-size: 1.5rem; border-bottom: 2px solid #edf2f7; padding-bottom: 0.5rem; }
+		.linguistic-content h3 { font-size: 1.25rem; }
+		.linguistic-content p {
+			font-size: 1rem;
+			margin-bottom: 1.2em;
+			text-align: justify;
+		}
+		.linguistic-content ul, .linguistic-content ol {
+			margin-bottom: 1.2em;
+			padding-left: 1.5em;
+		}
+		.linguistic-content li {
+			margin-bottom: 0.5em;
+		}
+		.linguistic-content strong {
+			color: #2d3748;
+			font-weight: 700;
+		}
+	</style>
 }

@@ -173,7 +173,7 @@ func main() {
 
 	// --- Handlers ---
 	// --- Handlers ---
-	numerologyHandler := handler.NewNumerologyHandler(numerologyCache, shadowCache, klakiniCache, numberPairCache, numberCategoryCache, namesMiracleRepo, linguisticService, sampleNamesCache)
+	numerologyHandler := handler.NewNumerologyHandler(numerologyCache, shadowCache, klakiniCache, numberPairCache, numberCategoryCache, namesMiracleRepo, linguisticService, sampleNamesCache, phoneNumberSvc)
 	promotionalCodeRepo := repository.NewPostgresPromotionalCodeRepository(db)
 	memberHandler := handler.NewMemberHandler(memberService, savedNameService, buddhistDayService, shippingAddressService, klakiniCache, numberPairCache, store, promotionalCodeRepo)
 	savedNameHandler := handler.NewSavedNameHandler(savedNameService, klakiniCache, numberPairCache, store)
@@ -328,6 +328,33 @@ func main() {
 		return c.SendString("")
 	})
 
+	// Chart Logic Explanation
+	app.Get("/chart-logic", func(c *fiber.Ctx) error {
+		getLocStr := func(key string) string {
+			v := c.Locals(key)
+			if v == nil || v == "<nil>" {
+				return ""
+			}
+			return fmt.Sprintf("%v", v)
+		}
+		return templ_render.Render(c, layout.Main(
+			layout.SEOProps{
+				Title:       "หลักการทำงานของกราฟวงกลม",
+				Description: "ทำความเข้าใจหลักการคำนวณกราฟความสมบูรณ์ของชีวิตในระบบ NumberNiceIC",
+				Keywords:    "Chart Logic, กราฟวงกลม, หลักการคำนวณ",
+				Canonical:   "https://xn--b3cu8e7ah6h.com/chart-logic",
+				OGType:      "website",
+			},
+			c.Locals("IsLoggedIn").(bool),
+			c.Locals("IsAdmin").(bool),
+			c.Locals("IsVIP").(bool),
+			"chart-logic",
+			getLocStr("toast_success"),
+			getLocStr("toast_error"),
+			pages.ChartLogic(),
+		))
+	})
+
 	// About Us Page
 	app.Get("/about", func(c *fiber.Ctx) error {
 		// Helper to get string from Locals safely
@@ -441,6 +468,33 @@ func main() {
 	// Analyzer Page
 	app.Get("/analyzer", numerologyHandler.AnalyzeStreaming)
 
+	// Number Analysis Page
+	app.Get("/number-analysis", func(c *fiber.Ctx) error {
+		getLocStr := func(key string) string {
+			v := c.Locals(key)
+			if v == nil || v == "<nil>" {
+				return ""
+			}
+			return fmt.Sprintf("%v", v)
+		}
+		return templ_render.Render(c, layout.Main(
+			layout.SEOProps{
+				Title:       "วิเคราะห์เบอร์โทรศัพท์",
+				Description: "ตรวจสอบพลังตัวเลขเบอร์โทรศัพท์ เพื่อเสริมดวงชะตาและชีวิต (Coming Soon)",
+				Keywords:    "วิเคราะห์เบอร์, เบอร์มงคล, เลขศาสตร์",
+				Canonical:   "https://xn--b3cu8e7ah6h.com/number-analysis",
+				OGType:      "website",
+			},
+			c.Locals("IsLoggedIn").(bool),
+			c.Locals("IsAdmin").(bool),
+			c.Locals("IsVIP").(bool),
+			"number-analysis",
+			getLocStr("toast_success"),
+			getLocStr("toast_error"),
+			pages.NumberAnalysis(),
+		))
+	})
+
 	app.Get("/decode", numerologyHandler.Decode)
 	app.Get("/solar-system", numerologyHandler.GetSolarSystem)
 	app.Get("/similar-names-initial", numerologyHandler.GetSimilarNamesInitial)
@@ -455,19 +509,22 @@ func main() {
 	// API Routes
 	api := app.Group("/api")
 	api.Get("/analyze", numerologyHandler.AnalyzeAPI)
+	api.Get("/number-analysis", numerologyHandler.AnalyzePhoneNumberAPI) // Updated route path
 	api.Get("/analyze-linguistically", numerologyHandler.AnalyzeLinguisticallyAPI)
 	api.Get("/sample-names", numerologyHandler.GetSampleNamesAPI)
 	api.Get("/lucky-number", func(c *fiber.Ctx) error {
 		category := c.Query("category")
+		index := c.QueryInt("index", 0)
 		if category == "" {
 			return c.Status(400).JSON(fiber.Map{"error": "category is required"})
 		}
-		number, keywords, err := phoneNumberSvc.GetLuckyNumberByCategory(category)
+		number, sum, keywords, err := phoneNumberSvc.GetLuckyNumberByCategory(category, index)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 		}
 		return c.JSON(fiber.Map{
 			"number":   number,
+			"sum":      sum,
 			"keywords": keywords,
 		})
 	})
@@ -564,6 +621,9 @@ func main() {
 	admin.Get("/buddhist-days", adminHandler.ShowBuddhistDaysPage)
 	admin.Post("/buddhist-days", adminHandler.AddBuddhistDay)
 	admin.Delete("/buddhist-days/:id", adminHandler.DeleteBuddhistDay)
+
+	// API Routes for Mobile App
+	app.Get("/api/analyze", numerologyHandler.AnalyzeAPI)
 
 	// API Docs
 	admin.Get("/api-docs", adminHandler.ShowAPIDocsPage)

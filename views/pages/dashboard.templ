@@ -275,6 +275,9 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
                         onclick={ navigateToAnalyzer(name.Name, name.BirthDayRaw) }>
 						<td>
 							<div style="display: flex; align-items: center; gap: 0.25rem;">
+                                <span style="font-size: 0.9em; font-weight: 300; color: #cbd5e0; margin-right: 8px;">
+                                    #{ fmt.Sprintf("%d", i+1) }
+                                </span>
 								<div class={ "name-cell", templ.KV("name-top-tier", name.IsTopTier) } style="font-size: 1.1rem;">
 									for _, dc := range name.DisplayNameHTML {
 										if dc.IsBad {

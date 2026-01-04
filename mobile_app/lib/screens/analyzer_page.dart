@@ -13,6 +13,7 @@ import '../widgets/upgrade_dialog.dart';
 import 'login_page.dart';
 import 'register_page.dart';
 import 'main_tab_page.dart';
+import '../widgets/category_nested_donut.dart';
 import 'numerology_detail_page.dart';
 import 'linguistic_detail_page.dart';
 import 'shop_page.dart';
@@ -878,24 +879,26 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
                   ],
                 ),
                 const SizedBox(height: 10),
-                // Action Hint (Separate Row)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: badgeBg.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(6),
+                    color: badgeBg, // Solid color for better visibility
+                    borderRadius: BorderRadius.circular(20), // More rounded like a button
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2)),
+                    ],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.touch_app, size: 12, color: badgeText.withOpacity(0.8)),
+                      Icon(Icons.touch_app, size: 14, color: badgeText), // Solid color
                       const SizedBox(width: 4),
                       Text(
                         'วิเคราะห์',
                         style: GoogleFonts.kanit(
-                          fontSize: 10, 
+                          fontSize: 12, 
                           fontWeight: FontWeight.bold, 
-                          color: badgeText.withOpacity(0.8)
+                          color: badgeText // Solid color
                         ),
                       ),
                     ],
@@ -1641,60 +1644,85 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
             child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Top Section: Save Button + Scores (Web-inspired Style)
+          // 1. Name and Toggles Row (Moved to Top)
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // 1.1 Good/Bad Breakdown
-              Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
-                      borderRadius: BorderRadius.circular(20),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      children: sunDisplayNameHTML.map((dc) {
+                        return Text(
+                          dc['char'] ?? '',
+                          style: GoogleFonts.kanit(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: dc['is_bad'] == true ? Colors.red : const Color(0xFF2D3748),
+                          ),
+                        );
+                      }).toList(),
                     ),
-                    child: Text(
-                      'ดี +${(solar['num_positive_score'] as int? ?? 0) + (solar['sha_positive_score'] as int? ?? 0)}',
-                      style: GoogleFonts.kanit(color: const Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFEBEE),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'ร้าย ${(solar['num_negative_score'] as int? ?? 0) + (solar['sha_negative_score'] as int? ?? 0)}',
-                      style: GoogleFonts.kanit(color: const Color(0xFFC62828), fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                  ),
-                ],
-              ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(color: Colors.grey[200]!),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 4, offset:const Offset(0,2))],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.calendar_today, size: 14, color: Colors.blueAccent),
+                              const SizedBox(width: 6),
+                              Text(inputDay, style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey[800])),
+                            ],
+                          ),
+                        ),
+                        _buildKlakiniBadge(klakiniChars),
 
-              // 1.2 Total Score
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text('คะแนนรวม', style: GoogleFonts.kanit(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w300)),
-                  Text(
-                    '${(solar['grand_total_score'] ?? 0) > 0 ? '+' : ''}${solar['grand_total_score'] ?? 0}',
-                    style: GoogleFonts.kanit(
-                      fontSize: 42, 
-                      height: 1.1,
-                      fontWeight: FontWeight.w300, 
-                      color: (solar['grand_total_score'] ?? 0) >= 0 ? const Color(0xFF26DE81) : const Color(0xFFEE5253),
+                      ],
                     ),
-                  ),
-                ],
+                    if (klakiniChars.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      RichText(
+                        text: TextSpan(
+                          style: GoogleFonts.kanit(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                          children: [
+                            const TextSpan(text: 'พยัญชนะหรือสระ'),
+                            TextSpan(
+                              text: 'สีแดง',
+                              style: TextStyle(color: Colors.red[700], fontWeight: FontWeight.bold),
+                            ),
+                            const TextSpan(text: 'คือกาลกิณี'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          
+          const SizedBox(height: 12),
 
-          // 2. Main Action Buttons (Two Big Row Buttons)
+          // 2. Main Action Buttons
           Row(
             children: [
               Expanded(
@@ -1750,119 +1778,25 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          
+          const SizedBox(height: 12),
 
-          // 3. Name and Toggles Row (Bottom)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      children: sunDisplayNameHTML.map((dc) {
-                        return Text(
-                          dc['char'] ?? '',
-                          style: GoogleFonts.kanit(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: dc['is_bad'] == true ? Colors.red : const Color(0xFF2D3748),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            border: Border.all(color: Colors.grey[200]!),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.calendar_today, size: 12, color: Colors.blueAccent),
-                              const SizedBox(width: 4),
-                              Text(inputDay, style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.w500)),
-                            ],
-                          ),
-                        ),
-                        _buildKlakiniBadge(klakiniChars),
-                        // 3.3 Save Chip Button (Outstanding Style)
-                        InkWell(
-                          onTap: _saveCurrentName,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF4F46E5), Color(0xFF3730A3)], // Indigo 600 to 800
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(25),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF4F46E5).withOpacity(0.4),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                              border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.save_outlined, size: 14, color: Colors.white),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'บันทึกชื่อนี้',
-                                  style: GoogleFonts.kanit(
-                                    fontSize: 13, 
-                                    fontWeight: FontWeight.bold, 
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (klakiniChars.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      RichText(
-                        text: TextSpan(
-                          style: GoogleFonts.kanit(
-                            fontSize: 10,
-                            color: Colors.grey[700],
-                            fontWeight: FontWeight.w500,
-                          ),
-                          children: [
-                            const TextSpan(text: 'พยัญชนะหรือสระ'),
-                            TextSpan(
-                              text: 'สีแดง',
-                              style: TextStyle(color: Colors.red[700], fontWeight: FontWeight.bold),
-                            ),
-                            const TextSpan(text: 'คือกาลกิณี'),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
+          // 3. Category Nested Donut Chart
+          if (solar['category_breakdown'] != null)
+             Builder(
+               builder: (context) {
+                 final breakdown = solar['category_breakdown'] as Map<String, dynamic>;
+                 final numPairs = (solar['numerology_pairs'] as List?)?.length ?? 0;
+                 final shaPairs = (solar['shadow_pairs'] as List?)?.length ?? 0;
+                 return Padding(
+                   padding: const EdgeInsets.only(bottom: 24),
+                   child: CategoryNestedDonut(
+                     categoryBreakdown: breakdown,
+                     totalPairs: numPairs + shaPairs,
+                   ),
+                 );
+               },
+             ),
         ],
       ),
      ),
@@ -2150,56 +2084,189 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
     final sunDisplayNameHTML = (solar['sun_display_name_html'] as List?) ?? [];
     final isSunDead = solar['is_sun_dead'] == true;
 
-    return Transform.translate(
-      offset: const Offset(0, -10),
-      child: Center(
-            child: SizedBox(
-              width: 320,
-              height: 320,
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.center,
-                children: [
-                // Orbits (Static)
-                CustomPaint(painter: OrbitPainter(), size: const Size(320, 320)),
-                
-                // Planets (Animated)
-                // Use separate controllers to maintain equal linear velocity
-                _buildPlanets((solar['shadow_pairs'] as List?) ?? [], 140, _rotationControllerOuter, false),
-                _buildPlanets((solar['numerology_pairs'] as List?) ?? [], 90, _rotationController, false),
+    // Calculate Scores for Side Panel
+    final numPos = solar['num_positive_score'] as int? ?? 0;
+    final shaPos = solar['sha_positive_score'] as int? ?? 0;
+    final numNeg = solar['num_negative_score'] as int? ?? 0;
+    final shaNeg = solar['sha_negative_score'] as int? ?? 0;
+    
+    final totalPos = numPos + shaPos;
+    final totalNeg = numNeg + shaNeg;
+    final grandTotal = solar['grand_total_score'] as int? ?? 0;
 
-                // Sun (Static)
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSunDead ? Colors.grey[600] : const Color(0xFFFFD700),
-                    boxShadow: isSunDead ? [] : [
-                      BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.5), blurRadius: 20, spreadRadius: 5),
-                      BoxShadow(color: const Color(0xFFFFA500).withOpacity(0.3), blurRadius: 40, spreadRadius: 10),
-                    ],
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // LEFT PANEL: Scores & Save
+          Container(
+            padding: const EdgeInsets.only(left: 16, right: 16), // Added left padding
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start, // Left align text
+              children: [
+                // Total Score Label
+                Text(
+                  'คะแนนรวม',
+                  style: GoogleFonts.kanit(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.bold,
                   ),
-                  padding: const EdgeInsets.all(10),
-                  child: Center(
-                    child: Wrap(
-                      alignment: WrapAlignment.center,
-                      children: sunDisplayNameHTML.map((dc) {
-                        return Text(
-                          dc['char'] ?? '',
+                ),
+                const SizedBox(height: 4),
+                // Total Score Value
+                Row(
+                  children: [
+                    const Icon(Icons.emoji_events_rounded, color: Color(0xFFD4AF37), size: 24), // Trophy
+                    const SizedBox(width: 4),
+                    Text(
+                      '${grandTotal > 0 ? "+" : ""}$grandTotal',
+                      style: GoogleFonts.kanit(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        color: grandTotal >= 0 ? const Color(0xFF00C853) : const Color(0xFFFF3D00), // Bright Green or Red
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Positive/Negative Pills in ROW
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                     // Positive Pill
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), // Reduced padding
+                      margin: const EdgeInsets.only(right: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8F5E9), // Light Green
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        'ดี +$totalPos',
+                        style: GoogleFonts.kanit(
+                          fontSize: 12, // Reduced font size
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF2E7D32),
+                        ),
+                      ),
+                    ),
+                    // Negative Pill
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), // Reduced padding
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFEBEE), // Light Red
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        'ร้าย $totalNeg',
+                        style: GoogleFonts.kanit(
+                          fontSize: 12, // Reduced font size
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFFC62828),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 24),
+
+                // Save Button (Orange Gradient)
+                InkWell(
+                  onTap: _saveCurrentName,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                       gradient: const LinearGradient(
+                        colors: [Color(0xFFFFD54F), Color(0xFFFFCA28)], // Amber/Orange Gradient
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.orange.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.save_outlined, color: Colors.white, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'บันทึกชื่อ',
                           style: GoogleFonts.kanit(
-                            fontSize: name.length > 5 ? 16 : 20,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: dc['is_bad'] == true ? Colors.red : (isSunDead ? Colors.grey[300] : Colors.black87),
+                            color: Colors.white,
                           ),
-                        );
-                      }).toList(),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ],
+            ),
           ),
-        ),
+
+          // RIGHT PANEL: Solar System Stack
+          Flexible(
+            child: SizedBox(
+              width: 280, // Slightly smaller to fit side by side
+              height: 280,
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  // Orbits (Static)
+                  CustomPaint(painter: OrbitPainter(), size: const Size(280, 280)),
+                  
+                  // Planets (Animated)
+                  _buildPlanets((solar['shadow_pairs'] as List?) ?? [], 120, _rotationControllerOuter, false),
+                  _buildPlanets((solar['numerology_pairs'] as List?) ?? [], 80, _rotationController, false),
+
+                  // Sun (Static)
+                  Container(
+                    width: 100, // Smaller Sun
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isSunDead ? Colors.grey[600] : const Color(0xFFFFD700),
+                      boxShadow: isSunDead ? [] : [
+                        BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.5), blurRadius: 20, spreadRadius: 5),
+                        BoxShadow(color: const Color(0xFFFFA500).withOpacity(0.3), blurRadius: 40, spreadRadius: 10),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(5),
+                    child: Center(
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        children: sunDisplayNameHTML.map((dc) {
+                          return Text(
+                            dc['char'] ?? '',
+                            style: GoogleFonts.kanit(
+                              fontSize: name.length > 5 ? 14 : 18,
+                              fontWeight: FontWeight.bold,
+                              color: dc['is_bad'] == true ? const Color(0xFFFF4757) : (isSunDead ? Colors.grey[300] : const Color(0xFFB8860B)), // Matching Web Colors
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2223,8 +2290,8 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
             final color = _getPairColor(pair['meaning']?['pair_type'] ?? '');
 
             return Positioned(
-              left: 160 + radius * math.cos(angle) - 18,
-              top: 160 + radius * math.sin(angle) - 18,
+              left: 140 + radius * math.cos(angle) - 18, // Center is 140 for 280 size
+              top: 140 + radius * math.sin(angle) - 18,
               child: Container(
                 width: 36,
                 height: 36,
@@ -2435,7 +2502,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
 
     for (int i = 0; i < names.length; i++) {
         if (i < limit) {
-             tableRows.add(_buildNameTableRow(names[i]));
+             tableRows.add(_buildNameTableRow(names[i], i));
         } else {
             showLockMessage = true;
             break;
@@ -2606,7 +2673,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
     );
   }
 
-  TableRow _buildNameTableRow(Map n) {
+  TableRow _buildNameTableRow(Map n, int index) {
     final isPremium = n['is_top_tier'] == true;
     final displayName = n['display_name_html'] as List;
     final similarity = (n['similarity'] as num? ?? 0) * 100;
@@ -2632,6 +2699,18 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
             child: Row(
               children: [
+                // Rank Number #1, #2, #3 ...
+                Padding(
+                   padding: const EdgeInsets.only(right: 8),
+                   child: Text(
+                     '#${index + 1}',
+                     style: GoogleFonts.kanit(
+                       fontSize: 10,
+                       fontWeight: FontWeight.bold,
+                       color: Colors.grey[400],
+                     ),
+                   ),
+                ),
                 if (isPremium)
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
@@ -2824,8 +2903,8 @@ class OrbitPainter extends CustomPainter {
       }
     }
 
-    drawDashedCircle(90);
-    drawDashedCircle(140);
+    drawDashedCircle(80);
+    drawDashedCircle(120);
   }
 
   @override

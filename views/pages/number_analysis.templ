@@ -1,0 +1,507 @@
+package pages
+
+templ NumberAnalysis() {
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap');
+        /* Number Analysis Page Styles */
+        .na-grid-layout { display: grid; grid-template-columns: 350px minmax(0, 1fr); gap: 2rem; width: 100%; align-items: start; padding: 0 1rem; }
+        .na-left-col { width: 100%; display: flex; flex-direction: column; align-items: center; position: sticky; top: 2rem; }
+        .na-details-container { padding: 1.5rem; }
+        .na-badge { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 15px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0; font-family: 'Kanit', sans-serif; }
+        .na-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; margin-bottom: 0px; background-color: #FFFFFF; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: background-color 0.2s; }
+        .na-row:hover { background-color: #F9FAFB; border-color: #D1D5DB; }
+        .na-row.na-sum { background-color: #FFFBEB; border-color: #FEF08A; }
+        .na-text { flex: 1; min-width: 0; font-size: 13px; color: #1F2937; font-weight: 500; line-height: 1.4; word-wrap: break-word; font-family: 'Kanit', sans-serif; }
+        .na-header { font-size: 13px; font-weight: bold; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; border-bottom: 1px solid #F3F4F6; padding-bottom: 6px; display: flex; align-items: center; gap: 8px; margin-top: 16px; font-family: 'Kanit', sans-serif; }
+        .na-header svg { width: 14px; height: 14px; }
+        .na-item-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+        .na-label-sum { font-size: 12px; color: #D97706; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; font-family: 'Kanit', sans-serif; }
+        .na-label-sum svg { width: 16px; height: 16px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        /* Phone Input Icon Fix */
+        .na-icon-input svg { width: 24px; height: 24px; }
+
+        @keyframes ping {
+            75%, 100% { transform: scale(2); opacity: 0; }
+        }
+
+        /* Golden Text Effect for Perfect Numbers */
+        .perfect-number {
+             background: linear-gradient(to right, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C);
+             background-size: 200% auto;
+             -webkit-background-clip: text;
+             background-clip: text;
+             color: transparent;
+             text-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+             animation: shine 3s infinite linear;
+             font-weight: 800 !important;
+             display: inline-block;
+             transform: scale(1.05);
+             transition: all 0.5s ease;
+        }
+
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        @media (max-width: 768px) {
+            .na-grid-layout { display: flex; flex-direction: column; align-items: center; }
+            .na-left-col { position: static; width: auto; margin-bottom: 2rem; }
+            .na-grid-layout { grid-template-columns: 1fr; }
+        }
+    </style>
+    <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+            <h1 class="text-3xl font-extrabold text-gray-900 sm:text-4xl" style="font-family: 'Kanit', sans-serif;">
+                วิเคราะห์เบอร์โทรศัพท์
+            </h1>
+            <p class="mt-4 max-w-2xl text-xl text-gray-500 mx-auto" style="font-family: 'Kanit', sans-serif;">
+                ตรวจสอบพลังตัวเลขเบอร์โทรศัพท์ เพื่อเสริมดวงชะตาและชีวิต
+            </p>
+        </div>
+
+
+        <div class="mt-12 max-w-lg mx-auto">
+             <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 1rem; margin-bottom: 2rem;">
+                <!-- Premium Input Container -->
+                <div style="position: relative; width: 100%; max-width: 480px; margin: 0 auto;">
+                    <!-- Absolute Icon -->
+                    <div style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #9CA3AF;">
+                        <svg style="width: 28px; height: 28px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                    </div>
+                    <!-- Input Field -->
+                    <input type="tel" 
+                           name="number" 
+                           style="width: 100%; padding: 20px 60px 20px 64px; font-size: 28px; font-weight: 500; font-family: monospace; letter-spacing: 0.15em; color: #1F2937; background-color: #FFFFFF; border: 2px solid #E5E7EB; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); outline: none; transition: all 0.2s ease; box-sizing: border-box;"
+                           placeholder="09XXXXXXXX" 
+                           maxlength="10"
+                           oninput="this.style.borderColor = '#4F46E5'; this.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.2)'; window.handlePhoneInput(this);"
+                           onblur="this.style.borderColor = '#E5E7EB'; this.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';"
+                           onfocus="this.style.borderColor = '#4F46E5'; this.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.2)';"
+                           autocomplete="off" />
+                    
+                    <!-- Clear Button (Delete Icon) -->
+                    <button id="clear-phone-input" 
+                            onclick="window.clearPhoneInput()"
+                            style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: #F3F4F6; border: none; border-radius: 50%; width: 36px; height: 36px; display: none; align-items: center; justify-content: center; cursor: pointer; color: #6B7280; transition: all 0.2s; z-index: 10;"
+                            onmouseover="this.style.background='#E5E7EB'; this.style.color='#1F2937'"
+                            onmouseout="this.style.background='#F3F4F6'; this.style.color='#6B7280'">
+                        <svg style="width: 20px; height: 20px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Helper Text -->
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 15px; color: #6B7280; background-color: white; padding: 8px 20px; border-radius: 9999px; border: 1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    <span style="display: flex; height: 12px; width: 12px; position: relative;">
+                      <span style="position: absolute; display: inline-flex; height: 100%; width: 100%; border-radius: 50%; background-color: #4ADE80; opacity: 0.75; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
+                      <span style="position: relative; display: inline-flex; border-radius: 50%; height: 12px; width: 12px; background-color: #22C55E;"></span>
+                    </span>
+                    <span>ระบบวิเคราะห์อัตโนมัติเมื่อครบ 10 หลัก</span>
+                </div>
+             </div>
+        </div>
+
+        <!-- Results Container (Separate from Input, Full Width) -->
+        <!-- Results Container (Separate from Input, Full Width) -->
+        <div id="analysis-results" style="display: none; width: 100%; margin-top: 2rem; flex-direction: column; align-items: center; border: none; box-shadow: none; background: transparent;" class="fade-slide-in">
+                    
+                    <!-- Phone Number Header (No Label, No Frame, No Shadow) -->
+                    <div style="text-align: center; margin-bottom: 0; width: 100%; background: transparent; border: none; box-shadow: none;">
+                        
+                        <!-- 1. Perfect Number Layout -->
+                        <div id="perfect-layout" style="display: none; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 1.25rem; transition: all 0.7s ease; opacity: 0; transform: scale(0.95); background: transparent;">
+                             <div style="position: relative; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center;">
+                                  <!-- Premium Wreath Image (Even Smaller) -->
+                                  <img src="/images/golden_wheat_wreath.png" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;" alt="Golden Wreath"/>
+                                  
+                                  <!-- Center Content: The Best + Stars (More Compact) -->
+                                  <div style="position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: -3px;">
+                                       <span style="font-size: 26px; font-weight: 900; background: linear-gradient(to bottom, #FDE68A, #D97706, #92400E); -webkit-background-clip: text; background-clip: text; color: transparent; text-transform: uppercase; font-family: 'Kanit', sans-serif; letter-spacing: -0.5px;">The Best</span>
+                                       <div style="display: flex; gap: 2px; margin-top: 1px; align-items: center; justify-content: center;">
+                                            <span style="color: #F59E0B; font-size: 14px;">★</span>
+                                            <span style="color: #F59E0B; font-size: 14px;">★</span>
+                                            <span style="color: #F59E0B; font-size: 18px; transform: scale(1.1); position: relative; top: -1px;">★</span>
+                                            <span style="color: #F59E0B; font-size: 14px;">★</span>
+                                            <span style="color: #F59E0B; font-size: 14px;">★</span>
+                                       </div>
+                                  </div>
+                             </div>
+                             <!-- Golden Phone Number (Even Smaller) -->
+                             <h2 id="golden-phone-number" class="perfect-number" style="font-size: 36px; font-weight: 800; font-family: monospace; margin-top: -25px; position: relative; z-index: 5; text-shadow: none;"></h2>
+                        </div>
+
+                        <!-- 2. Normal Layout (Smaller) -->
+                        <div id="normal-layout" style="display: block; width: 100%; text-align: center; background: transparent;">
+                             <h2 id="display-phone-number" style="font-size: 32px; font-weight: 700; color: #1F2937; letter-spacing: 0.1em; font-family: monospace; margin: 0;"></h2>
+                        </div> 
+                    </div>
+
+                    <!-- Grid Layout: Force 2 Columns using CSS -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 2rem; width: 100%; max-width: 1200px; margin: 0 auto;">
+                        
+                        <!-- Left Column: Chart + Legend -->
+                        <div style="flex: 0 0 auto; width: 320px; display: flex; flex-direction: column; align-items: center;">
+                            <div class="solar-system-container" style="position: relative; width: 320px; height: 320px;">
+                                <style>
+                                    @keyframes solar-spin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+                                    @keyframes solar-anti-spin { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+                                    @keyframes pulse-sun { 0% { transform: scale(1); box-shadow: 0 0 20px #FFD700; } 50% { transform: scale(1.05); box-shadow: 0 0 40px #FFD700; } 100% { transform: scale(1); box-shadow: 0 0 20px #FFD700; } }
+                                </style>
+                                <div class="solar-system" style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
+                                     <!-- Sun (Now displays SUM as Badge only) -->
+                                     <div class="sun" style="width: 120px; height: 120px; position: absolute; z-index: 10; background: #FFD700; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 20px #FFD700; animation: pulse-sun 3s infinite;">
+                                        <div id="sun-sum-badge-box" class="flex flex-col items-center justify-center w-full h-full relative">
+                                            <!-- Label removed as requested -->
+                                        </div>
+                                     </div>
+                                     <!-- Orbits -->
+                                     <div class="orbit orbit-inner" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 180px; height: 180px; border: 1px dashed #FF9800; border-radius: 50%; opacity: 0.6; pointer-events: none;"></div>
+                                     <div class="orbit orbit-outer" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 280px; height: 280px; border: 1px dashed #FF9800; border-radius: 50%; opacity: 0.4; pointer-events: none;"></div>
+                                     
+                                     <!-- Planets Container (Dynamic) -->
+                                     <div id="solar-planets-container"></div>
+                                </div>
+                            </div>
+                            <!-- Legend inside Left Column -->
+                            <div style="text-align: center; color: #6B7280; font-size: 14px; margin-top: 1rem;">
+                                <p style="margin: 0;">วงใน: คู่เลขหลัก | วงนอก: คู่เลขแฝง</p>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Meaning Table (Liquid Width) -->
+                        <div style="flex: 1; width: 100%; background: white; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #F3F4F6; overflow: hidden; display: flex; flex-direction: column; min-width: 0;">
+                            <div style="padding: 1.5rem; background: white; border-bottom: 1px solid #F3F4F6;">
+                                <h3 style="font-weight: 700; color: #1F2937; font-size: 1.125rem; display: flex; align-items: center; gap: 0.5rem; margin: 0; font-family: 'Kanit', sans-serif;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #4F46E5;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                    คำทำนายและความหมาย
+                                </h3>
+                            </div>
+                            <div id="analysis-details-container" style="padding: 1.5rem;">
+                                <!-- Dynamic Content will be injected here -->
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+
+
+        <script>
+             window.handlePhoneInput = function(e) {
+                  const clearBtn = document.getElementById('clear-phone-input');
+                  if (clearBtn) clearBtn.style.display = e.value.length > 0 ? 'flex' : 'none';
+
+                  let value = e.value.replace(/\D/g, '');
+                  if (value.length > 10) value = value.slice(0, 10);
+                  e.value = value;
+                  
+                  if (value.length === 10) {
+                      window.performNumberAnalysisV2(value);
+                  } else {
+                      const res = document.getElementById('analysis-results');
+                      if(res) res.style.display = 'none';
+                  }
+             }
+
+             document.addEventListener('DOMContentLoaded', () => {
+                 const urlParams = new URLSearchParams(window.location.search);
+                 const number = urlParams.get('number');
+                 if (number && number.length === 10) {
+                     const input = document.querySelector('input[name="number"]');
+                     if (input) {
+                         input.value = number;
+                         window.handlePhoneInput(input);
+                     }
+                 }
+             });
+
+            window.clearPhoneInput = function() {
+                const input = document.querySelector('input[name="number"]');
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                    window.handlePhoneInput(input);
+                }
+            }
+
+            window.triggerAnalyze = function() {
+                const input = document.querySelector('input[name="number"]');
+                if (input && input.value.length === 10) {
+                    window.performNumberAnalysisV2(input.value);
+                }
+            }
+
+            window.performNumberAnalysisV2 = function(phoneNumber) {
+                fetch(`/api/analyze-number?number=${phoneNumber}`)
+                .then(response => response.json())
+                .then(data => {
+                    const resultsDiv = document.getElementById('analysis-results');
+                    const displayPhoneNumber = document.getElementById('display-phone-number');
+                    const sunSumValue = document.getElementById('sun-sum-value');
+                    const sunSumMeaning = document.getElementById('sun-sum-meaning');
+                    const planetsContainer = document.getElementById('solar-planets-container');
+                    
+                    if(resultsDiv) resultsDiv.style.display = 'flex';
+                    
+                    // 1. Display Phone Number in Header (No Dashes)
+                    let formatted = phoneNumber;
+                    displayPhoneNumber.innerText = formatted;
+
+                    // Perfect Number Logic (Gold Glow)
+                    // Criteria: All Main Pairs + Sum must be Good (Green/Teal colors)
+                    const isGoodColor = (color) => {
+                        if (!color) return false;
+                        const c = color.toUpperCase();
+                        // Backend Colors: #2E7D32 (D10), #43A047 (D8), #66BB6A (D5)
+                        // Frontend Colors: #10B981, #0D9488
+                        return c.includes('2E7D32') || c.includes('43A047') || c.includes('66BB6A') || 
+                               c.includes('10B981') || c.includes('0D9488') || c.includes('14B8A6');
+                    };
+                    
+                    const mainPairsData = data.main_pairs || [];
+                    const sumPairData = data.sum_meaning;
+                    
+                    const isMainPerfect = mainPairsData.length > 0 && mainPairsData.every(p => p.meaning && isGoodColor(p.meaning.color));
+                    const isSumPerfect = sumPairData && sumPairData.meaning && isGoodColor(sumPairData.meaning.color);
+
+                    const normalLayout = document.getElementById('normal-layout');
+                    const perfectLayout = document.getElementById('perfect-layout');
+                    const goldenPhoneEl = document.getElementById('golden-phone-number');
+                    
+                    if (isMainPerfect && isSumPerfect) {
+                        // Switch to Perfect Layout
+                        if(normalLayout) normalLayout.style.display = 'none';
+                        if(perfectLayout) {
+                             perfectLayout.style.display = 'flex';
+                             // Small delay to trigger transition
+                             setTimeout(() => {
+                                 perfectLayout.style.opacity = '1';
+                                 perfectLayout.style.transform = 'scale(1)';
+                             }, 50);
+                        }
+                        if(goldenPhoneEl) {
+                             goldenPhoneEl.innerText = formatted;
+                        }
+                    } else {
+                        // Switch to Normal Layout
+                        if(perfectLayout) {
+                             perfectLayout.style.display = 'none';
+                             perfectLayout.style.opacity = '0';
+                             perfectLayout.style.transform = 'scale(0.95)';
+                        }
+                        if(normalLayout) normalLayout.style.display = 'block';
+                        
+                        displayPhoneNumber.innerText = formatted;
+                    }
+                    
+                    // 2. Display Sum in Sun as Badge (Label Removed)
+                    const sunSumContainer = document.getElementById('sun-sum-badge-box');
+                    if(sunSumContainer) sunSumContainer.innerHTML = '';
+
+
+                    if (data.sum_meaning) {
+                        const badge = document.createElement('div');
+                        badge.innerText = data.sum_meaning.pair;
+                        
+                        // Style to match planets but slightly centered
+                        badge.style.width = '44px';
+                        badge.style.height = '44px';
+                        badge.style.borderRadius = '50%';
+                        badge.style.backgroundColor = (data.sum_meaning.meaning && data.sum_meaning.meaning.color) ? data.sum_meaning.meaning.color : '#9E9E9E';
+                        badge.style.color = '#fff';
+                        badge.style.display = 'flex';
+                        badge.style.justifyContent = 'center';
+                        badge.style.alignItems = 'center';
+                        badge.style.fontWeight = 'bold';
+                        badge.style.fontSize = '1.1rem';
+                        badge.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+                        badge.style.border = '2px solid #fff';
+                        badge.style.zIndex = '30';
+                        badge.style.marginTop = '8px';
+                        badge.style.transition = 'transform 0.2s';
+                        badge.onmouseover = () => badge.style.transform = 'scale(1.1)';
+                        badge.onmouseout = () => badge.style.transform = 'scale(1)';
+                        badge.style.cursor = 'help';
+
+                        if (data.sum_meaning.meaning && data.sum_meaning.meaning.miracle_desc) {
+                             badge.title = "ผลรวม: " + data.sum_meaning.meaning.miracle_desc;
+                        }
+
+                        if(sunSumContainer) sunSumContainer.appendChild(badge);
+                    }
+
+                // 3. Render Planets (Keep existing logic)
+                    planetsContainer.innerHTML = '';
+
+                    // Helper to create planet
+                    function createPlanet(item, index, total, isInner) {
+                        const duration = isInner ? 20 : 30; // seconds
+                        const delay = -(index * (duration / total)); 
+
+                        const container = document.createElement('div');
+                        container.style.position = 'absolute';
+                        container.style.top = '50%';
+                        container.style.left = '50%';
+                        container.style.transform = 'translate(-50%, -50%)';
+                        container.style.animation = `solar-spin ${duration}s linear infinite`;
+                        container.style.animationDelay = `${delay}s`;
+                        container.style.zIndex = '20';
+                        
+                        // Set size to match orbit diameter
+                        const size = isInner ? '180px' : '280px';
+                        container.style.width = size;
+                        container.style.height = size;
+                        container.style.pointerEvents = 'none';
+
+                        const planet = document.createElement('div');
+                        planet.innerText = item.pair;
+                        planet.style.backgroundColor = (item.meaning && item.meaning.color) ? item.meaning.color : '#9E9E9E';
+                        planet.style.animation = `solar-anti-spin ${duration}s linear infinite`; 
+                        planet.style.animationDelay = `${delay}s`;
+                        
+                        // Planet Circle Styles
+                        planet.style.position = 'absolute';
+                        planet.style.top = '-15px'; 
+                        planet.style.left = '50%';
+                        planet.style.marginLeft = '-15px'; 
+                        planet.style.width = '30px';
+                        planet.style.height = '30px';
+                        planet.style.borderRadius = '50%';
+                        planet.style.display = 'flex';
+                        planet.style.justifyContent = 'center';
+                        planet.style.alignItems = 'center';
+                        planet.style.fontWeight = 'bold';
+                        planet.style.fontSize = '0.9rem';
+                        planet.style.color = '#fff';
+                        planet.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+                        planet.style.border = '2px solid #fff';
+                        planet.style.pointerEvents = 'auto'; // Enable events on planet
+                        planet.style.cursor = 'pointer';
+                        planet.className = 'transition-transform hover:scale-125';
+                        
+                        if(item.meaning && item.meaning.miracle_desc) {
+                            planet.title = item.meaning.miracle_desc;
+                        }
+
+                        container.appendChild(planet);
+                        return container;
+                    }
+
+                    if (data.main_pairs) data.main_pairs.forEach((item, i) => planetsContainer.appendChild(createPlanet(item, i, data.main_pairs.length, true)));
+                    if (data.hidden_pairs) data.hidden_pairs.forEach((item, i) => planetsContainer.appendChild(createPlanet(item, i, data.hidden_pairs.length, false)));
+
+                    // 4. Render Analysis Details (Sections: Sum, Main, Hidden) - USING CSS CLASSES
+                    const detailsContainer = document.getElementById('analysis-details-container');
+                    
+                    if(detailsContainer) {
+                        detailsContainer.innerHTML = '';
+                        let count = 0;
+
+                        // Helper for Circle Badge
+                        const createBadge = (num, color) => {
+                            const b = document.createElement('div');
+                            b.className = 'na-badge';
+                            b.style.backgroundColor = color || '#9E9E9E';
+                            b.innerText = num;
+                            return b;
+                        };
+
+                        // Helper for Item Row
+                        const createItemRow = (item, isSum = false) => {
+                             const row = document.createElement('div');
+                             row.className = 'na-row' + (isSum ? ' na-sum' : '');
+                             
+                             const badge = createBadge(item.pair, (item.meaning && item.meaning.color) ? item.meaning.color : null);
+                             
+                             const content = document.createElement('div');
+                             content.className = 'na-text';
+                             
+                             const keywords = (item.meaning && item.meaning.keywords && item.meaning.keywords.length > 0) 
+                                ? item.meaning.keywords.join(' / ') 
+                                : '';
+                             const desc = item.meaning ? (item.meaning.miracle_desc || '-') : '-';
+
+                             let htmlContent = '';
+                             if (keywords) {
+                                htmlContent += `<div style="font-weight: 600; color: #1F2937; margin-bottom: 2px; font-size: 14px;">${keywords}</div>`;
+                                htmlContent += `<div style="font-size: 12px; color: #6B7280; font-weight: 400;">${desc}</div>`;
+                             } else {
+                                htmlContent += `<div style="font-weight: 600; color: #1F2937; font-size: 14px;">${desc}</div>`;
+                             }
+                             content.innerHTML = htmlContent;
+
+                             row.appendChild(badge);
+                             row.appendChild(content);
+                             return row;
+                        };
+
+                        // Helper for Section
+                        const createSection = (title, items, iconSVG, titleColor = '#6B7280') => {
+                            if(!items || items.length === 0) return null;
+                            
+                            const section = document.createElement('div');
+                            const header = document.createElement('h4');
+                            header.className = 'na-header';
+                            header.style.color = titleColor; // Override color only if needed
+                            header.innerHTML = iconSVG + title;
+                            
+                            const grid = document.createElement('div');
+                            grid.className = 'na-item-grid';
+
+                            items.forEach(item => {
+                                grid.appendChild(createItemRow(item));
+                                count++;
+                            });
+
+                            section.appendChild(header);
+                            section.appendChild(grid);
+                            return section;
+                        }
+
+                        // 1. Sum (Top)
+                        if(data.sum_meaning) {
+                             const sumContainer = document.createElement('div');
+                             const label = document.createElement('div');
+                             label.className = 'na-label-sum';
+                             label.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> ผลรวม (Sum)';
+                             
+                             sumContainer.appendChild(label);
+                             sumContainer.appendChild(createItemRow(data.sum_meaning, true));
+                             
+                             detailsContainer.appendChild(sumContainer);
+                             count++;
+                        }
+
+                        // 2. Main Pairs
+                        const mainSection = createSection(
+                            'คู่เลขหลัก (Main Pairs)', 
+                            data.main_pairs, 
+                            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>',
+                            '#4F46E5' // Indigo-600
+                        );
+                        if(mainSection) detailsContainer.appendChild(mainSection);
+
+                        // 3. Hidden Pairs
+                        const hiddenSection = createSection(
+                            'คู่เลขแฝง (Hidden Pairs)', 
+                            data.hidden_pairs,
+                            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>',
+                            '#6B7280' // Gray-500
+                        );
+                        if(hiddenSection) detailsContainer.appendChild(hiddenSection);
+                    }
+                    
+                })
+                .catch(err => console.error(err));
+            }
+        </script>
+    </div>
+}

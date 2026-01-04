@@ -1,0 +1,19 @@
+#!/usr/bin/expect
+set timeout 60
+set password "IntelliP24.X"
+set host "tayap@43.228.85.200"
+
+# Command to run on server
+# We use single quotes for the bash command string to avoid variable expansion issues, 
+# but we need to be careful with escaping if we used variables inside. 
+# Here we just run static commands.
+spawn ssh $host "echo '=== SYSTEM UPTIME & LOAD ==='; uptime; echo ''; echo '=== MEMORY USAGE ==='; free -h; echo ''; echo '=== DISK USAGE ==='; df -h /; echo ''; echo '=== TOP 5 CPU PROCESSES ==='; ps -eo pid,user,%cpu,%mem,command --sort=-%cpu | head -n 6; echo ''; echo '=== TOP 5 MEMORY PROCESSES ==='; ps -eo pid,user,%cpu,%mem,command --sort=-%mem | head -n 6"
+
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "password:" { send "$password\r"; exp_continue }
+    "Password:" { send "$password\r"; exp_continue }
+    eof
+}
+catch wait result
+exit [lindex $result 3]

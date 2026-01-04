@@ -1133,7 +1133,7 @@ input:checked+.slider:before {
     height: 50px;
     cursor: pointer;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
+    z-index: 10000;
     justify-content: center;
     align-items: center;
     font-size: 1.5rem;
@@ -1143,6 +1143,13 @@ input:checked+.slider:before {
 #back-to-top:hover {
     background-color: #0056b3;
     transform: scale(1.1);
+}
+
+@media (max-width: 850px) {
+    #back-to-top {
+        right: 20px !important;
+        left: auto !important;
+    }
 }
 
 /* --- Header Sub Info (Responsive) --- */
