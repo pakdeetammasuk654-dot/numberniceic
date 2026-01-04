@@ -245,6 +245,12 @@ func main() {
 	app.Get("/sitemap.xml", seoHandler.GetSitemap)
 	app.Get("/robots.txt", seoHandler.GetRobots)
 
+	// SEO Dummy Categories (matching sitemap)
+	app.Get("/shop/category/:slug", func(c *fiber.Ctx) error {
+		// Dummy handler: in reality this should filter by category
+		return c.Redirect("/shop?category=" + c.Params("slug"))
+	})
+
 	app.Get("/", func(c *fiber.Ctx) error {
 		fmt.Printf("DEBUG: HIT HOME PAGE HANDLER - Path: %s\n", c.Path())
 		// Fetch pinned articles
@@ -712,9 +718,11 @@ func setupNumberPairCache(db *sql.DB) *cache.NumberPairCache {
 	return c
 }
 func setupNumberCategoryCache(db *sql.DB) *cache.NumberCategoryCache {
+	log.Println("Setting up NumberCategoryCache...")
 	repo := repository.NewPostgresNumberCategoryRepository(db)
 	c := cache.NewNumberCategoryCache(repo)
 	c.EnsureLoaded()
 	fmt.Println("Number category cache is ready.")
+	log.Println("NumberCategoryCache setup complete.")
 	return c
 }

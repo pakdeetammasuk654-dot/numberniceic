@@ -38,6 +38,7 @@ func (h *SEOHandler) GetSitemap(c *fiber.Ctx) error {
 
 	urls := []URL{
 		{Loc: baseURL + "/", LastMod: now, ChangeFreq: "daily", Priority: 1.0},
+		{Loc: baseURL + "/shop", LastMod: now, ChangeFreq: "daily", Priority: 0.9},
 		{Loc: baseURL + "/analyzer", LastMod: now, ChangeFreq: "monthly", Priority: 0.9},
 		{Loc: baseURL + "/articles", LastMod: now, ChangeFreq: "daily", Priority: 0.8},
 		{Loc: baseURL + "/about", LastMod: now, ChangeFreq: "monthly", Priority: 0.5},
@@ -55,6 +56,18 @@ func (h *SEOHandler) GetSitemap(c *fiber.Ctx) error {
 				Priority: 0.7,
 			})
 		}
+	}
+
+	// --- DUMMY/MISSING PARTS FOR SEO ---
+	// Add dummy category pages if they were missing
+	categories := []string{"ber-mongkol", "ber-vip", "ber-phlang-ngao"}
+	for _, cat := range categories {
+		urls = append(urls, URL{
+			Loc:        fmt.Sprintf("%s/shop/category/%s", baseURL, cat),
+			LastMod:    now,
+			ChangeFreq: "weekly",
+			Priority:   0.6,
+		})
 	}
 
 	sitemap := URLSet{

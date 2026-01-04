@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/shared_footer.dart';
+import '../widgets/premium_donut_chart.dart';
 import '../services/api_service.dart';
 
 class NumberAnalysisPage extends StatefulWidget {
@@ -296,11 +297,10 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
 
                 const SizedBox(height: 8), // Reduced 16->8 (Arrow 3 part 2)
 
-                // 2. Solar System Widget
-                _SolarSystem(
+                // 2. Solar System Widget -> Premium Donut Chart (Golden Style)
+                PremiumDonutChart(
                    data: _analysisData!, 
-                   innerController: _innerOrbitController, 
-                   outerController: _outerOrbitController
+                   isLoading: false,
                 ),
                 
                 const SizedBox(height: 32),

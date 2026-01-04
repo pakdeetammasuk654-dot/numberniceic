@@ -151,9 +151,15 @@ window.handleLuckyClick = function (cat, containerId, donutId) {
 }
 
 window.initNestedDonut = function (id, data, activeCategoriesJSON) {
-    setTimeout(() => {
+    // Retry mechanism with exponential backoff
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    function tryInit() {
+        attempts++;
+
         try {
-            console.log('[Nested Donut] Starting for ID:', id);
+            console.log('[Nested Donut] Attempt', attempts, 'for ID:', id);
 
             var breakdown;
             try {
@@ -165,9 +171,17 @@ window.initNestedDonut = function (id, data, activeCategoriesJSON) {
 
             const svg = document.getElementById(id);
             if (!svg) {
-                console.error('[Nested Donut] SVG not found:', id);
+                if (attempts < maxAttempts) {
+                    const delay = Math.min(100 * Math.pow(2, attempts - 1), 2000); // Exponential backoff, max 2s
+                    console.warn('[Nested Donut] SVG not found, retrying in', delay, 'ms');
+                    setTimeout(tryInit, delay);
+                    return;
+                }
+                console.error('[Nested Donut] SVG not found after', maxAttempts, 'attempts:', id);
                 return;
             }
+
+            console.log('[Nested Donut] SVG found, initializing:', id);
 
             const activeCategories = JSON.parse(activeCategoriesJSON);
             console.log('[Category Pie] Active categories:', activeCategories);
@@ -283,75 +297,263 @@ window.initNestedDonut = function (id, data, activeCategoriesJSON) {
             }
 
             function renderPie(percentages) {
-                innerRing.innerHTML = '';
-
-                // Draw Full Circle Border (Background) to show full potential
-                const fullCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                fullCircle.setAttribute('cx', '100');
-                fullCircle.setAttribute('cy', '100');
-                fullCircle.setAttribute('r', '95');
-                fullCircle.setAttribute('fill', 'none');
-                fullCircle.setAttribute('stroke', '#e0e0e0');
-                fullCircle.setAttribute('stroke-width', '1');
-                fullCircle.setAttribute('stroke-dasharray', '4 4'); // Dashed to indicate "empty slots"
-                innerRing.appendChild(fullCircle);
-
-                let currentAngle = -90;
-                const colorMap = { 'สุขภาพ': '#80CBC4', 'การงาน': '#90CAF9', 'การเงิน': '#FFCC80', 'ความรัก': '#F48FB1', 'N/A': '#ffffff00' };
-
-                for (const [cat, pct] of Object.entries(percentages)) {
-                    const angle = (pct / 100) * 360;
-
-                    if (cat !== 'N/A') {
-                        const color = colorMap[cat] || '#A0A0A0';
-                        // Increased thickess to 95 (almost full 100 radius)
-                        const path = createArcPath(100, 100, 0, 95, currentAngle, currentAngle + angle);
-
-                        const pathElem = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                        pathElem.setAttribute('d', path);
-                        pathElem.setAttribute('fill', color);
-                        pathElem.setAttribute('class', 'donut-segment category-segment');
-                        pathElem.setAttribute('stroke', '#fff');
-                        pathElem.setAttribute('stroke-width', '2');
-
-                        const titleElem = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-                        titleElem.textContent = cat + ': ' + Math.round(pct) + '%';
-                        pathElem.appendChild(titleElem);
-                        innerRing.appendChild(pathElem);
-
-                        if (pct >= 5) {
-                            const labelRadius = 60; // Moved text outwards for better visibility
-                            const midAngle = currentAngle + (angle / 2);
-                            const midRad = (midAngle * Math.PI) / 180;
-                            const tx = 100 + labelRadius * Math.cos(midRad);
-                            const ty = 100 + labelRadius * Math.sin(midRad);
-
-                            const textElem = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                            textElem.setAttribute('x', tx);
-                            textElem.setAttribute('y', ty); // Correct vertical alignment for middle
-                            textElem.setAttribute('text-anchor', 'middle');
-                            textElem.setAttribute('dominant-baseline', 'middle'); // Important for vertical centering
-                            textElem.setAttribute('fill', '#fff'); // Always white for category pie
-                            textElem.setAttribute('font-size', '12px');
-                            textElem.setAttribute('font-weight', 'bold');
-                            textElem.setAttribute('style', 'pointer-events: none; text-shadow: 0px 1px 2px rgba(0,0,0,0.5);');
-                            // Use Math.round to ensure consistency with table
-                            textElem.textContent = Math.round(pct) + '%';
-                            innerRing.appendChild(textElem);
-                        }
-                    }
-                    currentAngle += angle;
-                }
-
-                // --- NEW CODE: SYNC TABLE TEXT WITH CALCULATED PERCENTAGE ---
-                // 'svg.id' is expected to be 'nested-donut-NAME' or 'modal-nested-donut-NAME'
+                // Get ID for unique gradient names
                 const isModal = svg.id.startsWith('modal-');
                 const nameFromId = svg.id.replace(isModal ? 'modal-nested-donut-' : 'nested-donut-', '');
 
+                // HIDE SKELETON (Fade out opacity)
+                const skeletonId = 'skeleton-html-' + nameFromId;
+                const skeleton = document.getElementById(skeletonId);
+
+                if (skeleton) {
+                    console.log('Found skeleton:', skeletonId, '- Hiding now.');
+                    // Force fade out directly via style
+                    skeleton.style.transition = 'opacity 0.5s ease-out';
+                    skeleton.style.opacity = '0';
+                    skeleton.style.zIndex = '-1'; // Send to back immediately to prevent click blocking
+
+                    // Remove from DOM after transition
+                    setTimeout(() => {
+                        if (skeleton.parentNode) {
+                            skeleton.parentNode.removeChild(skeleton);
+                        }
+                    }, 600);
+                } else {
+                    console.log('Skeleton NOT found:', skeletonId);
+                }
+
+                innerRing.innerHTML = '';
+
+                // --- 1. DEFINITIONS (Gradients & Filters) ---
+                const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+
+                // Drop Shadow Filter
+                const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+                filter.setAttribute('id', 'premiumShadow');
+                filter.innerHTML = `
+                    <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+                    <feOffset in="blur" dx="0" dy="2" result="offsetBlur"/>
+                    <feComponentTransfer>
+                        <feFuncA type="linear" slope="0.3"/> 
+                    </feComponentTransfer>
+                    <feMerge>
+                        <feMergeNode/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                `;
+                defs.appendChild(filter);
+
+                // Gradients for each category
+                const gradientConfigs = {
+                    'การงาน': ['#90CAF9', '#42A5F5', '0'],     // Blue
+                    'การเงิน': ['#FFCC80', '#FFA726', '-45'], // Gold/Orange (More Premium)
+                    'ความรัก': ['#F48FB1', '#EC407A', '45'],  // Pink
+                    'สุขภาพ': ['#80CBC4', '#26A69A', '90'],    // Teal
+                    'N/A': ['#F5F5F5', '#E0E0E0', '0']     // Grey
+                };
+
+                for (const [cat, colors] of Object.entries(gradientConfigs)) {
+                    // Unique ID for each gradient based on Chart ID + Category
+                    const gradId = 'grad-' + nameFromId + '-' + cat;
+                    const grad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+                    grad.setAttribute('id', gradId);
+                    // Rotate gradient for dynamic look
+                    grad.setAttribute('gradientTransform', `rotate(${colors[2]})`);
+
+                    const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                    stop1.setAttribute('offset', '0%');
+                    stop1.setAttribute('stop-color', colors[0]);
+
+                    const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                    stop2.setAttribute('offset', '100%');
+                    stop2.setAttribute('stop-color', colors[1]);
+
+                    grad.appendChild(stop1);
+                    grad.appendChild(stop2);
+                    defs.appendChild(grad);
+                }
+                // GOLD GRADIENT for Score
+                const goldGrad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+                goldGrad.setAttribute('id', 'grad-' + nameFromId + '-gold');
+                goldGrad.setAttribute('x1', '0%');
+                goldGrad.setAttribute('y1', '0%');
+                goldGrad.setAttribute('x2', '100%');
+                goldGrad.setAttribute('y2', '100%');
+                goldGrad.innerHTML = `
+                    <stop offset="0%" style="stop-color:#D97706;stop-opacity:1" />
+                    <stop offset="50%" style="stop-color:#FFD700;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#B45309;stop-opacity:1" />
+                `;
+                defs.appendChild(goldGrad);
+
+                innerRing.appendChild(defs);
+
+                // --- 2. BACKGROUND RING (Track) ---
+                // Outer Radius ~98, StrokeWidth ~30 -> Center Radius ~83
+                const radius = 83;
+                const strokeWidth = 32;
+                const circumference = 2 * Math.PI * radius;
+
+                const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                bgCircle.setAttribute('cx', '100');
+                bgCircle.setAttribute('cy', '100');
+                bgCircle.setAttribute('r', radius);
+                bgCircle.setAttribute('fill', 'none');
+                bgCircle.setAttribute('stroke', '#F1F5F9');
+                bgCircle.setAttribute('stroke-width', strokeWidth);
+                bgCircle.setAttribute('stroke-linecap', 'round'); // Round ends for track too
+                innerRing.appendChild(bgCircle);
+
+                let currentOffset = 0; // Dashoffset starts at 0 (top-right usually, but we rotate)
+
+                // SVG circles start at 3 o'clock. We want -90deg (12 o'clock).
+                // But dasharray works by length.
+
+                let accumulatedPct = 0;
+
+                // Draw segments using STROKE-DASHARRAY
+                // We need to render them as separate circles overlapping, 
+                // but rotated properly.
+
+                for (const [cat, pct] of Object.entries(percentages)) {
+                    if (cat !== 'N/A' && pct > 0) {
+                        const gradUrl = `url(#grad-${nameFromId}-${cat})`; // Use local gradient
+
+                        // Calculate arc length
+                        const arcLength = (pct / 100) * circumference;
+
+                        // NO GAP for seamless look, but subtracting a TINY bit allows the background (white) to peek through
+                        // acting as a separator line.
+                        const drawLength = Math.max(0, arcLength - 1.5); // 1.5px gap
+
+                        // Create circle for this segment
+                        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        circle.setAttribute('cx', '100');
+                        circle.setAttribute('cy', '100');
+                        circle.setAttribute('r', radius);
+                        circle.setAttribute('fill', 'none');
+                        circle.setAttribute('stroke', gradUrl);
+                        circle.setAttribute('stroke-width', strokeWidth);
+                        // Default linecap is butt (straight), creating seamless look
+
+                        // Dash Array: [Length of Arc, Rest of Circle]
+                        circle.setAttribute('stroke-dasharray', `${drawLength} ${circumference}`);
+
+                        // Dash Offset: Where to start drawing.
+                        // SVG draws counter-clockwise from 3 o'clock? No, usually clockwise if we manage it right.
+                        // Actually standard SVG circle with positive dasharray draws clockwise? 
+                        // Wait, standard is: Start at 3 o'clock, go clockwise.
+                        // We want to start at 12 o'clock (-90deg).
+
+                        // Rotate the whole circle to the starting position of this segment
+                        // Start Angle = -90 + (accumulatedPct / 100 * 360)
+                        const startAngle = -90 + (accumulatedPct / 100) * 360;
+                        circle.setAttribute('transform', `rotate(${startAngle} 100 100)`);
+
+                        circle.setAttribute('class', 'donut-segment');
+                        circle.setAttribute('style', 'cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);');
+
+                        // Interaction
+                        circle.addEventListener('mouseenter', function () {
+                            this.setAttribute('stroke-width', strokeWidth + 4); // Thicker on hover
+                            this.style.filter = 'brightness(1.1) drop-shadow(0 4px 6px rgba(0,0,0,0.15))';
+                        });
+                        circle.addEventListener('mouseleave', function () {
+                            this.setAttribute('stroke-width', strokeWidth);
+                            this.style.filter = '';
+                        });
+
+                        const titleElem = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                        titleElem.textContent = `${cat}: ${Math.round(pct)}%`;
+                        circle.appendChild(titleElem);
+
+                        innerRing.appendChild(circle);
+
+                        // Percent Label
+                        if (pct >= 8) {
+                            // Calculate position for text
+                            // Angle is middle of this segment
+                            const segmentMiddleAngle = -90 + ((accumulatedPct + pct / 2) / 100 * 360);
+                            const midRad = (segmentMiddleAngle * Math.PI) / 180;
+
+                            // Radius for text is same as circle radius (centered in stroke)
+                            const textRadius = radius;
+
+                            const tx = 100 + textRadius * Math.cos(midRad);
+                            const ty = 100 + textRadius * Math.sin(midRad);
+
+                            const textElem = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                            textElem.setAttribute('x', tx);
+                            textElem.setAttribute('y', ty);
+                            textElem.setAttribute('text-anchor', 'middle');
+                            textElem.setAttribute('dominant-baseline', 'middle');
+                            textElem.setAttribute('fill', '#fff');
+                            textElem.setAttribute('font-size', '14px');
+                            textElem.setAttribute('font-weight', '900');
+                            textElem.setAttribute('style', 'pointer-events: none; text-shadow: 0px 2px 2px rgba(0,0,0,0.2); font-family: "Kanit", sans-serif;');
+                            textElem.textContent = Math.round(pct) + '%';
+                            innerRing.appendChild(textElem);
+                        }
+
+                        accumulatedPct += pct;
+                    }
+                }
+
+                // Add Center "WoW" Element (Total Score or Icon) - Optional
+                const totalScore = Object.entries(percentages)
+                    .filter(([k]) => k !== 'N/A')
+                    .reduce((acc, [, v]) => acc + v, 0);
+
+                // --- 2. CENTER PIECE (White Circle + Shadow + Text) ---
+                const centerGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+                // White background circle behind text
+                const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                centerCircle.setAttribute('cx', '100');
+                centerCircle.setAttribute('cy', '100');
+                // Let's make center circle slightly smaller than that
+                centerCircle.setAttribute('r', '58');
+                centerCircle.setAttribute('fill', 'white');
+                centerCircle.setAttribute('filter', 'url(#premiumShadow)');
+                centerGroup.appendChild(centerCircle);
+
+                // Score Text
+                const scoreText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                scoreText.setAttribute('x', '100');
+                scoreText.setAttribute('y', '90'); // Moved up slightly
+                scoreText.setAttribute('text-anchor', 'middle');
+                scoreText.setAttribute('font-size', '12px');
+                scoreText.setAttribute('fill', '#64748B');
+                scoreText.setAttribute('font-family', 'Kanit, sans-serif');
+                scoreText.textContent = 'คะแนนรวม';
+                centerGroup.appendChild(scoreText);
+
+                const scoreVal = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                scoreVal.setAttribute('x', '100');
+                scoreVal.setAttribute('y', '120'); // Moved down slightly
+                scoreVal.setAttribute('text-anchor', 'middle');
+                scoreVal.setAttribute('font-size', '32px'); // Bigger
+                scoreVal.setAttribute('font-weight', 'bold');
+
+                // Color: GOLDEN AURA (Use the gradient we just made)
+                const scoreColor = 'url(#grad-' + nameFromId + '-gold)';
+                scoreVal.setAttribute('fill', scoreColor);
+
+                // Add a drop shadow to the text itself for "Aura" effect
+                // We can reuse premiumShadow or create a specific text shadow
+                scoreVal.setAttribute('filter', 'url(#premiumShadow)');
+                scoreVal.setAttribute('font-family', 'Kanit, sans-serif');
+                scoreVal.textContent = Math.round(totalScore) + '%';
+                centerGroup.appendChild(scoreVal);
+
+                innerRing.appendChild(centerGroup);
+
+                // --- SYNC LEGEND & TEXTS (Keep existing logic mostly, but refined) ---
+                // variables isModal and nameFromId are already defined at the top
+
                 ['สุขภาพ', 'การงาน', 'การเงิน', 'ความรัก'].forEach(cat => {
-                    // Get the pct for this category from our just-calculated map (or 0 if missing)
                     let pct = percentages[cat];
-                    if (pct === undefined) return; // Category might not exist in this rendering cycle if inactive, but usually we iterate all 4
+                    if (pct === undefined) return;
 
                     const targetTextId = isModal ? ('modal-good-score-container-' + nameFromId + '-' + cat) : ('good-score-container-' + nameFromId + '-' + cat);
                     const targetEl = document.getElementById(targetTextId);
@@ -361,42 +563,17 @@ window.initNestedDonut = function (id, data, activeCategoriesJSON) {
                         const isLucky = luckyList.includes(cat);
 
                         if (isLucky) {
-                            // 1. Golden Badge Style - Centered
-                            targetEl.innerHTML = '<div style="background: linear-gradient(135deg, #FFD700, #F59E0B); color: #fff; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3); display: inline-flex; align-items: center; justify-content: center; min-width: 60px;">' +
-                                Math.round(pct) + '% <svg style="width:12px;height:12px;margin-left:2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2L15 9L22 9L17 14L19 21L12 17L5 21L7 14L2 9L9 9L12 2Z" fill="white" stroke="none"/></svg></div>';
-                            targetEl.style.textAlign = 'center';
+                            // Gold Badge with Shimmer
+                            targetEl.innerHTML = `
+                                <div class="enhance-btn-shimmer" style="background: linear-gradient(135deg, #FFD700, #F59E0B); color: #fff; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 0.9rem; box-shadow: 0 4px 6px rgba(245, 158, 11, 0.4); display: inline-flex; align-items: center; justify-content: center; min-width: 80px;">
+                                    ${Math.round(pct)}% <span style="font-size:1.2em; margin-left:4px;">✨</span>
+                                </div>`;
                         } else {
-                            // 2. Standard Green Text - Right Aligned
-                            targetEl.innerHTML = '<span class="category-pct-display" data-category="' + cat + '" style="color: #2E7D32; font-weight: 700; font-size: 1.1em; display: flex; align-items: center; justify-content: flex-end; gap: 4px;">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="check-icon" style="display: none;"><polyline points="20 6 9 17 4 12"></polyline></svg>' +
-                                '<span class="value-text">' + Math.round(pct) + '%</span></span>';
-                            targetEl.style.textAlign = 'right';
+                            // Standard Text
+                            targetEl.innerHTML = `<span style="color: ${pct > 0 ? '#10B981' : '#CBD5E1'}; font-weight: 700; font-size: 1.1em;">${Math.round(pct)}%</span>`;
                         }
                     }
                 });
-
-                // Update Total Score Display
-                // Calculate total excluding N/A
-                let totalScore = 0;
-                for (let k in percentages) {
-                    if (k !== 'N/A') totalScore += percentages[k];
-                }
-
-                const totalContainer = document.getElementById('total-score-' + nameFromId);
-                if (totalContainer) {
-                    const valSpan = totalContainer.querySelector('.score-value');
-                    if (valSpan) {
-                        // Add stars to total score if it's 100%
-                        valSpan.textContent = Math.round(totalScore) + '%' + (totalScore >= 99.5 ? ' ✨' : '');
-                    }
-                }
-                const modalTotalContainer = document.getElementById('modal-total-score-' + nameFromId);
-                if (modalTotalContainer) {
-                    const valSpan = modalTotalContainer.querySelector('.score-value');
-                    if (valSpan) {
-                        valSpan.textContent = Math.round(totalScore) + '%' + (totalScore >= 99.5 ? ' ✨' : '');
-                    }
-                }
             }
 
             svg.redraw = function () { drawCategoryPie(true); };
@@ -412,9 +589,18 @@ window.initNestedDonut = function (id, data, activeCategoriesJSON) {
 
             // Initial Draw
             drawCategoryPie();
+            console.log('[Nested Donut] Successfully initialized:', id);
 
         } catch (error) {
             console.error('[Category Pie] Error:', error);
         }
-    }, 0);
+    }
+
+    // Start trying after DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', tryInit);
+    } else {
+        // DOM already loaded, start immediately
+        setTimeout(tryInit, 0);
+    }
 };

@@ -13,6 +13,7 @@ import '../widgets/upgrade_dialog.dart';
 import 'login_page.dart';
 import 'register_page.dart';
 import 'main_tab_page.dart';
+import '../widgets/premium_donut_chart.dart';
 import '../widgets/category_nested_donut.dart';
 import 'numerology_detail_page.dart';
 import 'linguistic_detail_page.dart';
