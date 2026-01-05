@@ -1,5 +1,7 @@
 package pages
 
+import "numberniceic/views/components"
+
 templ NumberAnalysis() {
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap');
@@ -48,25 +50,26 @@ templ NumberAnalysis() {
             to { background-position: 200% center; }
         }
 
+        /* Skeleton Styles */
+        .na-skeleton { display: none; width: 100%; max-width: 1200px; margin: 0 auto; flex-direction: column; gap: 2rem; }
+        .na-skeleton-row { display: flex; flex-wrap: wrap; gap: 2rem; width: 100%; }
+        .na-skeleton-left { flex: 0 0 auto; width: 320px; height: 320px; background: #f1f5f9; border-radius: 50%; position: relative; overflow: hidden; }
+        .na-skeleton-right { flex: 1; height: 500px; background: #fff; border-radius: 0.75rem; border: 1px solid #f3f4f6; position: relative; overflow: hidden; }
+        .shimmer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent); animation: na-shimmer 1.5s infinite; }
+        @keyframes na-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
         @media (max-width: 768px) {
             .na-grid-layout { display: flex; flex-direction: column; align-items: center; }
             .na-left-col { position: static; width: auto; margin-bottom: 2rem; }
             .na-grid-layout { grid-template-columns: 1fr; }
+            .na-skeleton-row { flex-direction: column; align-items: center; }
         }
     </style>
     <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div class="text-center">
-                <h1 style="font-size: 3rem; font-weight: 900; color: #000; letter-spacing: -1px; margin-bottom: 0.5rem; line-height: 1.2;">
-                    วิเคราะห์เบอร์โทรศัพท์
-                </h1>
-                <p style="font-size: 1.125rem; color: #4B5563; font-weight: 300;">
-                    เบอร์โทรศัพท์ เลขศาสตร์ พลังเงา เปลี่ยนชีวิต
-                </p>
-        </div>
 
 
         <div class="mt-12 max-w-lg mx-auto">
-             <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 1rem; margin-bottom: 2rem;">
+             <div style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin-top: 1rem; margin-bottom: 0.75rem;">
                 <!-- Premium Input Container -->
                 <div style="position: relative; width: 100%; max-width: 480px; margin: 0 auto;">
                     <!-- Absolute Icon -->
@@ -104,62 +107,150 @@ templ NumberAnalysis() {
                       <span style="position: absolute; display: inline-flex; height: 100%; width: 100%; border-radius: 50%; background-color: #4ADE80; opacity: 0.75; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
                       <span style="position: relative; display: inline-flex; border-radius: 50%; height: 12px; width: 12px; background-color: #22C55E;"></span>
                     </span>
-                    <span>ระบบวิเคราะห์อัตโนมัติเมื่อครบ 10 หลัก</span>
+                    <span style="font-family: 'Kanit', sans-serif;">ระบบวิเคราะห์อัตโนมัติเมื่อครบ 10 หลัก</span>
                 </div>
              </div>
         </div>
+         
+         <!-- Perfect Number Display (Initially Hidden, Shows under input when perfect) -->
+         <div id="perfect-number-display" style="display: none; width: 100%; max-width: 600px; margin: 1rem auto 0 auto; position: relative; z-index: 100;">
+             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; position: relative; z-index: 1; gap: 10px;">
+                 <!-- PHONE NUMBER AS HEADER -->
+                 <h2 id="perfect-phone-number" class="perfect-number" style="font-size: 48px; font-weight: 800; font-family: monospace; margin: 0; text-shadow: none; position: relative; z-index: 10; line-height: 1.1;"></h2>
+
+                 <!-- Badge + Stars -->
+                 <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                     <span id="perfect-badge-title" style="font-size: 38px; font-weight: 400; background: linear-gradient(to bottom, #FDE68A, #D97706, #92400E); -webkit-background-clip: text; background-clip: text; color: transparent; text-transform: uppercase; font-family: 'Sarabun', sans-serif; letter-spacing: -0.5px; line-height: 1.0; text-align: center;">The Best</span>
+                     <div style="display: flex; gap: 4px; align-items: center; justify-content: center;">
+                          <span style="color: #F59E0B; font-size: 20px;">★</span>
+                          <span style="color: #F59E0B; font-size: 20px;">★</span>
+                          <span style="color: #F59E0B; font-size: 28px; transform: scale(1.1); position: relative; top: -1px;">★</span>
+                          <span style="color: #F59E0B; font-size: 20px;">★</span>
+                          <span style="color: #F59E0B; font-size: 20px;">★</span>
+                     </div>
+                 </div>
+                 
+                 <!-- Button -->
+                 <button onclick="showBuyContact()" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; border: none; padding: 12px 28px; border-radius: 9999px; font-family: 'Sarabun', sans-serif; font-weight: 500; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.05); font-size: 18px; transition: all 0.2s; white-space: nowrap; line-height: 1.2; margin-top: 10px;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 15px 20px -3px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 10px 15px -3px rgba(16, 185, 129, 0.3)'">ซื้อเบอร์นี้</button>
+             </div>
+         </div>
+        
+         <!-- Wreath Badge Component -->
+         @components.WreathBadge("เลขศาสตร์", "พลังเงา", "ผลรวม", "เลขเรียง", "คู่หลัก", "คู่รอง", "", "")
+        
+        <!-- Skeleton Loader (Initially Hidden) -->
+        <div id="analysis-skeleton" class="na-skeleton">
+            <!-- Title Skeleton -->
+            <div style="height: 48px; width: 300px; background: #f1f5f9; border-radius: 12px; align-self: center; position: relative; overflow: hidden;"><div class="shimmer"></div></div>
+            <div class="na-skeleton-row">
+                <div class="na-skeleton-left"><div class="shimmer"></div></div>
+                <div class="na-skeleton-right"><div class="shimmer"></div></div>
+            </div>
+        </div>
 
         <!-- Results Container (Separate from Input, Full Width) -->
-        <!-- Results Container (Separate from Input, Full Width) -->
-        <div id="analysis-results" style="display: none; width: 100%; margin-top: 2rem; flex-direction: column; align-items: center; border: none; box-shadow: none; background: transparent;" class="fade-slide-in">
+        <div id="analysis-results" style="display: none; width: 100%; margin-top: 30px !important; flex-direction: column; align-items: center; border: none; box-shadow: none; background: transparent;" class="fade-slide-in">
                     
                     <!-- Phone Number Header (No Label, No Frame, No Shadow) -->
                     <div style="text-align: center; margin-bottom: 0; width: 100%; background: transparent; border: none; box-shadow: none;">
                         
                         <!-- 1. Perfect Number Layout -->
                          <!-- 1. Perfect Number Layout (Restructured for Guaranteed Order) -->
-                         <div id="perfect-layout" style="display: none; width: 100%; max-width: 650px; margin: 0 auto 2rem auto; flex-direction: column; align-items: center; justify-content: center; transition: all 0.7s ease; opacity: 0; transform: scale(0.95); background: transparent;">
+                         <div id="perfect-layout" style="display: none; width: 100%; max-width: 750px; margin: 0 auto; flex-direction: column; align-items: center; justify-content: center; transition: all 0.7s ease; opacity: 0; transform: scale(0.95); background: transparent;">
                               
-                              <!-- PHONE NUMBER ON TOP -->
-                              <h2 id="golden-phone-number" class="perfect-number" style="font-size: 48px; font-weight: 800; font-family: monospace; margin-bottom: 10px; margin-top: 0; text-shadow: none;"></h2>
-
-                              <!-- WREATH BADGE BELOW -->
-                              <div style="display: flex; align-items: center; justify-content: center; width: 100%; position: relative;">
+                              <!-- WREATH CONTAINER ENCOMPASSING EVERYTHING -->
+                              <div style="display: flex; align-items: center; justify-content: center; width: 100%; position: relative; margin-top: 0; z-index: 1;">
                                   <!-- Left Wreath -->
-                                  <img src="/images/golden_laurel_right.png" style="height: 180px; width: auto; object-fit: contain; transform: scaleX(-1); margin-right: -40px;" alt="Left Wreath"/>
+                                  <img src="/images/golden_laurel_right.png" style="height: 180px; width: auto; object-fit: contain; transform: scaleX(-1); margin-right: -50px;" alt="Left Wreath"/>
 
-                                  <!-- Center Info -->
-                                  <div style="display: flex; align-items: center; gap: 20px; z-index: 2; position: relative; padding: 0 10px;">
-                                      <div style="display: flex; flex-direction: column; align-items: center;">
-                                          <span id="badge-title" style="font-size: 38px; font-weight: 900; background: linear-gradient(to bottom, #FDE68A, #D97706, #92400E); -webkit-background-clip: text; background-clip: text; color: transparent; text-transform: uppercase; font-family: 'Kanit', sans-serif; letter-spacing: -0.5px; line-height: 1.0; text-align: center;">The Best</span>
-                                          <div style="display: flex; gap: 4px; margin-top: 8px; align-items: center; justify-content: center;">
-                                               <span style="color: #F59E0B; font-size: 20px;">★</span>
-                                               <span style="color: #F59E0B; font-size: 20px;">★</span>
-                                               <span style="color: #F59E0B; font-size: 28px; transform: scale(1.1); position: relative; top: -1px;">★</span>
-                                               <span style="color: #F59E0B; font-size: 20px;">★</span>
-                                               <span style="color: #F59E0B; font-size: 20px;">★</span>
-                                          </div>
-                                      </div>
+                                  <!-- Main Center Stack -->
+                                  <div style="display: flex; flex-direction: column; align-items: center; gap: 0px; z-index: 2; position: relative;">
                                       
-                                      <button onclick="showBuyContact()" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; border: none; padding: 12px 28px; border-radius: 9999px; font-family: 'Kanit', sans-serif; font-weight: 700; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.05); font-size: 18px; transition: all 0.2s; white-space: nowrap; line-height: 1.2;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 15px 20px -3px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 10px 15px -3px rgba(16, 185, 129, 0.3)'">ซื้อเบอร์นี้</button>
+                                      <!-- PHONE NUMBER AS HEADER -->
+                                      <h2 id="golden-phone-number" class="perfect-number" style="font-size: 48px; font-weight: 800; font-family: monospace; margin: 0 0 10px 0; text-shadow: none; position: relative; z-index: 10; line-height: 1.1;"></h2>
+
+                                      <!-- Badge + Button Section Below Number -->
+                                      <div style="display: flex; align-items: center; gap: 20px; padding: 0 10px;">
+                                          <div style="display: flex; flex-direction: column; align-items: center;">
+                                              <span id="badge-title" style="font-size: 38px; font-weight: 900; background: linear-gradient(to bottom, #FDE68A, #D97706, #92400E); -webkit-background-clip: text; background-clip: text; color: transparent; text-transform: uppercase; font-family: 'Kanit', sans-serif; letter-spacing: -0.5px; line-height: 1.0; text-align: center;">The Best</span>
+                                              <div style="display: flex; gap: 4px; margin-top: 8px; align-items: center; justify-content: center;">
+                                                   <span style="color: #F59E0B; font-size: 20px;">★</span>
+                                                   <span style="color: #F59E0B; font-size: 20px;">★</span>
+                                                   <span style="color: #F59E0B; font-size: 28px; transform: scale(1.1); position: relative; top: -1px;">★</span>
+                                                   <span style="color: #F59E0B; font-size: 20px;">★</span>
+                                                   <span style="color: #F59E0B; font-size: 20px;">★</span>
+                                              </div>
+                                          </div>
+                                          
+                                          <button onclick="showBuyContact()" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; border: none; padding: 12px 28px; border-radius: 9999px; font-family: 'Kanit', sans-serif; font-weight: 700; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.05); font-size: 18px; transition: all 0.2s; white-space: nowrap; line-height: 1.2;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 15px 20px -3px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 10px 15px -3px rgba(16, 185, 129, 0.3)'">ซื้อเบอร์นี้</button>
+                                      </div>
                                   </div>
 
                                   <!-- Right Wreath -->
-                                  <img src="/images/golden_laurel_right.png" style="height: 180px; width: auto; object-fit: contain; margin-left: -40px;" alt="Right Wreath"/>
+                                  <img src="/images/golden_laurel_right.png" style="height: 180px; width: auto; object-fit: contain; margin-left: -50px;" alt="Right Wreath"/>
                               </div>
                          </div>
 
                         <!-- 2. Normal Layout (Smaller) -->
                         <div id="normal-layout" style="display: block; width: 100%; text-align: center; background: transparent;">
-                             <h2 id="display-phone-number" style="font-size: 32px; font-weight: 700; color: #1F2937; letter-spacing: 0.1em; font-family: monospace; margin: 0;"></h2>
+                             <h2 id="display-phone-number" style="font-size: 32px; font-weight: 700; color: #1F2937; letter-spacing: 0.1em; font-family: monospace; margin: 0 0 20px 0;"></h2>
                         </div> 
                     </div>
 
                     <!-- Grid Layout: Force 2 Columns using CSS -->
-                    <div style="display: flex; flex-wrap: wrap; gap: 2rem; width: 100%; max-width: 1200px; margin: 0 auto;">
+                    <style>
+                        .analysis-grid {
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 1rem;
+                            width: 100%;
+                            max-width: 1200px;
+                            margin: 0 auto;
+                        }
+                        
+                        .analysis-left-column {
+                            flex: 0 0 auto;
+                            width: 320px;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                        }
+                        
+                        .analysis-right-column {
+                            flex: 1;
+                            width: 100%;
+                            background: white;
+                            border-radius: 0.75rem;
+                            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                            border: 1px solid #F3F4F6;
+                            overflow: hidden;
+                            display: flex;
+                            flex-direction: column;
+                            min-width: 0;
+                        }
+                        
+                        @media (max-width: 768px) {
+                            .analysis-grid {
+                                flex-direction: column;
+                                gap: 1.5rem;
+                            }
+                            
+                            .analysis-left-column {
+                                width: 100%;
+                                max-width: 320px;
+                                margin: 0 auto;
+                            }
+                            
+                            .analysis-right-column {
+                                width: 100%;
+                            }
+                        }
+                    </style>
+                    
+                    <div class="analysis-grid">
                         
                         <!-- Left Column: Chart + Legend -->
-                        <div style="flex: 0 0 auto; width: 320px; display: flex; flex-direction: column; align-items: center;">
+                        <div class="analysis-left-column">
                             <div class="solar-system-container" style="position: relative; width: 320px; height: 320px;">
                                 <style>
                                     @keyframes solar-spin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
@@ -183,12 +274,12 @@ templ NumberAnalysis() {
                             </div>
                             <!-- Legend inside Left Column -->
                             <div style="text-align: center; color: #6B7280; font-size: 14px; margin-top: 1rem;">
-                                <p style="margin: 0;">วงใน: คู่เลขหลัก | วงนอก: คู่เลขแฝง</p>
+                                <p style="margin: 0; font-family: 'Kanit', sans-serif;">วงใน: คู่เลขหลัก | วงนอก: คู่เลขแฝง</p>
                             </div>
                         </div>
 
                         <!-- Right Column: Meaning Table (Liquid Width) -->
-                        <div style="flex: 1; width: 100%; background: white; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #F3F4F6; overflow: hidden; display: flex; flex-direction: column; min-width: 0;">
+                        <div class="analysis-right-column">
                             <div style="padding: 1.5rem; background: white; border-bottom: 1px solid #F3F4F6;">
                                 <h3 style="font-weight: 700; color: #1F2937; font-size: 1.125rem; display: flex; align-items: center; gap: 0.5rem; margin: 0; font-family: 'Kanit', sans-serif;">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #4F46E5;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
@@ -219,6 +310,8 @@ templ NumberAnalysis() {
                   } else {
                       const res = document.getElementById('analysis-results');
                       if(res) res.style.display = 'none';
+                      const skel = document.getElementById('analysis-skeleton');
+                      if(skel) skel.style.display = 'none';
                   }
              }
 
@@ -251,10 +344,19 @@ templ NumberAnalysis() {
             }
 
             window.performNumberAnalysisV2 = function(phoneNumber) {
+                // Show Skeleton, Hide Results
+                const skel = document.getElementById('analysis-skeleton');
+                const resultsDiv = document.getElementById('analysis-results');
+                if(skel) skel.style.display = 'flex';
+                if(resultsDiv) resultsDiv.style.display = 'none';
+
                 fetch(`/api/number-analysis?number=${phoneNumber}`)
                 .then(response => response.json())
                 .then(data => {
-                    const resultsDiv = document.getElementById('analysis-results');
+                    // Hide Skeleton, Show Results
+                    if(skel) skel.style.display = 'none';
+                    if(resultsDiv) resultsDiv.style.display = 'flex';
+                    
                     const displayPhoneNumber = document.getElementById('display-phone-number');
                     const sunSumValue = document.getElementById('sun-sum-value');
                     const sunSumMeaning = document.getElementById('sun-sum-meaning');
@@ -309,39 +411,44 @@ templ NumberAnalysis() {
                     }
 
                     const normalLayout = document.getElementById('normal-layout');
-                    const perfectLayout = document.getElementById('perfect-layout');
-                    const goldenPhoneEl = document.getElementById('golden-phone-number');
-                    const badgeTitleEl = document.getElementById('badge-title');
+                    const perfectNumberDisplay = document.getElementById('perfect-number-display');
+                    const perfectPhoneEl = document.getElementById('perfect-phone-number');
+                    const perfectBadgeTitleEl = document.getElementById('perfect-badge-title');
+                    
+                    console.log("Perfect Number Display Element:", perfectNumberDisplay);
+                    console.log("Show Golden Badge:", showGoldenBadge, "Grade Title:", gradeTitle);
                     
                     if (showGoldenBadge && gradeTitle) {
-                        // Switch to Perfect Layout
-                        if(normalLayout) normalLayout.style.display = 'none';
-                        if(perfectLayout) {
-                             perfectLayout.style.display = 'flex';
-                             // Force reflow
-                             void perfectLayout.offsetWidth;
-                             perfectLayout.style.opacity = '1';
-                             perfectLayout.style.transform = 'scale(1)';
+                        // Show Perfect Number Display under input
+                        console.log("Showing Perfect Number Display");
+                        if(perfectNumberDisplay) {
+                             perfectNumberDisplay.style.display = 'block';
+                             console.log("Perfect Number Display shown!");
+                        } else {
+                             console.error("Perfect Number Display element not found!");
                         }
                         // Set Grade Title
-                        if(badgeTitleEl) {
-                            badgeTitleEl.innerText = gradeTitle;
+                        if(perfectBadgeTitleEl) {
+                            perfectBadgeTitleEl.innerText = gradeTitle;
                             console.log("Set badge title to:", gradeTitle);
                         } else {
-                            console.error("Badge Title Element not found!");
+                            console.error("Perfect Badge Title Element not found!");
                         }
                         
-                        if(goldenPhoneEl) goldenPhoneEl.innerText = formatted;
-                    } else {
-                        // Switch to Normal Layout
-                        // HIDDEN as requested: Redundant phone number display
-                         if(normalLayout) normalLayout.style.display = 'none';
-                         
-                        if(perfectLayout) {
-                             perfectLayout.style.display = 'none';
-                             perfectLayout.style.opacity = '0';
-                             perfectLayout.style.transform = 'scale(0.95)';
+                        if(perfectPhoneEl) {
+                            perfectPhoneEl.innerText = formatted;
+                            console.log("Set perfect phone to:", formatted);
                         }
+                        
+                        // Hide normal layout in results
+                        if(normalLayout) normalLayout.style.display = 'none';
+                    } else {
+                        // Hide Perfect Number Display
+                        console.log("Hiding Perfect Number Display");
+                        if(perfectNumberDisplay) perfectNumberDisplay.style.display = 'none';
+                        
+                        // Show normal layout in results
+                         if(normalLayout) normalLayout.style.display = 'none';
                     }
                     
                     // 2. Display Sum in Sun as Badge (Label Removed)

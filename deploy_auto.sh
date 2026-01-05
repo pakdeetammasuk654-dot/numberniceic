@@ -8,11 +8,16 @@ REMOTE_DIR="/home/$SERVER_USER/$APP_NAME"
 SSH_SOCKET="/Users/tayap/.ssh/control-${SERVER_IP}-tayap"
 SSH_OPTS="-o ControlPath=$SSH_SOCKET"
 
-SERVER_PASS="IntelliP24.X"
-
 echo "--- Deploying to Dedicated Server ($SERVER_IP) with Multiplexing ---"
 
 # 1. Build for Linux
+echo "Generating Templ templates..."
+~/go/bin/templ generate
+if [ $? -ne 0 ]; then
+    echo "Templ generation failed!"
+    exit 1
+fi
+
 echo "Building Go binary for Linux..."
 GOOS=linux GOARCH=amd64 go build -o numbernice-linux main.go
 if [ $? -ne 0 ]; then
@@ -24,7 +29,7 @@ fi
 echo "Stopping service and uploading files..."
 
 # Stop Service
-ssh $SSH_OPTS $SERVER_USER@$SERVER_IP "echo '$SERVER_PASS' | sudo -S systemctl stop numberniceic"
+ssh $SSH_OPTS $SERVER_USER@$SERVER_IP "sudo systemctl stop numberniceic"
 
 # Create directory
 ssh $SSH_OPTS $SERVER_USER@$SERVER_IP "mkdir -p $REMOTE_DIR/migrations"
@@ -36,10 +41,12 @@ scp $SSH_OPTS numbernice-linux $SERVER_USER@$SERVER_IP:$REMOTE_DIR/numbernice-li
 scp $SSH_OPTS migrations/*.sql $SERVER_USER@$SERVER_IP:$REMOTE_DIR/migrations/
 
 # Upload Static Files
-echo "Uploading CSS and Assets..."
+echo "Uploading Static Assets (CSS, JS)..."
 scp $SSH_OPTS -r static/css $SERVER_USER@$SERVER_IP:$REMOTE_DIR/static/
+scp $SSH_OPTS -r static/js $SERVER_USER@$SERVER_IP:$REMOTE_DIR/static/
 
-
+# Upload Views (since we are not using go-bindata/embed yet, or just to be safe)
+scp $SSH_OPTS -r views $SERVER_USER@$SERVER_IP:$REMOTE_DIR/
 
 # Upload .env
 scp $SSH_OPTS .env.production $SERVER_USER@$SERVER_IP:$REMOTE_DIR/.env
@@ -51,6 +58,6 @@ scp $SSH_OPTS run_migration-linux $SERVER_USER@$SERVER_IP:$REMOTE_DIR/
 
 # 3. Apply Changes & Restart
 echo "Applying changes on server..."
-ssh $SSH_OPTS $SERVER_USER@$SERVER_IP "cd $REMOTE_DIR && rm -rf views && chmod +x numbernice-linux run_migration-linux && mv numbernice-linux numberniceic && ./run_migration-linux && echo 'Restarting Service...' && echo '$SERVER_PASS' | sudo -S systemctl restart numberniceic && echo '$SERVER_PASS' | sudo -S systemctl status numberniceic --no-pager"
+ssh $SSH_OPTS $SERVER_USER@$SERVER_IP "cd $REMOTE_DIR && rm -rf views && chmod +x numbernice-linux run_migration-linux && mv numbernice-linux numberniceic && ./run_migration-linux && echo 'Restarting Service...' && sudo systemctl restart numberniceic && sudo systemctl status numberniceic --no-pager"
 
 echo "Deployment to Server Complete!"

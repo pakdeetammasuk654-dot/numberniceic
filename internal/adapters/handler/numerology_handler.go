@@ -3,6 +3,7 @@ package handler
 import (
 	"bufio"
 	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"log"
@@ -17,6 +18,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/a-h/templ"
@@ -39,6 +41,7 @@ type NumerologyHandler struct {
 	linguisticService   *service.LinguisticService
 	sampleNamesCache    *cache.SampleNamesCache
 	phoneNumberService  *service.PhoneNumberService
+	db                  *sql.DB
 }
 
 func NewNumerologyHandler(
@@ -50,6 +53,7 @@ func NewNumerologyHandler(
 	lingoService *service.LinguisticService,
 	sampleCache *cache.SampleNamesCache,
 	phoneNumberService *service.PhoneNumberService,
+	db *sql.DB,
 ) *NumerologyHandler {
 	return &NumerologyHandler{
 		numerologyCache:     numCache,
@@ -61,6 +65,7 @@ func NewNumerologyHandler(
 		linguisticService:   lingoService,
 		sampleNamesCache:    sampleCache,
 		phoneNumberService:  phoneNumberService,
+		db:                  db,
 	}
 }
 
@@ -412,10 +417,13 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 
 	isVIP := c.Locals("IsVIP") == true
 
-	// Calculate Solar System Props (Fast - mostly cache)
+	// Calculate Solar System Props (needed for visualization)
+	log.Printf("⏱️  [PERF] Starting getSolarSystemProps for name: %s", name)
+	startSolar := time.Now()
 	solarProps, _ := h.getSolarSystemProps(name, day, repoAllowKlakini, isVIP)
 	solarProps.DisableKlakini = disableKlakiniTable
 	solarProps.SkipTrigger = true
+	log.Printf("✅ [PERF] getSolarSystemProps completed in: %v", time.Since(startSolar))
 
 	// Prepare minimal Props for Index (Render Shell Immediately)
 	indexProps := analysis.IndexProps{
@@ -496,7 +504,11 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 			// --- PHASE 1: Top 4 (Fast-ish if indexed) ---
 			normalizedInput := strings.TrimSpace(name)
 			allowKlakiniTop4 := !disableKlakiniTop4
+			log.Printf("⏱️  [PERF] Starting GetBestSimilarNames (fetch 100, show top 4)")
+			startBest := time.Now()
+			// Fetch 100 names for proper ranking calculation
 			bestCandidates, errBest := h.namesMiracleRepo.GetBestSimilarNames(name, day, 100, allowKlakiniTop4)
+			log.Printf("✅ [PERF] GetBestSimilarNames completed in: %v (found %d names)", time.Since(startBest), len(bestCandidates))
 
 			var top4, last4 []domain.SimilarNameResult
 			var totalCountBest int
@@ -504,13 +516,17 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 			// If we got Best Names independently, render them now!
 			if errBest == nil && len(bestCandidates) > 0 {
 				h.calculateScoresAndHighlights(bestCandidates, day)
-				top4, last4, totalCountBest = h.getBestNames(bestCandidates, 100, allowKlakiniTop4)
+				// Get all ranked names first
+				t4, l4, totalCount := h.getBestNames(bestCandidates, 100, allowKlakiniTop4)
+				totalCountBest = totalCount
+				top4 = t4
+				last4 = l4
 
 				top4Props := analysis.SimilarNamesProps{
 					Top4Names:          top4,
 					Last4Names:         last4,
 					TotalFilteredCount: totalCountBest,
-					ShowTop4:           false, // Default view
+					ShowTop4:           isVIP, // Default view for VIP members is Top 4
 					DisplayNameHTML:    displayNameHTML,
 					DisableKlakiniTop4: disableKlakiniTop4,
 					IsVIP:              isVIP,
@@ -568,7 +584,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 					Top4Names:          top4,
 					Last4Names:         last4,
 					TotalFilteredCount: totalCountBest,
-					ShowTop4:           false,
+					ShowTop4:           isVIP,
 					DisplayNameHTML:    displayNameHTML,
 					DisableKlakiniTop4: disableKlakiniTop4,
 					IsVIP:              isVIP,
@@ -655,12 +671,23 @@ func (h *NumerologyHandler) AnalyzeLinguistically(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("Name parameter is required.")
 	}
 
+	// 1. Try Cache
+	var cachedMarkdown string
+	err := h.db.QueryRow("SELECT analysis_markdown FROM linguistic_cache WHERE name_text = $1", name).Scan(&cachedMarkdown)
+	if err == nil && cachedMarkdown != "" {
+		log.Printf("DEBUG: Linguistic Cache HIT for '%s'", name)
+		return templ_render.Render(c, analysis.LinguisticModal(name, cachedMarkdown))
+	}
+
+	// 2. AI Call
 	analysisRes, err := h.linguisticService.AnalyzeName(name)
 	if err != nil {
 		log.Printf("Error from linguistic service: %v", err)
-		// Return actual error for debugging
 		return c.Status(fiber.StatusInternalServerError).SendString(fmt.Sprintf("Service Error: %v", err))
 	}
+
+	// 3. Save to Cache (Background or Sync - let's do sync for simplicity and reliability)
+	_, _ = h.db.Exec("INSERT INTO linguistic_cache (name_text, analysis_markdown) VALUES ($1, $2) ON CONFLICT (name_text) DO NOTHING", name, analysisRes)
 
 	return templ_render.Render(c, analysis.LinguisticModal(name, analysisRes))
 }
@@ -691,10 +718,24 @@ func (h *NumerologyHandler) AnalyzeLinguisticallyAPI(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Name is required"})
 	}
 
+	// Try Cache
+	var cachedMarkdown string
+	err := h.db.QueryRow("SELECT analysis_markdown FROM linguistic_cache WHERE name_text = $1", name).Scan(&cachedMarkdown)
+	if err == nil && cachedMarkdown != "" {
+		return c.JSON(fiber.Map{
+			"name":     name,
+			"analysis": cachedMarkdown,
+			"source":   "cache",
+		})
+	}
+
 	analysisRes, err := h.linguisticService.AnalyzeName(name)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf("Analysis failed: %v", err)})
 	}
+
+	// Save
+	_, _ = h.db.Exec("INSERT INTO linguistic_cache (name_text, analysis_markdown) VALUES ($1, $2) ON CONFLICT (name_text) DO NOTHING", name, analysisRes)
 
 	return c.JSON(fiber.Map{
 		"name":     name,
@@ -1023,6 +1064,11 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 	// Use Templ Component
 	isVIP := c.Locals("IsVIP") == true
 	showTop4 := c.Query("show_top4") == "true" || c.Query("show_top4") == "on"
+
+	// Default to VIP view for VIP members if not explicitly toggled
+	if c.Query("show_top4") == "" && isVIP {
+		showTop4 = true
+	}
 
 	props := analysis.SimilarNamesProps{
 		SimilarNames:          tableCandidates,
@@ -1457,26 +1503,37 @@ func (h *NumerologyHandler) getSolarSystemProps(name, day string, repoAllowKlaki
 	}
 
 	updateBreakdown := func(pairNumber string) {
-		// Get categories directly from cache (sourced ONLY from number_categories table)
+		// Get categories directly from cache
 		if cats, ok := h.numberCategoryCache.GetCategories(pairNumber); ok {
 			keywords := h.numberCategoryCache.GetKeywords(pairNumber)
 
+			// Determine Good/Bad status from the SOURCE of Truth (PairCache - same as score)
+			isGood := false
+			isBad := false
+			if m, ok := h.numberPairCache.GetMeaning(pairNumber); ok {
+				if service.IsGoodPairType(m.PairType) {
+					isGood = true
+				} else if service.IsBadPairType(m.PairType) {
+					isBad = true
+				}
+			} else {
+				// Fallback to category cache if pair meaning missing (unlikely)
+				numberType := h.numberCategoryCache.GetNumberType(pairNumber)
+				isGood = (numberType == "ดี")
+				isBad = (numberType == "ร้าย")
+			}
+
 			for _, c := range cats {
-				// Only process allowed known categories for consistency
 				if !allowedCategories[c] {
 					continue
 				}
 
-				counts[c]++
+				counts[c]++ // Update count
 
-				// Get number_type strictly from number_categories table via cache
-				numberType := h.numberCategoryCache.GetNumberType(pairNumber)
-
-				// Update Good/Bad counts based on number_type
 				current := breakdown[c]
-				if numberType == "ดี" {
+				if isGood {
 					current.Good++
-				} else if numberType == "ร้าย" {
+				} else if isBad {
 					current.Bad++
 				}
 

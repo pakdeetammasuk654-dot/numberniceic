@@ -3,12 +3,6 @@ package pages
 import "numberniceic/internal/core/domain"
 
 templ Articles(articles []domain.Article) {
-	<div style="margin-bottom: 2rem;">
-		<h1 style="font-family: 'Kanit', sans-serif; text-align: center;">บทความน่ารู้</h1>
-		<p style="text-align: center; color: #666; font-family: 'Kanit', sans-serif;">
-			รวมบทความเกี่ยวกับศาสตร์ตัวเลขและเรื่องราวที่น่าสนใจ
-		</p>
-	</div>
 	<div class="articles-grid">
 		for _, a := range articles {
 			<a href={ templ.SafeURL("/articles/" + a.Slug) } class="article-card">

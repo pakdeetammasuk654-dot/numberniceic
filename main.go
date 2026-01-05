@@ -173,7 +173,7 @@ func main() {
 
 	// --- Handlers ---
 	// --- Handlers ---
-	numerologyHandler := handler.NewNumerologyHandler(numerologyCache, shadowCache, klakiniCache, numberPairCache, numberCategoryCache, namesMiracleRepo, linguisticService, sampleNamesCache, phoneNumberSvc)
+	numerologyHandler := handler.NewNumerologyHandler(numerologyCache, shadowCache, klakiniCache, numberPairCache, numberCategoryCache, namesMiracleRepo, linguisticService, sampleNamesCache, phoneNumberSvc, db)
 	promotionalCodeRepo := repository.NewPostgresPromotionalCodeRepository(db)
 	memberHandler := handler.NewMemberHandler(memberService, savedNameService, buddhistDayService, shippingAddressService, klakiniCache, numberPairCache, store, promotionalCodeRepo)
 	savedNameHandler := handler.NewSavedNameHandler(savedNameService, klakiniCache, numberPairCache, store)
@@ -674,6 +674,11 @@ func setupDatabase() *sql.DB {
 		os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"))
 	db, _ := sql.Open("postgres", psqlInfo)
+
+	// Optimize Connection Pool
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
+	db.SetConnMaxLifetime(5 * time.Minute)
 
 	err := db.Ping()
 	if err != nil {

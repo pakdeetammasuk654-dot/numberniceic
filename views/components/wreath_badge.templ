@@ -1,0 +1,250 @@
+package components
+
+templ WreathBadge(text1 string, text2 string, text3 string, text4 string, text5 string, text6 string, text7 string, text8 string) {
+    <style>
+        .wreath-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 1400px;
+            margin: 1.5rem auto 0 auto;
+            gap: 15px 10px; /* Reduced vertical, increased item safety */
+            padding: 0 10px;
+        }
+        
+        .wreath-item {
+            display: flex;
+            align-items: center;
+            position: relative;
+            transition: transform 0.2s ease;
+            flex: 0 0 auto;
+            margin: 0 5px; /* Add safety margin to prevent overlap */
+        }
+
+        .wreath-item img {
+            height: 90px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .wreath-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            z-index: 2;
+            position: relative;
+            padding: 0 5px;
+        }
+
+        .wreath-text {
+            font-family: 'Kanit', sans-serif;
+            font-weight: 400;
+            font-size: 19px; /* Slightly smaller to fit 6 in row better */
+            background: linear-gradient(to bottom, #FDE68A, #D97706, #92400E);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            white-space: nowrap;
+        }
+
+        .stars {
+            display: flex;
+            gap: 2px;
+        }
+
+        .stars span {
+            color: #F59E0B;
+            font-size: 15px;
+        }
+        
+        @media (max-width: 1300px) {
+            .wreath-container {
+                gap: 10px 5px;
+            }
+            .wreath-item img {
+                height: 75px;
+            }
+            .wreath-text {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 1100px) {
+            .wreath-container {
+                gap: 8px 2px;
+                padding: 0 5px;
+            }
+            .wreath-item {
+                margin: 0 2px;
+            }
+            .wreath-item img {
+                height: 65px;
+            }
+            .wreath-text {
+                font-size: 13px;
+            }
+            .stars span {
+                font-size: 11px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .wreath-container {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px 5px;
+                padding: 0 10px;
+                justify-items: center;
+            }
+            .wreath-item {
+                margin: 0;
+            }
+            .wreath-item img {
+                height: 80px !important;
+            }
+            .wreath-text {
+                font-size: 16px;
+            }
+            .stars span {
+                font-size: 13px;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .wreath-container {
+                gap: 15px 5px;
+                padding: 0 8px;
+            }
+            
+            .wreath-item img {
+                height: 70px !important;
+            }
+            
+            .wreath-text {
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .wreath-container {
+                gap: 10px 2px;
+                padding: 0 5px;
+            }
+            
+            .wreath-item img {
+                height: 55px !important;
+            }
+            
+            .wreath-text {
+                font-size: 11px;
+            }
+            
+            .stars span {
+                font-size: 9px;
+            }
+        }
+    </style>
+    
+    <div class="wreath-container">
+        if text1 != "" {
+            <div class="wreath-item">
+                <img src="/images/golden_laurel_right.png" style="transform: scaleX(-1); margin-right: -25px;" alt="Left Wreath"/>
+                <div class="wreath-content">
+                    <span class="wreath-text">{ text1 }</span>
+                    <div class="stars">
+                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                    </div>
+                </div>
+                <img src="/images/golden_laurel_right.png" style="margin-left: -25px;" alt="Right Wreath"/>
+            </div>
+        }
+        if text2 != "" {
+            <div class="wreath-item">
+                <img src="/images/golden_laurel_right.png" style="transform: scaleX(-1); margin-right: -25px;" alt="Left Wreath"/>
+                <div class="wreath-content">
+                    <span class="wreath-text">{ text2 }</span>
+                    <div class="stars">
+                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                    </div>
+                </div>
+                <img src="/images/golden_laurel_right.png" style="margin-left: -25px;" alt="Right Wreath"/>
+            </div>
+        }
+        if text3 != "" {
+            <div class="wreath-item">
+                <img src="/images/golden_laurel_right.png" style="transform: scaleX(-1); margin-right: -25px;" alt="Left Wreath"/>
+                <div class="wreath-content">
+                    <span class="wreath-text">{ text3 }</span>
+                    <div class="stars">
+                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                    </div>
+                </div>
+                <img src="/images/golden_laurel_right.png" style="margin-left: -25px;" alt="Right Wreath"/>
+            </div>
+        }
+        if text4 != "" {
+            <div class="wreath-item">
+                <img src="/images/golden_laurel_right.png" style="transform: scaleX(-1); margin-right: -25px;" alt="Left Wreath"/>
+                <div class="wreath-content">
+                    <span class="wreath-text">{ text4 }</span>
+                    <div class="stars">
+                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                    </div>
+                </div>
+                <img src="/images/golden_laurel_right.png" style="margin-left: -25px;" alt="Right Wreath"/>
+            </div>
+        }
+        if text5 != "" {
+            <div class="wreath-item">
+                <img src="/images/golden_laurel_right.png" style="transform: scaleX(-1); margin-right: -25px;" alt="Left Wreath"/>
+                <div class="wreath-content">
+                    <span class="wreath-text">{ text5 }</span>
+                    <div class="stars">
+                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                    </div>
+                </div>
+                <img src="/images/golden_laurel_right.png" style="margin-left: -25px;" alt="Right Wreath"/>
+            </div>
+        }
+        if text6 != "" {
+            <div class="wreath-item">
+                <img src="/images/golden_laurel_right.png" style="transform: scaleX(-1); margin-right: -25px;" alt="Left Wreath"/>
+                <div class="wreath-content">
+                    <span class="wreath-text">{ text6 }</span>
+                    <div class="stars">
+                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                    </div>
+                </div>
+                <img src="/images/golden_laurel_right.png" style="margin-left: -25px;" alt="Right Wreath"/>
+            </div>
+        }
+        if text7 != "" {
+            <div class="wreath-item">
+                <img src="/images/golden_laurel_right.png" style="transform: scaleX(-1); margin-right: -25px;" alt="Left Wreath"/>
+                <div class="wreath-content">
+                    <span class="wreath-text">{ text7 }</span>
+                    <div class="stars">
+                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                    </div>
+                </div>
+                <img src="/images/golden_laurel_right.png" style="margin-left: -25px;" alt="Right Wreath"/>
+            </div>
+        }
+        if text8 != "" {
+            <div class="wreath-item">
+                <img src="/images/golden_laurel_right.png" style="transform: scaleX(-1); margin-right: -25px;" alt="Left Wreath"/>
+                <div class="wreath-content">
+                    <span class="wreath-text">{ text8 }</span>
+                    <div class="stars">
+                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                    </div>
+                </div>
+                <img src="/images/golden_laurel_right.png" style="margin-left: -25px;" alt="Right Wreath"/>
+            </div>
+        }
+    </div>
+}
