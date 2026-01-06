@@ -13,6 +13,7 @@ import '../utils/custom_toast.dart';
 import 'login_page.dart';
 import 'dashboard_page.dart'; // To refresh dashboard or navigate? Actually we'll just show dialog.
 import 'main_tab_page.dart';
+import '../widgets/contact_purchase_modal.dart';
 
 class ShopPage extends StatefulWidget {
   const ShopPage({super.key});
@@ -56,7 +57,24 @@ class _ShopPageState extends State<ShopPage> {
     });
   }
 
+
+
   void _confirmPurchase(ProductModel product) {
+    debugPrint('🖱️ Clicked Buy: ${product.name}');
+    // Check if product is a phone number (Lucky Number)
+    final cleanName = product.name.replaceAll(RegExp(r'[^0-9]'), '');
+    final isPhone = cleanName.length >= 9 && cleanName.length <= 10; // Relaxed check
+    debugPrint('📞 isPhone: $isPhone (Clean: $cleanName)');
+
+    if (isPhone) {
+      debugPrint('🚀 Showing Contact Modal');
+      showDialog(
+        context: context,
+        builder: (context) => ContactPurchaseModal(phoneNumber: product.name),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -301,6 +319,7 @@ class _ShopPageState extends State<ShopPage> {
                           sum: sum,
                           isVip: true, // Shop items are generally premium
                           keywords: keywords,
+                          buyButtonLabel: 'ติดต่อซื้อ', // Changed for visual confirmation
                           onBuy: () => _confirmPurchase(product),
                           onAnalyze: () {
                               CustomToast.show(context, 'Analysis for ${product.name}');

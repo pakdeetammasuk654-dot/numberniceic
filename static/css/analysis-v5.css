@@ -1779,3 +1779,112 @@ body {
         width: 100%;
     }
 }
+
+@media (max-width: 600px) {
+    #similar-names-section {
+        margin-left: -1rem !important;
+        margin-right: -1rem !important;
+        width: auto !important;
+    }
+
+    .table-responsive,
+    .result-card-header,
+    .vip-banner {
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+        box-shadow: none !important;
+    }
+
+    .similar-names-table th,
+    .similar-names-table td {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+
+    .table-toolbar,
+    .result-card-header,
+    .vip-banner {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    .name-cell {
+        font-size: 1rem !important;
+    }
+
+    .table-pair-circle {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 0.7rem !important;
+    }
+
+    /* Vertical Dashboard Layout for Mobile */
+    .solar-dashboard-layout {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 1.5rem !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    .solar-system-container {
+        order: 1 !important;
+        /* Solar on top */
+        transform: none !important;
+        margin: 0 !important;
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+    .stats-control-panel {
+        order: 2 !important;
+        /* Stats below */
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 1.5rem !important;
+        width: 100% !important;
+        transform: none !important;
+        margin: 0 !important;
+    }
+
+    .score-pills {
+        flex-direction: row !important;
+        width: auto !important;
+        gap: 0.5rem !important;
+    }
+
+    .score-summary {
+        margin: 0 !important;
+        align-items: center !important;
+    }
+
+    .action-btn-premium.btn-save {
+        width: auto !important;
+        min-width: 140px;
+    }
+}
+
+@media (max-width: 400px) {
+    .stats-control-panel {
+        gap: 1rem !important;
+    }
+
+    .solar-system-container {
+        transform: scale(0.9) !important;
+        margin: -15px 0 !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .stats-control-panel {
+        gap: 0.75rem !important;
+    }
+
+    .solar-system-container {
+        transform: scale(0.85) !important;
+        margin: -25px 0 !important;
+    }
+}

@@ -99,6 +99,10 @@ main {
     font-family: 'Kanit', sans-serif !important;
 }
 
+.force-kanit {
+    font-family: 'Kanit', sans-serif !important;
+}
+
 .auth-links {
     display: flex;
     align-items: center;
@@ -2022,9 +2026,10 @@ body.htmx-request .solar-system-container {
 .table-responsive {
     background: white;
     border-radius: 16px;
-    overflow: hidden;
+    overflow-x: auto;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
     border: 1px solid #f0f0f0;
+    -webkit-overflow-scrolling: touch;
 }
 
 @media (max-width: 480px) {

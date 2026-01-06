@@ -131,8 +131,11 @@ class LuckyNumberCard extends StatelessWidget {
                           // Buy Button
                           Expanded(
                             flex: 3,
-                            child: ElevatedButton(
-                              onPressed: onBuy,
+                                child: ElevatedButton(
+                                onPressed: () {
+                                  print('🔘 LuckyNumberCard Button Pressed');
+                                  if (onBuy != null) onBuy!();
+                                },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF10B981), 
                                 foregroundColor: Colors.white,

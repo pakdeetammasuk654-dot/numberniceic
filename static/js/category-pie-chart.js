@@ -225,11 +225,6 @@ window.initNestedDonut = function (id, data, activeCategoriesJSON) {
             innerRing.innerHTML = '';
             const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
 
-            const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
-            filter.setAttribute('id', idPrefix + '-dropShadow');
-            filter.innerHTML = `<feGaussianBlur in="SourceAlpha" stdDeviation="3"/><feOffset dx="0" dy="2" result="offsetblur"/><feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>`;
-            defs.appendChild(filter);
-
             const catMap = { 'สุขภาพ': 'H', 'การงาน': 'W', 'การเงิน': 'F', 'ความรัก': 'L', 'N/A': 'N' };
             const gradientConfigs = {
                 'การงาน': ['#90CAF9', '#42A5F5', '0'],

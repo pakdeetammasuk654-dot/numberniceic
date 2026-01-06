@@ -40,14 +40,14 @@ func Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage st
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"th\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><meta name=\"google-site-verification\" content=\"AHPSlfwkrw1mcmvdhXPJGZLtaZcxxF9brzaKo_v0q-k\"><!-- Global site tag (gtag.js) - Google Analytics --><script async src=\"https://www.googletagmanager.com/gtag/js?id=G-3GZPS4KBX2\"></script><script>\n\t\t\t\twindow.dataLayer = window.dataLayer || [];\n\t\t\t\tfunction gtag(){dataLayer.push(arguments);}\n\t\t\t\tgtag('js', new Date());\n\t\t\t\tgtag('config', 'G-3GZPS4KBX2');\n\t\t\t</script><!-- Primary Meta Tags --><title>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"th\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><meta name=\"format-detection\" content=\"telephone=no\"><meta name=\"google-site-verification\" content=\"AHPSlfwkrw1mcmvdhXPJGZLtaZcxxF9brzaKo_v0q-k\"><!-- Global site tag (gtag.js) - Google Analytics --><script async src=\"https://www.googletagmanager.com/gtag/js?id=G-3GZPS4KBX2\"></script><script>\n\t\t\t\twindow.dataLayer = window.dataLayer || [];\n\t\t\t\tfunction gtag(){dataLayer.push(arguments);}\n\t\t\t\tgtag('js', new Date());\n\t\t\t\tgtag('config', 'G-3GZPS4KBX2');\n\t\t\t</script><!-- Primary Meta Tags --><title>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(seo.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 32, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 33, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -60,7 +60,7 @@ func Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage st
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(seo.Title + " - ชื่อดี.com")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 33, Col: 71}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 34, Col: 71}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -73,7 +73,7 @@ func Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage st
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(seo.Description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 34, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 35, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -86,7 +86,7 @@ func Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage st
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(seo.Keywords)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 35, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 36, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -104,7 +104,7 @@ func Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage st
 			var templ_7745c5c3_Var6 templ.SafeURL
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(seo.Canonical)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 38, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 39, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -122,7 +122,7 @@ func Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage st
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(seo.OGType)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 42, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 43, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -135,7 +135,7 @@ func Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage st
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(seo.Canonical)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 43, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 44, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -148,7 +148,7 @@ func Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage st
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(seo.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 44, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 45, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -161,7 +161,7 @@ func Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage st
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(seo.Description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 45, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 46, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -174,7 +174,7 @@ func Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage st
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(seo.OGImage)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 46, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 47, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -187,7 +187,7 @@ func Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage st
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(seo.Canonical)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 50, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 51, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -200,7 +200,7 @@ func Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage st
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(seo.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 51, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 52, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -213,7 +213,7 @@ func Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage st
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(seo.Description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 52, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 53, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -226,13 +226,13 @@ func Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage st
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(seo.OGImage)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 53, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/layout/main.templ`, Line: 54, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\"><link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg?v=2\"><link rel=\"icon\" type=\"image/png\" href=\"/favicon.png?v=2\"><link rel=\"shortcut icon\" href=\"/favicon.ico?v=2\"><!-- Google Fonts --><link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin><link href=\"https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&family=Kanit:wght@400;700&display=swap\" rel=\"stylesheet\"><script src=\"https://cdn.jsdelivr.net/npm/marked/marked.min.js\"></script><script src=\"https://unpkg.com/htmx.org@1.9.10\"></script><script src=\"/js/category-pie-chart.js?v=10\"></script><!-- Corrected CSS Path --><link rel=\"stylesheet\" href=\"/css/style-v4.css?v=12\"><!-- Critical CSS Injection for Best Names Layout --><link rel=\"stylesheet\" href=\"/css/analysis-v5.css?v=46\"><link rel=\"stylesheet\" href=\"/css/category-breakdown.css?v=2\"><style>\n\t\t\t\t.clickable-row { cursor: pointer; }\n\t\t\t    \n\t\t\t    /* Global Premium Gold Text */\n\t\t\t    .premium-gold-text {\n\t\t\t        color: #d4a700 !important;\n\t\t\t        font-weight: 700 !important;\n\t\t\t        font-family: 'Kanit', sans-serif !important;\n\t\t\t    }\n\t\t\t    .brand-link, .brand-link:visited, .brand-link:hover, .brand-link:active, .link-plain, .link-plain:visited, .link-plain:hover, .link-plain:active {\n\t\t\t        color: #d4a700 !important;\n\t\t\t        text-decoration: none !important;\n\t\t\t        display: flex !important;\n\t\t\t        align-items: center !important;\n\t\t\t        gap: 0.5rem !important;\n\t\t\t    }\n\t\t\t    .klakini-char {\n\t\t\t        color: #ff4757 !important;\n\t\t\t        -webkit-text-fill-color: #ff4757 !important;\n\t\t\t    }\n\t\t\t</style><link rel=\"stylesheet\" href=\"/css/auth.css\"><!-- Toastify JS CDN --><link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css\"><!-- JSON-LD Structured Data (Dummy Placeholder) --><script type=\"application/ld+json\">\n\t\t\t{\n\t\t\t  \"@context\": \"https://schema.org\",\n\t\t\t  \"@type\": \"Organization\",\n\t\t\t  \"name\": \"ชื่อดี.com\",\n\t\t\t  \"url\": \"https://xn--b3cu8e7ah6h.com\",\n\t\t\t  \"logo\": \"https://xn--b3cu8e7ah6h.com/favicon.png\",\n\t\t\t  \"description\": \"บริการวิเคราะห์ชื่อมงคล เบอร์มงคล ตามหลักเลขศาสตร์ พลังเงา\"\n\t\t\t}\n\t\t\t</script><script type=\"application/ld+json\">\n\t\t\t{\n\t\t\t  \"@context\": \"https://schema.org\",\n\t\t\t  \"@type\": \"WebSite\",\n\t\t\t  \"url\": \"https://xn--b3cu8e7ah6h.com\",\n\t\t\t  \"potentialAction\": {\n\t\t\t    \"@type\": \"SearchAction\",\n\t\t\t    \"target\": \"https://xn--b3cu8e7ah6h.com/analyzer?q={search_term_string}\",\n\t\t\t    \"query-input\": \"required name=search_term_string\"\n\t\t\t  }\n\t\t\t}\n\t\t\t</script></head><body hx-boost=\"true\"><!-- Global Upgrade Modal Container --><div id=\"upgrade-modal-container\" class=\"modal-overlay\" style=\"display: none; z-index: 9999;\"><!-- HTMX will inject content here --></div><!-- Buddhist Day Banner (Loaded via HTMX) --><div hx-get=\"/buddhist-day-banner\" hx-trigger=\"load\" hx-swap=\"outerHTML\"></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\"><link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg?v=2\"><link rel=\"icon\" type=\"image/png\" href=\"/favicon.png?v=2\"><link rel=\"shortcut icon\" href=\"/favicon.ico?v=2\"><!-- Google Fonts --><link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin><link href=\"https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&family=Kanit:wght@400;700&display=swap\" rel=\"stylesheet\"><script src=\"https://cdn.jsdelivr.net/npm/marked/marked.min.js\"></script><script src=\"https://unpkg.com/htmx.org@1.9.10\"></script><script src=\"/js/category-pie-chart.js?v=10\"></script><!-- Corrected CSS Path --><link rel=\"stylesheet\" href=\"/css/style-v4.css?v=13\"><!-- Critical CSS Injection for Best Names Layout --><link rel=\"stylesheet\" href=\"/css/analysis-v5.css?v=46\"><link rel=\"stylesheet\" href=\"/css/category-breakdown.css?v=2\"><style>\n\t\t\t\t.clickable-row { cursor: pointer; }\n\t\t\t    \n\t\t\t    /* Global Premium Gold Text */\n\t\t\t    .premium-gold-text {\n\t\t\t        color: #d4a700 !important;\n\t\t\t        font-weight: 700 !important;\n\t\t\t        font-family: 'Kanit', sans-serif !important;\n\t\t\t    }\n\t\t\t    .brand-link, .brand-link:visited, .brand-link:hover, .brand-link:active, .link-plain, .link-plain:visited, .link-plain:hover, .link-plain:active {\n\t\t\t        color: #d4a700 !important;\n\t\t\t        text-decoration: none !important;\n\t\t\t        display: flex !important;\n\t\t\t        align-items: center !important;\n\t\t\t        gap: 0.5rem !important;\n\t\t\t    }\n\t\t\t    .klakini-char {\n\t\t\t        color: #ff4757 !important;\n\t\t\t        -webkit-text-fill-color: #ff4757 !important;\n\t\t\t    }\n\t\t\t</style><link rel=\"stylesheet\" href=\"/css/auth.css\"><!-- Toastify JS CDN --><link rel=\"stylesheet\" type=\"text/css\" href=\"https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css\"><!-- JSON-LD Structured Data (Dummy Placeholder) --><script type=\"application/ld+json\">\n\t\t\t{\n\t\t\t  \"@context\": \"https://schema.org\",\n\t\t\t  \"@type\": \"Organization\",\n\t\t\t  \"name\": \"ชื่อดี.com\",\n\t\t\t  \"url\": \"https://xn--b3cu8e7ah6h.com\",\n\t\t\t  \"logo\": \"https://xn--b3cu8e7ah6h.com/favicon.png\",\n\t\t\t  \"description\": \"บริการวิเคราะห์ชื่อมงคล เบอร์มงคล ตามหลักเลขศาสตร์ พลังเงา\"\n\t\t\t}\n\t\t\t</script><script type=\"application/ld+json\">\n\t\t\t{\n\t\t\t  \"@context\": \"https://schema.org\",\n\t\t\t  \"@type\": \"WebSite\",\n\t\t\t  \"url\": \"https://xn--b3cu8e7ah6h.com\",\n\t\t\t  \"potentialAction\": {\n\t\t\t    \"@type\": \"SearchAction\",\n\t\t\t    \"target\": \"https://xn--b3cu8e7ah6h.com/analyzer?q={search_term_string}\",\n\t\t\t    \"query-input\": \"required name=search_term_string\"\n\t\t\t  }\n\t\t\t}\n\t\t\t</script></head><body hx-boost=\"true\"><!-- Global Upgrade Modal Container --><div id=\"upgrade-modal-container\" class=\"modal-overlay\" style=\"display: none; z-index: 9999;\"><!-- HTMX will inject content here --></div><!-- Buddhist Day Banner (Loaded via HTMX) --><div hx-get=\"/buddhist-day-banner\" hx-trigger=\"load\" hx-swap=\"outerHTML\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

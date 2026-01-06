@@ -4,6 +4,8 @@ import 'dart:math' as math;
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/shared_footer.dart';
 import '../widgets/premium_donut_chart.dart';
+import '../widgets/wreath_score_grid.dart';
+import '../widgets/solar_system_widget.dart';
 import '../services/api_service.dart';
 
 class NumberAnalysisPage extends StatefulWidget {
@@ -173,26 +175,7 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
               color: Colors.transparent, // Transparent to show scaffold bg
               child: Column(
                 children: [
-                   // Title
-                   Text(
-                    'วิเคราะห์เบอร์โทรศัพท์',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.kanit(
-                      fontSize: 32, 
-                      fontWeight: FontWeight.w900, 
-                      color: Colors.black,
-                      height: 1.2
-                    ),
-                  ),
-                  const SizedBox(height: 8), // Reduced 16->8
-                  
-                  // Subtitle
-                  Text(
-                    'เบอร์โทรศัพท์ เลขศาสตร์ พลังเงา เปลี่ยนชีวิต',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.kanit(fontSize: 16, color: Colors.black87),
-                  ),
-                  const SizedBox(height: 12), // Reduced 32->12 (Arrow 1)
+
                   
                   // Phone Input (Card Style)
                   Container(
@@ -205,43 +188,50 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
                       ],
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    child: TextField(
-                      controller: _phoneController,
-                      focusNode: _phoneFocusNode,
-                      keyboardType: TextInputType.phone,
-                      maxLength: 10,
-                      onChanged: _onPhoneChanged,
-                      style: GoogleFonts.sourceCodePro( // Monospace-like font
-                        fontSize: 28, 
-                        fontWeight: FontWeight.w600, 
-                        letterSpacing: 4, 
-                        color: const Color(0xFF1F2937)
-                      ),
-                      textAlign: TextAlign.center,
-                      decoration: InputDecoration(
-                        hintText: '08XXXXXXXX',
-                        hintStyle: GoogleFonts.sourceCodePro(color: Colors.grey[300], letterSpacing: 2),
-                        border: InputBorder.none,
-                        counterText: "",
-                        prefixIcon: const Icon(Icons.phone_in_talk_outlined, color: Colors.grey, size: 28),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 4),
-                        suffixIcon: _phoneController.text.isNotEmpty 
-                          ? IconButton(
-                              icon: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[100],
-                                  shape: BoxShape.circle
-                                ),
-                                child: const Icon(Icons.close, color: Colors.grey, size: 18)
-                              ),
-                              onPressed: () {
-                                 _phoneController.clear();
-                                 _onPhoneChanged('');
-                              },
-                            )
-                          : null
-                      ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.phone_in_talk_outlined, color: Colors.grey, size: 24),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _phoneController,
+                            focusNode: _phoneFocusNode,
+                            keyboardType: TextInputType.phone,
+                            maxLength: 10,
+                            onChanged: _onPhoneChanged,
+                            style: GoogleFonts.sourceCodePro( 
+                              fontSize: 24, // Slightly reduced to ensure fit
+                              fontWeight: FontWeight.w600, 
+                              letterSpacing: 3, // Slightly reduced spacing
+                              color: const Color(0xFF1F2937)
+                            ),
+                            textAlign: TextAlign.center,
+                            decoration: InputDecoration(
+                              hintText: '08XXXXXXXX',
+                              hintStyle: GoogleFonts.sourceCodePro(color: Colors.grey[300], letterSpacing: 2),
+                              border: InputBorder.none,
+                              counterText: "",
+                              contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                              suffixIcon: _phoneController.text.isNotEmpty 
+                                ? IconButton(
+                                    icon: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        shape: BoxShape.circle
+                                      ),
+                                      child: const Icon(Icons.close, color: Colors.grey, size: 18)
+                                    ),
+                                    onPressed: () {
+                                       _phoneController.clear();
+                                       _onPhoneChanged('');
+                                    },
+                                  )
+                                : null
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 12), // Reduced 24->12 (Arrow 2)
@@ -288,21 +278,29 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
                  child: CircularProgressIndicator(),
                ),
 
+
+
             if (!_isLoading && _analysisData != null) ...[
-                const SizedBox(height: 0), // Reduced 8->0 (Arrow 3 part 1)
-                
-                // 1. Grade Badge (Conditional)
-                if (showGoldenBadge && gradeTitle != null)
+                const SizedBox(height: 8), // Reduced spacing
+
+                // 1. Grade Badge (Moved to top)
+                if (showGoldenBadge && gradeTitle != null) ...[
                   _buildGradeBadge(_phoneController.text, gradeTitle!),
-
-                const SizedBox(height: 8), // Reduced 16->8 (Arrow 3 part 2)
-
-                // 2. Solar System Widget -> Premium Donut Chart (Golden Style)
-                PremiumDonutChart(
-                   data: _analysisData!, 
-                   isLoading: false,
-                ),
+                  const SizedBox(height: 8),
+                ],
                 
+                // Wreath Score Grid (Flower bouquet)
+                const WreathScoreGrid(),
+                
+                const SizedBox(height: 32),
+
+                // Solar System Visualization
+                SolarSystemWidget(
+                  sumPair: _analysisData!['sum_meaning'],
+                  mainPairs: _analysisData!['main_pairs'] as List?,
+                  hiddenPairs: _analysisData!['hidden_pairs'] as List?,
+                ),
+
                 const SizedBox(height: 32),
                 
                 // 3. Meaning Analysis Section

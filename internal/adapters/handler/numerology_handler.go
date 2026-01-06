@@ -307,7 +307,11 @@ func (h *NumerologyHandler) AnalyzeAPI(c *fiber.Ctx) error {
 			}
 		}
 
-		top4, last4, totalBest = h.getBestNames(bestCandidates, 100, allowKlakiniTop4)
+		var fullList []domain.SimilarNameResult
+		top4, last4, fullList, totalBest = h.getBestNames(bestCandidates, 100, allowKlakiniTop4)
+		if len(fullList) > 0 {
+			tableCandidates = fullList
+		}
 
 		// 3. Apply Limit based on VIP/Admin status
 		finalSimilarNames = tableCandidates
@@ -510,17 +514,18 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 			bestCandidates, errBest := h.namesMiracleRepo.GetBestSimilarNames(name, day, 100, allowKlakiniTop4)
 			log.Printf("✅ [PERF] GetBestSimilarNames completed in: %v (found %d names)", time.Since(startBest), len(bestCandidates))
 
-			var top4, last4 []domain.SimilarNameResult
+			var top4, last4, fullBestList []domain.SimilarNameResult
 			var totalCountBest int
 
 			// If we got Best Names independently, render them now!
 			if errBest == nil && len(bestCandidates) > 0 {
 				h.calculateScoresAndHighlights(bestCandidates, day)
 				// Get all ranked names first
-				t4, l4, totalCount := h.getBestNames(bestCandidates, 100, allowKlakiniTop4)
+				t4, l4, fl, totalCount := h.getBestNames(bestCandidates, 100, allowKlakiniTop4)
 				totalCountBest = totalCount
 				top4 = t4
 				last4 = l4
+				fullBestList = fl
 
 				top4Props := analysis.SimilarNamesProps{
 					Top4Names:          top4,
@@ -577,7 +582,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 					}
 				*/
 				h.calculateScoresAndHighlights(bestCandidates, day) // Ensure scores
-				top4, last4, totalCountBest = h.getBestNames(bestCandidates, 100, allowKlakiniTop4)
+				top4, last4, fullBestList, totalCountBest = h.getBestNames(bestCandidates, 100, allowKlakiniTop4)
 
 				// RENDER TOP 4 (Late Update)
 				top4Props := analysis.SimilarNamesProps{
@@ -607,6 +612,9 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 
 			// 3. Filter for TABLE
 			tableCandidates := similarNames
+			if len(fullBestList) > 0 {
+				tableCandidates = fullBestList
+			}
 			if isAuspicious {
 				var filtered []domain.SimilarNameResult
 				for _, n := range tableCandidates {
@@ -1050,7 +1058,10 @@ func (h *NumerologyHandler) GetSimilarNames(c *fiber.Ctx) error {
 		copy(bestCandidates, similarNames)
 	}
 
-	top4, last4, totalCountBest := h.getBestNames(bestCandidates, 100, allowKlakiniTop4)
+	top4, last4, fullList, totalCountBest := h.getBestNames(bestCandidates, 100, allowKlakiniTop4)
+	if errBest == nil && len(fullList) > 0 {
+		tableCandidates = fullList
+	}
 
 	// Create display chars for the header (always true Klakini status)
 	displayNameHTML := h.createDisplayChars(name, day)
@@ -1146,7 +1157,7 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 	return templ_render.Render(c, analysis.SolarSystemAndRefresh(solarProps, name, day))
 }
 
-func (h *NumerologyHandler) getBestNames(candidates []domain.SimilarNameResult, limit int, allowKlakini bool) ([]domain.SimilarNameResult, []domain.SimilarNameResult, int) {
+func (h *NumerologyHandler) getBestNames(candidates []domain.SimilarNameResult, limit int, allowKlakini bool) ([]domain.SimilarNameResult, []domain.SimilarNameResult, []domain.SimilarNameResult, int) {
 	var top4 []domain.SimilarNameResult
 	var last4 []domain.SimilarNameResult
 
@@ -1256,7 +1267,7 @@ func (h *NumerologyHandler) getBestNames(candidates []domain.SimilarNameResult, 
 		}
 	}
 
-	return top4, last4, len(finalList)
+	return top4, last4, finalList, len(finalList)
 }
 
 func (h *NumerologyHandler) filterKlakiniNames(names []domain.SimilarNameResult) []domain.SimilarNameResult {

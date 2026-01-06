@@ -212,12 +212,7 @@ templ SimilarNamesTable(props SimilarNamesProps) {
 							<h3 class="vip-banner-title">รับรหัส VIP วิเคราะห์ +3 แสนชื่อเมื่อซื้อของร้านมาดี</h3>
 						</div>
 					</div>
-					<a href="#" 
-					   hx-get="/payment/upgrade" 
-					   hx-target="#upgrade-modal-container" 
-					   hx-swap="innerHTML"
-					   onclick="event.preventDefault(); var el = document.getElementById('upgrade-modal-container'); if(!el){ el = document.createElement('div'); el.id = 'upgrade-modal-container'; el.className = 'modal-overlay'; el.style.display = 'none'; el.style.zIndex='9999'; document.body.appendChild(el); } el.style.display='flex'"
-					   class="vip-button-style">ร้านมาดี</a>
+					<a href="/shop" class="vip-button-style">ร้านมาดี</a>
 				</div>
 			} else {
 				<!-- VIP Active Banner -->
@@ -310,7 +305,7 @@ templ Top4Section(props SimilarNamesProps) {
 									} else {
 										<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#a0aec0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon-svg"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
 									}
-									<span>VIP</span>
+									<span>TOP4</span>
 								</span>
 								<label class="toggle-switch toggle-label-scale">
 									<input type="checkbox" id="show-top4-toggle" onchange="toggleBestNames(this.checked)"
@@ -320,7 +315,7 @@ templ Top4Section(props SimilarNamesProps) {
                                         hx-target="#top4-section"
                                         hx-swap="innerHTML" 
                                         hx-indicator="#top4-loader"
-                                        hx-vals='js:{"section": "top4", "name": (document.getElementById("name") ? document.getElementById("name").value : ""), "day": (document.getElementById("day") ? document.getElementById("day").value : ""), "auspicious": document.getElementById("auspicious-toggle") ? document.getElementById("auspicious-toggle").checked : false, "disable_klakini_top4": document.getElementById("disable-klakini-top4-toggle") ? document.getElementById("disable-klakini-top4-toggle").checked : false, "disable_klakini": document.getElementById("disable-klakini-toggle") ? document.getElementById("disable-klakini-toggle").checked : false, "show_top4": event.target.checked}'
+                                        hx-vals='js:{"section": "top4", "name": (document.getElementById("name") ? document.getElementById("name").value : ""), "day": (document.getElementById("day") ? document.getElementById("day").value : ""), "auspicious": document.getElementById("auspicious-toggle") ? document.getElementById("auspicious-toggle").checked : false, "disable_klakini_top4": document.getElementById("disable-klakini-top4-toggle") ? !document.getElementById("disable-klakini-top4-toggle").checked : false, "disable_klakini": document.getElementById("disable-klakini-toggle") ? !document.getElementById("disable-klakini-toggle").checked : false, "show_top4": event.target.checked}'
                                         checked?={ props.ShowTop4 }
                                     />
 									<span class="slider"></span>
@@ -417,8 +412,15 @@ templ SimilarNamesList(props SimilarNamesProps) {
 					hx-indicator="#table-loader"
 					hx-vals='js:{"section": "table", "name": (document.getElementById("name") ? document.getElementById("name").value : ""), "day": (document.getElementById("day") ? document.getElementById("day").value : ""), "auspicious": document.getElementById("auspicious-toggle").checked, "disable_klakini": !document.getElementById("disable-klakini-toggle").checked, "disable_klakini_top4": document.getElementById("disable-klakini-top4-toggle") ? !document.getElementById("disable-klakini-top4-toggle").checked : false, "show_top4": document.getElementById("show-top4-toggle") ? document.getElementById("show-top4-toggle").checked : false}'
 				>
-					<div class="toggle-item">
-						<span class="toggle-label toggle-label-auspicious">ชื่อดีเท่านั้น</span>
+					<div class={ "toggle-item-top4", templ.KV("inactive-toggle", !props.IsAuspicious) }>
+						<span class="toggle-label-top4">
+							if props.IsAuspicious {
+								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f57f17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon-svg"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+							} else {
+								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#a0aec0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon-svg"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+							}
+							<span>VIP</span>
+						</span>
 						<label class="toggle-switch toggle-label-scale">
 							<input type="checkbox" id="auspicious-toggle" name="auspicious" 
 								if props.IsAuspicious {

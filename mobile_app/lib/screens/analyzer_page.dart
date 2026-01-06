@@ -2289,17 +2289,22 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
                        gradient: const LinearGradient(
-                        colors: [Color(0xFFFFD54F), Color(0xFFFFCA28)], // Amber/Orange Gradient
+                        colors: [Color(0xFFFFC107), Color(0xFFFF8F00)], // Darker Amber -> Dark Orange
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(25), // Rounded pill shape
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.orange.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
+                          color: Colors.orange.shade900.withOpacity(0.3), // Darker shadow
+                          blurRadius: 10,
+                          offset: const Offset(0, 6),
                         ),
+                        BoxShadow(
+                          color: Colors.white.withOpacity(0.4),
+                          blurRadius: 0,
+                          offset: const Offset(0, 2) // Inner highlight effect (top edge)
+                        )
                       ],
                     ),
                     child: Row(
@@ -2382,39 +2387,49 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
     
     final angleStep = (2 * math.pi) / pairs.length;
 
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, child) {
-        final rotationValue = controller.value * 2 * math.pi * (reverse ? -1 : 1);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Calculate center dynamically based on actual size
+        // This ensures alignment with OrbitPainter even if the view shrinks below 280x280
+        final cx = constraints.maxWidth / 2;
+        final cy = constraints.maxHeight / 2;
         
-        return Stack(
-          children: pairs.asMap().entries.map((entry) {
-            final idx = entry.key;
-            final pair = entry.value;
-            final angle = rotationValue + (idx * angleStep);
+        return AnimatedBuilder(
+          animation: controller,
+          builder: (context, child) {
+            final rotationValue = controller.value * 2 * math.pi * (reverse ? -1 : 1);
             
-            final color = _getPairColor(pair['meaning']?['pair_type'] ?? '');
+            return Stack(
+              clipBehavior: Clip.none,
+              children: pairs.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final pair = entry.value;
+                final angle = rotationValue + (idx * angleStep);
+                
+                final color = _getPairColor(pair['meaning']?['pair_type'] ?? '');
 
-            return Positioned(
-              left: 140 + radius * math.cos(angle) - 18, // Center is 140 for 280 size
-              top: 140 + radius * math.sin(angle) - 18,
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: color,
-                  boxShadow: [BoxShadow(color: color.withOpacity(0.5), blurRadius: 8)],
-                ),
-                child: Center(
-                  child: Text(
-                    pair['pair_number'] ?? '',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                return Positioned(
+                  left: cx + radius * math.cos(angle) - 18, 
+                  top: cy + radius * math.sin(angle) - 18,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: color,
+                      boxShadow: [BoxShadow(color: color.withOpacity(0.5), blurRadius: 8)],
+                    ),
+                    child: Center(
+                      child: Text(
+                        pair['pair_number'] ?? '',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              }).toList(),
             );
-          }).toList(),
+          },
         );
       },
     );
@@ -2546,19 +2561,23 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('รับรหัส VIP วิเคราะห์ +3 แสนชื่อเมื่อซื้อเบอร์มงคล', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF4A3B00))),
-                  // Subtitle removed to match user request for single string
+                  Text('รับรหัส VIP วิเคราะห์ +3 แสนชื่อ\nเมื่อซื้อเบอร์มงคล', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF4A3B00))),
                 ],
               ),
             ),
             ElevatedButton(
-              onPressed: _handleUnlockAction,
+              onPressed: () {
+                 Navigator.of(context).pushAndRemoveUntil(
+                   MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 3)),
+                   (route) => false,
+                 );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2C3E50),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: Text(_isLoggedIn ? 'ร้านมาดี' : 'เข้าสู่ระบบ', style: GoogleFonts.kanit()),
+              child: Text('ร้านมาดี', style: GoogleFonts.kanit()),
             ),
           ],
         ),

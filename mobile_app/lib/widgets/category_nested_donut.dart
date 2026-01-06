@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_app/widgets/lucky_number_card.dart';
 import 'package:mobile_app/widgets/lucky_number_skeleton.dart';
+import 'package:mobile_app/widgets/contact_purchase_modal.dart';
 import 'package:mobile_app/services/api_service.dart';
 
 // --- MAIN WIDGET ---
@@ -317,7 +318,13 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
                           isVip: cat.suggestedNumber!['is_vip'] == true,
                           keywords: List<String>.from(cat.suggestedNumber!['keywords'] ?? []),
                           themeColor: cat.color, 
-                          onBuy: () {}, 
+                          buyButtonLabel: 'ติดต่อซื้อ',
+                          onBuy: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => ContactPurchaseModal(phoneNumber: cat.suggestedNumber!['number'] ?? ''),
+                            );
+                          }, 
                           onClose: () => _onEnhanceChange(cat.name, false),
                       )
                       : const LuckyNumberSkeleton(key: ValueKey('skeleton')),
