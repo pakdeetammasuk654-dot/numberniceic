@@ -54,6 +54,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
   bool _showKlakiniTop4 = true;
   bool _showScrollToTop = false;
   bool _isTop4Switching = false;
+  final GlobalKey _top4Key = GlobalKey();
 
   final List<Map<String, dynamic>> _days = [
     {'value': 'sunday', 'label': 'วันอาทิตย์', 'icon': Icons.wb_sunny, 'color': Colors.red},
@@ -351,6 +352,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
         : [Colors.white, const Color(0xFFF1F8E9)];
 
     return Container(
+      key: _top4Key,
         margin: const EdgeInsets.only(bottom: 64), // Increased bottom margin to prevent overlap
         padding: const EdgeInsets.symmetric(horizontal: 16), // No background padding needed
         // No decoration -> transparent background
@@ -1602,9 +1604,17 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
                       _showTop4 = true;
                       _showScrollToTop = true;
                    });
-                   // Scroll slightly down to Top4
-                   Future.delayed(const Duration(milliseconds: 100), () {
-                     if (_scrollController.hasClients) {
+                   // Scroll to Top4 Section using Key
+                   Future.delayed(const Duration(milliseconds: 200), () {
+                     if (_top4Key.currentContext != null) {
+                         Scrollable.ensureVisible(
+                           _top4Key.currentContext!,
+                           duration: const Duration(milliseconds: 800),
+                           curve: Curves.easeInOutQuart,
+                           alignment: 0.1, 
+                         );
+                     } else if (_scrollController.hasClients) {
+                         // Fallback
                          _scrollController.animateTo(
                             _scrollController.position.maxScrollExtent, 
                             duration: const Duration(milliseconds: 1000), 

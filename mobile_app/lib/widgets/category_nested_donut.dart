@@ -673,7 +673,8 @@ class CategoryLegendRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     bool isActive = cat.good > 0 || isEnhanced; 
-    bool showColor = isActive; 
+    bool hasBad = cat.bad > 0;
+    bool showColor = isActive || hasBad; 
     int goodPct = displayPct;
     int badPct = totalPairs > 0 ? ((cat.bad / totalPairs) * 100).ceil() : 0;
 
@@ -749,7 +750,10 @@ class CategoryLegendRow extends StatelessWidget {
               padding: const EdgeInsets.only(left: 20, right: 8), 
               child: Text(
                 cat.keywords.join(', '),
-                style: GoogleFonts.kanit(fontSize: 13, color: showColor ? Colors.grey[600]! : Colors.grey[400]!),
+                style: GoogleFonts.kanit(
+                  fontSize: 13, 
+                  color: hasBad ? const Color(0xFFEF4444) : (showColor ? Colors.grey[600]! : Colors.grey[400]!),
+                ),
               ),
             ),
           ] else ...[
@@ -757,7 +761,10 @@ class CategoryLegendRow extends StatelessWidget {
               padding: const EdgeInsets.only(left: 20, right: 8),
               child: Text(
                 '-',
-                style: GoogleFonts.kanit(fontSize: 13, color: Colors.grey[400]),
+                style: GoogleFonts.kanit(
+                  fontSize: 13, 
+                  color: hasBad ? const Color(0xFFEF4444) : Colors.grey[400],
+                ),
               ),
             ),
           ],
