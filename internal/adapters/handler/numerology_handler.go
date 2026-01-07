@@ -1591,6 +1591,14 @@ func (h *NumerologyHandler) getSolarSystemProps(name, day string, repoAllowKlaki
 			sort.Strings(badKws)
 			entry.BadKeywords = badKws
 
+			// FIX: Combine Good + Bad keywords into main 'Keywords' field
+			// so that Mobile App (which reads only 'keywords') displays them.
+			// The Mobile App handles coloring based on 'HasBad' flag.
+			combinedKws := make([]string, 0, len(kws)+len(badKws))
+			combinedKws = append(combinedKws, kws...)
+			combinedKws = append(combinedKws, badKws...)
+			entry.Keywords = combinedKws
+
 			breakdown[cat] = entry
 		}
 	}
