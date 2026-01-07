@@ -3,7 +3,6 @@ package repository
 import (
 	"database/sql"
 	"numberniceic/internal/core/domain"
-	"numberniceic/internal/core/service"
 	"strings"
 
 	"github.com/lib/pq"
@@ -47,7 +46,7 @@ func (r *PostgresNumberPairRepository) GetAll() ([]domain.NumberPairMeaning, err
 		m.PairPoint = int(pairPoint.Int64)
 		m.Category = strings.TrimSpace(category.String)
 		m.Keywords = keywords
-		m.Color = service.GetPairTypeColor(m.PairType) // Assign color here
+		m.Color = getPairTypeColor(m.PairType) // Assign color here
 
 		meanings = append(meanings, m)
 	}
@@ -57,4 +56,24 @@ func (r *PostgresNumberPairRepository) GetAll() ([]domain.NumberPairMeaning, err
 	}
 
 	return meanings, nil
+}
+
+func getPairTypeColor(pairType string) string {
+	trimmedType := strings.TrimSpace(pairType)
+	switch trimmedType {
+	case "D10":
+		return "#2E7D32" // Dark Green
+	case "D8":
+		return "#43A047" // Green
+	case "D5":
+		return "#66BB6A" // Light Green
+	case "R10":
+		return "#C62828" // Dark Red
+	case "R7":
+		return "#E53935" // Red
+	case "R5":
+		return "#EF5350" // Light Red
+	default:
+		return "#9E9E9E" // Grey
+	}
 }

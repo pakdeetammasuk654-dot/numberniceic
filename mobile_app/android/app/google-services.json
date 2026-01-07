@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "564920304262",
+    "project_id": "numberniceic-mobile",
+    "storage_bucket": "numberniceic-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:564920304262:android:d04fffff5ab0e31aca4707",
+        "android_client_info": {
+          "package_name": "com.example.mobile_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "564920304262-68tejddeu1hs4iru30jois3sn14cg991.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAD1bHTzqxH9bQEp-7eXd6LKbj-lytONw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "564920304262-68tejddeu1hs4iru30jois3sn14cg991.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "564920304262-3m5tmlsu6ti53mtiodp1qki595iji2tn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.mobileApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

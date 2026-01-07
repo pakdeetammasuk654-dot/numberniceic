@@ -7,6 +7,7 @@ import '../widgets/premium_donut_chart.dart';
 import '../widgets/wreath_score_grid.dart';
 import '../widgets/solar_system_widget.dart';
 import '../services/api_service.dart';
+import 'vip_grade_info_page.dart';
 
 class NumberAnalysisPage extends StatefulWidget {
   const NumberAnalysisPage({super.key});
@@ -369,34 +370,56 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
              // Grade & Stars Column
-             Column(
-               mainAxisSize: MainAxisSize.min,
-               children: [
-                  ShaderMask(
-                     shaderCallback: (bounds) => const LinearGradient(
-                       colors: [Color(0xFFFDE68A), Color(0xFFD97706), Color(0xFF92400E)],
-                       begin: Alignment.topCenter,
-                       end: Alignment.bottomCenter,
-                     ).createShader(bounds),
-                     child: Text(
-                       title,
-                       style: GoogleFonts.kanit(
-                         fontSize: 30,
-                         fontWeight: FontWeight.w900,
-                         color: Colors.white, // Masked
-                         height: 1.0, 
+             GestureDetector(
+               onTap: () {
+                 Navigator.push(
+                   context,
+                   MaterialPageRoute(builder: (context) => const VipGradeInfoPage()),
+                 );
+               },
+               child: Column(
+                 mainAxisSize: MainAxisSize.min,
+                 children: [
+                    ShaderMask(
+                       shaderCallback: (bounds) => const LinearGradient(
+                         colors: [Color(0xFFFDE68A), Color(0xFFD97706), Color(0xFF92400E)],
+                         begin: Alignment.topCenter,
+                         end: Alignment.bottomCenter,
+                       ).createShader(bounds),
+                       child: Row(
+                         mainAxisSize: MainAxisSize.min,
+                         children: [
+                           Text(
+                             title,
+                             style: GoogleFonts.kanit(
+                               fontSize: 30,
+                               fontWeight: FontWeight.w900,
+                               color: Colors.white, // Masked
+                               height: 1.0, 
+                             ),
+                             textAlign: TextAlign.center,
+                           ),
+                           const SizedBox(width: 8),
+                           Container(
+                             padding: const EdgeInsets.all(2),
+                             decoration: const BoxDecoration(
+                               color: Colors.white24,
+                               shape: BoxShape.circle,
+                             ),
+                             child: const Icon(Icons.info_outline, color: Colors.white, size: 20),
+                           ),
+                         ],
                        ),
-                       textAlign: TextAlign.center,
-                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                     mainAxisSize: MainAxisSize.min,
-                     children: List.generate(5, (index) => 
-                        Icon(Icons.star, color: const Color(0xFFF59E0B), size: index == 2 ? 26 : 20)
-                     ),
-                  )
-               ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                       mainAxisSize: MainAxisSize.min,
+                       children: List.generate(5, (index) => 
+                          Icon(Icons.star, color: const Color(0xFFF59E0B), size: index == 2 ? 26 : 20)
+                       ),
+                    )
+                 ],
+               ),
              ),
 
              const SizedBox(width: 12),
@@ -1029,7 +1052,30 @@ class _Planet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pair = item['pair']?.toString() ?? '';
-    final colorHex = item['meaning']?['color']?.toString() ?? '#9E9E9E';
+    
+    // Determine if this pair is bad
+    bool isBad = false;
+    final meaning = item['meaning'];
+    if (meaning != null) {
+      // Check is_bad flag
+      final badVal = meaning['is_bad'];
+      if (badVal is bool) {
+        isBad = badVal;
+      } else if (badVal is int) {
+        isBad = badVal > 0;
+      } else if (badVal is String) {
+        isBad = badVal.toLowerCase() == 'true';
+      }
+      
+      // Fallback: check pair_type if is_bad not set
+      if (!isBad && meaning['pair_type'] != null) {
+        final pairType = meaning['pair_type'].toString();
+        isBad = (pairType == 'ร้าย' || pairType == 'ร้ายมาก');
+      }
+    }
+    
+    // Use green for good, red for bad
+    final color = isBad ? const Color(0xFFEF4444) : const Color(0xFF10B981);
     
     // Calculate initial angle based on index
     final double initialAngle = (2 * math.pi * index) / total;
@@ -1050,7 +1096,7 @@ class _Planet extends StatelessWidget {
             width: 30, height: 30,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: _parseColor(colorHex),
+              color: color,
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 2),
               boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black26)]
@@ -1060,16 +1106,6 @@ class _Planet extends StatelessWidget {
         );
       },
     );
-  }
-  
-    Color _parseColor(String hex) {
-     try {
-       String clean = hex.replaceAll('#', '');
-       if (clean.length == 6) clean = 'FF$clean';
-       return Color(int.parse(clean, radix: 16));
-     } catch(e) {
-       return Colors.grey;
-     }
   }
 }
 

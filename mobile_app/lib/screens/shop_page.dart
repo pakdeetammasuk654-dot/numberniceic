@@ -319,7 +319,7 @@ class _ShopPageState extends State<ShopPage> {
                           sum: sum,
                           isVip: true, // Shop items are generally premium
                           keywords: keywords,
-                          buyButtonLabel: 'ติดต่อซื้อ', // Changed for visual confirmation
+                          buyButtonLabel: 'ซื้อเบอร์นี้', // Changed for visual confirmation
                           onBuy: () => _confirmPurchase(product),
                           onAnalyze: () {
                               CustomToast.show(context, 'Analysis for ${product.name}');

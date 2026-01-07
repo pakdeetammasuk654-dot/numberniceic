@@ -1819,21 +1819,23 @@ body {
         font-size: 0.7rem !important;
     }
 
-    /* Vertical Dashboard Layout for Mobile */
+    /* Keep Dashboard Layout Side-by-Side */
     .solar-dashboard-layout {
-        flex-direction: column !important;
+        flex-direction: row !important;
         align-items: center !important;
-        gap: 1.5rem !important;
+        gap: 0.5rem !important;
         padding: 0 !important;
         overflow: visible !important;
+        flex-wrap: nowrap !important;
     }
 
     .solar-system-container {
-        order: 1 !important;
-        /* Solar on top */
-        transform: none !important;
+        order: 2 !important;
+        /* Solar on right/after score */
+        transform: scale(0.9) !important;
+        /* Slightly scale down for small screens */
         margin: 0 !important;
-        width: 100% !important;
+        width: auto !important;
         display: flex !important;
         justify-content: center !important;
     }

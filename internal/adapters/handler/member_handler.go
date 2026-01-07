@@ -49,113 +49,13 @@ func NewMemberHandler(service *service.MemberService, savedNameService *service.
 
 // ShowRegisterPage renders the registration page.
 func (h *MemberHandler) ShowRegisterPage(c *fiber.Ctx) error {
-	getLocStr := func(key string) string {
-		v := c.Locals(key)
-		if v == nil || v == "<nil>" {
-			return ""
-		}
-		return fmt.Sprintf("%v", v)
-	}
-
-	sess, _ := h.store.Get(c)
-	lastUsername := ""
-	lastEmail := ""
-	lastTel := ""
-	errorField := ""
-
-	if v := sess.Get("reg_username"); v != nil {
-		lastUsername = v.(string)
-		sess.Delete("reg_username")
-	}
-	if v := sess.Get("reg_email"); v != nil {
-		lastEmail = v.(string)
-		sess.Delete("reg_email")
-	}
-	if v := sess.Get("reg_tel"); v != nil {
-		lastTel = v.(string)
-		sess.Delete("reg_tel")
-	}
-	if v := sess.Get("error_field"); v != nil {
-		errorField = v.(string)
-		sess.Delete("error_field")
-	}
-	sess.Save()
-
-	return templ_render.Render(c, layout.Main(
-		layout.SEOProps{
-			Title:       "สมัครสมาชิก",
-			Description: "สมัครสมาชิกกับ ชื่อดี.com เพื่อรับสิทธิพิเศษในการบันทึกชื่อที่คุณชื่นชอบ และเข้าถึงบทความวิเคราะห์เชิงลึก",
-			Keywords:    "สมัครสมาชิก, ลงทะเบียน, ชื่อมงคล",
-			Canonical:   "https://xn--b3cu8e7ah6h.com/register",
-			OGType:      "website",
-		},
-		c.Locals("IsLoggedIn").(bool),
-		c.Locals("IsAdmin").(bool),
-		c.Locals("IsVIP").(bool),
-		"register",
-		getLocStr("toast_success"),
-		getLocStr("toast_error"),
-		pages.Register(lastUsername, lastEmail, lastTel, errorField),
-	))
+	return c.Redirect("/login")
 }
 
 // HandleRegister handles the form submission from the registration page.
 func (h *MemberHandler) HandleRegister(c *fiber.Ctx) error {
-	username := strings.TrimSpace(c.FormValue("username"))
-	password := c.FormValue("password")
-	confirmPassword := c.FormValue("confirm_password")
-	email := strings.TrimSpace(c.FormValue("email"))
-	tel := strings.TrimSpace(c.FormValue("tel"))
-
 	sess, _ := h.store.Get(c)
-
-	// Helper to save form state
-	saveState := func(ef string) {
-		sess.Set("reg_username", username)
-		sess.Set("reg_email", email)
-		sess.Set("reg_tel", tel)
-		sess.Set("error_field", ef)
-		sess.Save()
-	}
-
-	if username == "" {
-		sess.Set("toast_error", "กรุณากรอกชื่อผู้ใช้")
-		saveState("username")
-		return c.Redirect("/register")
-	}
-
-	if !h.isValidUsername(username) {
-		sess.Set("toast_error", "Username ต้องเป็นภาษาไทย ภาษาอังกฤษ หรือตัวเลข และห้ามมีช่องว่าง")
-		saveState("username")
-		return c.Redirect("/register")
-	}
-
-	if password == "" {
-		sess.Set("toast_error", "กรุณากรอกรหัสผ่าน")
-		saveState("password")
-		return c.Redirect("/register")
-	}
-
-	if password != confirmPassword {
-		sess.Set("toast_error", "รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน")
-		saveState("password_mismatch")
-		return c.Redirect("/register")
-	}
-
-	err := h.service.Register(username, password, email, tel)
-	if err != nil {
-		log.Printf("Register Error: %v", err)
-		sess.Set("toast_error", err.Error())
-
-		saveState("username")
-		return c.Redirect("/register")
-	}
-
-	sess.Set("toast_success", "ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบ")
-	sess.Delete("reg_username")
-	sess.Delete("reg_email")
-	sess.Delete("reg_tel")
-	sess.Delete("error_field")
+	sess.Set("toast_error", "ระบบปิดรับสมัครสมาชิกด้วยรหัสผ่าน กรุณาใช้ Social Login")
 	sess.Save()
 	return c.Redirect("/login")
 }
@@ -183,6 +83,7 @@ func (h *MemberHandler) ShowLoginPage(c *fiber.Ctx) error {
 	}
 	sess.Save()
 
+	avatarURL, _ := c.Locals("AvatarURL").(string)
 	return templ_render.Render(c, layout.Main(
 		layout.SEOProps{
 			Title:       "เข้าสู่ระบบ",
@@ -197,48 +98,17 @@ func (h *MemberHandler) ShowLoginPage(c *fiber.Ctx) error {
 		"login",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		avatarURL,
 		pages.Login(lastUsername, errorField),
 	))
 }
 
 // HandleLogin handles the form submission from the login page.
 func (h *MemberHandler) HandleLogin(c *fiber.Ctx) error {
-	username := strings.TrimSpace(c.FormValue("username"))
-	password := c.FormValue("password")
-
 	sess, _ := h.store.Get(c)
-
-	member, err := h.service.Login(username, password)
-	if err == nil {
-		fmt.Printf("DEBUG: Login Success for %s. DB Status=%d. IsVIP=%v\n", member.Username, member.Status, member.IsVIP())
-	}
-	if err != nil {
-		log.Printf("Login Error: %v", err)
-		sess.Set("toast_error", err.Error())
-		sess.Set("last_username", username) // Remember username
-		sess.Set("error_field", "password") // Default to password if login fails
-		sess.Save()
-		return c.Redirect("/login")
-	}
-
-	sess.Set("member_id", member.ID)
-	// Admin logic restored
-	if member.Status == 9 {
-		sess.Set("is_admin", true)
-	} else {
-		sess.Set("is_admin", false)
-	}
-
-	if member.IsVIP() {
-		sess.Set("is_vip", true)
-	} else {
-		sess.Set("is_vip", false)
-	}
-
-	sess.Set("toast_success", "ยินดีต้อนรับกลับ, "+member.Username+"!")
+	sess.Set("toast_error", "ระบบยกเลิกการเข้าสู่ระบบด้วยรหัสผ่านแล้ว กรุณาใช้ Social Login")
 	sess.Save()
-
-	return c.Redirect("/dashboard")
+	return c.Redirect("/login")
 }
 
 // ShowDashboard renders the member's dashboard.
@@ -298,6 +168,7 @@ func (h *MemberHandler) ShowDashboard(c *fiber.Ctx) error {
 		}
 	}
 
+	avatarURL, _ := c.Locals("AvatarURL").(string)
 	return templ_render.Render(c, layout.Main(
 		layout.SEOProps{
 			Title:       "แดชบอร์ดส่วนตัว",
@@ -310,7 +181,8 @@ func (h *MemberHandler) ShowDashboard(c *fiber.Ctx) error {
 		"dashboard",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
-		pages.Dashboard(member.Username, member.Email, member.Tel, displayNames, member.IsVIP(), assignedColors, h.isTodayBuddhistDay(), myCodes, hasShippingAddress, member.GetVIPExpiryText()),
+		avatarURL,
+		pages.Dashboard(member.Username, member.Email, member.Tel, member.AvatarURL, displayNames, member.IsVIP(), assignedColors, h.isTodayBuddhistDay(), myCodes, hasShippingAddress, member.GetVIPExpiryText()),
 	))
 }
 
@@ -487,109 +359,15 @@ func (h *MemberHandler) isValidUsername(username string) bool {
 
 // HandleLoginAPI handles JSON login requests for mobile apps
 func (h *MemberHandler) HandleLoginAPI(c *fiber.Ctx) error {
-	type LoginRequest struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
-
-	var req LoginRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "รูปแบบข้อมูลไม่ถูกต้อง",
-		})
-	}
-
-	member, err := h.service.Login(req.Username, req.Password)
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
-		})
-	}
-
-	// Fetch detailed member info to ensure including assigned_colors
-	fullMember, err := h.service.GetMemberByID(member.ID)
-	if err != nil {
-		fullMember = member // Fallback
-	}
-
-	assignedColors := strings.Split(fullMember.AssignedColors, ",")
-	if len(assignedColors) == 1 && assignedColors[0] == "" {
-		assignedColors = []string{}
-	}
-
-	// Generate JWT Token
-	claims := jwt.MapClaims{
-		"user_id":  fullMember.ID,
-		"username": fullMember.Username,
-		"status":   fullMember.Status,
-		"exp":      time.Now().Add(time.Hour * 72).Unix(), // Expires in 3 days
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	t, err := token.SignedString([]byte(jwtSecret))
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "ไม่สามารถสร้าง Token ได้",
-		})
-	}
-
-	return c.JSON(fiber.Map{
-		"message":         "เข้าสู่ระบบสำเร็จ",
-		"token":           t,
-		"id":              fullMember.ID,
-		"username":        fullMember.Username,
-		"email":           fullMember.Email,
-		"status":          fullMember.Status,
-		"is_vip":          fullMember.IsVIP(),
-		"vip_expiry_text": fullMember.GetVIPExpiryText(),
-		"assigned_colors": assignedColors,
+	return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+		"error": "ระบบยกเลิกการเข้าสู่ระบบด้วยรหัสผ่านแล้ว กรุณาใช้ Social Login",
 	})
 }
 
 // HandleRegisterAPI handles JSON registration requests for mobile apps
 func (h *MemberHandler) HandleRegisterAPI(c *fiber.Ctx) error {
-	type RegisterRequest struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-		Email    string `json:"email"`
-		Tel      string `json:"tel"`
-	}
-
-	var req RegisterRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "รูปแบบข้อมูลไม่ถูกต้อง",
-		})
-	}
-
-	username := strings.TrimSpace(req.Username)
-	email := strings.TrimSpace(req.Email)
-	tel := strings.TrimSpace(req.Tel)
-
-	if username == "" || req.Password == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน",
-		})
-	}
-
-	if !h.isValidUsername(username) {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "ชื่อผู้ใช้ต้องเป็นตัวอักษรหรือตัวเลข และห้ามมีช่องว่าง",
-		})
-	}
-
-	err := h.service.Register(username, req.Password, email, tel)
-	if err != nil {
-		errMsg := err.Error()
-		if strings.Contains(errMsg, "duplicate") || strings.Contains(errMsg, "exists") {
-			errMsg = "ชื่อผู้ใช้นี้มีอยู่ในระบบแล้ว"
-		}
-		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-			"error": errMsg,
-		})
-	}
-
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "สมัครสมาชิกสำเร็จ",
+	return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+		"error": "ระบบปิดรับสมัครสมาชิกด้วยรหัสผ่าน กรุณาใช้ Social Login",
 	})
 }
 
@@ -728,6 +506,7 @@ func (h *MemberHandler) ShowShippingAddressPage(c *fiber.Ctx) error {
 		return fmt.Sprintf("%v", v)
 	}
 
+	avatarURL, _ := c.Locals("AvatarURL").(string)
 	return templ_render.Render(c, layout.Main(
 		layout.SEOProps{
 			Title:  "จัดการที่อยู่จัดส่ง",
@@ -739,6 +518,7 @@ func (h *MemberHandler) ShowShippingAddressPage(c *fiber.Ctx) error {
 		"shipping_address",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		avatarURL,
 		pages.ShippingAddress(addresses, editMode, addressToEdit),
 	))
 }
@@ -800,6 +580,59 @@ func (h *MemberHandler) HandleDeleteAddress(c *fiber.Ctx) error {
 	}
 	sess.Save()
 	return c.Redirect("/shipping-address")
+}
+
+// HandleUpdateProfileAPI handles JSON requests to update user profile
+func (h *MemberHandler) HandleUpdateProfileAPI(c *fiber.Ctx) error {
+	type UpdateProfileRequest struct {
+		Username string `json:"username"`
+		Email    string `json:"email"`
+		Tel      string `json:"tel"`
+	}
+
+	var req UpdateProfileRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "รูปแบบข้อมูลไม่ถูกต้อง",
+		})
+	}
+
+	// Validate (Simple check)
+	req.Username = strings.TrimSpace(req.Username)
+	if req.Username == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "ชื่อผู้ใช้ห้ามว่าง",
+		})
+	}
+	if !h.isValidUsername(req.Username) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "ชื่อผู้ใช้ต้องเป็นตัวอักษร, ตัวเลข หรือ _ เท่านั้น",
+		})
+	}
+
+	sess, _ := h.store.Get(c)
+	memberIDRaw := sess.Get("member_id")
+	if memberIDRaw == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "กรุณาเข้าสู่ระบบ",
+		})
+	}
+	memberID := memberIDRaw.(int)
+
+	err := h.service.UpdateProfile(memberID, req.Username, req.Email, req.Tel)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// Update session toast for next page load
+	sess.Set("toast_success", "บันทึกข้อมูลสำเร็จ")
+	sess.Save()
+
+	return c.JSON(fiber.Map{
+		"message": "บันทึกข้อมูลเรียบร้อยแล้ว",
+	})
 }
 
 // --- API Shipping Address Handlers ---

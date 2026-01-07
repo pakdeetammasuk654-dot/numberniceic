@@ -143,6 +143,8 @@ type SolarSystemProps struct {
 	ShaPositiveScore     int                           `json:"sha_positive_score"`
 	ShaNegativeScore     int                           `json:"sha_negative_score"`
 	GrandTotalScore      int                           `json:"grand_total_score"`
+	TotalPercent         float64                       `json:"total_percent"`
+	TotalPairs           int                           `json:"total_pairs"`
 	IsSunDead            bool                          `json:"is_sun_dead"`
 	AllUniquePairs       []domain.PairMeaningResult    `json:"all_unique_pairs"`
 	DecodedParts         []domain.DecodedResult        `json:"decoded_parts"`
@@ -151,6 +153,10 @@ type SolarSystemProps struct {
 	SkipTrigger          bool                          `json:"skip_trigger"`
 	CategoryCounts       map[string]int                `json:"category_counts"`
 	CategoryBreakdown    map[string]domain.CategoryBreakdown  `json:"category_breakdown"`
+	AnalysisSummaries    []domain.AnalysisSummary      `json:"analysis_summaries"`
+	ResultTitle          string                        `json:"result_title"`
+	ResultColor          string                        `json:"result_color"`
+	ResultStyle          string                        `json:"result_style"`
 }
 
 func (p SolarSystemProps) GetCategoryDataJSON() string {
@@ -248,13 +254,11 @@ func (p SolarSystemProps) GetActiveCategoriesJSON() string {
 }
 
 func getCategoryColor(cat string) string {
-	switch cat {
-	case "การงาน": return "#90CAF9"
-	case "สุขภาพ": return "#80CBC4"
-	case "การเงิน": return "#FFCC80"
-	case "ความรัก": return "#F48FB1"
-	default: return "#A0A0A0"
-	}
+	if strings.Contains(cat, "การงาน") { return "#90CAF9" }
+	if strings.Contains(cat, "สุขภาพ") { return "#80CBC4" }
+	if strings.Contains(cat, "การเงิน") { return "#FFCC80" }
+	if strings.Contains(cat, "ความรัก") { return "#F48FB1" }
+	return "#A0A0A0"
 }
 
 func hasBadChars(chars []domain.DisplayChar) bool {
@@ -319,75 +323,160 @@ templ SolarSystem(props SolarSystemProps) {
 
 
 
-	<div class="solar-dashboard-layout" style="display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 1rem; flex-wrap: nowrap; margin-bottom: 2rem; width: 100%; max-width: 100%; overflow-x: hidden;">
+	<div class="solar-dashboard-layout" style="display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 4rem; flex-wrap: nowrap; margin-bottom: 2rem; width: 100%; max-width: 100%; position: relative; z-index: 9991;">
 		
-		<!-- LEFT: Stats & Controls -->
-		<div class="stats-control-panel fade-slide-in" style="display: flex; flex-direction: column; gap: 1rem; align-items: center; position: relative; z-index: 250;">
+		<!-- LEFT: Controls & Scores (Mobile App Style) -->
+		<div class="stats-control-panel fade-slide-in" style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-start; min-width: 140px; position: relative; z-index: 10000; padding: 0.5rem;">
 			
-			<!-- Good / Bad Pills -->
-			<div class="score-pills" style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
-				<div class="score-badge-positive" style="justify-content: center; font-size: 1rem;">
-					ดี 
-					if (props.NumPositiveScore + props.ShaPositiveScore) > 0 {
-						+{ fmt.Sprintf("%d", props.NumPositiveScore + props.ShaPositiveScore) }
-					} else {
-						{ fmt.Sprintf("%d", props.NumPositiveScore + props.ShaPositiveScore) }
-					}
-				</div>
-				<div class="score-badge-negative" style="justify-content: center; font-size: 1rem;">
-					ร้าย { fmt.Sprintf("%d", props.NumNegativeScore + props.ShaNegativeScore) }
-				</div>
-			</div>
-
-			<!-- Total Score -->
-			<div class="score-summary" style="flex-direction: column; gap: 0.2rem; margin-left: 0;">
-				<div class="score-summary-label" style="font-size: 0.9rem;">คะแนนรวม</div>
-				<div class={ "score-summary-value", 
-					templ.KV("score-negative", props.GrandTotalScore < 0),
-					templ.KV("score-positive", props.GrandTotalScore >= 0) } style="font-size: 2.2rem;">
+			<div style="font-size: 0.9rem; color: #64748b; font-family: 'Kanit', sans-serif; font-weight: 500; margin-bottom: -0.5rem;">คะแนนรวม</div>
+			
+			<!-- Large Score with Trophy -->
+			<div style="display: flex; align-items: center; gap: 12px;">
+				<div class="score-emoji" style="font-size: 2.75rem; display: flex; align-items: center; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));">
 					if props.GrandTotalScore > 0 {
-						<span style="display: flex; align-items: center; gap: 8px;">
-							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#B8860B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));">
-								<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-								<path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-								<path d="M4 22h16"></path>
-								<path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-								<path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-								<path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-							</svg>
-							+{ fmt.Sprintf("%d", props.GrandTotalScore) }
-						</span>
+						😊
 					} else {
-						<span style="display: flex; align-items: center; gap: 8px;">
-							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#e0e0e0" stroke="#bdbdbd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: grayscale(1); opacity: 0.7;">
-								<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-								<path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-								<path d="M4 22h16"></path>
-								<path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-								<path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-								<path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-							</svg>
-							{ fmt.Sprintf("%d", props.GrandTotalScore) }
-						</span>
+						😭
+					}
+				</div>
+				<div style={ fmt.Sprintf("font-size: 3rem; font-weight: 900; color: %s; font-family: 'Kanit', sans-serif; line-height: 1; letter-spacing: -1px;", ifThen(props.GrandTotalScore >= 0, "#10B981", "#EF4444")) }>
+					if props.GrandTotalScore >= 0 {
+						+{ fmt.Sprintf("%d", props.GrandTotalScore) }
+					} else {
+						{ fmt.Sprintf("%d", props.GrandTotalScore) }
 					}
 				</div>
 			</div>
 
-			<!-- Save Button -->
-			<button type="button" hx-post="/saved-names"
-				hx-vals={ fmt.Sprintf(`{"name": "%s", "birth_day": "%s", "total_score": "%d", "sat_sum": "%d", "sha_sum": "%d"}`, props.CleanedName, props.InputDayRaw, props.GrandTotalScore, props.TotalNumerologyValue, props.TotalShadowValue) }
-				hx-swap="none"
-				class="action-btn-premium btn-save"
-				style="width: 100%; justify-content: center; padding: 0.6rem 1.2rem; font-size: 1rem;">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-					stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-					<polyline points="17 21 17 13 7 13 7 21"></polyline>
-					<polyline points="7 3 7 8 15 8"></polyline>
-				</svg>
-				<span class="btn-label">บันทึกชื่อนี้</span>
-			</button>
+			<!-- Small Pills -->
+			<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+				<div style="background: #ecfdf5; color: #10B981; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; font-family: 'Kanit', sans-serif; display: flex; align-items: center; gap: 4px;">
+					ดี +{ fmt.Sprintf("%d", (props.NumPositiveScore + props.ShaPositiveScore)) }
+				</div>
+				<div style="background: #fef2f2; color: #EF4444; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; font-family: 'Kanit', sans-serif; display: flex; align-items: center; gap: 4px;">
+					ร้าย { fmt.Sprintf("%d", (props.NumNegativeScore + props.ShaNegativeScore)) }
+				</div>
+			</div>
 
+	<!-- Category Summary Section -->
+	{{
+		containerStyle := "margin-top: 1rem; padding: 1rem; background: #F8FAFC; border-radius: 16px; border: 1px solid #E2E8F0; max-width: 280px;"
+		if props.ResultStyle == "gold" {
+			containerStyle = "margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%); border-radius: 16px; border: 1px solid #FCD34D; max-width: 280px; box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.1), 0 2px 4px -1px rgba(245, 158, 11, 0.06);"
+		}
+	}}
+	<div style={ containerStyle }>
+			<div style="margin-bottom: 0.75rem; text-align: center;">
+				<div style={ fmt.Sprintf("font-size: 1.1rem; color: %s; font-family: 'Kanit', sans-serif; font-weight: 600;", ifThen(props.GrandTotalScore >= 0, props.ResultColor, "#1E293B")) }>
+					<span>"</span>
+					<span style="display: inline-flex; gap: 0; align-items: baseline;">
+						for _, char := range props.SunDisplayNameHTML {
+							if char.IsBad {
+								<span style="color: #EF4444;">{ char.Char }</span>
+							} else {
+								<span>{ char.Char }</span>
+							}
+						}
+					</span>
+					<span>" { props.ResultTitle }</span>
+				</div>
+			</div>
+			
+			<div style="display: flex; flex-direction: column; gap: 10px;">
+				for _, summary := range props.AnalysisSummaries {
+					if summary.BackgroundColor != "" {
+						<div style={ fmt.Sprintf("padding: 0.75rem; background: linear-gradient(135deg, #FFFFFF, %s); border-radius: 12px; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);", summary.BackgroundColor) }>
+							<div style="font-weight: 600; color: #1E293B; font-size: 1rem; font-family: 'Kanit', sans-serif; margin-bottom: 0.5rem;">{ summary.Title }</div>
+							<div style="font-size: 0.9rem; color: #475569; line-height: 1.6; font-family: 'Sarabun', sans-serif; font-weight: 400;">
+								for i, kw := range summary.Content {
+									if kw.IsBad {
+										<span style="color: #EF4444;">{ kw.Text }</span>
+									} else {
+										<span style="color: #475569;">{ kw.Text }</span>
+									}
+									if i < len(summary.Content)-1 {
+										<span style="color: #475569;">, </span>
+									}
+								}
+							</div>
+						</div>
+					} else {
+						{{ categoryColor := getCategoryColor(summary.Title) }}
+						<div style="display: flex; flex-direction: column; gap: 4px;">
+							<div style="display: flex; align-items: center; gap: 8px;">
+								<div style={ fmt.Sprintf("width: 28px; height: 28px; min-width: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: %s20;", categoryColor) }>
+									<span style={ "display: block; width: 10px; height: 10px; border-radius: 2px; background-color: " + categoryColor + ";" }></span>
+								</div>
+								<span style={ fmt.Sprintf("font-weight: 500; color: #1E293B; font-size: 0.95rem; font-family: 'Kanit', sans-serif;") }>{ summary.Title }</span>
+							</div>
+							<div style="margin-left: 36px; line-height: 1.3; font-size: 0.85rem; font-family: 'Sarabun', sans-serif; font-weight: 300;">
+								for i, kw := range summary.Content {
+									if kw.IsBad {
+										<span style="color: #EF4444;">{ kw.Text }</span>
+									} else {
+										<span style="color: #64748B;">{ kw.Text }</span>
+									}
+									if i < len(summary.Content)-1 {
+										<span style="color: #64748B;">, </span>
+									}
+								}
+							</div>
+						</div>
+					}
+				}
+			</div>
+		</div>
+
+		<!-- Buttons Section (Swapped & Unified Premium Emerald Theme) -->
+		
+		<!-- 1. Save Button (Top - Elegant Gold, Light Kanit) -->
+		<button type="button" hx-post="/saved-names"
+			hx-vals={ fmt.Sprintf(`{"name": "%s", "birth_day": "%s", "total_score": "%d", "sat_sum": "%d", "sha_sum": "%d"}`, props.CleanedName, props.InputDayRaw, props.GrandTotalScore, props.TotalNumerologyValue, props.TotalShadowValue) }
+			hx-swap="none"
+			style={fmt.Sprintf("width: 100%%; padding: 14px 20px; margin-top: 1rem; margin-bottom: 0.8rem; font-size: 1.1rem; border: 1px solid #FDE68A; background: linear-gradient(135deg, #CA8A04 0%%, #A16207 100%%) !important; color: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px rgba(161, 98, 7, 0.3); %%s", getSaveButtonVisibility(props.IsVIP))}
+			onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 15px rgba(161, 98, 7, 0.4)'"
+			onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 10px rgba(161, 98, 7, 0.3)'">
+			<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="white" stroke="none">
+				<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2zM12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm5 8H7v-3h10v3z"></path>
+			</svg>
+			<span class="btn-label" style="font-family: 'Kanit', sans-serif; font-weight: 300;">
+				<span>บันทึกชื่อ "</span>
+				<span style="display: inline-flex; gap: 0; align-items: baseline;">
+					for _, char := range props.SunDisplayNameHTML {
+						if char.IsBad {
+							<span style="color: #EF4444; font-weight: 500;">{ char.Char }</span>
+						} else {
+							<span>{ char.Char }</span>
+						}
+					}
+				</span>
+				<span>"</span>
+			</span>
+		</button>
+
+		<!-- 2. Perfect Naming Button (Bottom - Premium Emerald) -->
+		<button onclick="document.getElementById('similar-names-section').scrollIntoView({ behavior: 'smooth' });" 
+				style="margin-bottom: 0.5rem; width: 100%; background: linear-gradient(135deg, #10B981 0%, #047857 100%); border: 2px solid #6EE7B7; outline: 1px solid #064E3B; border-radius: 16px; padding: 14px 10px; color: #FFFFFF; font-family: 'Kanit', sans-serif; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; box-shadow: 0 4px 10px rgba(4, 120, 87, 0.4); transition: all 0.2s ease-in-out;"
+				onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(4, 120, 87, 0.5)'"
+				onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 10px rgba(4, 120, 87, 0.4)'">
+			<div style="display: flex; align-items: center; gap: 6px; font-size: 1rem; font-weight: 500; opacity: 0.95;">
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+				<span>เปลี่ยนชื่อ "</span>
+				<span style="display: inline-flex; gap: 0; align-items: baseline;">
+					for _, char := range props.SunDisplayNameHTML {
+						if char.IsBad {
+							<span style="color: #EF4444; font-weight: 700;">{ char.Char }</span>
+						} else {
+							<span>{ char.Char }</span>
+						}
+					}
+				</span>
+				<span>"</span>
+			</div>
+			<div style="font-size: 1.3rem; font-weight: 700; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+				ให้สมบูรณ์แบบ!!
+			</div>
+		</button>
 		</div>
 
 		<!-- RIGHT: Solar System Chart -->
@@ -450,8 +539,8 @@ templ SolarSystem(props SolarSystemProps) {
 <!-- Wrapper removed -->
 
         <!-- NEW: Category Breakdown Section (Moved from Enhance Number) -->
-         <div class="category-breakdown-container" style="margin-bottom: 3rem; background: white; padding: 2rem; border-radius: 24px; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.08); border: 1px solid #F1F5F9; position: relative; z-index: 500;">
-            <div class="nested-donut-layout" style="display: flex; flex-direction: row; gap: 3rem; align-items: flex-start; justify-content: center; flex-wrap: wrap;">
+         <div class="category-breakdown-container" style="margin-bottom: 3rem; width: 100%; position: relative; z-index: 500;">
+            <div class="nested-donut-layout" style="display: flex; flex-direction: row; gap: 2rem; align-items: flex-start; justify-content: center; flex-wrap: wrap;">
                 
                 <!-- LEFT COLUMN: Donut + Name Info -->
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem;">
@@ -536,7 +625,7 @@ templ SolarSystem(props SolarSystemProps) {
                 </div>
 
                 <!-- RIGHT COLUMN: Legend Table -->
-                <div class="nested-legend" style="flex: 1; min-width: 300px; max-width: 500px;">
+                <div class="nested-legend" style="flex: 1; min-width: 300px;">
                     @renderSolarCategoryTable(props)
                 </div>
             </div>
@@ -794,15 +883,7 @@ templ renderSolarDonutChart(props SolarSystemProps) {
 		style="width: 100%; height: 100%; position: relative; z-index: 1;">
 		
 		<defs>
-			<filter id="premiumShadow" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
-				<feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
-				<feOffset dx="0" dy="4" result="offsetblur"/>
-				<feComponentTransfer><feFuncA type="linear" slope="0.15"/></feComponentTransfer>
-				<feMerge>
-					<feMergeNode/>
-					<feMergeNode in="SourceGraphic"/>
-				</feMerge>
-			</filter>
+
 			<linearGradient id="grad-work" gradientTransform="rotate(0)">
 				<stop offset="0%" stop-color="#90CAF9"/>
 				<stop offset="100%" stop-color="#42A5F5"/>
@@ -845,7 +926,7 @@ templ renderSolarDonutChart(props SolarSystemProps) {
 		<g class="outer-ring"></g>
 		
 		<g class="center-text-group" style="transform-origin: center;">
-			<circle cx="100" cy="100" r="58" fill="white" filter="url(#premiumShadow)"></circle>
+			<circle cx="100" cy="100" r="58" fill="white" style="filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.15));"></circle>
 			<text x="100" y="108" text-anchor="middle" font-size="38px" font-weight="300" fill="url(#grad-gold)" font-family="Kanit, sans-serif" class="donut-center-number">
 				{ fmt.Sprintf("%.0f%%", props.GetBaseCategoryPercentage()) }
 			</text>
@@ -896,12 +977,6 @@ templ renderSolarCategoryTable(props SolarSystemProps) {
 		for _, cat := range []string{"สุขภาพ", "การงาน", "การเงิน", "ความรัก"} {
 			{{
 				breakdown := props.CategoryBreakdown[cat]
-				totalPoints := len(props.NumerologyPairs) + len(props.ShadowPairs)
-				goodPercent := 0.0
-				if totalPoints > 0 {
-					goodPercent = (float64(breakdown.Good) / float64(totalPoints)) * 100
-				}
-				
 				categoryColor := getCategoryColor(cat)
 				labelColor := "#1E293B" // Default dark
 				iconOpacity := "1"
@@ -922,22 +997,18 @@ templ renderSolarCategoryTable(props SolarSystemProps) {
 
 					<div style="flex: 1.5; text-align: right;" id={ fmt.Sprintf("good-score-container-%s-%s", props.CleanedName, cat) }>
 						if breakdown.Good > 0 {
-							<span class="force-kanit" style={ fmt.Sprintf("color: %s; font-weight: 500; font-family: 'Kanit', sans-serif !important;", getCategoryColor(cat)) }>
-								{ fmt.Sprintf("%.0f%%", goodPercent) }
+							<span class="force-kanit" style={ fmt.Sprintf("color: %s; font-weight: 500; font-family: 'Kanit', sans-serif !important;", labelColor) }>
+								{ fmt.Sprintf("%.0f%%", (float64(breakdown.Good)/float64(len(props.NumerologyPairs) + len(props.ShadowPairs)))*100) }
 							</span>
 						} else {
-							<span class="force-kanit" style="color: #CBD5E1; font-weight: 700; font-family: 'Kanit', sans-serif !important;">-</span>
+							<span class="force-kanit" style="color: #CBD5E1; font-family: 'Kanit', sans-serif !important;">-</span>
 						}
 					</div>
 
 					<div style="flex: 1.5; text-align: right;">
 						if breakdown.Bad > 0 {
 							<span class="force-kanit" style="color: #EF4444; font-weight: 700; font-family: 'Kanit', sans-serif !important;">
-								if len(props.NumerologyPairs) + len(props.ShadowPairs) > 0 {
-									{ fmt.Sprintf("%.0f%%", (float64(breakdown.Bad) / float64(len(props.NumerologyPairs) + len(props.ShadowPairs))) * 100) }
-								} else {
-									0%
-								}
+								{ fmt.Sprintf("%.0f%%", (float64(breakdown.Bad)/float64(len(props.NumerologyPairs) + len(props.ShadowPairs)))*100) }
 							</span>
 						} else {
 							<span class="force-kanit" style="color: #CBD5E1; font-family: 'Kanit', sans-serif !important;">-</span>
@@ -962,6 +1033,11 @@ templ renderSolarCategoryTable(props SolarSystemProps) {
 							{ strings.Join(breakdown.Keywords, ", ") }
 						</div>
 					}
+					if len(breakdown.BadKeywords) > 0 {
+						<div style="font-size: 0.95rem; color: #EF4444; margin-bottom: 4px; line-height: 1.2; font-weight: 300; font-family: 'Sarabun', sans-serif;">
+							{ strings.Join(breakdown.BadKeywords, ", ") }
+						</div>
+					}
 				</div>
 				<div id={ fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat) } style="margin-top: 12px; margin-left: -16px; margin-right: -16px; width: auto; position: relative; z-index: 10;"></div>
 			</div>
@@ -977,7 +1053,7 @@ templ renderSolarCategoryTable(props SolarSystemProps) {
 			</div>
 			
 			<div id={ fmt.Sprintf("total-score-%s", props.CleanedName) } data-base-score={ fmt.Sprintf("%.0f", props.GetBaseCategoryPercentage()) }>
-				<span class="score-value force-kanit" style="font-weight: 900; font-size: 2rem; font-family: 'Kanit', sans-serif !important; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 2px 2px rgba(245, 158, 11, 0.15));">
+				<span class="score-value force-kanit" style={ fmt.Sprintf("font-weight: 900; font-size: 2.25rem; font-family: 'Kanit', sans-serif !important; color: %s; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));", getPercentColor(props.GetBaseCategoryPercentage())) }>
 					{ fmt.Sprintf("%.0f%%", props.GetBaseCategoryPercentage()) }
 				</span>
 			</div>

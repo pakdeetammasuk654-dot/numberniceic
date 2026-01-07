@@ -72,15 +72,8 @@ window.initNestedDonut = function (id, data, activeCategoriesJSON) {
             // 1. Assign Base Natural Scores (25% each if good)
             let usedScore = 0;
             categories.forEach(cat => {
-                // Check for direct key match or case-insensitive match just in case
                 let data = breakdown[cat];
-                if (!data) {
-                    // Fallback search
-                    const key = Object.keys(breakdown).find(k => k === cat);
-                    data = breakdown[key];
-                }
-
-                if ((data?.good || 0) > 0 || (data?.Good || 0) > 0) { // Handle Go struct field casing if JSON is capitalized
+                if ((data?.good || 0) > 0 || (data?.Good || 0) > 0) {
                     percentages[cat] = 25;
                     usedScore += 25;
                 }

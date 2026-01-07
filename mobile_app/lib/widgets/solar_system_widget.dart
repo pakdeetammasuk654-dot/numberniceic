@@ -144,8 +144,30 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
                       children: List.generate(widget.mainPairs!.length, (index) {
                         final item = widget.mainPairs![index];
                         final pairNum = item['pair']?.toString() ?? '';
-                        final colorHex = item['meaning']?['color']?.toString();
-                        final color = _parseColor(colorHex);
+                        
+                        // Determine if this pair is bad
+                        bool isBad = false;
+                        final meaning = item['meaning'];
+                        if (meaning != null) {
+                          // Check is_bad flag
+                          final badVal = meaning['is_bad'];
+                          if (badVal is bool) {
+                            isBad = badVal;
+                          } else if (badVal is int) {
+                            isBad = badVal > 0;
+                          } else if (badVal is String) {
+                            isBad = badVal.toLowerCase() == 'true';
+                          }
+                          
+                          // Fallback: check pair_type if is_bad not set
+                          if (!isBad && meaning['pair_type'] != null) {
+                            final pairType = meaning['pair_type'].toString();
+                            isBad = (pairType == 'ร้าย' || pairType == 'ร้ายมาก');
+                          }
+                        }
+                        
+                        // Use green for good, red for bad
+                        final color = isBad ? const Color(0xFFEF4444) : const Color(0xFF10B981);
                         
                         // Calculate position
                         // Radius for inner orbit = ? (OrbitPainter will define it, let's say 90)
@@ -174,8 +196,30 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
                       children: List.generate(widget.hiddenPairs!.length, (index) {
                         final item = widget.hiddenPairs![index];
                         final pairNum = item['pair']?.toString() ?? '';
-                        final colorHex = item['meaning']?['color']?.toString();
-                        final color = _parseColor(colorHex);
+                        
+                        // Determine if this pair is bad
+                        bool isBad = false;
+                        final meaning = item['meaning'];
+                        if (meaning != null) {
+                          // Check is_bad flag
+                          final badVal = meaning['is_bad'];
+                          if (badVal is bool) {
+                            isBad = badVal;
+                          } else if (badVal is int) {
+                            isBad = badVal > 0;
+                          } else if (badVal is String) {
+                            isBad = badVal.toLowerCase() == 'true';
+                          }
+                          
+                          // Fallback: check pair_type if is_bad not set
+                          if (!isBad && meaning['pair_type'] != null) {
+                            final pairType = meaning['pair_type'].toString();
+                            isBad = (pairType == 'ร้าย' || pairType == 'ร้ายมาก');
+                          }
+                        }
+                        
+                        // Use green for good, red for bad
+                        final color = isBad ? const Color(0xFFEF4444) : const Color(0xFF10B981);
                         
                         // Calculate position
                         // Radius for outer orbit = ? (OrbitPainter will define it, let's say 135)

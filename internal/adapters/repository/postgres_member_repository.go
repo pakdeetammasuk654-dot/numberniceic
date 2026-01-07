@@ -6,8 +6,6 @@ import (
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
 	"strings"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type PostgresMemberRepository struct {
@@ -19,15 +17,10 @@ func NewPostgresMemberRepository(db *sql.DB) ports.MemberRepository {
 }
 
 func (r *PostgresMemberRepository) Create(member *domain.Member) error {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(member.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-
 	// Use 'status' but skip timestamps for now
 	query := `
-		INSERT INTO member (username, password, email, tel, status)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO member (username, email, tel, status, provider, provider_id, avatar_url)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id
 	`
 	// Default status to 1 (Normal User) if not specified
@@ -36,11 +29,10 @@ func (r *PostgresMemberRepository) Create(member *domain.Member) error {
 		status = member.Status
 	}
 
-	err = r.db.QueryRow(query, member.Username, string(hashedPassword), member.Email, member.Tel, status).Scan(&member.ID)
+	err := r.db.QueryRow(query, member.Username, member.Email, member.Tel, status, member.Provider, member.ProviderID, member.AvatarURL).Scan(&member.ID)
 	if err != nil {
 		return err
 	}
-	member.Password = "" // Don't return password
 	return nil
 }
 
@@ -49,18 +41,22 @@ func (r *PostgresMemberRepository) GetByEmail(email string) (*domain.Member, err
 		return nil, nil
 	}
 	query := `
-		SELECT id, username, password, email, tel, status, day_of_birth, COALESCE(assigned_colors, '')
+		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, '')
 		FROM member
 		WHERE email = $1
 	`
 	var m domain.Member
-	err := r.db.QueryRow(query, email).Scan(&m.ID, &m.Username, &m.Password, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors)
+	var provider, providerID, avatarURL sql.NullString
+	err := r.db.QueryRow(query, email).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &provider, &providerID, &avatarURL)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
 	}
+	m.Provider = provider.String
+	m.ProviderID = providerID.String
+	m.AvatarURL = avatarURL.String
 	m.Username = strings.TrimSpace(m.Username)
 	m.Email = strings.TrimSpace(m.Email)
 	m.Tel = strings.TrimSpace(m.Tel)
@@ -70,18 +66,22 @@ func (r *PostgresMemberRepository) GetByEmail(email string) (*domain.Member, err
 func (r *PostgresMemberRepository) GetByUsername(username string) (*domain.Member, error) {
 	// Use 'status' but skip timestamps for now
 	query := `
-		SELECT id, username, password, email, tel, status, day_of_birth, COALESCE(assigned_colors, '')
+		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, '')
 		FROM member
 		WHERE username = $1
 	`
 	var m domain.Member
-	err := r.db.QueryRow(query, username).Scan(&m.ID, &m.Username, &m.Password, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors)
+	var provider, providerID, avatarURL sql.NullString
+	err := r.db.QueryRow(query, username).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &provider, &providerID, &avatarURL)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
 	}
+	m.Provider = provider.String
+	m.ProviderID = providerID.String
+	m.AvatarURL = avatarURL.String
 	m.Username = strings.TrimSpace(m.Username)
 	m.Email = strings.TrimSpace(m.Email)
 	m.Tel = strings.TrimSpace(m.Tel)
@@ -91,18 +91,46 @@ func (r *PostgresMemberRepository) GetByUsername(username string) (*domain.Membe
 func (r *PostgresMemberRepository) GetByID(id int) (*domain.Member, error) {
 	// Use 'status' but skip timestamps for now
 	query := `
-		SELECT id, username, password, email, tel, status, day_of_birth, COALESCE(assigned_colors, '')
+		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, '')
 		FROM member
 		WHERE id = $1
 	`
 	var m domain.Member
-	err := r.db.QueryRow(query, id).Scan(&m.ID, &m.Username, &m.Password, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors)
+	var provider, providerID, avatarURL sql.NullString
+	err := r.db.QueryRow(query, id).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &provider, &providerID, &avatarURL)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
 	}
+	m.Provider = provider.String
+	m.ProviderID = providerID.String
+	m.AvatarURL = avatarURL.String
+	m.Username = strings.TrimSpace(m.Username)
+	m.Email = strings.TrimSpace(m.Email)
+	m.Tel = strings.TrimSpace(m.Tel)
+	return &m, nil
+}
+
+func (r *PostgresMemberRepository) GetByProvider(provider, providerID string) (*domain.Member, error) {
+	query := `
+		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, '')
+		FROM member
+		WHERE provider = $1 AND provider_id = $2
+	`
+	var m domain.Member
+	var p, pID, aURL sql.NullString
+	err := r.db.QueryRow(query, provider, providerID).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &p, &pID, &aURL)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	m.Provider = p.String
+	m.ProviderID = pID.String
+	m.AvatarURL = aURL.String
 	m.Username = strings.TrimSpace(m.Username)
 	m.Email = strings.TrimSpace(m.Email)
 	m.Tel = strings.TrimSpace(m.Tel)
@@ -110,18 +138,19 @@ func (r *PostgresMemberRepository) GetByID(id int) (*domain.Member, error) {
 }
 
 func (r *PostgresMemberRepository) Update(member *domain.Member) error {
-	// Implement update logic if needed
-	return nil
+	query := `
+		UPDATE member 
+		SET username = $1, email = $2, tel = $3, avatar_url = $4, provider = $5, provider_id = $6
+		WHERE id = $7
+	`
+	_, err := r.db.Exec(query, member.Username, member.Email, member.Tel, member.AvatarURL, member.Provider, member.ProviderID, member.ID)
+	return err
 }
 
 func (r *PostgresMemberRepository) Delete(id int) error {
 	query := `DELETE FROM member WHERE id = $1`
 	_, err := r.db.Exec(query, id)
 	return err
-}
-
-func (r *PostgresMemberRepository) CheckPassword(hashedPassword, password string) error {
-	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
 // GetAllMembers retrieves all members (for admin)

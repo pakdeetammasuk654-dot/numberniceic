@@ -45,5 +45,51 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>GIDClientID</key>
+	<string>564920304262-3m5tmlsu6ti53mtiodp1qki595iji2tn.apps.googleusercontent.com</string>
+    <key>LineSDKConfig</key>
+    <dict>
+        <key>ChannelID</key>
+        <string>2008834631</string>
+    </dict>
+    <key>FacebookAppID</key>
+    <string>1564787444833363</string>
+    <key>FacebookClientToken</key>
+    <string>234ca1ad879a87df5d967cbf773f961d</string>
+    <key>FacebookDisplayName</key>
+    <string>NumberNice</string>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>lineauth2</string>
+        <string>fbapi</string>
+        <string>fb-messenger-share-api</string>
+    </array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.564920304262-3m5tmlsu6ti53mtiodp1qki595iji2tn</string>
+			</array>
+		</dict>
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>line3rdp.com.taya.numberniceic</string>
+            </array>
+        </dict>
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>fb1564787444833363</string>
+            </array>
+        </dict>
+	</array>
 </dict>
 </plist>

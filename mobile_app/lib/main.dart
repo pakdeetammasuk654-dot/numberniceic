@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/main_tab_page.dart';
+import 'utils/social_auth_config.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize LINE SDK
+  await SocialAuthConfig.initializeLineSDK();
+  
   runApp(const MyApp());
 }
 

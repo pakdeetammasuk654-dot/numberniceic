@@ -34,7 +34,7 @@ func WreathBadge(text1 string, text2 string, text3 string, text4 string, text5 s
 			return templ_7745c5c3_Err
 		}
 		if text1 != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"wreath-item\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"wreath-item\" onclick=\"showVipGradeInfo()\" style=\"cursor: pointer;\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -53,7 +53,7 @@ func WreathBadge(text1 string, text2 string, text3 string, text4 string, text5 s
 			}
 		}
 		if text2 != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"wreath-item\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"wreath-item\" onclick=\"showVipGradeInfo()\" style=\"cursor: pointer;\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -72,7 +72,7 @@ func WreathBadge(text1 string, text2 string, text3 string, text4 string, text5 s
 			}
 		}
 		if text3 != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"wreath-item\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"wreath-item\" onclick=\"showVipGradeInfo()\" style=\"cursor: pointer;\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -91,7 +91,7 @@ func WreathBadge(text1 string, text2 string, text3 string, text4 string, text5 s
 			}
 		}
 		if text4 != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"wreath-item\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"wreath-item\" onclick=\"showVipGradeInfo()\" style=\"cursor: pointer;\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -110,7 +110,7 @@ func WreathBadge(text1 string, text2 string, text3 string, text4 string, text5 s
 			}
 		}
 		if text5 != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"wreath-item\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"wreath-item\" onclick=\"showVipGradeInfo()\" style=\"cursor: pointer;\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -129,7 +129,7 @@ func WreathBadge(text1 string, text2 string, text3 string, text4 string, text5 s
 			}
 		}
 		if text6 != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"wreath-item\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"wreath-item\" onclick=\"showVipGradeInfo()\" style=\"cursor: pointer;\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -148,7 +148,7 @@ func WreathBadge(text1 string, text2 string, text3 string, text4 string, text5 s
 			}
 		}
 		if text7 != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"wreath-item\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"wreath-item\" onclick=\"showVipGradeInfo()\" style=\"cursor: pointer;\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -167,7 +167,7 @@ func WreathBadge(text1 string, text2 string, text3 string, text4 string, text5 s
 			}
 		}
 		if text8 != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div class=\"wreath-item\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div class=\"wreath-item\" onclick=\"showVipGradeInfo()\" style=\"cursor: pointer;\"><img src=\"/images/golden_laurel_right.png\" style=\"transform: scaleX(-1); margin-right: -25px;\" alt=\"Left Wreath\"><div class=\"wreath-content\"><span class=\"wreath-text\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -7,9 +7,10 @@ type MemberRepository interface {
 	GetByUsername(username string) (*domain.Member, error)
 	GetByEmail(email string) (*domain.Member, error)
 	GetByID(id int) (*domain.Member, error)
+	GetByProvider(provider, providerID string) (*domain.Member, error)
 	Update(member *domain.Member) error
 	Delete(id int) error
-	CheckPassword(hashedPassword, password string) error
+
 	UpdateDayOfBirth(id int, dayOfWeek int) error
 
 	// Admin methods

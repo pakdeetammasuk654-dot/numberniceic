@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
+import '../services/api_service.dart';
+import '../widgets/welcome_dialog.dart';
 import 'landing_page.dart';
 import 'analyzer_page.dart';
 import 'number_analysis_page.dart';
@@ -19,12 +22,58 @@ class MainTabPage extends StatefulWidget {
 class _MainTabPageState extends State<MainTabPage> {
   int _currentIndex = 0;
   bool _isLoggedIn = false;
+  String? _avatarUrl;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
     _checkLoginStatus();
+    // Check for first time launch after UI builds
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkFirstTimeUser();
+    });
+  }
+
+  Future<void> _checkFirstTimeUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Default Fallback
+    int version = 1;
+    String title = 'ยินดีต้อนรับ!';
+    String body = 'ขอต้อนรับสู่ NumberNiceIC\nแอพพลิเคชันวิเคราะห์ชื่อและเบอร์โทรศัพท์มงคล\nที่จะช่วยเสริมสิริมงคลให้กับชีวิตของคุณ';
+    bool isActive = true;
+
+    try {
+      final apiConfig = await ApiService.getWelcomeMessage();
+      if (apiConfig != null) {
+        version = apiConfig['version'] ?? 1;
+        title = apiConfig['title'] ?? title;
+        body = (apiConfig['body'] ?? body).replaceAll('\\n', '\n');
+        isActive = apiConfig['is_active'] ?? true;
+      }
+    } catch (_) {}
+
+    if (!isActive) return;
+
+    final int lastShownVersion = prefs.getInt('welcome_msg_version') ?? 0;
+    final bool hasShownLegacy = prefs.getBool('has_shown_welcome_v1') ?? false;
+
+    // Convert legacy boolean to version 1 if applicable
+    if (lastShownVersion == 0 && hasShownLegacy && version == 1) {
+       await prefs.setInt('welcome_msg_version', 1);
+       return;
+    }
+
+    if (version > lastShownVersion) {
+      if (!mounted) return;
+      await WelcomeDialog.show(
+        context: context,
+        title: title,
+        body: body,
+        version: version,
+      );
+    }
   }
 
   Future<void> _checkLoginStatus() async {
@@ -32,6 +81,7 @@ class _MainTabPageState extends State<MainTabPage> {
     if (mounted) {
       setState(() {
         _isLoggedIn = userInfo['username'] != null;
+        _avatarUrl = userInfo['avatar_url'];
       });
     }
   }
@@ -99,8 +149,34 @@ class _MainTabPageState extends State<MainTabPage> {
               label: 'ร้านค้า',
             ),
             BottomNavigationBarItem(
-              icon: Icon(_isLoggedIn ? Icons.dashboard_outlined : Icons.login_outlined),
-              activeIcon: Icon(_isLoggedIn ? Icons.dashboard : Icons.login),
+              icon: _isLoggedIn && _avatarUrl != null && _avatarUrl!.isNotEmpty
+                  ? Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: DecorationImage(
+                          image: NetworkImage(_avatarUrl!),
+                          fit: BoxFit.cover,
+                        ),
+                        border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+                      ),
+                    )
+                  : Icon(_isLoggedIn ? Icons.dashboard_outlined : Icons.login_outlined),
+              activeIcon: _isLoggedIn && _avatarUrl != null && _avatarUrl!.isNotEmpty
+                  ? Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: DecorationImage(
+                          image: NetworkImage(_avatarUrl!),
+                          fit: BoxFit.cover,
+                        ),
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                    )
+                  : Icon(_isLoggedIn ? Icons.dashboard : Icons.login),
               label: _isLoggedIn ? 'แดชบอร์ด' : 'เข้าสู่ระบบ',
             ),
           ],

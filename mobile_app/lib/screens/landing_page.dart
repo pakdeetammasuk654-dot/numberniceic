@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/auth_service.dart';
 import '../utils/custom_toast.dart';
 import '../models/article.dart';
 import '../services/api_service.dart';
+import '../widgets/welcome_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'article_detail_page.dart';
 import 'articles_page.dart';
 import 'dashboard_page.dart';
 import 'analyzer_page.dart';
+import 'notification_list_page.dart';
 import 'login_page.dart';
 import 'register_page.dart';
 import '../widgets/shared_footer.dart';
@@ -23,6 +27,11 @@ class _LandingPageState extends State<LandingPage> {
   late Future<List<Article>> _articlesFuture;
   late Future<bool> _isBuddhistDayFuture;
   late Future<Map<String, dynamic>> _userInfoFuture;
+  bool _hasUnreadNotification = false;
+  Map<String, dynamic>? _pendingConfig;
+  // New state
+  int _unreadCount = 0;
+  bool _isLoggedIn = false;
 
   @override
   void initState() {
@@ -30,13 +39,95 @@ class _LandingPageState extends State<LandingPage> {
     _articlesFuture = ApiService.getArticles();
     _isBuddhistDayFuture = ApiService.isBuddhistDayToday();
     _userInfoFuture = AuthService.getUserInfo();
+    // Check notification on init (deferred)
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkNotification());
   }
 
   Future<void> _refresh() async {
     setState(() {
       _articlesFuture = ApiService.getArticles();
     });
+    // Check notification after refresh
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkNotification());
   }
+
+  Future<void> _checkNotification() async {
+    final token = await AuthService.getToken();
+    _isLoggedIn = token != null;
+    
+    if (_isLoggedIn) {
+        // Logged In: Check individual notifications
+        try {
+            final count = await ApiService.getUnreadNotificationCount();
+            if (mounted) {
+                setState(() {
+                    _unreadCount = count;
+                    _hasUnreadNotification = count > 0;
+                });
+            }
+        } catch (_) {}
+    } else {
+        // Guest: Check Global Welcome Message
+        final prefs = await SharedPreferences.getInstance();
+        try {
+            final apiConfig = await ApiService.getWelcomeMessage();
+            if (apiConfig != null && (apiConfig['is_active'] ?? true)) {
+                final int version = apiConfig['version'] ?? 1;
+                final int lastShownVersion = prefs.getInt('welcome_msg_version') ?? 0;
+                
+                if (version > lastShownVersion) {
+                    setState(() {
+                        _hasUnreadNotification = true;
+                        _pendingConfig = apiConfig;
+                    });
+                } else {
+                    setState(() {
+                        _hasUnreadNotification = false;
+                        _pendingConfig = apiConfig;
+                    });
+                }
+            }
+        } catch (_) {}
+    }
+  }
+  
+  void _handleNotificationTap() {
+    if (_isLoggedIn) {
+        Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const NotificationListPage()),
+        ).then((_) {
+            // Refresh badge on return
+            _checkNotification();
+        });
+    } else {
+        _showWelcomeDialog();
+    }
+  }
+
+  void _showWelcomeDialog() {
+     if (_pendingConfig != null) {
+        String body = (_pendingConfig!['body'] ?? '').replaceAll('\\n', '\n');
+        WelcomeDialog.show(
+            context: context,
+            title: _pendingConfig!['title'] ?? 'ประกาศ',
+            body: body,
+            version: _pendingConfig!['version'] ?? 1,
+            onDismiss: () {
+                setState(() {
+                    _hasUnreadNotification = false;
+                });
+                _checkNotification(); 
+            }
+        );
+     } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('ไม่มีการแจ้งเตือนใหม่')),
+        );
+     }
+  }
+  
+
 
   @override
   Widget build(BuildContext context) {
@@ -48,24 +139,48 @@ class _LandingPageState extends State<LandingPage> {
         scrolledUnderElevation: 2,
         centerTitle: false,
 
-        title: Text(
-          'ชื่อดี.com',
-          style: GoogleFonts.kanit(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            fontSize: 22,
-          ),
+        title: Row(
+          children: [
+            SvgPicture.asset(
+              'assets/images/logo.svg',
+              height: 48,
+              width: 48,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'ชื่อดี.com',
+              style: GoogleFonts.kanit(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                fontSize: 22,
+              ),
+            ),
+          ],
         ),
 
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('ไม่มีการแจ้งเตือนใหม่')),
-              );
-            },
-            tooltip: 'การแจ้งเตือน',
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                onPressed: _handleNotificationTap,
+                tooltip: 'การแจ้งเตือน',
+              ),
+              if (_hasUnreadNotification)
+                Positioned(
+                  right: 12,
+                  top: 12,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFF333333), width: 1.5),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(width: 8),
         ],

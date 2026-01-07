@@ -98,7 +98,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF8F9FA), // Cleaner off-white background
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async => _loadDashboard(),
@@ -108,16 +108,16 @@ class _DashboardPageState extends State<DashboardPage> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               } else if (snapshot.hasError) {
-                // Handle Session Expired
+                // ... Error Handling (Same as before)
                 if (snapshot.error.toString().contains('Session expired')) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     CustomToast.show(context, 'เซสชั่นหมดอายุ กรุณาเข้าสู่ระบบใหม่', isSuccess: false);
                     Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 0)),
                       (route) => false,
                     );
-                  });
-                  return const SizedBox();
+                   });
+                   return const SizedBox();
                 }
                 return Center(child: Text('Error: ${snapshot.error}', style: GoogleFonts.kanit()));
               } else if (!snapshot.hasData) {
@@ -125,141 +125,85 @@ class _DashboardPageState extends State<DashboardPage> {
               }
 
               final data = snapshot.data!;
-              // Log full data for debugging to console
-              debugPrint('DASHBOARD_DATA: $data');
-
-              // Handle both snake_case and PascalCase from Go
               final isVip = data['is_vip'] == true || data['IsVIP'] == true;
               final statusVal = data['status'] ?? data['Status'] ?? 0;
               final statusInt = statusVal is int ? statusVal : (statusVal is num ? statusVal.toInt() : 0);
               final isAdmin = statusInt == 9;
-
               final savedNames = (data['saved_names'] ?? data['SavedNames']) as List<dynamic>? ?? [];
-
+              
+              final username = data['username'] ?? data['Username'] ?? 'User';
+              final email = data['email'] ?? data['Email'] ?? '';
+              final avatarUrl = data['avatar_url'] ?? data['AvatarURL'];
+              final tel = data['tel'] ?? data['Tel'] ?? '';
+              final hasAddress = data['has_shipping_address'] == true || data['HasShippingAddress'] == true;
 
               return SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // 1. Premium Header with Avatar
+                    _buildPremiumHeader(context, username, email, avatarUrl, isVip, isAdmin),
+                    
                     Padding(
-                      padding: const EdgeInsets.all(16),
-                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      padding: const EdgeInsets.symmetric(horizontal: 20), // More breathing room
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // 1. User Info Section
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'ยินดีต้อนรับ, ${data['username'] ?? ''}!',
-                                    style: GoogleFonts.kanit(
-                                      fontSize: 20, // Slightly smaller than header
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                  if (isVip)
-                                    Row(
-                                      children: [
-                                        Text('สถานะ: ', style: GoogleFonts.kanit(fontSize: 16, color: Colors.black54)),
-                                        ShaderMask(
-                                          shaderCallback: (bounds) => const LinearGradient(
-                                            colors: [Color(0xFFD4AF37), Color(0xFFFFD700), Color(0xFFD4AF37)],
-                                          ).createShader(bounds),
-                                          child: Text(
-                                            'สมาชิก VIP',
-                                            style: GoogleFonts.kanit(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w800,
-                                              color: Colors.white, // Required for ShaderMask
-                                            ),
-                                          ),
-                                        ),
-                                        if (data['vip_expiry_text'] != null && data['vip_expiry_text'].toString().isNotEmpty)
-                                          Text(
-                                            ' (${data['vip_expiry_text']})',
-                                            style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[600]),
-                                          ),
-                                      ],
-                                    ),
-                                ],
-                              ),
-                              // Buddhist Day Icon (if needed, mimicking web)
-                            ],
-                          ),
                           const SizedBox(height: 24),
-
-
-
-                          // 4. Saved Names Section
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [Color(0xFFFFD700), Color(0xFFFFC107)],
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(Icons.folder_open, color: Color(0xFF333333), size: 20),
-                                    const SizedBox(width: 8),
-                                    Text('รายชื่อที่บันทึกไว้', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF333333))),
-                                  ],
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0x664a3b00),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: const Color(0x33000000))
-                                  ),
-                                  child: Text(
-                                    '${savedNames.length} / 12 รายชื่อ',
-                                    style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF4a3b00)),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          
+                          // 2. VIP Privilege Card
+                          _buildPrivilegeCard(isVip),
+                          
+                          const SizedBox(height: 24),
+                          
+                          // 3. Saved Names Section
+                          _buildSavedNamesHeader(savedNames.length),
                           const SizedBox(height: 12),
                           if (savedNames.isEmpty)
                             _buildEmptyState()
                           else
                             _buildSavedNamesTable(savedNames, isVip),
+                            
+                          const SizedBox(height: 32),
+                          
+                          // 4. Menu Section (Clean List)
+                          Text('เมนูบัญชีผู้ใช้', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                          const SizedBox(height: 12),
+                          _buildMenuCard(context, hasAddress),
 
-                          const SizedBox(height: 16),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        children: [
-                          _buildPrivilegeCard(isVip),
-                          const SizedBox(height: 24),
-                          _buildProfileCard(
-                            data['username'] ?? data['Username'] ?? '', 
-                            data['email'] ?? data['Email'] ?? '', 
-                            data['tel'] ?? data['Tel'] ?? '',
-                            isVip, 
-                            isAdmin,
-                            data['has_shipping_address'] == true || data['HasShippingAddress'] == true
+                          const SizedBox(height: 32),
+
+                          // 5. Logout Button (Distinct & Bottom)
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                await AuthService.logout();
+                                if (context.mounted) {
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                    MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 0)),
+                                    (route) => false,
+                                  );
+                                  CustomToast.show(context, 'ออกจากระบบเรียบร้อยแล้ว');
+                                }
+                              },
+                              icon: const Icon(Icons.logout, color: Colors.redAccent),
+                              label: Text('ออกจากระบบ', style: GoogleFonts.kanit(fontSize: 16, color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                side: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                backgroundColor: Colors.red.withOpacity(0.02),
+                              ),
+                            ),
                           ),
+                          
+                          const SizedBox(height: 48),
+                          const SharedFooter(),
+                          const SizedBox(height: 24),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 48),
-                    const SharedFooter(),
                   ],
                 ),
               );
@@ -267,6 +211,215 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
       ),
+    );
+  }
+
+  // --- New Header Widget ---
+  Widget _buildPremiumHeader(BuildContext context, String username, String email, String? avatarUrl, bool isVip, bool isAdmin) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 24, offset: const Offset(0, 8)),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+      child: Column(
+        children: [
+           // Avatar with Glow
+           Stack(
+             alignment: Alignment.center,
+             children: [
+               if (isVip)
+                 Container(
+                   width: 108, 
+                   height: 108,
+                   decoration: BoxDecoration(
+                     shape: BoxShape.circle,
+                     gradient: const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFFA000)]),
+                     boxShadow: [
+                        BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.4), blurRadius: 20, spreadRadius: 2)
+                     ],
+                   ),
+                 ),
+               Container(
+                 decoration: BoxDecoration(
+                   shape: BoxShape.circle,
+                   border: Border.all(color: Colors.white, width: 4),
+                 ),
+                 child: CircleAvatar(
+                   radius: 50,
+                   backgroundColor: Colors.grey[100],
+                   backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty) 
+                      ? NetworkImage(avatarUrl) 
+                      : null,
+                   child: (avatarUrl == null || avatarUrl.isEmpty)
+                      ? Text(
+                          username.isNotEmpty ? username[0].toUpperCase() : '?',
+                          style: GoogleFonts.kanit(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.grey[400]),
+                        )
+                      : null,
+                 ),
+               ),
+               if (isAdmin)
+                 Positioned(
+                   bottom: 0,
+                   right: 0,
+                   child: Container(
+                     padding: const EdgeInsets.all(6),
+                     decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                     child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 16),
+                   ),
+                 )
+             ],
+           ),
+           const SizedBox(height: 16),
+           
+           // Username
+           Text(
+             username, 
+             style: GoogleFonts.kanit(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87)
+           ),
+           
+           // VIP Badge / Email
+           const SizedBox(height: 4),
+           Row(
+             mainAxisAlignment: MainAxisAlignment.center,
+             children: [
+               if (isVip)
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFDB931)]),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star, color: Colors.white, size: 12),
+                      const SizedBox(width: 4),
+                      Text('VIP MEMBER', style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
+                    ],
+                  ),
+                ),
+               Text(email, style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[500])),
+             ],
+           ),
+        ],
+      ),
+    );
+  }
+
+  // --- Modified Saved Names Header ---
+  Widget _buildSavedNamesHeader(int count) {
+     return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFD700).withOpacity(0.2), 
+                    borderRadius: BorderRadius.circular(12)
+                  ),
+                  child: const Icon(Icons.bookmark_border_rounded, color: Color(0xFFB78900), size: 20),
+                ),
+                const SizedBox(width: 12),
+                Text('รายชื่อที่บันทึก', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '$count / 12 รายชื่อ',
+                style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[600]),
+              ),
+            ),
+        ],
+     );
+  }
+
+  // --- New Menu Card Widget ---
+  Widget _buildMenuCard(BuildContext context, bool hasAddress) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        children: [
+           _buildMenuItem(
+             context,
+             icon: Icons.history,
+             title: 'ประวัติการสั่งซื้อ',
+             iconColor: Colors.blueAccent,
+             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const OrderHistoryPage())),
+           ),
+           const Divider(height: 1, indent: 60),
+           _buildMenuItem(
+             context,
+             icon: Icons.location_on_outlined,
+             title: 'จัดการที่อยู่จัดส่ง',
+             iconColor: hasAddress ? Colors.green : Colors.orange,
+             subtitle: hasAddress ? null : 'ยังไม่ได้เพิ่มที่อยู่',
+             onTap: () async {
+                 await Navigator.push(context, MaterialPageRoute(builder: (context) => const ShippingAddressPage()));
+                 _loadDashboard();
+             },
+           ),
+           const Divider(height: 1, indent: 60),
+           _buildMenuItem(
+              context,
+              icon: Icons.lock_outline,
+              title: 'นโยบายความเป็นส่วนตัว',
+              iconColor: Colors.grey[600]!,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PrivacyPolicyPage()))
+           ),
+           const Divider(height: 1, indent: 60),
+            _buildMenuItem(
+              context,
+              icon: Icons.delete_outline,
+              title: 'ขอลบบัญชีผู้ใช้',
+              iconColor: Colors.grey[400]!,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const DeleteAccountPage()))
+           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(BuildContext context, {
+    required IconData icon,
+    required String title,
+    required Color iconColor,
+    String? subtitle,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      onTap: onTap,
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: iconColor.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: iconColor, size: 22),
+      ),
+      title: Text(title, style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.w500)),
+      subtitle: subtitle != null ? Text(subtitle, style: GoogleFonts.kanit(fontSize: 12, color: Colors.orange)) : null,
+      trailing: const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 
@@ -616,7 +769,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildProfileCard(String username, String email, String tel, bool isVip, bool isAdmin, bool hasShippingAddress) {
+  Widget _buildProfileCard(String username, String email, String tel, String? avatarUrl, bool isVip, bool isAdmin, bool hasShippingAddress) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -630,14 +783,20 @@ class _DashboardPageState extends State<DashboardPage> {
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: isVip ? Colors.amber[100] : Colors.teal[50],
-                child: Text(
-                  username.isNotEmpty ? username[0].toUpperCase() : '?',
-                  style: GoogleFonts.kanit(fontSize: 24, fontWeight: FontWeight.bold, color: isVip ? Colors.amber[800] : Colors.teal),
-                ),
-              ),
+              avatarUrl != null && avatarUrl.isNotEmpty
+                ? CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.transparent,
+                    backgroundImage: NetworkImage(avatarUrl),
+                  )
+                : CircleAvatar(
+                    radius: 30,
+                    backgroundColor: isVip ? Colors.amber[100] : Colors.teal[50],
+                    child: Text(
+                      username.isNotEmpty ? username[0].toUpperCase() : '?',
+                      style: GoogleFonts.kanit(fontSize: 24, fontWeight: FontWeight.bold, color: isVip ? Colors.amber[800] : Colors.teal),
+                    ),
+                  ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(

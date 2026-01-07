@@ -54,6 +54,7 @@ func (h *ArticleHandler) ShowArticlesPage(c *fiber.Ctx) error {
 		"articles",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		pages.Articles(articles),
 	))
 }
@@ -99,6 +100,7 @@ func (h *ArticleHandler) ShowArticleDetailPage(c *fiber.Ctx) error {
 		"articles",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		pages.ArticleDetail(article),
 	))
 }

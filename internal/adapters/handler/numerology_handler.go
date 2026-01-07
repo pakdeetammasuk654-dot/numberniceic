@@ -167,11 +167,6 @@ func (h *NumerologyHandler) AnalyzePhoneNumberAPI(c *fiber.Ctx) error {
 	}
 
 	// Calculate Total Score % (Base Category Percentage logic)
-	// Web Logic: (TotalGood - TotalBad) / TotalPairs * 100 ??
-	// Actually current web logic uses "GetBaseCategoryPercentage" which is:
-	// length(ActiveCategories) * 25.0
-	// Active Category = Has > 0 Good numbers.
-
 	totalBasePercent := 0.0
 	for _, cat := range []string{"สุขภาพ", "การงาน", "การเงิน", "ความรัก"} {
 		if bd, ok := breakdown[cat]; ok && bd.Good > 0 {
@@ -444,6 +439,7 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 			ToastSuccess: c.Locals("toast_success"),
 			ToastError:   c.Locals("toast_error"),
 			IsVIP:        isVIP,
+			AvatarURL:    func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		},
 		DefaultName:           name,
 		DefaultDay:            strings.ToUpper(day),
@@ -1366,6 +1362,7 @@ func getMeaningsAndScores(pairs []string, pairCache *cache.NumberPairCache) ([]d
 			// Force RED color for bad pairs to fix "sad brown" display issue globally
 			if service.IsBadPairType(meaning.PairType) {
 				meaning.Color = "#D32F2F"
+				meaning.IsBad = true
 			}
 			meanings = append(meanings, domain.PairMeaningResult{PairNumber: p, Meaning: meaning})
 			if meaning.PairPoint > 0 {
@@ -1509,8 +1506,10 @@ func (h *NumerologyHandler) getSolarSystemProps(name, day string, repoAllowKlaki
 
 	// Helper map to aggregate unique keywords per category
 	categoryKeywords := make(map[string]map[string]bool)
+	categoryBadKeywords := make(map[string]map[string]bool)
 	for cat := range counts {
 		categoryKeywords[cat] = make(map[string]bool)
+		categoryBadKeywords[cat] = make(map[string]bool)
 	}
 
 	updateBreakdown := func(pairNumber string) {
@@ -1548,10 +1547,14 @@ func (h *NumerologyHandler) getSolarSystemProps(name, day string, repoAllowKlaki
 					current.Bad++
 				}
 
-				// Aggregate keywords
+				// Aggregate keywords based on good/bad status
 				for _, kw := range keywords {
 					if kw != "" {
-						categoryKeywords[c][kw] = true
+						if isGood {
+							categoryKeywords[c][kw] = true
+						} else if isBad {
+							categoryBadKeywords[c][kw] = true
+						}
 					}
 				}
 
@@ -1579,14 +1582,86 @@ func (h *NumerologyHandler) getSolarSystemProps(name, day string, repoAllowKlaki
 			}
 			sort.Strings(kws)
 			entry.Keywords = kws
+
+			// Add bad keywords
+			var badKws []string
+			for kw := range categoryBadKeywords[cat] {
+				badKws = append(badKws, kw)
+			}
+			sort.Strings(badKws)
+			entry.BadKeywords = badKws
+
 			breakdown[cat] = entry
+		}
+	}
+
+	// Calculate Total Score % (Base Category Percentage logic)
+	totalBasePercent := 0.0
+	for _, cat := range []string{"สุขภาพ", "การงาน", "การเงิน", "ความรัก"} {
+		if bd, ok := breakdown[cat]; ok && bd.Good > 0 {
+			totalBasePercent += 25.0
+		}
+	}
+
+	// Prepare Display Summaries (Backend Logic for UI)
+	var analysisSummaries []domain.AnalysisSummary
+
+	toDisplayKeywords := func(goodKws []string, badKws []string) []domain.DisplayKeyword {
+		var content []domain.DisplayKeyword
+		for _, k := range goodKws {
+			content = append(content, domain.DisplayKeyword{Text: k, IsBad: false})
+		}
+		for _, k := range badKws {
+			content = append(content, domain.DisplayKeyword{Text: k, IsBad: true})
+		}
+		return content
+	}
+
+	// Unified Logic: Show all relevant categories separately matching Pie Chart colors
+	order := []string{"สุขภาพ", "การงาน", "การเงิน", "ความรัก"}
+	for _, cat := range order {
+		bd := breakdown[cat]
+		content := toDisplayKeywords(bd.Keywords, bd.BadKeywords)
+
+		// Show as long as there is content (Good OR Bad)
+		if len(content) > 0 {
+			title := cat
+			// Append warning suffix if there are bad keywords in this category
+			if len(bd.BadKeywords) > 0 {
+				title += ": จะส่งผลร้าย"
+			}
+
+			analysisSummaries = append(analysisSummaries, domain.AnalysisSummary{
+				Title:       title,
+				Content:     content,
+				CategoryKey: cat,
+			})
+		}
+	}
+
+	// Determine Header Title & Color
+	resultTitle := ""
+	resultColor := ""
+	resultStyle := "default"
+
+	if grandTotalScore >= 0 {
+		resultTitle = "ชื่อนี้ดี"
+		resultColor = "#10B981" // Emerald Green
+		resultStyle = "emerald"
+	} else {
+		if numPos+shaPos == 0 {
+			resultTitle = "ชื่อนี้ส่งผลร้าย"
+			resultColor = "#EF4444"
+		} else {
+			resultTitle = "ชื่อนี้ร้ายมากกว่าดี"
+			resultColor = "#EF4444"
 		}
 	}
 
 	return analysis.SolarSystemProps{
 		CleanedName:          name,
 		InputDay:             service.GetThaiDay(day),
-		InputDayRaw:          service.GetThaiDay(day),
+		InputDayRaw:          day,
 		DisableKlakini:       !repoAllowKlakini,
 		SunDisplayNameHTML:   h.createDisplayChars(name, day),
 		NumerologyPairs:      numMeanings,
@@ -1596,6 +1671,8 @@ func (h *NumerologyHandler) getSolarSystemProps(name, day string, repoAllowKlaki
 		ShaPositiveScore:     shaPos,
 		ShaNegativeScore:     shaNeg,
 		GrandTotalScore:      grandTotalScore,
+		TotalPercent:         totalBasePercent,
+		TotalPairs:           len(numMeanings) + len(shaMeanings),
 		IsSunDead:            grandTotalScore < 0,
 		AllUniquePairs:       allUniquePairs,
 		DecodedParts:         results,
@@ -1604,5 +1681,9 @@ func (h *NumerologyHandler) getSolarSystemProps(name, day string, repoAllowKlaki
 		IsVIP:                isVIP,
 		CategoryCounts:       counts,
 		CategoryBreakdown:    breakdown,
+		AnalysisSummaries:    analysisSummaries,
+		ResultTitle:          resultTitle,
+		ResultColor:          resultColor,
+		ResultStyle:          resultStyle,
 	}, nil
 }

@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.mobile_app"
+    namespace = "com.taya.numberniceic"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,16 +15,23 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.mobile_app"
+        applicationId = "com.taya.numberniceic"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // LINE Login Scheme
+        manifestPlaceholders["lineChannelScheme"] = "line3rdp.com.taya.numberniceic"
     }
 
     buildTypes {
@@ -38,4 +45,20 @@ android {
 
 flutter {
     source = "../.."
+}
+
+tasks.register("printSHA1") {
+    doLast {
+        println("🔑 TEMPORARY SHA-1 PRINTER 🔑")
+        val keystoreFile = File(System.getProperty("user.home") + "/.android/debug.keystore")
+        if (keystoreFile.exists()) {
+             println("Debug keystore found at: ${keystoreFile.absolutePath}")
+             // Note: Executing keytool from Gradle is tricky without knowing path.
+             // But we can try to find it or print instructions.
+             println("To get SHA-1, please run this in your terminal:")
+             println("keytool -list -v -keystore ${keystoreFile.absolutePath} -alias androiddebugkey -storepass android -keypass android")
+        } else {
+             println("Debug keystore NOT found at default location.")
+        }
+    }
 }

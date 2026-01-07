@@ -119,10 +119,17 @@ templ NumberAnalysis() {
                  <h2 id="perfect-phone-number" class="perfect-number" style="font-size: 48px; font-weight: 800; font-family: monospace; margin: 0; text-shadow: none; position: relative; z-index: 10; line-height: 1.1;"></h2>
 
                  <!-- Badge + Stars -->
-                 <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 24px; margin-top: 10px;">
+                 <div onclick="showVipGradeInfo()" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 24px; margin-top: 10px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                      <!-- Badge + Stars -->
                      <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                         <span id="perfect-badge-title" style="font-size: 38px; font-weight: 400; background: linear-gradient(to bottom, #FDE68A, #D97706, #92400E); -webkit-background-clip: text; background-clip: text; color: transparent; text-transform: uppercase; font-family: 'Sarabun', sans-serif; letter-spacing: -0.5px; line-height: 1.0; text-align: center;">The Best</span>
+                         <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <span id="perfect-badge-title" style="font-size: 38px; font-weight: 400; background: linear-gradient(to bottom, #FDE68A, #D97706, #92400E); -webkit-background-clip: text; background-clip: text; color: transparent; text-transform: uppercase; font-family: 'Sarabun', sans-serif; letter-spacing: -0.5px; line-height: 1.0; text-align: center;">The Best</span>
+                            <span style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: #F3F4F6; border-radius: 50%; color: #9CA3AF;">
+                                <svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </span>
+                         </div>
                          <div style="display: flex; gap: 4px; align-items: center; justify-content: center;">
                               <span style="color: #F59E0B; font-size: 20px;">★</span>
                               <span style="color: #F59E0B; font-size: 20px;">★</span>
@@ -131,15 +138,14 @@ templ NumberAnalysis() {
                               <span style="color: #F59E0B; font-size: 20px;">★</span>
                          </div>
                      </div>
-                     
-                     <!-- Button -->
-                     <button onclick="showBuyContact()" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; border: none; padding: 12px 28px; border-radius: 9999px; font-family: 'Sarabun', sans-serif; font-weight: 500; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.05); font-size: 18px; transition: all 0.2s; white-space: nowrap; line-height: 1.2;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 15px 20px -3px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 10px 15px -3px rgba(16, 185, 129, 0.3)'">ซื้อเบอร์นี้</button>
-                 </div>
+                 </div>   
+                 <!-- Button -->
+                 <button onclick="showBuyContact()" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; border: none; padding: 12px 28px; border-radius: 9999px; font-family: 'Sarabun', sans-serif; font-weight: 500; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.05); font-size: 18px; transition: all 0.2s; white-space: nowrap; line-height: 1.2;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 15px 20px -3px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 10px 15px -3px rgba(16, 185, 129, 0.3)'">ซื้อเบอร์นี้</button>
              </div>
          </div>
         
          <!-- Wreath Badge Component -->
-         @components.WreathBadge("เลขศาสตร์", "พลังเงา", "ผลรวม", "เลขเรียง", "คู่หลัก", "คู่รอง", "", "")
+         @components.WreathBadge("เลขศาสตร์", "พลังเงา", "ผลรวม", "เลขเรียง", "คู่หลัก", "คู่แฝง", "", "")
         
         <!-- Skeleton Loader (Initially Hidden) -->
         <div id="analysis-skeleton" class="na-skeleton">
@@ -174,8 +180,15 @@ templ NumberAnalysis() {
 
                                       <!-- Badge + Button Section Below Number -->
                                       <div style="display: flex; align-items: center; gap: 20px; padding: 0 10px;">
-                                          <div style="display: flex; flex-direction: column; align-items: center;">
-                                              <span id="badge-title" style="font-size: 38px; font-weight: 900; background: linear-gradient(to bottom, #FDE68A, #D97706, #92400E); -webkit-background-clip: text; background-clip: text; color: transparent; text-transform: uppercase; font-family: 'Kanit', sans-serif; letter-spacing: -0.5px; line-height: 1.0; text-align: center;">The Best</span>
+                                          <div onclick="showVipGradeInfo()" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                                              <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                                  <span id="badge-title" style="font-size: 38px; font-weight: 900; background: linear-gradient(to bottom, #FDE68A, #D97706, #92400E); -webkit-background-clip: text; background-clip: text; color: transparent; text-transform: uppercase; font-family: 'Kanit', sans-serif; letter-spacing: -0.5px; line-height: 1.0; text-align: center;">The Best</span>
+                                                  <span style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: #F3F4F6; border-radius: 50%; color: #9CA3AF;">
+                                                      <svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                      </svg>
+                                                  </span>
+                                              </div>
                                               <div style="display: flex; gap: 4px; margin-top: 8px; align-items: center; justify-content: center;">
                                                    <span style="color: #F59E0B; font-size: 20px;">★</span>
                                                    <span style="color: #F59E0B; font-size: 20px;">★</span>
@@ -434,6 +447,12 @@ templ NumberAnalysis() {
                         if(perfectBadgeTitleEl) {
                             perfectBadgeTitleEl.innerText = gradeTitle;
                             console.log("Set badge title to:", gradeTitle);
+                            
+                            // Also update the main result section badge title
+                            const mainBadgeTitleEl = document.getElementById('badge-title');
+                            if(mainBadgeTitleEl) {
+                                mainBadgeTitleEl.innerText = gradeTitle;
+                            }
                         } else {
                             console.error("Perfect Badge Title Element not found!");
                         }
@@ -867,6 +886,116 @@ templ NumberAnalysis() {
                  </div>
              </div>
         </div>
+
+
+        <!-- VIP Grade Info Modal -->
+        <div id="vip-grade-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; padding-top: 0; z-index: 1000; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+            <div id="vip-grade-modal-content" style="background-color: #fff; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); width: 95%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; padding: 2rem; transform: scale(0.95); opacity: 0; transition: all 0.2s ease-out;">
+                
+                <button onclick="closeVipGradeInfo()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; cursor: pointer; color: #9CA3AF; transition: color 0.2s;">
+                    <svg style="width: 24px; height: 24px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+
+                <h3 style="font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 1rem; font-family: 'Kanit', sans-serif; text-align: center;">ระดับความมงคล (VIP Grade)</h3>
+                
+                <p style="color: #4B5563; font-family: 'Sarabun', sans-serif; margin-bottom: 1.5rem; line-height: 1.6;">
+                    เมื่อวิเคราะห์เบอร์โทรศัพท์ ระบบจะให้เกรดความมงคลโดยพิจารณาจาก <strong>"ความต่อเนื่องของคู่เลขดี"</strong> (Consecutive Good Pairs) 
+                    โดยเริ่มไล่จาก <strong>คู่สุดท้าย</strong> ย้อนกลับมาหาคู่แรก ยิ่งมีคู่ดีติดต่อกันมากเท่าไหร่ ระดับความมงคลยิ่งสูงขึ้นเท่านั้น
+                </p>
+
+                <div style="overflow-x: auto; border-radius: 12px; border: 1px solid #E5E7EB;">
+                    <table style="width: 100%; border-collapse: collapse; font-family: 'Sarabun', sans-serif;">
+                        <thead>
+                            <tr style="background-color: #F9FAFB; border-bottom: 1px solid #E5E7EB;">
+                                <th style="padding: 12px 16px; text-align: left; font-size: 14px; color: #6B7280; font-weight: 600; text-transform: uppercase;">ระดับ (Grade)</th>
+                                <th style="padding: 12px 16px; text-align: left; font-size: 14px; color: #6B7280; font-weight: 600; text-transform: uppercase;">เงื่อนไข (Condition)</th>
+                            </tr>
+                        </thead>
+                        <tbody style="background-color: white;">
+                            <tr style="border-bottom: 1px solid #E5E7EB;">
+                                <td style="padding: 12px 16px;">
+                                    <span style="display: inline-block; padding: 2px 8px; font-size: 12px; font-weight: 600; border-radius: 9999px; background-color: #FEF3C7; color: #92400E;">PERFECT</span>
+                                </td>
+                                <td style="padding: 12px 16px; color: #4B5563; font-size: 14px;">ผลรวมดี + คู่เลขดีต่อเนื่องกัน <strong>5 คู่ขึ้นไป</strong> (แทบไม่มีที่ติ)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #E5E7EB;">
+                                <td style="padding: 12px 16px;">
+                                    <span style="display: inline-block; padding: 2px 8px; font-size: 12px; font-weight: 600; border-radius: 9999px; background-color: #F3E8FF; color: #6B21A8;">The Best</span>
+                                </td>
+                                <td style="padding: 12px 16px; color: #4B5563; font-size: 14px;">ผลรวมดี + คู่เลขดีต่อเนื่องกัน <strong>4 คู่</strong></td>
+                            </tr>
+                             <tr style="border-bottom: 1px solid #E5E7EB;">
+                                <td style="padding: 12px 16px;">
+                                    <span style="display: inline-block; padding: 2px 8px; font-size: 12px; font-weight: 600; border-radius: 9999px; background-color: #DBEAFE; color: #1E40AF;">Triple ดี</span>
+                                </td>
+                                <td style="padding: 12px 16px; color: #4B5563; font-size: 14px;">ผลรวมดี + คู่เลขดีต่อเนื่องกัน <strong>3 คู่</strong></td>
+                            </tr>
+                             <tr style="border-bottom: 1px solid #E5E7EB;">
+                                <td style="padding: 12px 16px;">
+                                    <span style="display: inline-block; padding: 2px 8px; font-size: 12px; font-weight: 600; border-radius: 9999px; background-color: #DCFCE7; color: #166534;">คู่ท้าย Double ดี</span>
+                                </td>
+                                <td style="padding: 12px 16px; color: #4B5563; font-size: 14px;">ผลรวมดี + คู่เลขดีต่อเนื่องกัน <strong>2 คู่</strong> (ปิดท้ายสวยงาม)</td>
+                            </tr>
+                             <tr style="border-bottom: 1px solid #E5E7EB;">
+                                <td style="padding: 12px 16px;">
+                                    <span style="display: inline-block; padding: 2px 8px; font-size: 12px; font-weight: 600; border-radius: 9999px; background-color: #F3F4F6; color: #1F2937;">คู่ท้ายดี</span>
+                                </td>
+                                <td style="padding: 12px 16px; color: #4B5563; font-size: 14px;">ผลรวมดี + คู่เลขสุดท้ายเป็นคู่ดี <strong>1 คู่</strong></td>
+                            </tr>
+                             <tr>
+                                <td style="padding: 12px 16px;">
+                                    <span style="display: inline-block; padding: 2px 8px; font-size: 12px; font-weight: 600; border-radius: 9999px; background-color: #F9FAFB; color: #6B7280;">ผลรวมดี</span>
+                                </td>
+                                <td style="padding: 12px 16px; color: #4B5563; font-size: 14px;">ผลรวม (Sum) ออกมาดี แต่คู่ท้ายอาจยังไม่สมบูรณ์ หรือขาดความต่อเนื่อง</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                 <div style="margin-top: 1.5rem; padding: 1rem; background-color: #FFFBEB; border-radius: 8px; text-align: center;">
+                    <p style="color: #92400E; font-weight: 600; margin: 0; font-family: 'Sarabun', sans-serif;">
+                        "หลักการนี้ช่วยให้คุณเห็นภาพว่า การเสริมเบอร์มงคล คือการเข้ามา 'เติมเต็ม' ส่วนที่ขาดหายไปในชีวิตให้สมบูรณ์ยิ่งขึ้น"
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function showVipGradeInfo() {
+                const modal = document.getElementById('vip-grade-modal');
+                const content = document.getElementById('vip-grade-modal-content');
+                if(!modal || !content) return;
+
+                modal.style.display = 'flex';
+                content.style.transform = 'scale(0.95)';
+                content.style.opacity = '0';
+                setTimeout(() => {
+                    content.style.transform = 'scale(1)';
+                    content.style.opacity = '1';
+                }, 10);
+            }
+
+            function closeVipGradeInfo() {
+                const modal = document.getElementById('vip-grade-modal');
+                const content = document.getElementById('vip-grade-modal-content');
+                if(!modal || !content) return;
+
+                content.style.transform = 'scale(0.95)';
+                content.style.opacity = '0';
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 200);
+            }
+            
+            // Add click outside listener if not already handled generally
+            window.addEventListener('click', function(event) {
+                const gradeModal = document.getElementById('vip-grade-modal');
+                if (event.target == gradeModal) {
+                    closeVipGradeInfo();
+                }
+            });
+        </script>
 
     </div>
 }

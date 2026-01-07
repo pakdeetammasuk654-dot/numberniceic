@@ -9,6 +9,7 @@ type NumberPairMeaning struct {
 	Color         string   `json:"color"`    // New field for color
 	Category      string   `json:"category"` // Added for filtering lucky numbers
 	Keywords      []string `json:"keywords"` // Added for display
+	IsBad         bool     `json:"is_bad"`   // Added for UI logic
 }
 
 type NumberCategory struct {

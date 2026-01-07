@@ -78,6 +78,87 @@ templ ChartLogic() {
 				</div>
 			</div>
 
+			<hr class="my-6 border-gray-200"/>
+
+			<h2 class="text-2xl font-bold text-gray-800 mb-4">ระดับความมงคลของเบอร์โทรศัพท์ (VIP Grade)</h2>
+			<p class="text-gray-700 mb-4">
+				เมื่อวิเคราะห์เบอร์โทรศัพท์ ระบบจะให้เกรดความมงคลโดยพิจารณาจาก <strong>"ความต่อเนื่องของคู่เลขดี"</strong> (Consecutive Good Pairs) 
+				โดยเริ่มไล่จาก <strong>คู่สุดท้าย</strong> ย้อนกลับมาหาคู่แรก ยิ่งมีคู่ดีติดต่อกันมากเท่าไหร่ ระดับความมงคลยิ่งสูงขึ้นเท่านั้น
+			</p>
+
+			<div class="overflow-hidden bg-white shadow sm:rounded-lg border border-gray-200">
+				<table class="min-w-full divide-y divide-gray-200">
+					<thead class="bg-gray-50">
+						<tr>
+							<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ระดับ (Grade)</th>
+							<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เงื่อนไข (Condition)</th>
+						</tr>
+					</thead>
+					<tbody class="bg-white divide-y divide-gray-200">
+						<tr>
+							<td class="px-6 py-4 whitespace-nowrap">
+								<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+									PERFECT
+								</span>
+							</td>
+							<td class="px-6 py-4 text-sm text-gray-500">
+								ผลรวมดี + คู่เลขดีต่อเนื่องกัน <strong>5 คู่ขึ้นไป</strong> (แทบไม่มีที่ติ)
+							</td>
+						</tr>
+						<tr>
+							<td class="px-6 py-4 whitespace-nowrap">
+								<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+									The Best
+								</span>
+							</td>
+							<td class="px-6 py-4 text-sm text-gray-500">
+								ผลรวมดี + คู่เลขดีต่อเนื่องกัน <strong>4 คู่</strong>
+							</td>
+						</tr>
+						<tr>
+							<td class="px-6 py-4 whitespace-nowrap">
+								<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+									Triple ดี
+								</span>
+							</td>
+							<td class="px-6 py-4 text-sm text-gray-500">
+								ผลรวมดี + คู่เลขดีต่อเนื่องกัน <strong>3 คู่</strong>
+							</td>
+						</tr>
+						<tr>
+							<td class="px-6 py-4 whitespace-nowrap">
+								<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+									คู่ท้าย Double ดี
+								</span>
+							</td>
+							<td class="px-6 py-4 text-sm text-gray-500">
+								ผลรวมดี + คู่เลขดีต่อเนื่องกัน <strong>2 คู่</strong> (ปิดท้ายสวยงาม)
+							</td>
+						</tr>
+						<tr>
+							<td class="px-6 py-4 whitespace-nowrap">
+								<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+									คู่ท้ายดี
+								</span>
+							</td>
+							<td class="px-6 py-4 text-sm text-gray-500">
+								ผลรวมดี + คู่เลขสุดท้ายเป็นคู่ดี <strong>1 คู่</strong>
+							</td>
+						</tr>
+						<tr>
+							<td class="px-6 py-4 whitespace-nowrap">
+								<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-50 text-gray-500">
+									ผลรวมดี
+								</span>
+							</td>
+							<td class="px-6 py-4 text-sm text-gray-500">
+								ผลรวม (Sum) ออกมาดี แต่คู่ท้ายอาจยังไม่สมบูรณ์ หรือขาดความต่อเนื่อง
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+
 			<div class="mt-8 p-4 bg-yellow-50 rounded-lg text-center">
 				<p class="text-yellow-800 font-semibold">
 					"หลักการนี้ช่วยให้คุณเห็นภาพว่า การเสริมเบอร์มงคล คือการเข้ามา 'เติมเต็ม' ส่วนที่ขาดหายไปในชีวิตให้สมบูรณ์ยิ่งขึ้น"

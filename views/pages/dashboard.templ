@@ -9,8 +9,8 @@ script navigateToAnalyzer(name string, day string) {
 	window.location.href = '/analyzer?name=' + name + '&day=' + day;
 }
 
-templ Dashboard(username string, email string, tel string, savedNames []domain.SavedNameDisplay, isVIP bool, assignedColors []string, isBuddhistDay bool, myCodes []domain.PromotionalCode, hasShippingAddress bool, vipExpiryText string) {
-	<div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+templ Dashboard(username string, email string, tel string, avatarURL string, savedNames []domain.SavedNameDisplay, isVIP bool, assignedColors []string, isBuddhistDay bool, myCodes []domain.PromotionalCode, hasShippingAddress bool, vipExpiryText string) {
+	<div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
 		<div>
 			<div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
 				<h1 style="font-family: 'Kanit', sans-serif; margin: 0;">ยินดีต้อนรับ, { username }!</h1>
@@ -32,6 +32,10 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
 				<p style="font-family: 'Kanit', sans-serif; color: #666; margin: 0.5rem 0 0 0;">ข้อมูลส่วนตัวและรายชื่อดีที่คุณเลือก</p>
 			}
 		</div>
+		<a href="/logout" class="link-button" style="color: #dc3545; text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; background: #fff; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #fee2e2; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+			<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+			ออกจากระบบ
+		</a>
 	</div>
 
 
@@ -45,10 +49,28 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
 					<span title="ยังไม่ได้ใส่ที่อยู่" style="display: inline-flex; width: 10px; height: 10px; background-color: #f56565; border-radius: 50%; margin-left: auto;"></span>
 				}
 			</h2>
-			<div style="flex: 1; display: flex; flex-direction: column; gap: 0.75rem;">
-				<p style="margin: 0;"><strong style="color: #718096; width: 100px; display: inline-block;">ชื่อผู้ใช้:</strong> { username }</p>
-				<p style="margin: 0;"><strong style="color: #718096; width: 100px; display: inline-block;">อีเมล:</strong> { email }</p>
-				<p style="margin: 0;"><strong style="color: #718096; width: 100px; display: inline-block;">เบอร์โทรศัพท์:</strong> { tel }</p>
+			<div style="flex: 1; display: flex; flex-direction: column; gap: 0.75rem; position: relative;">
+				<button onclick="openEditProfileModal()" style="position: absolute; top: 0; right: 0; background: none; border: none; cursor: pointer; color: #718096;" title="แก้ไขข้อมูล">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+				</button>
+				<div style="display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 0.5rem;">
+					if avatarURL != "" {
+						<img src={ avatarURL } alt={ username } style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid #eee;" referrerpolicy="no-referrer" />
+					} else {
+						<div style="width: 64px; height: 64px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border: 2px solid #eee;">
+							<span style="font-size: 1.5rem; color: #999;">{ string([]rune(username)[0]) }</span>
+						</div>
+					}
+					<div style="flex: 1;">
+						<p style="margin: 0 0 0.5rem 0;"><strong style="color: #718096; width: 100px; display: inline-block;">ชื่อผู้ใช้:</strong> { username }</p>
+						if email != "" {
+							<p style="margin: 0 0 0.5rem 0;"><strong style="color: #718096; width: 100px; display: inline-block;">อีเมล:</strong> { email }</p>
+						}
+						if tel != "" {
+							<p style="margin: 0;"><strong style="color: #718096; width: 100px; display: inline-block;">เบอร์โทรศัพท์:</strong> { tel }</p>
+						}
+					</div>
+				</div>
 			</div>
 			<div style="margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
 				<a href="/shipping-address" class="link-button" style="color: #007bff; text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
@@ -57,10 +79,6 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
 					if !hasShippingAddress {
 						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f56565" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: auto;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
 					}
-				</a>
-				<a href="/logout" class="link-button" style="color: #dc3545; text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
-					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-					ออกจากระบบ
 				</a>
 			</div>
 		</div>
@@ -147,20 +165,28 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
 
 		<!-- Promotional Code Card -->
 		if !isVIP {
-			<div class="name-card" style="margin: 0; font-family: 'Kanit', sans-serif;">
-				<h2 style="font-size: 1.25rem; margin-bottom: 1.25rem; border-bottom: 1px solid #eee; padding-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+			<div class="name-card" style="margin: 0; font-family: 'Kanit', sans-serif; background: linear-gradient(135deg, #ffffff 0%, #fffdf5 100%); border: 1px solid #f6e05e; position: relative; overflow: hidden;">
+				<!-- Decorative Glow -->
+				<div style="position: absolute; top: -20px; right: -20px; width: 60px; height: 60px; background: radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, rgba(255, 255, 255, 0) 70%); pointer-events: none;"></div>
+				
+				<h2 style="font-size: 1.25rem; margin-bottom: 1rem; border-bottom: 1px solid #fae69e; padding-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; color: #b7791f;">
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h5M17 15h0M22 9.5h-5"/></svg>
 					กรอกรหัสโปรโมชัน
 				</h2>
-				<p style="font-size: 0.85rem; color: #666; margin-bottom: 1rem;">หากคุณได้รับรหัสจากการซื้อ "สิ่งของมงคล" สามารถกรอกเพื่ออัปเกรดเป็น VIP ได้ที่นี่</p>
+				<p style="font-size: 0.9rem; color: #555; margin-bottom: 1.25rem; line-height: 1.5;">หากคุณมีรหัส VIP จากการสั่งซื้อกรอกเพื่ออัปเกรดที่นี่</p>
 				<div id="redeem-container">
-					<div style="display: flex; gap: 0.5rem;">
-						<input type="text" id="promo-code-input" placeholder="กรอกรหัสที่ได้รับ" style="flex: 1; padding: 0.6rem; border: 1px solid #ddd; border-radius: 8px; font-family: 'Kanit', sans-serif;" />
+					<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+						<input type="text" id="promo-code-input" placeholder="VIP-XXXX-XXXX" style="flex: 1; min-width: 150px; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 8px; font-family: 'Kanit', sans-serif; font-size: 1rem; transition: border-color 0.2s;" onfocus="this.style.borderColor = '#FDB931'" onblur="this.style.borderColor = '#e2e8f0'" />
 						<button 
 							onclick="redeemCode()"
 							class="btn-primary"
-							style="background: #2da44e; color: white; border: none; padding: 0.6rem 1rem; border-radius: 8px; font-weight: bold; cursor: pointer;"
-						>เปิดใช้งาน</button>
+							style="background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #4a3b00; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 6px rgba(253, 185, 49, 0.25); transition: transform 0.1s;"
+							onmouseover="this.style.transform = 'scale(1.02)'"
+							onmouseout="this.style.transform = 'scale(1)'"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+							เปิดใช้งาน
+						</button>
 					</div>
 					<div id="redeem-error" style="margin-top: 0.5rem; color: #dc3545; font-size: 0.85rem; display: none;"></div>
 				</div>
@@ -589,5 +615,86 @@ templ Dashboard(username string, email string, tel string, savedNames []domain.S
 				}
 			} catch(e) { console.error(e); }
 		});
+	</script>
+
+	<!-- Edit Profile Modal -->
+	<div id="edit-profile-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 1rem;">
+		<div style="background: white; width: 100%; max-width: 450px; border-radius: 16px; padding: 2rem; position: relative; font-family: 'Kanit', sans-serif;">
+			<button onclick="closeEditProfileModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; cursor: pointer; color: #999;">
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+			</button>
+			<h3 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.5rem; text-align: center;">แก้ไขข้อมูลส่วนตัว</h3>
+			<form id="edit-profile-form" onsubmit="submitEditProfile(event)">
+				<div style="margin-bottom: 1rem;">
+					<label style="display: block; margin-bottom: 0.5rem; color: #4a5568; font-weight: 500;">ชื่อผู้ใช้</label>
+					<input type="text" name="username" value={ username } required style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Kanit', sans-serif;" />
+				</div>
+				<div style="margin-bottom: 1rem;">
+					<label style="display: block; margin-bottom: 0.5rem; color: #4a5568; font-weight: 500;">อีเมล</label>
+					<input type="email" name="email" value={ email } style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Kanit', sans-serif;" />
+				</div>
+				<div style="margin-bottom: 1.5rem;">
+					<label style="display: block; margin-bottom: 0.5rem; color: #4a5568; font-weight: 500;">เบอร์โทรศัพท์</label>
+					<input type="tel" name="tel" value={ tel } placeholder="08xxxxxxxx" style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Kanit', sans-serif;" />
+				</div>
+				<button type="submit" style="width: 100%; background: #007bff; color: white; border: none; padding: 0.75rem; border-radius: 8px; font-weight: bold; font-family: 'Kanit', sans-serif; cursor: pointer;">บันทึกการเปลี่ยนแปลง</button>
+			</form>
+		</div>
+	</div>
+
+	<script>
+		function openEditProfileModal() {
+			document.getElementById('edit-profile-modal').style.display = 'flex';
+		}
+
+		function closeEditProfileModal() {
+			document.getElementById('edit-profile-modal').style.display = 'none';
+		}
+
+		async function submitEditProfile(e) {
+			e.preventDefault();
+			const form = e.target;
+			const formData = new FormData(form);
+			const data = Object.fromEntries(formData.entries());
+
+			try {
+				const res = await fetch('/api/profile/update', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(data)
+				});
+
+				if (res.ok) {
+					Toastify({
+						text: "บันทึกข้อมูลเรียบร้อยแล้ว",
+						duration: 3000,
+						style: { background: "linear-gradient(to right, #00b09b, #96c93d)" }
+					}).showToast();
+					setTimeout(() => window.location.reload(), 1000);
+				} else {
+					const err = await res.json();
+					Toastify({
+						text: err.error || "เกิดข้อผิดพลาด",
+						duration: 3000,
+						style: { background: "linear-gradient(to right, #ff5f6d, #ffc371)" }
+					}).showToast();
+				}
+			} catch (error) {
+				console.error(error);
+				Toastify({
+					text: "เกิดข้อผิดพลาดในการเชื่อมต่อ",
+					duration: 3000,
+					style: { background: "linear-gradient(to right, #ff5f6d, #ffc371)" }
+				}).showToast();
+			}
+		}
+
+		// Close modal when clicking outside
+		window.onclick = function(event) {
+			const modal = document.getElementById('edit-profile-modal');
+			if (event.target == modal) {
+				closeEditProfileModal();
+			}
+		}
 	</script>
 }

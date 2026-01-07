@@ -82,6 +82,12 @@ func main() {
 	walletColorRepo := repository.NewPostgresWalletColorRepository(db)
 	walletColorService := service.NewWalletColorService(walletColorRepo)
 
+	mobileConfigRepo := repository.NewPostgresMobileConfigRepository(db)
+	mobileConfigService := service.NewMobileConfigService(mobileConfigRepo)
+
+	notificationRepo := repository.NewPostgresNotificationRepository(db)
+	notificationService := service.NewNotificationService(notificationRepo)
+
 	// --- Session Store ---
 	store := session.New(session.Config{
 		CookieHTTPOnly: true,
@@ -118,6 +124,7 @@ func main() {
 			c.Locals("UserID", memberID) // Make UserID available for all handlers
 		} else {
 			c.Locals("IsLoggedIn", false)
+			c.Locals("AvatarURL", "")
 		}
 
 		c.Locals("IsAdmin", sess.Get("is_admin") == true)
@@ -132,13 +139,14 @@ func main() {
 			if err == nil && member != nil {
 				isRealTimeVIP := member.IsVIP()
 				c.Locals("IsVIP", isRealTimeVIP)
+				c.Locals("AvatarURL", member.AvatarURL)
 
 				// Optional: Sync session if changed
 				if isRealTimeVIP != isVipSession {
 					sess.Set("is_vip", isRealTimeVIP)
 					sess.Save()
 				}
-				fmt.Printf("DEBUG: Users Logged In. DB Status=%d. RealTime IsVIP=%v\n", member.Status, isRealTimeVIP)
+				fmt.Printf("DEBUG: Users Logged In. DB Status=%d. RealTime IsVIP=%v. Avatar=%s\n", member.Status, isRealTimeVIP, member.AvatarURL)
 			} else {
 				// Fallback to session if DB fail
 				c.Locals("IsVIP", isVipSession)
@@ -178,7 +186,7 @@ func main() {
 	memberHandler := handler.NewMemberHandler(memberService, savedNameService, buddhistDayService, shippingAddressService, klakiniCache, numberPairCache, store, promotionalCodeRepo)
 	savedNameHandler := handler.NewSavedNameHandler(savedNameService, klakiniCache, numberPairCache, store)
 	articleHandler := handler.NewArticleHandler(articleService, store)
-	adminHandler := handler.NewAdminHandler(adminService, sampleNamesCache, store, buddhistDayService, walletColorService, shippingAddressService)
+	adminHandler := handler.NewAdminHandler(adminService, sampleNamesCache, store, buddhistDayService, walletColorService, shippingAddressService, mobileConfigService, notificationService)
 
 	paymentService := service.NewPaymentService(orderRepo, memberRepo, promotionalCodeRepo)
 	// We need to pass store to paymentHandler if we want to read session user_id
@@ -186,6 +194,8 @@ func main() {
 	seoHandler := handler.NewSEOHandler(articleService)
 
 	promotionalCodeHandler := handler.NewPromotionalCodeHandler(promotionalCodeRepo, store)
+	authHandler := handler.NewAuthHandler(memberService, store)
+	socialAuthHandler := handler.NewSocialAuthHandler(memberService)
 
 	// --- Middleware for Auth ---
 	authMiddleware := func(c *fiber.Ctx) error {
@@ -228,7 +238,10 @@ func main() {
 				if claims, ok := token.Claims.(jwt.MapClaims); ok {
 					if userID, ok := claims["user_id"].(float64); ok {
 						// JWT is valid, set user_id in locals
-						c.Locals("user_id", int(userID))
+						uID := int(userID)
+						c.Locals("user_id", uID)
+						c.Locals("UserID", uID)
+						c.Locals("IsLoggedIn", true)
 					}
 				}
 			}
@@ -295,6 +308,7 @@ func main() {
 			"home",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
+			getLocStr("AvatarURL"),
 			pages.Landing(pinnedArticles),
 		))
 	})
@@ -357,6 +371,7 @@ func main() {
 			"chart-logic",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
+			getLocStr("AvatarURL"),
 			pages.ChartLogic(),
 		))
 	})
@@ -386,6 +401,7 @@ func main() {
 			"about",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
+			getLocStr("AvatarURL"),
 			pages.About(),
 		))
 	})
@@ -413,6 +429,7 @@ func main() {
 			"privacy",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
+			getLocStr("AvatarURL"),
 			pages.PrivacyPolicy(),
 		))
 	})
@@ -440,6 +457,7 @@ func main() {
 			"delete-account",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
+			getLocStr("AvatarURL"),
 			pages.DeleteAccount(),
 		))
 	})
@@ -467,6 +485,7 @@ func main() {
 			"shop",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
+			getLocStr("AvatarURL"),
 			pages.Shop(c.Locals("IsLoggedIn").(bool)),
 		))
 	})
@@ -497,6 +516,7 @@ func main() {
 			"number-analysis",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
+			getLocStr("AvatarURL"),
 			pages.NumberAnalysis(),
 		))
 	})
@@ -543,8 +563,11 @@ func main() {
 	api.Get("/buddhist-days", adminHandler.GetBuddhistDaysJSON)
 	api.Get("/buddhist-days/upcoming", adminHandler.GetUpcomingBuddhistDayJSON)
 	api.Get("/buddhist-days/check", adminHandler.CheckIsBuddhistDayJSON)
+	api.Get("/system/welcome-message", adminHandler.GetWelcomeMessageAPI)
 
 	// Auth routes
+	app.Get("/auth/:provider", authHandler.Login)
+	app.Get("/auth/:provider/callback", authHandler.Callback)
 	app.Get("/login", memberHandler.ShowLoginPage)
 	app.Post("/login", memberHandler.HandleLogin)
 	app.Post("/api/login", memberHandler.HandleLoginAPI)
@@ -553,6 +576,9 @@ func main() {
 	app.Get("/register", memberHandler.ShowRegisterPage)
 	app.Post("/register", memberHandler.HandleRegister)
 	app.Get("/logout", memberHandler.HandleLogout)
+
+	// Social Auth for Mobile App
+	app.Post("/api/auth/social", socialAuthHandler.HandleSocialAuth)
 
 	// Promotional Code Redemption
 	app.Post("/api/redeem-code", optionalAuthMiddleware, promotionalCodeHandler.RedeemCode)
@@ -585,7 +611,13 @@ func main() {
 	// Other saved-names routes CAN use authMiddleware
 	savedNames := app.Group("/saved-names", authMiddleware)
 	savedNames.Get("/", savedNameHandler.GetSavedNames)
-	savedNames.Delete("/:id", optionalAuthMiddleware, savedNameHandler.DeleteSavedName)
+	savedNames.Delete("/:id", savedNameHandler.DeleteSavedName)
+
+	// Update Profile API
+	// Use Auth Middleware to ensure user is logged in
+	app.Post("/api/profile/update", authMiddleware, memberHandler.HandleUpdateProfileAPI)
+
+	// Admin Routes (Protect with adminMiddleware)	savedNames.Delete("/:id", optionalAuthMiddleware, savedNameHandler.DeleteSavedName)
 
 	// Shipping Address Routes
 	shipping := app.Group("/shipping-address", authMiddleware)
@@ -655,7 +687,16 @@ func main() {
 	admin.Delete("/orders/:id", adminHandler.HandleDeleteOrder)
 
 	// Auspicious Numbers (New)
+	// Auspicious Numbers (New)
 	admin.Get("/auspicious-numbers", adminHandler.ShowAuspiciousNumbersPage)
+
+	// Mobile Config
+	admin.Get("/welcome-message", adminHandler.ShowMobileConfigPage)
+	admin.Post("/welcome-message", adminHandler.UpdateMobileConfig)
+
+	// Notification Management
+	admin.Get("/notification", adminHandler.ShowNotificationPage)
+	admin.Post("/notification/send", adminHandler.SendNotification)
 
 	// Payment Routes
 	app.Get("/payment/upgrade", paymentHandler.GetUpgradeModal)
@@ -663,6 +704,11 @@ func main() {
 	app.Get("/payment/reset", paymentHandler.ResetPayment)
 	app.Post("/api/pay/willback", paymentHandler.HandlePaymentWebhook)       // PaySolutions Webhook
 	app.Get("/api/payment/status/:refNo", paymentHandler.CheckPaymentStatus) // Polling Endpoint
+
+	// API Notification Routes
+	app.Get("/api/notifications", optionalAuthMiddleware, adminHandler.GetUserNotificationsAPI)
+	app.Get("/api/notifications/unread", optionalAuthMiddleware, adminHandler.GetUnreadCountAPI)
+	app.Post("/api/notifications/:id/read", optionalAuthMiddleware, adminHandler.MarkNotificationReadAPI)
 
 	log.Println("Starting server on port 3000...")
 	log.Fatal(app.Listen(":3000"))
@@ -690,9 +736,44 @@ func setupDatabase() *sql.DB {
 		ALTER TABLE orders ADD COLUMN IF NOT EXISTS product_name TEXT;
 		ALTER TABLE orders ADD COLUMN IF NOT EXISTS slip_url TEXT;
 		ALTER TABLE orders ADD COLUMN IF NOT EXISTS promo_code_id INTEGER;
+		ALTER TABLE member ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500);
+		ALTER TABLE member DROP COLUMN IF EXISTS password;
 	`
 	if _, err := db.Exec(migrationSQL); err != nil {
 		log.Printf("Migration Warning: %v", err)
+	}
+
+	// Auto-migrate Mobile Welcome Config
+	migrationWelcomeSQL := `
+		CREATE TABLE IF NOT EXISTS mobile_welcome_configs (
+			id SERIAL PRIMARY KEY,
+			title TEXT NOT NULL,
+			body TEXT NOT NULL,
+			is_active BOOLEAN DEFAULT true,
+			version INTEGER DEFAULT 1,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+        INSERT INTO mobile_welcome_configs (title, body, version) 
+        SELECT 'ยินดีต้อนรับ!', 'ขอต้อนรับสู่ NumberNiceIC\nแอพพลิเคชันวิเคราะห์ชื่อและเบอร์โทรศัพท์มงคล\nที่จะช่วยเสริมสิริมงคลให้กับชีวิตของคุณ', 1
+        WHERE NOT EXISTS (SELECT 1 FROM mobile_welcome_configs);
+	`
+	if _, err := db.Exec(migrationWelcomeSQL); err != nil {
+		log.Printf("Migration Warning (Welcome Config): %v", err)
+	}
+
+	// Auto-migrate User Notifications
+	migrationNotifySQL := `
+		CREATE TABLE IF NOT EXISTS user_notifications (
+			id SERIAL PRIMARY KEY,
+			user_id INTEGER NOT NULL REFERENCES member(id) ON DELETE CASCADE,
+			title TEXT NOT NULL,
+			message TEXT NOT NULL,
+			is_read BOOLEAN DEFAULT FALSE,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		);
+	`
+	if _, err := db.Exec(migrationNotifySQL); err != nil {
+		log.Printf("Migration Warning (Notification): %v", err)
 	}
 
 	fmt.Println("Successfully connected to database and migrated schema!")

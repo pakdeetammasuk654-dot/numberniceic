@@ -8,6 +8,7 @@ import '../models/product_model.dart';
 import '../models/order_model.dart';
 import '../models/shipping_address_model.dart';
 import 'auth_service.dart';
+import '../models/user_notification.dart';
 
 class ApiService {
   static final ValueNotifier<int> dashboardRefreshSignal = ValueNotifier<int>(0);
@@ -579,6 +580,85 @@ class ApiService {
     } catch (e) {
       print('Fetch Lucky Number Error: $e');
       return null;
+    }
+  }
+  static Future<Map<String, dynamic>?> getWelcomeMessage() async {
+    final url = Uri.parse('$baseUrl/api/system/welcome-message');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // --- Notifications ---
+
+  static Future<List<UserNotification>> getUserNotifications() async {
+    final url = Uri.parse('$baseUrl/api/notifications');
+    final token = await AuthService.getToken();
+    if (token == null) return [];
+
+    try {
+      if (kDebugMode) print('🚀 API REQUEST: GET $url (Authenticated)');
+      final response = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((e) => UserNotification.fromJson(e)).toList();
+      }
+      if (kDebugMode) print('❌ API RESPONSE: ${response.statusCode} for notifications');
+      return [];
+    } catch (e) {
+      if (kDebugMode) print('❌ API ERROR: Fetch notifications: $e');
+      return [];
+    }
+  }
+
+  static Future<int> getUnreadNotificationCount() async {
+     final url = Uri.parse('$baseUrl/api/notifications/unread');
+     final token = await AuthService.getToken();
+     if (token == null) return 0;
+     
+     try {
+       if (kDebugMode) print('🚀 API REQUEST: GET $url (Authenticated)');
+       final response = await http.get(
+          url,
+          headers: {'Authorization': 'Bearer $token'},
+       );
+       if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          return data['count'] ?? 0;
+       }
+       if (kDebugMode) print('❌ API RESPONSE: ${response.statusCode} for unread count');
+       return 0;
+     } catch (e) {
+       if (kDebugMode) print('❌ API ERROR: Unread count: $e');
+       return 0;
+     }
+  }
+
+  static Future<bool> markNotificationAsRead(int id) async {
+    final url = Uri.parse('$baseUrl/api/notifications/$id/read');
+    final token = await AuthService.getToken();
+    if (token == null) return false;
+
+    try {
+      if (kDebugMode) print('🚀 API REQUEST: POST $url (Authenticated)');
+      final response = await http.post(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      if (kDebugMode) print('❌ API ERROR: Mark as read: $e');
+      return false;
     }
   }
 }

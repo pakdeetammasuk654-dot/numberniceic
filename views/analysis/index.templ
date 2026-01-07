@@ -82,14 +82,15 @@ templ Index(props IndexProps) {
 		</div>
 
 		<!-- Sample Names Section -->
-		<div class="sample-names-container">
-			<div class="avatars-grid">
+		<div class="sample-names-container" style="max-width: 100%; overflow: hidden; position: relative; mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);">
+			<div class="avatars-grid" id="avatars-grid" style="display: flex; overflow-x: auto; gap: 20px; padding: 20px 0; -ms-overflow-style: none; scrollbar-width: none; cursor: grab;">
 				for _, sample := range props.SampleNames {
 					<div class={ "avatar-premium", templ.KV("active", strings.TrimSpace(sample.Name) == strings.TrimSpace(props.DefaultName)) } 
 						data-name={ strings.TrimSpace(sample.Name) }
-						{ templ.Attributes{"onclick": "selectName('" + strings.TrimSpace(sample.Name) + "')" }... }>
-						<img src={ sample.AvatarURL } alt="Avatar" class="avatar-img"/>
-						<div class="avatar-name">{ sample.Name }</div>
+						{ templ.Attributes{"onclick": "selectName('" + strings.TrimSpace(sample.Name) + "')" }... }
+                        style="flex: 0 0 auto; min-width: 80px; transition: transform 0.2s;">
+						<img src={ sample.AvatarURL } alt="Avatar" class="avatar-img" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid white; pointer-events: none;"/>
+						<div class="avatar-name" style="margin-top: 8px; font-size: 0.9rem; color: #4a5568; font-weight: 500; pointer-events: none;">{ sample.Name }</div>
 					</div>
 				}
 			</div>
@@ -130,6 +131,106 @@ templ Index(props IndexProps) {
 			</div>
 		</div>
 		
+		<script>
+            (function() {
+                // Use IIFE to avoid global scope pollution
+                function initAvatarScroll() {
+                    const grid = document.getElementById('avatars-grid');
+                    if (!grid) {
+                        console.log("Avatar grid not found, retrying...");
+                        setTimeout(initAvatarScroll, 500); // Retry if not found immediately
+                        return;
+                    }
+
+                    // Avoid double initialization
+                    if (grid.dataset.scrollInit === "true") return;
+                    grid.dataset.scrollInit = "true";
+
+                    // Clone children for infinite scroll
+                    const originalChildren = Array.from(grid.children);
+                    
+                    // Clone enough times to cover screen width + buffer
+                    // Simple approach: Triple the content
+                    originalChildren.forEach(child => {
+                        grid.appendChild(child.cloneNode(true));
+                    });
+                    originalChildren.forEach(child => {
+                        grid.appendChild(child.cloneNode(true));
+                    });
+
+                    let isPaused = false;
+                    let isDragging = false;
+                    let startX, scrollLeft;
+                    const speed = 0.5; // pixel per frame
+                    
+                    // Calculate the width of one set of items (approximate)
+                    // We can't trust scrollWidth immediately if images aren't loaded, 
+                    // but usually avatar images are small.
+                    // Better logic: reset when scrollLeft >= scrollWidth / 3
+                    
+                    function autoScroll() {
+                        if (!isPaused && !isDragging) {
+                            grid.scrollLeft += speed;
+                            
+                            // Check reset condition
+                            // We have 3 sets. If we scroll past the first set (1/3 total), snap back to 0.
+                            // However, precise pixel math is better.
+                            // Let's rely on scrollWidth.
+                            if (grid.scrollLeft >= (grid.scrollWidth / 3)) {
+                                grid.scrollLeft = 0; // or subtract, but 0 is safer for drift
+                            }
+                        }
+                        requestAnimationFrame(autoScroll);
+                    }
+                    
+                    // Mouse Drag Logic
+                    grid.addEventListener('mousedown', (e) => {
+                        isDragging = true;
+                        isPaused = true;
+                        grid.style.cursor = 'grabbing';
+                        startX = e.pageX - grid.offsetLeft;
+                        scrollLeft = grid.scrollLeft;
+                    });
+                    
+                   grid.addEventListener('mouseleave', () => {
+                        isDragging = false;
+                        isPaused = false;
+                        grid.style.cursor = 'grab';
+                    });
+                    
+                    grid.addEventListener('mouseup', () => {
+                        isDragging = false;
+                        isPaused = false;
+                        grid.style.cursor = 'grab';
+                    });
+                    
+                    grid.addEventListener('mousemove', (e) => {
+                        if (!isDragging) return;
+                        e.preventDefault();
+                        const x = e.pageX - grid.offsetLeft;
+                        const walk = (x - startX) * 2; // scroll-fast
+                        grid.scrollLeft = scrollLeft - walk;
+                    });
+
+                    // Touch Logic
+                    grid.addEventListener('touchstart', () => { isPaused = true; });
+                    grid.addEventListener('touchend', () => { setTimeout(() => isPaused = false, 1000); });
+                    
+                    // Pause on Hover (optional, if user just wants to read)
+                    grid.addEventListener('mouseenter', () => isPaused = true);
+
+                    // Start loop
+                    autoScroll();
+                }
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initAvatarScroll);
+                } else {
+                    initAvatarScroll();
+                }
+            })();
+        </script>
+
 		<!-- Back to Top Button -->
 		<button id="back-to-top" onclick="scrollToTop()" title="Go to top">
 			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"

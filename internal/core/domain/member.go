@@ -6,10 +6,13 @@ import (
 )
 
 type Member struct {
-	ID             int        `json:"id"`
-	Username       string     `json:"username"`
-	Password       string     `json:"-"`
+	ID       int    `json:"id"`
+	Username string `json:"username"`
+
+	Provider       string     `json:"provider"`    // "line", "facebook", "google"
+	ProviderID     string     `json:"provider_id"` // Unique ID from provider
 	Email          string     `json:"email"`
+	AvatarURL      string     `json:"avatar_url"`
 	Tel            string     `json:"tel"`
 	Status         int        `json:"status"`
 	DayOfBirth     *int       `json:"day_of_birth"` // 0=Sunday, 1=Monday, ..., 6=Saturday

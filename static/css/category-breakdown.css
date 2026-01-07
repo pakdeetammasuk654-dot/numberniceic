@@ -1,14 +1,12 @@
 /* Category Breakdown Chart (Nested Donut) Styles */
 .category-breakdown-container {
-    background: white;
-    border-radius: 16px;
+    background: transparent;
+    border-radius: 0;
     padding: 24px 0;
-    /* Vertical padding only */
     margin-top: 1.5rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    border: 1px solid #f0f0f0;
-    overflow: hidden;
-    /* Ensure items don't leak out of rounded corners */
+    box-shadow: none;
+    border: none;
+    overflow: visible;
 }
 
 .nested-donut-layout {

@@ -5,16 +5,23 @@ import 'package:mobile_app/widgets/lucky_number_card.dart';
 import 'package:mobile_app/widgets/lucky_number_skeleton.dart';
 import 'package:mobile_app/widgets/contact_purchase_modal.dart';
 import 'package:mobile_app/services/api_service.dart';
+import 'package:mobile_app/screens/number_analysis_page.dart';
 
 // --- MAIN WIDGET ---
 class CategoryNestedDonut extends StatefulWidget {
   final Map<String, dynamic> categoryBreakdown;
   final int totalPairs;
+  final int grandTotalScore;
+  final int totalPositiveScore;
+  final int totalNegativeScore;
 
   const CategoryNestedDonut({
     super.key,
     required this.categoryBreakdown,
     required this.totalPairs,
+    required this.grandTotalScore,
+    required this.totalPositiveScore,
+    required this.totalNegativeScore,
   });
 
   @override
@@ -132,7 +139,7 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
   Color _getCategoryColor(String category) {
     switch (category) {
       case 'การงาน': return const Color(0xFF42A5F5); // Blue
-      case 'การเงิน': return const Color(0xFFFFCA28); // Amber
+      case 'การเงิน': return const Color(0xFFFFA726); // Orange
       case 'ความรัก': return const Color(0xFFEC407A); // Pink
       case 'สุขภาพ': return const Color(0xFF26A69A); // Teal
       default: return Colors.grey;
@@ -176,8 +183,10 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
      double finalScoreTarget = isEnhanced ? 100.0 : (activeCategories * 25.0);
      if (finalScoreTarget == 0 && activeCategories > 0) finalScoreTarget = 99; 
 
-    return Column(
-      children: [
+    return Container(
+      color: Colors.white,
+      child: Column(
+        children: [
         // Chart Section
         SizedBox(
           height: 220,
@@ -244,7 +253,7 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
         ),
         
         const SizedBox(height: 12),
-        
+
         // Legend Header
         _buildLegendHeader(),
         const Divider(height: 1),
@@ -292,7 +301,7 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
                 // Lucky Number Section with FADE Transition
                 if (isEnhanced)
                   Container(
-                    margin: const EdgeInsets.only(bottom: 16), 
+                    margin: const EdgeInsets.only(bottom: 4), 
                     width: double.infinity,
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 500),
@@ -318,11 +327,20 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
                           isVip: cat.suggestedNumber!['is_vip'] == true,
                           keywords: List<String>.from(cat.suggestedNumber!['keywords'] ?? []),
                           themeColor: cat.color, 
-                          buyButtonLabel: 'ติดต่อซื้อ',
+                          buyButtonLabel: 'ซื้อเบอร์นี้',
                           onBuy: () {
                             showDialog(
                               context: context,
                               builder: (context) => ContactPurchaseModal(phoneNumber: cat.suggestedNumber!['number'] ?? ''),
+                            );
+                          },
+                          onAnalyze: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const NumberAnalysisPage(),
+                                settings: RouteSettings(arguments: cat.suggestedNumber!['number']),
+                              ),
                             );
                           }, 
                           onClose: () => _onEnhanceChange(cat.name, false),
@@ -335,12 +353,36 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
           }).toList(),
         ),
 
-        const Divider(height: 24),
-        _buildTotalScoreRow(chartData),
-        const SizedBox(height: 8),
-        _buildFooterHint(),
+        // Hint Text (Moved to bottom)
+        _buildHintText(),
+
       ],
+      ),
     );
+  }
+
+  Widget _buildHintText() {
+      return Container(
+        color: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text('💡 แตะไอคอน ', style: GoogleFonts.kanit(fontSize: 10, color: const Color(0xFF64748B), fontStyle: FontStyle.italic)),
+            Container(
+              width: 14, height: 14,
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFDB931)]),
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.3), blurRadius: 3, offset: const Offset(0, 1))],
+              ),
+              child: const Icon(Icons.autorenew, size: 10, color: Colors.white),
+            ),
+            Text(' เพื่อเปลี่ยนเบอร์มงคล', style: GoogleFonts.kanit(fontSize: 10, color: const Color(0xFF64748B), fontStyle: FontStyle.italic)),
+          ],
+        ),
+      );
   }
 
   Widget _buildLegendHeader() {
@@ -368,60 +410,56 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
   }
   
   Widget _buildTotalScoreRow(List<CategoryData> chartData) {
-     int activeCategories = 0;
-     for (var cat in chartData) {
-       if (cat.good > 0) activeCategories++;
-     }
-     bool isEnhanced = _enhancedCategories.isNotEmpty;
-     double finalScore = isEnhanced ? 100.0 : (activeCategories * 25).toDouble();
-
+     final score = widget.grandTotalScore;
+     final isPositive = score >= 0;
+     
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9), 
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: Colors.white, // Clean background
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('คะแนนรวม', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-          Container(
-             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-             decoration: BoxDecoration(
-               gradient: const LinearGradient(colors: [Color(0xFFB45309), Color(0xFFFFD700)]),
-               borderRadius: BorderRadius.circular(20),
-               boxShadow: [
-                 BoxShadow(color: Colors.orange.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 4))
-               ]
-             ),
-             child: Text('${finalScore.toInt()}%', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: Colors.white)),
-          )
-        ],
-      )
-    );
-  }
-  
-  Widget _buildFooterHint() {
-      return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Text('คะแนนรวม', style: GoogleFonts.kanit(fontSize: 16, color: const Color(0xFF64748B), fontWeight: FontWeight.w500)),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text('💡 แตะไอคอน ', style: GoogleFonts.kanit(fontSize: 11, color: const Color(0xFF64748B), fontStyle: FontStyle.italic)),
-              Container(
-                width: 20, height: 20,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFDB931)]),
-                  shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.3), blurRadius: 3, offset: const Offset(0, 1))],
-                ),
-                child: const Icon(Icons.autorenew, size: 12, color: Colors.white),
-              ),
-              Text(' ซ้ำเพื่อเปลี่ยนเบอร์มงคล', style: GoogleFonts.kanit(fontSize: 11, color: const Color(0xFF64748B), fontStyle: FontStyle.italic)),
+               Text(isPositive ? '😊' : '😭', style: const TextStyle(fontSize: 48)),
+               const SizedBox(width: 16),
+               Text(
+                 '${isPositive ? '+' : ''}$score',
+                 style: GoogleFonts.kanit(
+                   fontSize: 56, 
+                   fontWeight: FontWeight.w900, 
+                   color: isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                   height: 1.0,
+                 ),
+               ),
             ],
           ),
-        );
+          const SizedBox(height: 12),
+          Row(
+            children: [
+               _buildPill('ดี +${widget.totalPositiveScore}', const Color(0xFFECFDF5), const Color(0xFF10B981)),
+               const SizedBox(width: 12),
+               _buildPill('ร้าย ${widget.totalNegativeScore}', const Color(0xFFFEF2F2), const Color(0xFFEF4444)),
+            ],
+          )
+        ],
+      ),
+    );
   }
+
+  Widget _buildPill(String text, Color bg, Color fg) {
+      return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(24)),
+          child: Text(text, style: GoogleFonts.kanit(fontSize: 15, fontWeight: FontWeight.w700, color: fg)),
+      );
+  }
+  
+
 }
 
 // --- PAINTER & MODEL ---
@@ -546,8 +584,8 @@ class NestedDonutPainter extends CustomPainter {
        List<Color> gradientColors;
        if (categoryColor.value == 0xFF42A5F5) { // Blue
           gradientColors = [const Color(0xFF90CAF9), const Color(0xFF42A5F5)];
-       } else if (categoryColor.value == 0xFFFFCA28) { // Amber
-          gradientColors = [const Color(0xFFFFE082), const Color(0xFFFFCA28)];
+       } else if (categoryColor.value == 0xFFFFA726) { // Orange
+          gradientColors = [const Color(0xFFFFCC80), const Color(0xFFFFA726)];
        } else if (categoryColor.value == 0xFFEC407A) { // Pink
           gradientColors = [const Color(0xFFF48FB1), const Color(0xFFEC407A)];
        } else if (categoryColor.value == 0xFF26A69A) { // Teal
@@ -639,8 +677,13 @@ class CategoryLegendRow extends StatelessWidget {
     int goodPct = displayPct;
     int badPct = totalPairs > 0 ? ((cat.bad / totalPairs) * 100).ceil() : 0;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+    return Container(
+      // Zebra striping: even rows get light background
+      decoration: BoxDecoration(
+        color: index % 2 == 0 ? const Color(0xFFF9FAFB) : Colors.white,
+        // No borderRadius for sharp edges
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -672,7 +715,7 @@ class CategoryLegendRow extends StatelessWidget {
                 child: Container(
                   alignment: Alignment.center,
                   child: isActive 
-                  ? Text('${goodPct > 0 ? goodPct : "-"}%', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF10B981)))
+                  ? Text('${goodPct > 0 ? goodPct : "-"}%', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: cat.color))
                   : Text('-', style: GoogleFonts.kanit(fontSize: 16, color: Colors.grey[300])),
                 ),
               ),
@@ -701,16 +744,23 @@ class CategoryLegendRow extends StatelessWidget {
               ),
             ],
           ),
-          if (showColor && cat.keywords.isNotEmpty) ...[
-            const SizedBox(height: 4),
+          if (cat.keywords.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.only(left: 20, right: 8), 
               child: Text(
                 cat.keywords.join(', '),
-                style: GoogleFonts.kanit(fontSize: 13, color: Colors.grey[600]),
+                style: GoogleFonts.kanit(fontSize: 13, color: showColor ? Colors.grey[600]! : Colors.grey[400]!),
               ),
             ),
-          ]
+          ] else ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 20, right: 8),
+              child: Text(
+                '-',
+                style: GoogleFonts.kanit(fontSize: 13, color: Colors.grey[400]),
+              ),
+            ),
+          ],
         ],
       ),
     );

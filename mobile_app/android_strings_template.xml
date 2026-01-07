@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ชื่อดี</string>
+    
+    <!-- Facebook Configuration -->
+    <!-- Get these values from https://developers.facebook.com/ -->
+    <string name="facebook_app_id">YOUR_FACEBOOK_APP_ID_HERE</string>
+    <string name="facebook_client_token">YOUR_FACEBOOK_CLIENT_TOKEN_HERE</string>
+    <string name="fb_login_protocol_scheme">fbYOUR_FACEBOOK_APP_ID_HERE</string>
+    
+    <!-- 
+    Instructions:
+    1. Go to https://developers.facebook.com/
+    2. Select your app or create a new one
+    3. Go to Settings > Basic
+    4. Copy App ID and paste it above (replace YOUR_FACEBOOK_APP_ID_HERE)
+    5. Copy Client Token and paste it above (replace YOUR_FACEBOOK_CLIENT_TOKEN_HERE)
+    6. In fb_login_protocol_scheme, replace YOUR_FACEBOOK_APP_ID_HERE with your actual App ID
+       Example: if App ID is 123456789, it should be: fb123456789
+    -->
+</resources>

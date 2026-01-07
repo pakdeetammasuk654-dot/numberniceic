@@ -28,10 +28,12 @@ type AdminHandler struct {
 	buddhistDayService     *service.BuddhistDayService
 	walletColorService     *service.WalletColorService
 	shippingAddressService *service.ShippingAddressService
+	mobileConfigService    *service.MobileConfigService
+	notificationService    *service.NotificationService
 }
 
-func NewAdminHandler(service *service.AdminService, sampleCache *cache.SampleNamesCache, store *session.Store, buddhistDayService *service.BuddhistDayService, walletColorService *service.WalletColorService, shippingAddressService *service.ShippingAddressService) *AdminHandler {
-	return &AdminHandler{service: service, sampleCache: sampleCache, store: store, buddhistDayService: buddhistDayService, walletColorService: walletColorService, shippingAddressService: shippingAddressService}
+func NewAdminHandler(service *service.AdminService, sampleCache *cache.SampleNamesCache, store *session.Store, buddhistDayService *service.BuddhistDayService, walletColorService *service.WalletColorService, shippingAddressService *service.ShippingAddressService, mobileConfigService *service.MobileConfigService, notificationService *service.NotificationService) *AdminHandler {
+	return &AdminHandler{service: service, sampleCache: sampleCache, store: store, buddhistDayService: buddhistDayService, walletColorService: walletColorService, shippingAddressService: shippingAddressService, mobileConfigService: mobileConfigService, notificationService: notificationService}
 }
 
 // --- Sample Names Management ---
@@ -61,6 +63,7 @@ func (h *AdminHandler) ShowSampleNamesPage(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.SampleNames(samples),
 	))
 }
@@ -100,6 +103,7 @@ func (h *AdminHandler) ShowDashboard(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.Dashboard(),
 	))
 }
@@ -132,6 +136,7 @@ func (h *AdminHandler) ShowAuspiciousNumbersPage(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.AuspiciousNumbers(pagedResult),
 	))
 }
@@ -162,6 +167,7 @@ func (h *AdminHandler) ShowUsersPage(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.Users(users),
 	))
 }
@@ -267,6 +273,7 @@ func (h *AdminHandler) ShowArticlesPage(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.Articles(articles, page, totalPages, page > 1, page < totalPages, page-1, page+1),
 	))
 }
@@ -291,6 +298,7 @@ func (h *AdminHandler) ShowCreateArticlePage(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.ArticleForm(false, nil),
 	))
 }
@@ -367,6 +375,7 @@ func (h *AdminHandler) ShowEditArticlePage(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.ArticleForm(true, article),
 	))
 }
@@ -479,6 +488,7 @@ func (h *AdminHandler) ShowImagesPage(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.Images(images),
 	))
 }
@@ -559,6 +569,7 @@ func (h *AdminHandler) ShowAddNamePage(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.AddNameForm(recentNames, totalCount),
 	))
 }
@@ -695,6 +706,7 @@ func (h *AdminHandler) ShowBuddhistDaysPage(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.BuddhistDays(days),
 	))
 }
@@ -798,6 +810,7 @@ func (h *AdminHandler) ShowAPIDocsPage(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.APIDocs(),
 	))
 }
@@ -829,6 +842,7 @@ func (h *AdminHandler) ShowWalletColorsPage(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.WalletColors(colors),
 	))
 }
@@ -904,6 +918,7 @@ func (h *AdminHandler) ShowProductsPage(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.Products(products),
 	))
 }
@@ -928,6 +943,7 @@ func (h *AdminHandler) ShowCreateProductPage(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.ProductForm(false, nil),
 	))
 }
@@ -997,6 +1013,7 @@ func (h *AdminHandler) ShowEditProductPage(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.ProductForm(true, product),
 	))
 }
@@ -1082,6 +1099,7 @@ func (h *AdminHandler) ShowCustomerColorReportPage(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.CustomerColorReport(member, username, recentAssignments),
 	))
 }
@@ -1151,6 +1169,7 @@ func (h *AdminHandler) HandleManageOrders(c *fiber.Ctx) error {
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
 		admin.Orders(orders, page, totalPages, search),
 	))
 }
@@ -1167,4 +1186,188 @@ func (h *AdminHandler) HandleDeleteOrder(c *fiber.Ctx) error {
 	}
 
 	return c.SendStatus(200) // HTMX expects 200 OK to swap content (empty in this case with hx-swap="outerHTML")
+}
+
+// --- Mobile Config Management ---
+
+func (h *AdminHandler) ShowMobileConfigPage(c *fiber.Ctx) error {
+	config, err := h.mobileConfigService.GetWelcomeMessage()
+	if err != nil {
+		// If error (or empty table), return empty or default
+		// But migration puts one.
+		// return c.Status(fiber.StatusInternalServerError).SendString("Error loading mobile config")
+		// Just create a default placeholder
+		config = &domain.MobileWelcomeConfig{
+			Title:     "Welcome",
+			Body:      "Welcome to our app",
+			IsActive:  true,
+			Version:   1,
+			CreatedAt: time.Now(),
+		}
+	}
+	if config == nil {
+		config = &domain.MobileWelcomeConfig{
+			Title:     "ยินดีต้อนรับ!",
+			Body:      "ขอต้อนรับสู่ NumberNiceIC...",
+			IsActive:  true,
+			Version:   1,
+			CreatedAt: time.Now(),
+		}
+	}
+
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "Mobile App Config",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
+		admin.MobileConfig(config),
+	))
+}
+
+func (h *AdminHandler) UpdateMobileConfig(c *fiber.Ctx) error {
+	title := c.FormValue("title")
+	body := c.FormValue("body")
+	isActive := c.FormValue("is_active") == "on"
+
+	err := h.mobileConfigService.UpdateWelcomeMessage(title, body, isActive)
+	if err != nil {
+		sess, _ := h.store.Get(c)
+		sess.Set("toast_error", "Error updating config: "+err.Error())
+		sess.Save()
+		return c.Redirect("/admin/welcome-message")
+	}
+
+	sess, _ := h.store.Get(c)
+	sess.Set("toast_success", "Mobile config updated successfully")
+	sess.Save()
+	return c.Redirect("/admin/welcome-message")
+}
+
+func (h *AdminHandler) GetWelcomeMessageAPI(c *fiber.Ctx) error {
+	config, err := h.mobileConfigService.GetWelcomeMessage()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	if config == nil {
+		return c.Status(404).JSON(fiber.Map{"error": "Config not found"})
+	}
+	return c.JSON(config)
+}
+
+// --- Notification Management ---
+
+func (h *AdminHandler) ShowNotificationPage(c *fiber.Ctx) error {
+	users, err := h.service.GetAllUsers()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error loading users")
+	}
+
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	history, err := h.notificationService.GetNotificationHistory(50)
+	if err != nil {
+		history = []domain.AdminNotificationHistory{}
+	}
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "Send Notification",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
+		admin.SendNotification(users, history),
+	))
+}
+
+func (h *AdminHandler) SendNotification(c *fiber.Ctx) error {
+	userID, _ := strconv.Atoi(c.FormValue("user_id"))
+	title := c.FormValue("title")
+	message := c.FormValue("message")
+
+	if userID == 0 || title == "" || message == "" {
+		sess, _ := h.store.Get(c)
+		sess.Set("toast_error", "Missing required fields")
+		sess.Save()
+		return c.Redirect("/admin/notification")
+	}
+
+	err := h.notificationService.SendNotification(userID, title, message)
+	if err != nil {
+		sess, _ := h.store.Get(c)
+		sess.Set("toast_error", "Failed to send notification: "+err.Error())
+		sess.Save()
+		return c.Redirect("/admin/notification")
+	}
+
+	sess, _ := h.store.Get(c)
+	sess.Set("toast_success", "Notification sent successfully!")
+	sess.Save()
+	return c.Redirect("/admin/notification")
+}
+
+// --- Notification API for Mobile ---
+
+func (h *AdminHandler) GetUserNotificationsAPI(c *fiber.Ctx) error {
+	userID, ok := c.Locals("UserID").(int)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	notifs, err := h.notificationService.GetUserNotifications(userID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch notifications"})
+	}
+	if notifs == nil {
+		notifs = []domain.UserNotification{}
+	}
+	return c.JSON(notifs)
+}
+
+func (h *AdminHandler) GetUnreadCountAPI(c *fiber.Ctx) error {
+	userID, ok := c.Locals("UserID").(int)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	count, err := h.notificationService.GetUnreadCount(userID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to count unread"})
+	}
+	return c.JSON(fiber.Map{"count": count})
+}
+
+func (h *AdminHandler) MarkNotificationReadAPI(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	err := h.notificationService.MarkAsRead(id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update"})
+	}
+	return c.JSON(fiber.Map{"success": true})
 }
