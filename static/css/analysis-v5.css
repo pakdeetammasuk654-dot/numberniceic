@@ -1821,35 +1821,40 @@ body {
 
     /* Keep Dashboard Layout Side-by-Side */
     .solar-dashboard-layout {
-        flex-direction: row !important;
+        flex-direction: column !important;
         align-items: center !important;
-        gap: 0.5rem !important;
+        gap: 1.5rem !important;
         padding: 0 !important;
+        margin: 0 auto !important;
         overflow: visible !important;
-        flex-wrap: nowrap !important;
+        flex-wrap: wrap !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .solar-system-container {
-        order: 2 !important;
-        /* Solar on right/after score */
-        transform: scale(0.9) !important;
-        /* Slightly scale down for small screens */
-        margin: 0 !important;
-        width: auto !important;
+        order: 1 !important;
+        transform: scale(1) !important;
+        margin: 0 auto !important;
+        width: 100% !important;
         display: flex !important;
         justify-content: center !important;
     }
 
     .stats-control-panel {
         order: 2 !important;
-        /* Stats below */
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
         justify-content: center !important;
-        gap: 1.5rem !important;
+        align-items: center !important;
+        gap: 0.75rem !important;
         width: 100% !important;
+        max-width: 100% !important;
         transform: none !important;
         margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
     }
 
     .score-pills {
@@ -1861,13 +1866,15 @@ body {
     .score-summary {
         margin: 0 !important;
         align-items: center !important;
+        text-align: center !important;
     }
 
     .action-btn-premium.btn-save {
-        width: auto !important;
-        min-width: 140px;
+        width: 100% !important;
+        max-width: 100%;
     }
 }
+
 
 @media (max-width: 400px) {
     .stats-control-panel {
@@ -1888,5 +1895,342 @@ body {
     .solar-system-container {
         transform: scale(0.85) !important;
         margin: -25px 0 !important;
+    }
+}
+
+/* Mobile Responsive Fixes for Analysis Summary */
+
+/* Category Summary Container */
+.category-summary-box {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #F8FAFC;
+    border-radius: 16px;
+    border: 1px solid #E2E8F0;
+    max-width: 280px;
+    box-sizing: border-box;
+}
+
+.category-summary-box.gold {
+    background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+    border: 1px solid #FCD34D;
+    box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.1), 0 2px 4px -1px rgba(245, 158, 11, 0.06);
+}
+
+.category-summary-title {
+    font-size: 1.1rem;
+    font-family: 'Kanit', sans-serif;
+    font-weight: 600;
+}
+
+.category-item-icon {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.category-item-icon-inner {
+    display: block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+
+.category-item-name {
+    font-weight: 500;
+    color: #1E293B;
+    font-size: 0.95rem;
+    font-family: 'Kanit', sans-serif;
+}
+
+.category-item-keywords {
+    margin-left: 36px;
+    line-height: 1.3;
+    font-size: 0.85rem;
+    font-family: 'Sarabun', sans-serif;
+    font-weight: 300;
+}
+
+@media (max-width: 640px) {
+
+    /* Category Summary Box - Make it full width on mobile with visible borders */
+    .category-summary-box {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 1rem !important;
+        margin-top: 0.75rem !important;
+        margin-left: 1rem !important;
+        margin-right: 1rem !important;
+        border: 2px solid #E2E8F0 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+        box-sizing: border-box !important;
+    }
+
+    .category-summary-box.gold {
+        border: 2px solid #FCD34D !important;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15) !important;
+    }
+
+    /* Category Title - Increase font size for better readability */
+    .category-summary-title {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    /* Category Icons - Keep reasonable size */
+    .category-item-icon {
+        width: 24px !important;
+        height: 24px !important;
+        min-width: 24px !important;
+    }
+
+    .category-item-icon-inner {
+        width: 8px !important;
+        height: 8px !important;
+    }
+
+    /* Category Name - Increase font size */
+    .category-item-name {
+        font-size: 1rem !important;
+    }
+
+    /* Keywords - Increase font size for better readability */
+    .category-item-keywords {
+        margin-left: 28px !important;
+        font-size: 0.9rem !important;
+        line-height: 1.5 !important;
+    }
+
+    /* Override inline styles for better control */
+    .stats-control-panel>div>div[style*="gap: 10px"] {
+        gap: 8px !important;
+    }
+
+    .stats-control-panel>div>div[style*="gap: 8px"] {
+        gap: 6px !important;
+    }
+
+    /* Button Text - Keep readable size */
+    .stats-control-panel button .btn-label {
+        font-size: 0.9rem !important;
+        line-height: 1.3 !important;
+    }
+
+    /* Save Button - Make more compact but with good tap target */
+    .stats-control-panel button[hx-post="/saved-names"] {
+        padding: 14px 16px !important;
+        font-size: 1rem !important;
+        gap: 8px !important;
+    }
+
+    .stats-control-panel button[hx-post="/saved-names"] svg {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    /* Perfect Name Button - Make more compact but with good tap target */
+    .stats-control-panel button[onclick*="similar-names-section"] {
+        padding: 14px 12px !important;
+    }
+
+    .stats-control-panel button[onclick*="similar-names-section"]>div:first-child {
+        font-size: 0.85rem !important;
+        gap: 5px !important;
+    }
+
+    .stats-control-panel button[onclick*="similar-names-section"]>div:first-child svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .stats-control-panel button[onclick*="similar-names-section"]>div:last-child {
+        font-size: 1.15rem !important;
+        line-height: 1.25 !important;
+    }
+
+    /* Make stats panel full width on mobile and center everything */
+    .stats-control-panel {
+        min-width: 100% !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+        gap: 0.75rem !important;
+        align-items: center !important;
+        display: flex !important;
+        flex-direction: column !important;
+        margin: 0 !important;
+    }
+
+    /* Center all direct children */
+    .stats-control-panel>* {
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+}
+
+
+
+@media (max-width: 480px) {
+
+    /* Adjust for smaller screens while keeping readability */
+    .category-summary-box {
+        padding: 0.85rem !important;
+        margin-top: 0.6rem !important;
+    }
+
+    /* Category summary title - keep readable */
+    .category-summary-title {
+        font-size: 1rem !important;
+        margin-bottom: 0.6rem !important;
+    }
+
+    /* Category names - keep readable */
+    .category-item-name {
+        font-size: 0.9rem !important;
+    }
+
+    /* Keywords - keep readable */
+    .category-item-keywords {
+        margin-left: 26px !important;
+        font-size: 0.8rem !important;
+        line-height: 1.4 !important;
+    }
+
+    /* Category icons - reasonable size */
+    .category-item-icon {
+        width: 22px !important;
+        height: 22px !important;
+        min-width: 22px !important;
+    }
+
+    .category-item-icon-inner {
+        width: 7px !important;
+        height: 7px !important;
+    }
+
+    /* Button text - keep readable */
+    .stats-control-panel button .btn-label {
+        font-size: 0.85rem !important;
+        line-height: 1.25 !important;
+    }
+
+    /* Save button - maintain good tap target */
+    .stats-control-panel button[hx-post="/saved-names"] {
+        padding: 12px 14px !important;
+        font-size: 0.9rem !important;
+        gap: 7px !important;
+    }
+
+    .stats-control-panel button[hx-post="/saved-names"] svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    /* Perfect name button - maintain good tap target */
+    .stats-control-panel button[onclick*="similar-names-section"] {
+        padding: 12px 10px !important;
+    }
+
+    .stats-control-panel button[onclick*="similar-names-section"]>div:first-child {
+        font-size: 0.8rem !important;
+        gap: 4px !important;
+    }
+
+    .stats-control-panel button[onclick*="similar-names-section"]>div:first-child svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    .stats-control-panel button[onclick*="similar-names-section"]>div:last-child {
+        font-size: 1.05rem !important;
+        line-height: 1.2 !important;
+    }
+
+    /* Make stats panel slightly more compact */
+    .stats-control-panel {
+        min-width: 100% !important;
+        padding: 0.4rem !important;
+        gap: 0.6rem !important;
+    }
+}
+
+
+@media (max-width: 380px) {
+
+    /* Ultra compact for very small screens */
+    .category-summary-box {
+        padding: 0.35rem !important;
+    }
+
+    .category-summary-title {
+        font-size: 0.65rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    .category-item-name {
+        font-size: 0.65rem !important;
+    }
+
+    .category-item-keywords {
+        margin-left: 16px !important;
+        font-size: 0.55rem !important;
+        line-height: 1.2 !important;
+    }
+
+    .category-item-icon {
+        width: 16px !important;
+        height: 16px !important;
+        min-width: 16px !important;
+    }
+
+    .category-item-icon-inner {
+        width: 4px !important;
+        height: 4px !important;
+    }
+
+    /* Buttons - ultra compact */
+    .stats-control-panel button .btn-label {
+        font-size: 0.65rem !important;
+        line-height: 1.15 !important;
+    }
+
+    .stats-control-panel button[hx-post="/saved-names"] {
+        padding: 5px 6px !important;
+        font-size: 0.65rem !important;
+        gap: 3px !important;
+    }
+
+    .stats-control-panel button[hx-post="/saved-names"] svg {
+        width: 12px !important;
+        height: 12px !important;
+    }
+
+    .stats-control-panel button[onclick*="similar-names-section"] {
+        padding: 5px 3px !important;
+    }
+
+    .stats-control-panel button[onclick*="similar-names-section"]>div:first-child {
+        font-size: 0.6rem !important;
+        gap: 2px !important;
+    }
+
+    .stats-control-panel button[onclick*="similar-names-section"]>div:first-child svg {
+        width: 11px !important;
+        height: 11px !important;
+    }
+
+    .stats-control-panel button[onclick*="similar-names-section"]>div:last-child {
+        font-size: 0.75rem !important;
+        line-height: 1.05 !important;
+    }
+
+    .stats-control-panel {
+        min-width: 95px !important;
+        padding: 0.15rem !important;
+        gap: 0.3rem !important;
     }
 }
