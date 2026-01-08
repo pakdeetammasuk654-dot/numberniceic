@@ -14,6 +14,58 @@
       },
       "oauth_client": [
         {
+          "client_id": "564920304262-32ibclu0qv4is315qf18hsuf2ose129q.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mobile_app",
+            "certificate_hash": "bc3dca29a08bc6d8d6f78340d6590e130953adce"
+          }
+        },
+        {
+          "client_id": "564920304262-68tejddeu1hs4iru30jois3sn14cg991.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAD1bHTzqxH9bQEp-7eXd6LKbj-lytONw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "564920304262-68tejddeu1hs4iru30jois3sn14cg991.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "564920304262-3m5tmlsu6ti53mtiodp1qki595iji2tn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.mobileApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:564920304262:android:9f885879cabd1fe8ca4707",
+        "android_client_info": {
+          "package_name": "com.taya.numberniceic"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "564920304262-tj33f5nm2egsj43hrmj5e8arqu769d1u.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.taya.numberniceic",
+            "certificate_hash": "bc3dca29a08bc6d8d6f78340d6590e130953adce"
+          }
+        },
+        {
           "client_id": "564920304262-68tejddeu1hs4iru30jois3sn14cg991.apps.googleusercontent.com",
           "client_type": 3
         }

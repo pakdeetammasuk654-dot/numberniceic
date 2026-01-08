@@ -6,8 +6,8 @@ import 'utils/social_auth_config.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize LINE SDK
-  await SocialAuthConfig.initializeLineSDK();
+  // Initialize LINE SDK in background
+  SocialAuthConfig.initializeLineSDK();
   
   runApp(const MyApp());
 }

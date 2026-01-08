@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NumberNice</string>
+    <string name="facebook_app_id">1564787444833363</string>
+    <string name="fb_login_protocol_scheme">fb1564787444833363</string>
+    <string name="facebook_client_token">234ca1ad879a87df5d967cbf773f961d</string>
+</resources>

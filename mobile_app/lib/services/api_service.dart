@@ -13,6 +13,23 @@ import '../models/user_notification.dart';
 class ApiService {
   static final ValueNotifier<int> dashboardRefreshSignal = ValueNotifier<int>(0);
 
+  static dynamic _safeDecode(http.Response response) {
+    if (response.body.isEmpty) {
+      throw Exception('Server returned an empty response (Status: ${response.statusCode})');
+    }
+    try {
+      return json.decode(response.body);
+    } catch (e) {
+      print('❌ JSON Parse Error Body: ${response.body}');
+      // If it's HTML, it might be an error page
+      if (response.body.contains('<!DOCTYPE html>') || response.body.contains('<html')) {
+          throw Exception('Server returned HTML instead of JSON. This usually indicates a server error (500) or a route not found (404). Status: ${response.statusCode}');
+      }
+      throw Exception('Failed to parse JSON: $e');
+    }
+  }
+
+
   static String get baseUrl {
     if (kIsWeb) return 'http://localhost:3000';
     
@@ -26,16 +43,15 @@ class ApiService {
     // หากเป็น Debug Mode ให้ใช้ IP หรือ localhost
     // เลือกโหมด: หากเป็น kReleaseMode (ตอน Build App จริง) ให้ใช้ Domain
     // หากเป็น Debug Mode ให้ใช้ IP หรือ localhost
-    const bool useProduction = false; // Set to true for production builds
+    const bool useProduction = true; // Set to true for production builds
 
     if (useProduction || kReleaseMode) {
       return 'https://$productionDomain';
     }
 
     if (Platform.isAndroid) {
-      // 10.0.2.2 คือ IP ที่ Android Emulator ใช้เรียกเครื่อง Host (localhost)
-      // return 'http://10.0.2.2:3000'; // For Emulator
-      return 'http://$localIp:3000'; // For Real Device via LAN
+      // 10.0.2.2 is the IP that Android Emulator uses to reach the host machine (localhost)
+      return 'http://10.0.2.2:3000'; 
     }
     
     return 'http://$localIp:3000'; // For iOS Real Device / LAN
@@ -56,14 +72,14 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = _safeDecode(response);
         if (data == null || data is! List) return [];
         return data.map((item) => ShippingAddress.fromJson(item)).toList();
       } else {
         throw Exception('Failed to load addresses');
       }
     } catch (e) {
-      throw Exception('Connection error: $e');
+      throw Exception('Connection error at $url: $e');
     }
   }
 
@@ -109,13 +125,13 @@ class ApiService {
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
+        final List<dynamic> data = _safeDecode(response);
         return data.map((json) => Article.fromJson(json)).toList();
       } else {
         throw Exception('Failed to load articles');
       }
     } catch (e) {
-      throw Exception('Connection error: $e');
+      throw Exception('Connection error at $url: $e');
     }
   }
 
@@ -125,13 +141,13 @@ class ApiService {
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = _safeDecode(response);
         return Article.fromJson(data);
       } else {
         throw Exception('Failed to load article');
       }
     } catch (e) {
-      throw Exception('Connection error: $e');
+      throw Exception('Connection error at $url: $e');
     }
   }
 
@@ -153,16 +169,23 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final data = _safeDecode(response);
+        // Sync with SharedPreferences so bottom bar and other widgets get latest info
+        await AuthService.syncAuthData(data);
+        return data;
       } else if (response.statusCode == 401) {
         // Token expired or invalid
         await AuthService.logout();
         throw Exception('Session expired');
+      } else if (response.statusCode == 404) {
+        // User record missing in DB (likely deleted or DB test reset)
+        await AuthService.logout();
+        throw Exception('User no longer exists');
       } else {
         throw Exception('Failed to load dashboard: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Connection error: $e');
+      throw Exception('Connection error at $url: $e');
     }
   }
 
@@ -174,7 +197,7 @@ class ApiService {
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = _safeDecode(response);
         return data['is_buddhist_day'] == true;
       }
       return false;
@@ -213,12 +236,13 @@ class ApiService {
 
       final response = await http.get(url, headers: headers);
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return _safeDecode(response);
       } else {
-        throw Exception('Failed to analyze name');
+        final errorMsg = response.statusCode == 401 ? 'Session expired' : 'Server error: ${response.statusCode}';
+        throw Exception(errorMsg);
       }
     } catch (e) {
-      throw Exception('Connection error: $e');
+      throw Exception('Connection error at $url: $e');
     }
   }
 
@@ -228,12 +252,12 @@ class ApiService {
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return _safeDecode(response);
       } else {
         throw Exception('Failed to analyze name linguistically: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
-      throw Exception('Connection error: $e');
+      throw Exception('Connection error at $url: $e');
     }
   }
 
@@ -243,12 +267,12 @@ class ApiService {
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return _safeDecode(response);
       } else {
         throw Exception('Failed to analyze number: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Connection error: $e');
+      throw Exception('Connection error at $url: $e');
     }
   }
 
@@ -267,12 +291,12 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return _safeDecode(response);
       } else {
         throw Exception('ไม่สามารถดึงข้อมูลชำระเงินได้');
       }
     } catch (e) {
-      throw Exception('Connection error: $e');
+      throw Exception('Connection error at $url: $e');
     }
   }
 
@@ -289,7 +313,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = _safeDecode(response);
         return data['status'] ?? 'pending';
       }
       return 'pending';
@@ -318,7 +342,7 @@ class ApiService {
         return 'ลบรายชื่อเรียบร้อยแล้ว';
       } else {
         try {
-          final error = json.decode(response.body);
+          final error = _safeDecode(response);
           throw Exception(error['error'] ?? 'ลบไม่สำเร็จ');
         } catch (_) {
           throw Exception('ลบไม่สำเร็จ (${response.statusCode})');
@@ -326,7 +350,7 @@ class ApiService {
       }
     } catch (e) {
       if (e is Exception) rethrow;
-      throw Exception('Connection error: $e');
+      throw Exception('Connection error at $url: $e');
     }
   }
 
@@ -368,7 +392,7 @@ class ApiService {
         throw Exception('กรุณาเข้าสู่ระบบก่อนบันทึกชื่อ');
       } else {
         try {
-          final error = json.decode(response.body);
+          final error = _safeDecode(response);
           throw Exception(error['error'] ?? 'บันทึกไม่สำเร็จ');
         } catch (_) {
           throw Exception('บันทึกไม่สำเร็จ (${response.statusCode})');
@@ -388,13 +412,13 @@ class ApiService {
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
+        final List<dynamic> data = _safeDecode(response);
         return data.map((json) => SampleName.fromJson(json)).toList();
       } else {
         throw Exception('Failed to load sample names');
       }
     } catch (e) {
-      throw Exception('Connection error: $e');
+      throw Exception('Connection error at $url: $e');
     }
   }
 
@@ -415,7 +439,7 @@ class ApiService {
         body: jsonEncode({'code': code}),
       );
 
-      final data = json.decode(response.body);
+      final data = _safeDecode(response);
 
       if (response.statusCode == 200) {
         return data['message'] ?? 'ใช้งานรหัสสำเร็จ';
@@ -434,13 +458,13 @@ class ApiService {
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
+        final List<dynamic> data = _safeDecode(response);
         return data.map((json) => ProductModel.fromJson(json)).toList();
       } else {
         throw Exception('Failed to load products');
       }
     } catch (e) {
-      throw Exception('Connection error: $e');
+      throw Exception('Connection error at $url: $e');
     }
   }
 
@@ -459,7 +483,7 @@ class ApiService {
         body: jsonEncode({'product_name': productName}),
       );
 
-      final data = json.decode(response.body);
+      final data = _safeDecode(response);
 
       if (response.statusCode == 200) {
         // Returns {success: true, order_id: 123, ref_no: "123456789012", amount: 1, qr_code_url: "data:image/png;base64,..."}
@@ -486,7 +510,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return _safeDecode(response);
       } else {
         throw Exception('ไม่สามารถตรวจสอบสถานะได้');
       }
@@ -517,14 +541,14 @@ class ApiService {
         if (!contentType.contains('application/json') && !response.body.trim().startsWith('{')) {
            throw Exception('Unexpected response (200 OK) but not JSON. Type: $contentType. Body starts with: ${response.body.substring(0, 50)}...');
         }
-        final data = json.decode(response.body);
+        final data = _safeDecode(response);
         final List<dynamic> ordersJson = data['orders'] ?? [];
         return ordersJson.map((json) => OrderModel.fromJson(json)).toList();
       } else {
         throw Exception('Failed to load orders');
       }
     } catch (e) {
-      throw Exception('Connection error: $e');
+      throw Exception('Connection error at $url: $e');
     }
   }
 
@@ -544,9 +568,9 @@ class ApiService {
         if (!response.body.trim().startsWith('{') && !response.body.trim().startsWith('[')) {
            throw Exception('Unexpected response format. Expected JSON but got: ${response.body.substring(0, 50)}...');
         }
-        return json.decode(response.body);
+        return _safeDecode(response);
       } else {
-        final errorData = json.decode(response.body);
+        final errorData = _safeDecode(response);
         final errorMessage = errorData['error'] ?? 'Failed to load payment info';
         throw Exception(errorMessage);
       }
@@ -571,7 +595,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = _safeDecode(response);
         if (data is Map<String, dynamic>) {
            return data;
         }
@@ -587,7 +611,7 @@ class ApiService {
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return _safeDecode(response);
       }
       return null;
     } catch (e) {
@@ -610,7 +634,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
+        final List<dynamic> data = _safeDecode(response);
         return data.map((e) => UserNotification.fromJson(e)).toList();
       }
       if (kDebugMode) print('❌ API RESPONSE: ${response.statusCode} for notifications');
@@ -633,7 +657,7 @@ class ApiService {
           headers: {'Authorization': 'Bearer $token'},
        );
        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
+          final data = _safeDecode(response);
           return data['count'] ?? 0;
        }
        if (kDebugMode) print('❌ API RESPONSE: ${response.statusCode} for unread count');

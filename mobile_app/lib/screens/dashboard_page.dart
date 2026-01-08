@@ -109,7 +109,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 return const Center(child: CircularProgressIndicator());
               } else if (snapshot.hasError) {
                 // ... Error Handling (Same as before)
-                if (snapshot.error.toString().contains('Session expired')) {
+                if (snapshot.error.toString().contains('Session expired') || 
+                    snapshot.error.toString().contains('User no longer exists')) {
                    WidgetsBinding.instance.addPostFrameCallback((_) {
                     CustomToast.show(context, 'เซสชั่นหมดอายุ กรุณาเข้าสู่ระบบใหม่', isSuccess: false);
                     Navigator.of(context).pushAndRemoveUntil(

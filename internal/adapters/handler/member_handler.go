@@ -10,7 +10,6 @@ import (
 	"numberniceic/internal/core/service"
 	"numberniceic/views/layout"
 	"numberniceic/views/pages"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -373,11 +372,7 @@ func (h *MemberHandler) HandleRegisterAPI(c *fiber.Ctx) error {
 
 // GetDashboardAPI returns dashboard data including saved names for the authenticated user
 func (h *MemberHandler) GetDashboardAPI(c *fiber.Ctx) error {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Printf("PANIC RECOVERED in GetDashboardAPI: %v\nStack: %s\n", r, string(debug.Stack()))
-		}
-	}()
+	log.Printf("DEBUG: GetDashboardAPI Entered. Auth Header: %s", c.Get("Authorization"))
 	// 1. Get Token from Header
 	authHeader := c.Get("Authorization")
 	if authHeader == "" {
@@ -408,23 +403,37 @@ func (h *MemberHandler) GetDashboardAPI(c *fiber.Ctx) error {
 	}
 
 	// Handle float64 conversion typical for JSON numbers
+	// Handle float64 conversion typical for JSON numbers
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid User ID in Token"})
 	}
 	userID := int(userIDFloat)
+	log.Printf("DEBUG: GetDashboardAPI - UserID: %d", userID)
 
 	// Fetch Member Info (Refresh data)
 	member, err := h.service.GetMemberByID(userID)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
+		log.Printf("DEBUG: GetDashboardAPI - DB Error (Member): %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf("Database error: %v", err)})
 	}
+	if member == nil {
+		log.Printf("DEBUG: GetDashboardAPI - Member not found: %d", userID)
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User no longer exists"})
+	}
+	log.Printf("DEBUG: GetDashboardAPI - Member found: %s", member.Username)
 
 	// Fetch Saved Names
-	savedNames, _ := h.savedNameService.GetSavedNames(userID)
+	log.Printf("DEBUG: GetDashboardAPI - Fetching Saved Names for UserID: %d", userID)
+	savedNames, err := h.savedNameService.GetSavedNames(userID)
+	if err != nil {
+		log.Printf("DEBUG: GetDashboardAPI - DB Error (SavedNames): %v", err)
+	}
 
 	// Prepare Display Names (Calculate summary/quality) - use the existing helper
+	log.Printf("DEBUG: GetDashboardAPI - Preparing Display Names (Count: %d)", len(savedNames))
 	displayNames := h.prepareDisplayNames(savedNames)
+	log.Printf("DEBUG: GetDashboardAPI - Display Names Prepared")
 
 	// Format for JSON output manually to ensure snake_case and correct types
 	var formattedNames []map[string]interface{}
@@ -463,6 +472,7 @@ func (h *MemberHandler) GetDashboardAPI(c *fiber.Ctx) error {
 		"username":             member.Username,
 		"email":                member.Email,
 		"tel":                  member.Tel,
+		"avatar_url":           member.AvatarURL,
 		"is_vip":               member.IsVIP(),
 		"vip_expiry_text":      member.GetVIPExpiryText(),
 		"status":               member.Status, // 9 = Admin

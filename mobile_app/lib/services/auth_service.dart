@@ -221,7 +221,7 @@ class AuthService {
       final data = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        await _saveAuthData(data);
+        await syncAuthData(data);
         return {'success': true, 'data': data};
       } else {
         return {'success': false, 'message': data['error'] ?? 'เข้าสู่ระบบไม่สำเร็จ'};
@@ -281,7 +281,7 @@ class AuthService {
     return prefs.getString(keyToken);
   }
 
-  static Future<void> _saveAuthData(Map<String, dynamic> data) async {
+  static Future<void> syncAuthData(Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
     
     if (data['token'] != null) await prefs.setString(keyToken, data['token']);

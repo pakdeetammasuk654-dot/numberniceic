@@ -149,34 +149,8 @@ class _MainTabPageState extends State<MainTabPage> {
               label: 'ร้านค้า',
             ),
             BottomNavigationBarItem(
-              icon: _isLoggedIn && _avatarUrl != null && _avatarUrl!.isNotEmpty
-                  ? Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: DecorationImage(
-                          image: NetworkImage(_avatarUrl!),
-                          fit: BoxFit.cover,
-                        ),
-                        border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
-                      ),
-                    )
-                  : Icon(_isLoggedIn ? Icons.dashboard_outlined : Icons.login_outlined),
-              activeIcon: _isLoggedIn && _avatarUrl != null && _avatarUrl!.isNotEmpty
-                  ? Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: DecorationImage(
-                          image: NetworkImage(_avatarUrl!),
-                          fit: BoxFit.cover,
-                        ),
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                    )
-                  : Icon(_isLoggedIn ? Icons.dashboard : Icons.login),
+              icon: _buildUserIcon(false),
+              activeIcon: _buildUserIcon(true),
               label: _isLoggedIn ? 'แดชบอร์ด' : 'เข้าสู่ระบบ',
             ),
           ],
@@ -203,6 +177,36 @@ class _MainTabPageState extends State<MainTabPage> {
               child: const Icon(Icons.shopping_cart, color: Color(0xFF4A3B00), size: 28),
             ),
           ),
+    );
+  }
+  Widget _buildUserIcon(bool isActive) {
+    if (!_isLoggedIn || _avatarUrl == null || _avatarUrl!.isEmpty) {
+      return Icon(isActive 
+        ? (_isLoggedIn ? Icons.dashboard : Icons.login)
+        : (_isLoggedIn ? Icons.dashboard_outlined : Icons.login_outlined)
+      );
+    }
+
+    final size = isActive ? 26.0 : 24.0;
+    final borderWidth = isActive ? 2.0 : 1.0;
+    final borderColor = isActive ? Colors.white : Colors.white.withOpacity(0.5);
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: borderColor, width: borderWidth),
+      ),
+      child: ClipOval(
+        child: Image.network(
+          _avatarUrl!,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(isActive ? Icons.dashboard : Icons.dashboard_outlined, size: size * 0.8);
+          },
+        ),
+      ),
     );
   }
 }
