@@ -18,4 +18,5 @@ type AnalysisSummary struct {
 	Content         []DisplayKeyword `json:"content"`          // Mixed content ready to display
 	BackgroundColor string           `json:"background_color"` // Optional: for API usage
 	CategoryKey     string           `json:"category_key"`     // e.g. "finance", "work", "health" (for icon mapping)
+	IsBad           bool             `json:"is_bad"`
 }

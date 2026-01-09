@@ -57,21 +57,20 @@ class _AutoScrollingAvatarListState extends State<AutoScrollingAvatarList> with 
 
   @override
   Widget build(BuildContext context) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: (scrollNotification) {
-          if (scrollNotification is UserScrollNotification) {
-             if (scrollNotification.direction != ScrollDirection.idle) {
-                 _isUserInteracting = true;
-             } else {
-                 // User stopped dragging.
-                 Future.delayed(const Duration(seconds: 1), () {
-                    if (mounted) {
-                        _isUserInteracting = false;
-                    }
-                 });
-             }
-          }
-          return false;
+    return Listener(
+      onPointerDown: (_) {
+         _isUserInteracting = true;
+      },
+      onPointerUp: (_) {
+         // Add a small delay so momentum scrolling can finish or user can flick
+         Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) {
+               _isUserInteracting = false;
+            }
+         });
+      },
+      onPointerCancel: (_) {
+         _isUserInteracting = false;
       },
       child: ListView.builder(
         controller: _scrollController,

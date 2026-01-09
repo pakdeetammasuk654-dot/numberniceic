@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"net/http"
 	"numberniceic/internal/core/service"
 	"os"
 
@@ -35,12 +36,28 @@ func NewAuthHandler(memberService *service.MemberService, store *session.Store) 
 		line.New(os.Getenv("LINE_KEY"), os.Getenv("LINE_SECRET"), baseURL+"/auth/line/callback", "profile", "openid", "email"),
 	)
 
-	// FIX: Initialize gothic.Store to handle state cookie correctly on localhost
+	// FIX: Initialize gothic.Store to handle state cookie correctly
 	// Use a secure key in production!
 	key := "s3cr3t-k3y-f0r-num63rn1c31c-m0b1l3-@pp"
 	cookieStore := sessions.NewCookieStore([]byte(key))
 	cookieStore.Options.HttpOnly = true
-	cookieStore.Options.Secure = false // Set to true in production with HTTPS
+	cookieStore.Options.Path = "/"
+	cookieStore.Options.MaxAge = 86400 * 7 // 7 days
+
+	// Set Secure and Domain based on environment
+	if baseURL != "http://localhost:3000" {
+		cookieStore.Options.Secure = true
+		cookieStore.Options.SameSite = http.SameSiteLaxMode
+		cookieStore.Options.Path = "/"
+		cookieStore.Options.Domain = "xn--b3cu8e7ah6h.com"
+	} else {
+		cookieStore.Options.Secure = false
+		cookieStore.Options.SameSite = http.SameSiteLaxMode
+		cookieStore.Options.Path = "/"
+	}
+
+	fmt.Printf("DEBUG: Cookie store configured for baseURL: %s, Secure: %v, SameSite: %v, Domain: %s\n", baseURL, cookieStore.Options.Secure, cookieStore.Options.SameSite, cookieStore.Options.Domain)
+
 	gothic.Store = cookieStore
 
 	return &AuthHandler{
@@ -58,6 +75,14 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 // Handle callback from provider
 func (h *AuthHandler) Callback(c *fiber.Ctx) error {
 	fmt.Println("DEBUG: AuthHandler.Callback triggered")
+
+	// Print all cookies for debugging
+	c.Request().Header.VisitAll(func(key, value []byte) {
+		if string(key) == "Cookie" {
+			fmt.Printf("DEBUG: Cookies received: %s\n", string(value))
+		}
+	})
+
 	user, err := goth_fiber.CompleteUserAuth(c)
 	if err != nil {
 		fmt.Printf("DEBUG: goth_fiber.CompleteUserAuth error: %v\n", err)

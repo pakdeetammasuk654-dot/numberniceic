@@ -1614,11 +1614,22 @@ func (h *NumerologyHandler) getSolarSystemProps(name, day string, repoAllowKlaki
 	// Prepare Display Summaries (Backend Logic for UI)
 	var analysisSummaries []domain.AnalysisSummary
 
-	toDisplayKeywords := func(goodKws []string, badKws []string) []domain.DisplayKeyword {
+	toDisplayKeywords := func(mixedKws []string, badKws []string) []domain.DisplayKeyword {
 		var content []domain.DisplayKeyword
-		for _, k := range goodKws {
-			content = append(content, domain.DisplayKeyword{Text: k, IsBad: false})
+
+		// Create set of bad keywords for exclusion from mixed list (which contains both good+bad)
+		badSet := make(map[string]bool)
+		for _, k := range badKws {
+			badSet[k] = true
 		}
+
+		// Add Good keywords (filter out bads from the mixed list)
+		for _, k := range mixedKws {
+			if !badSet[k] {
+				content = append(content, domain.DisplayKeyword{Text: k, IsBad: false})
+			}
+		}
+		// Add Bad keywords
 		for _, k := range badKws {
 			content = append(content, domain.DisplayKeyword{Text: k, IsBad: true})
 		}
@@ -1634,15 +1645,17 @@ func (h *NumerologyHandler) getSolarSystemProps(name, day string, repoAllowKlaki
 		// Show as long as there is content (Good OR Bad)
 		if len(content) > 0 {
 			title := cat
-			// Append warning suffix if there are bad keywords in this category
+			isBad := false
+			// Check if there are bad keywords in this category
 			if len(bd.BadKeywords) > 0 {
-				title += ": จะส่งผลร้าย"
+				isBad = true
 			}
 
 			analysisSummaries = append(analysisSummaries, domain.AnalysisSummary{
 				Title:       title,
 				Content:     content,
 				CategoryKey: cat,
+				IsBad:       isBad,
 			})
 		}
 	}

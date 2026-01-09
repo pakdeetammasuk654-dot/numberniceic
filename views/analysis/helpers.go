@@ -1,6 +1,10 @@
 package analysis
 
-import "fmt"
+import (
+	"fmt"
+	"numberniceic/internal/core/domain"
+	"strings"
+)
 
 // add sums two integers.
 func add(a, b int) int {
@@ -50,4 +54,43 @@ func getPercentColor(p float64) string {
 		return "#F59E0B" // Orange
 	}
 	return "#EF4444" // Red
+}
+
+func hasBadInSummaries(summaries []domain.AnalysisSummary) bool {
+	for _, s := range summaries {
+		if strings.Contains(s.Title, "ส่งผลร้าย") {
+			return true
+		}
+		for _, content := range s.Content {
+			if content.IsBad {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// translateDay converts English day names to Thai.
+func translateDay(day string) string {
+	day = strings.ToLower(strings.TrimSpace(day))
+	switch day {
+	case "sunday":
+		return "วันอาทิตย์"
+	case "monday":
+		return "วันจันทร์"
+	case "tuesday":
+		return "วันอังคาร"
+	case "wednesday":
+		return "วันพุธ"
+	case "wednesday night":
+		return "วันพุธกลางคืน"
+	case "thursday":
+		return "วันพฤหัสบดี"
+	case "friday":
+		return "วันศุกร์"
+	case "saturday":
+		return "วันเสาร์"
+	default:
+		return day
+	}
 }

@@ -159,6 +159,15 @@ type SolarSystemProps struct {
 	ResultStyle          string                        `json:"result_style"`
 }
 
+func getSummaryForCategory(summaries []domain.AnalysisSummary, category string) *domain.AnalysisSummary {
+    for _, s := range summaries {
+        if strings.Contains(s.Title, category) {
+            return &s
+        }
+    }
+    return nil
+}
+
 func (p SolarSystemProps) GetCategoryDataJSON() string {
 	b, _ := json.Marshal(p.CategoryCounts)
 	return base64.StdEncoding.EncodeToString(b)
@@ -326,133 +335,208 @@ templ SolarSystem(props SolarSystemProps) {
 	<div class="solar-dashboard-layout" style="display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 4rem; flex-wrap: nowrap; margin-bottom: 2rem; width: 100%; max-width: 100%; position: relative; z-index: 9991;">
 		
 		<!-- LEFT: Controls & Scores (Mobile App Style) -->
-		<div class="stats-control-panel fade-slide-in" style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-start; min-width: 140px; position: relative; z-index: 10000; padding: 0.5rem;">
+		<div class="stats-control-panel fade-slide-in" style="display: flex; flex-direction: column; gap: 1.5rem; align-items: center; min-width: 140px; position: relative; z-index: 10000; padding: 0.5rem;">
 			
-			<div style="font-size: 0.9rem; color: #64748b; font-family: 'Kanit', sans-serif; font-weight: 500; margin-bottom: -0.5rem;">คะแนนรวม</div>
-			
-			<!-- Large Score with Trophy -->
-			<div style="display: flex; align-items: center; gap: 12px;">
-				<div class="score-emoji" style="font-size: 2.75rem; display: flex; align-items: center; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));">
-					if props.GrandTotalScore > 0 {
-						😊
-					} else {
-						😭
-					}
-				</div>
-				<div style={ fmt.Sprintf("font-size: 3rem; font-weight: 900; color: %s; font-family: 'Kanit', sans-serif; line-height: 1; letter-spacing: -1px;", ifThen(props.GrandTotalScore >= 0, "#10B981", "#EF4444")) }>
-					if props.GrandTotalScore >= 0 {
-						+{ fmt.Sprintf("%d", props.GrandTotalScore) }
-					} else {
-						{ fmt.Sprintf("%d", props.GrandTotalScore) }
-					}
-				</div>
-			</div>
+            <div style="display: flex; flex-direction: row; gap: 3rem; align-items: flex-start; justify-content: center; width: 100%;">
+                <!-- LEFT: Scores -->
+                <div style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-mid;">
+                <div style="font-size: 0.9rem; color: #64748b; font-family: 'Kanit', sans-serif; font-weight: 500; margin-bottom: -0.5rem;">คะแนนรวม</div>
+                
+                <!-- Large Score with Trophy -->
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="score-emoji" style="font-size: 2.75rem; display: flex; align-items: center; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));">
+                        if props.GrandTotalScore > 0 {
+                            😊
+                        } else {
+                            😭
+                        }
+                    </div>
+                    <div style={ fmt.Sprintf("font-size: 3rem; font-weight: 900; color: %s; font-family: 'Kanit', sans-serif; line-height: 1; letter-spacing: -1px;", ifThen(props.GrandTotalScore >= 0, "#10B981", "#EF4444")) }>
+                        if props.GrandTotalScore >= 0 {
+                            +{ fmt.Sprintf("%d", props.GrandTotalScore) }
+                        } else {
+                            { fmt.Sprintf("%d", props.GrandTotalScore) }
+                        }
+                    </div>
+                </div>
 
-			<!-- Small Pills -->
-			<div style="display: flex; gap: 8px; flex-wrap: wrap;">
-				<div style="background: #ecfdf5; color: #10B981; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; font-family: 'Kanit', sans-serif; display: flex; align-items: center; gap: 4px;">
-					ดี +{ fmt.Sprintf("%d", (props.NumPositiveScore + props.ShaPositiveScore)) }
-				</div>
-				<div style="background: #fef2f2; color: #EF4444; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; font-family: 'Kanit', sans-serif; display: flex; align-items: center; gap: 4px;">
-					ร้าย { fmt.Sprintf("%d", (props.NumNegativeScore + props.ShaNegativeScore)) }
-				</div>
-			</div>
+                <!-- Small Pills -->
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <div style="background: #ecfdf5; color: #10B981; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; font-family: 'Kanit', sans-serif; display: flex; align-items: center; gap: 4px;">
+                        ดี +{ fmt.Sprintf("%d", (props.NumPositiveScore + props.ShaPositiveScore)) }
+                    </div>
+                    <div style="background: #fef2f2; color: #EF4444; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; font-family: 'Kanit', sans-serif; display: flex; align-items: center; gap: 4px;">
+                        ร้าย { fmt.Sprintf("%d", (props.NumNegativeScore + props.ShaNegativeScore)) }
+                    </div>
+                </div>
+            </div>
 
+            <!-- RIGHT: Name Analysis Header (Moved) -->
+            <div class="name-analysis-header" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 0.5rem;">
+                <!-- Big Name -->
+                <h1 style="font-size: 2.5rem; font-weight: 800; color: #2D3748; margin: 0; line-height: 1.2; display: flex; align-items: baseline; gap: 2px;">
+                   for _, dc := range props.SunDisplayNameHTML {
+                       if dc.IsBad {
+                           <span style="color: #dc2626;">{ dc.Char }</span>
+                       } else {
+                           <span>{ dc.Char }</span>
+                       }
+                   }
+                </h1>
+                
+                <!-- Pills Row -->
+                <div style="display: flex; justify-content: center; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap;">
+                   <!-- Date -->
+                   <div style="padding: 4px 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 6px; font-size: 0.9rem;">
+                       @DayIcon(props.InputDayRaw)
+                       <span style="font-family: 'Kanit', sans-serif; font-weight: 500; color: #4a5568;">{ translateDay(props.InputDayRaw) }</span>
+                   </div>
+                   
+                   <!-- Status -->
+                   if hasBadChars(props.SunDisplayNameHTML) {
+                       <div style="padding: 4px 12px; background: #fee2e2; border: 1px solid #fecaca; border-radius: 20px; display: flex; align-items: center; gap: 6px; color: #dc2626; font-weight: 600; font-size: 0.9rem;">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                           for _, dc := range getBadChars(props.SunDisplayNameHTML) {
+                               <span style="margin-right: 2px;">{ dc.Char }</span>
+                           }
+                       </div>
+                   } else {
+                       <div style="padding: 4px 12px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 20px; display: flex; align-items: center; gap: 6px; color: #15803D; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 0.9rem;">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                           <span>ไม่มีกาลกิณี</span>
+                       </div>
+                   }
+                </div>
+                
+                <!-- Explanation -->
+                if hasBadChars(props.SunDisplayNameHTML) {
+                   <p style="margin-top: 6px; font-size: 0.8rem; color: #718096; font-family: 'Kanit', sans-serif;">
+                       พยัญชนะหรือสระ<span style="color: #dc2626; font-weight: bold;">สีแดง</span>คือกาลกิณี
+                   </p>
+               }
+           </div>
+		</div>
 	<!-- Category Summary Section -->
-	{{
-		containerStyle := "margin-top: 1rem; padding: 1rem; background: #F8FAFC; border-radius: 16px; border: 1px solid #E2E8F0; max-width: 280px;"
-		if props.ResultStyle == "gold" {
-			containerStyle = "margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%); border-radius: 16px; border: 1px solid #FCD34D; max-width: 280px; box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.1), 0 2px 4px -1px rgba(245, 158, 11, 0.06);"
-		}
-	}}
-	<div style={ containerStyle }>
-			<div style="margin-bottom: 0.75rem; text-align: center;">
-				<div style={ fmt.Sprintf("font-size: 1.1rem; color: %s; font-family: 'Kanit', sans-serif; font-weight: 600;", ifThen(props.GrandTotalScore >= 0, props.ResultColor, "#1E293B")) }>
-					<span>"</span>
-					<span style="display: inline-flex; gap: 0; align-items: baseline;">
-						for _, char := range props.SunDisplayNameHTML {
-							if char.IsBad {
-								<span style="color: #EF4444;">{ char.Char }</span>
-							} else {
-								<span>{ char.Char }</span>
+	<div class={ "category-summary-box", templ.KV("gold", props.ResultStyle != "emerald"), templ.KV("emerald", props.ResultStyle == "emerald") }>
+			<div style="margin-bottom: 1rem; display: flex; flex-direction: column; align-items: center;">
+				<div class="category-summary-title" style="display: flex; align-items: center; gap: 0.5rem; color: #B45309;">
+					<!-- Icon matching the card style -->
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="min-width: 24px;">
+						<rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><line x1="3" x2="21" y1="9" y2="9"></line><path d="m9 16 2 2 4-4"></path>
+					</svg>
+					<div style="display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: baseline;">
+						<span>"</span>
+						<span style="display: inline-flex; gap: 0; align-items: baseline;">
+							for _, char := range props.SunDisplayNameHTML {
+								if char.IsBad {
+									<span style="color: #EF4444;">{ char.Char }</span>
+								} else {
+									<span>{ char.Char }</span>
+								}
 							}
+						</span>
+						if props.GrandTotalScore >= 0 && hasBadInSummaries(props.AnalysisSummaries) {
+							<span>" { props.ResultTitle } (แต่)</span>
+						} else {
+							<span>" { props.ResultTitle }</span>
 						}
-					</span>
-					<span>" { props.ResultTitle }</span>
+					</div>
 				</div>
+                <div class="category-divider" style="border-top: 1px solid #FCD34D; margin-top: 10px; margin-bottom: 0; opacity: 0.5; width: 100%;"></div>
 			</div>
 			
-			<div style="display: flex; flex-direction: column; gap: 10px;">
-				for _, summary := range props.AnalysisSummaries {
-					if summary.BackgroundColor != "" {
-						<div style={ fmt.Sprintf("padding: 0.75rem; background: linear-gradient(135deg, #FFFFFF, %s); border-radius: 12px; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);", summary.BackgroundColor) }>
-							<div style="font-weight: 600; color: #1E293B; font-size: 1rem; font-family: 'Kanit', sans-serif; margin-bottom: 0.5rem;">{ summary.Title }</div>
-							<div style="font-size: 0.9rem; color: #475569; line-height: 1.6; font-family: 'Sarabun', sans-serif; font-weight: 400;">
-								for i, kw := range summary.Content {
-									if kw.IsBad {
-										<span style="color: #EF4444;">{ kw.Text }</span>
-									} else {
-										<span style="color: #475569;">{ kw.Text }</span>
-									}
-									if i < len(summary.Content)-1 {
-										<span style="color: #475569;">, </span>
-									}
-								}
-							</div>
-						</div>
-					} else {
-						{{ categoryColor := getCategoryColor(summary.Title) }}
-						<div style="display: flex; flex-direction: column; gap: 4px;">
-							<div style="display: flex; align-items: center; gap: 8px;">
-								<div style={ fmt.Sprintf("width: 28px; height: 28px; min-width: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: %s20;", categoryColor) }>
-									<span style={ "display: block; width: 10px; height: 10px; border-radius: 2px; background-color: " + categoryColor + ";" }></span>
-								</div>
-								<span style={ fmt.Sprintf("font-weight: 500; color: #1E293B; font-size: 0.95rem; font-family: 'Kanit', sans-serif;") }>{ summary.Title }</span>
-							</div>
-							<div style="margin-left: 36px; line-height: 1.3; font-size: 0.85rem; font-family: 'Sarabun', sans-serif; font-weight: 300;">
-								for i, kw := range summary.Content {
-									if kw.IsBad {
-										<span style="color: #EF4444;">{ kw.Text }</span>
-									} else {
-										<span style="color: #64748B;">{ kw.Text }</span>
-									}
-									if i < len(summary.Content)-1 {
-										<span style="color: #64748B;">, </span>
-									}
-								}
-							</div>
-						</div>
-					}
+			<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+				<!-- Iterate through fixed categories to maintain order: Work, Finance, Love, Health -->
+				for _, catName := range []string{"การงาน", "การเงิน", "ความรัก", "สุขภาพ"} {
+                    if summary := getSummaryForCategory(props.AnalysisSummaries, catName); summary != nil {
+                        {{ categoryColor := getCategoryColor(catName) }}
+                        <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px;">
+                            <!-- Large Icon Box -->
+                            <div style={ fmt.Sprintf("width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background-color: %s20;", categoryColor) }>
+                                <!-- Lightbulb Icon (Filled=On, Outlined=Off) -->
+                                if summary.IsBad {
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #EF4444;">
+                                        <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
+                                        <path d="M9 18h6"/>
+                                        <path d="M10 22h4"/>
+                                    </svg>
+                                } else {
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" stroke="none" style={ fmt.Sprintf("color: %s;", categoryColor) }>
+                                        <path d="M12 2C7.58 2 4 5.58 4 10c0 2.62 1.27 4.96 3.23 6.43.83.63 1.27 1.63 1.27 2.67V20c0 1.1.9 2 2 2h7c1.1 0 2-.9 2-2v-.9c0-1.04.44-2.04 1.27-2.67C22.73 14.96 24 12.62 24 10c0-4.42-3.58-8-8-8zm3.5 18h-7v-1h7v1zm0-3h-7v-1.1c0-1.48-.65-2.88-1.78-3.79C5.35 11.19 4.5 9.68 4.5 8c0-3.03 2.47-5.5 5.5-5.5s5.5 2.47 5.5 5.5c0 1.68-.85 3.19-2.22 4.11-1.13.91-1.78 2.31-1.78 3.79V17z"/>
+                                        <path d="M9 21h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-1z" opacity="0.3"/> 
+                                        <path d="M7 10c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.84 3.06-2.12 3.94-.9.62-1.43 1.66-1.43 2.76v.3h-3.9v-.3c0-1.1-.53-2.14-1.43-2.76C7.84 13.06 7 11.63 7 10z"/>
+                                    </svg>
+                                }
+                            </div>
+                            <!-- Text Column -->
+                            <div style="display: flex; flex-direction: column; justify-content: center; min-height: 48px;">
+                                <div style="font-size: 1.1rem; font-weight: 700; color: #1F2937; font-family: 'Kanit', sans-serif; line-height: 1.2; margin-bottom: 2px;">
+                                    { catName }
+                                    if summary.IsBad {
+                                        <span style="color: #EF4444;"> (ร้าย)</span>
+                                    }
+                                </div>
+                                <!-- Description Text -->
+                                <div style="font-size: 0.95rem; line-height: 1.5; color: #4B5563; font-family: 'Sarabun', sans-serif;">
+                                    for i, kw := range summary.Content {
+                                        <span style="color: #1E293B;">{ kw.Text }</span>
+                                        if i < len(summary.Content)-1 {
+                                            <span> , </span>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
 				}
 			</div>
 		</div>
 
 		<!-- Buttons Section (Swapped & Unified Premium Emerald Theme) -->
 		
-		<!-- 1. Save Button (Top - Elegant Gold, Light Kanit) -->
-		<button type="button" hx-post="/saved-names"
-			hx-vals={ fmt.Sprintf(`{"name": "%s", "birth_day": "%s", "total_score": "%d", "sat_sum": "%d", "sha_sum": "%d"}`, props.CleanedName, props.InputDayRaw, props.GrandTotalScore, props.TotalNumerologyValue, props.TotalShadowValue) }
-			hx-swap="none"
-			style={fmt.Sprintf("width: 100%%; padding: 14px 20px; margin-top: 1rem; margin-bottom: 0.8rem; font-size: 1.1rem; border: 1px solid #FDE68A; background: linear-gradient(135deg, #CA8A04 0%%, #A16207 100%%) !important; color: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px rgba(161, 98, 7, 0.3); %%s", getSaveButtonVisibility(props.IsVIP))}
-			onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 15px rgba(161, 98, 7, 0.4)'"
-			onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 10px rgba(161, 98, 7, 0.3)'">
-			<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="white" stroke="none">
-				<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2zM12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm5 8H7v-3h10v3z"></path>
-			</svg>
-			<span class="btn-label" style="font-family: 'Kanit', sans-serif; font-weight: 300;">
-				<span>บันทึกชื่อ "</span>
-				<span style="display: inline-flex; gap: 0; align-items: baseline;">
-					for _, char := range props.SunDisplayNameHTML {
-						if char.IsBad {
-							<span style="color: #EF4444; font-weight: 500;">{ char.Char }</span>
-						} else {
-							<span>{ char.Char }</span>
-						}
-					}
-				</span>
-				<span>"</span>
-			</span>
-		</button>
+        <!-- Action Buttons Row (Save Only) -->
+        <div style="display: flex; gap: 8px; width: 100%; margin-top: 1rem; margin-bottom: 0.8rem;">
+            <!-- 1. Numerology Button -->
+            <button type="button" onclick={ templ.ComponentScript{ Call: fmt.Sprintf("openMeaningModal('%s')", props.CleanedName) } }
+                style="flex: 1; background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 12px; padding: 10px 4px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.2s;"
+                onmouseover="this.style.background='#E0E7FF'"
+                onmouseout="this.style.background='#EEF2FF'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <path d="M12 11h4"></path>
+                    <path d="M12 16h4"></path>
+                </svg>
+                <span style="font-family: 'Kanit', sans-serif; font-weight: 600; font-size: 0.85rem; color: #4F46E5;">เลขศาสตร์</span>
+            </button>
+
+            <!-- 2. Linguistic Button -->
+            <button type="button" onclick={ templ.ComponentScript{ Call: fmt.Sprintf("loadLinguisticAnalysis('%s')", props.CleanedName) } }
+                style="flex: 1; background: #F0FDFA; border: 1px solid #99F6E4; border-radius: 12px; padding: 10px 4px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.2s;"
+                onmouseover="this.style.background='#CCFBF1'"
+                onmouseout="this.style.background='#F0FDFA'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0D9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                </svg>
+                <span style="font-family: 'Kanit', sans-serif; font-weight: 600; font-size: 0.85rem; color: #0F766E;">ภาษาศาสตร์</span>
+            </button>
+
+            <!-- 3. Save Button (Grey) -->
+            <button type="button" hx-post="/saved-names"
+                hx-vals={ fmt.Sprintf(`{"name": "%s", "birth_day": "%s", "total_score": "%d", "sat_sum": "%d", "sha_sum": "%d"}`, props.CleanedName, props.InputDayRaw, props.GrandTotalScore, props.TotalNumerologyValue, props.TotalShadowValue) }
+                hx-swap="none"
+                style={fmt.Sprintf("flex: 1; background: #E2E8F0; border: 1px solid #CBD5E1; border-radius: 12px; padding: 10px 4px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.2s;")}
+                onmouseover="this.style.background='#CBD5E1'"
+                onmouseout="this.style.background='#E2E8F0'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                <span style="font-family: 'Kanit', sans-serif; font-weight: 600; font-size: 0.85rem; color: #334155;">บันทึก</span>
+            </button>
+        </div>
 
 		<!-- 2. Perfect Naming Button (Bottom - Premium Emerald) -->
 		<button onclick="document.getElementById('similar-names-section').scrollIntoView({ behavior: 'smooth' });" 
@@ -550,78 +634,7 @@ templ SolarSystem(props SolarSystemProps) {
                         @renderSolarDonutChart(props)
                     </div>
 
-                    <!-- Name Info (Moved Closer) -->
-                    <div class="header-with-actions" style="display: flex; flex-direction: column-reverse; align-items: center; gap: 1rem; width: 100%;">
-                        
-                        <!-- Name Analysis Header -->
-                        <div class="name-analysis-header" style="text-align: center;">
-                            <h1 style="font-size: 2.2rem; font-weight: 800; color: #2D3748; margin-bottom: 0.5rem; line-height: 1.2;">
-                                for _, dc := range props.SunDisplayNameHTML {
-                                    if dc.IsBad {
-                                        <span style="color: #dc2626;">{ dc.Char }</span>
-                                    } else {
-                                        <span>{ dc.Char }</span>
-                                    }
-                                }
-                            </h1>
-                            <div style="display: flex; justify-content: center; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap;">
-                                <div style="padding: 4px 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 6px; font-size: 0.9rem;">
-                                    @DayIcon(props.InputDayRaw)
-                                    <span style="font-family: 'Kanit', sans-serif; font-weight: 500; color: #4a5568;">{ props.InputDayRaw }</span>
-                                </div>
-                                
-                                if hasBadChars(props.SunDisplayNameHTML) {
-                                    <div style="padding: 4px 10px; background: #fee2e2; border: 1px solid #fecaca; border-radius: 20px; display: flex; align-items: center; gap: 6px; color: #dc2626; font-weight: 600; font-size: 0.9rem;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                                        for _, dc := range getBadChars(props.SunDisplayNameHTML) {
-                                            <span style="margin-right: 2px;">{ dc.Char }</span>
-                                        }
-                                    </div>
-                                } else {
-                                    <div style="padding: 4px 10px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 20px; display: flex; align-items: center; gap: 6px; color: #15803D; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 0.9rem;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                                        <span>ไม่มีกาลกิณี</span>
-                                    </div>
-                                }
-                            </div>
-                            
-                            if hasBadChars(props.SunDisplayNameHTML) {
-                                <p style="margin-top: 8px; font-size: 0.85rem; color: #718096; font-family: 'Kanit', sans-serif;">
-                                    พยัญชนะหรือสระ<span style="color: #dc2626; font-weight: bold;">สีแดง</span>คือกาลกิณี
-                                </p>
-                            }
-                        </div>
 
-                        <!-- Action Buttons -->
-                        <div class="action-buttons-container" style="display: flex; flex-direction: row; gap: 0.8rem;">
-                            <!-- Numerology Button -->
-                            <button type="button" { templ.Attributes{"onclick": fmt.Sprintf("openMeaningModal('%s')", props.CleanedName)}... }
-                                class="action-btn-premium btn-numerology" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-                                    <path d="M12 11h4"></path>
-                                    <path d="M12 16h4"></path>
-                                    <path d="M8 11h.01"></path>
-                                    <path d="M8 16h.01"></path>
-                                </svg>
-                                <span class="btn-label-text">เลขศาสตร์</span>
-                            </button>
-
-                            <!-- Linguistic Button -->
-                            <button type="button" 
-                                { templ.Attributes{"onclick": fmt.Sprintf("loadLinguisticAnalysis('%s')", props.CleanedName)}... }
-                                class="action-btn-premium btn-linguistic" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                                </svg>
-                                <span class="btn-label-text">ภาษาศาสตร์</span>
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- RIGHT COLUMN: Legend Table -->
@@ -1033,11 +1046,7 @@ templ renderSolarCategoryTable(props SolarSystemProps) {
 							{ strings.Join(breakdown.Keywords, ", ") }
 						</div>
 					}
-					if len(breakdown.BadKeywords) > 0 {
-						<div style="font-size: 0.95rem; color: #EF4444; margin-bottom: 4px; line-height: 1.2; font-weight: 300; font-family: 'Sarabun', sans-serif;">
-							{ strings.Join(breakdown.BadKeywords, ", ") }
-						</div>
-					}
+
 				</div>
 				<div id={ fmt.Sprintf("lucky-container-%s-%s", props.CleanedName, cat) } style="margin-top: 12px; margin-left: -16px; margin-right: -16px; width: auto; position: relative; z-index: 10;"></div>
 			</div>

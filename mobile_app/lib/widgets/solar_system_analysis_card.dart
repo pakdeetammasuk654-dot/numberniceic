@@ -44,10 +44,20 @@ class SolarSystemAnalysisCard extends StatelessWidget {
     // Check for mixed good/bad (Good Name but has Bad summaries)
     bool hasBadInSummaries = false;
     for (var s in summaries) {
+        // Check both flag and Title (backend removed text, but safe to keep) AND Content
         if (s['is_bad'] == true || (s['title'] as String? ?? '').contains('ส่งผลร้าย')) {
             hasBadInSummaries = true;
             break;
         }
+        // Deep check content values
+        final content = s['content'] as List? ?? [];
+        for (var c in content) {
+           if (c is Map && c['is_bad'] == true) {
+              hasBadInSummaries = true;
+              break; 
+           }
+        }
+        if (hasBadInSummaries) break;
     }
     
     String displayResultTitle = ' " $resultTitle';
@@ -78,21 +88,21 @@ class SolarSystemAnalysisCard extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isGoodName ? const Color(0xFF10B981) : const Color(0xFFBDBDBD), 
-          width: 2.0
+          color: isGoodName ? const Color(0xFFD4AF37) : const Color(0xFFBDBDBD), 
+          width: 1.0
         ),
         boxShadow: isGoodName 
           ? [
               // Soft outer glow - light green
               BoxShadow(
-                color: const Color(0xFF6EE7B7).withOpacity(0.4),
+                color: const Color(0xFFD4AF37).withOpacity(0.4),
                 blurRadius: 30,
                 spreadRadius: 0,
                 offset: const Offset(0, 0),
               ),
               // Medium glow
               BoxShadow(
-                color: const Color(0xFF34D399).withOpacity(0.2),
+                color: const Color(0xFFD4AF37).withOpacity(0.2),
                 blurRadius: 20,
                 spreadRadius: -5,
                 offset: const Offset(0, 4),
@@ -157,6 +167,13 @@ class SolarSystemAnalysisCard extends StatelessWidget {
                   ),
                ),
              ),
+             const SizedBox(height: 12),
+             Divider(
+               height: 1,
+               thickness: 1,
+               color: isGoodName ? const Color(0xFF6EE7B7).withOpacity(0.5) : const Color(0xFFFCD34D).withOpacity(0.5),
+             ),
+             const SizedBox(height: 24),
           
           // 2. Summary List
             if (summaries.isNotEmpty)
@@ -170,9 +187,19 @@ class SolarSystemAnalysisCard extends StatelessWidget {
 
                   final bgColor = summary['background_color'] as String?;
                   final rawTitle = summary['title'] as String? ?? '';
-                  final isBadItem = summary['is_bad'] == true;
                   final rawContent = summary['content'] as List? ?? [];
-                  final content = rawContent.map((e) => Map<String, dynamic>.from(e)).toList();
+                  final content = rawContent.map((e) => Map<String, dynamic>.from(e)).toList();                  
+
+                  // Robust IsBad Calculation
+                  bool isBadItem = summary['is_bad'] == true;
+                  if (!isBadItem) {
+                      for (var c in content) {
+                          if (c['is_bad'] == true) {
+                              isBadItem = true;
+                              break;
+                          }
+                      }
+                  }
 
                   // Case A: Premium Box (has background color)
                   if (bgColor != null && bgColor.isNotEmpty) {
@@ -230,50 +257,55 @@ class SolarSystemAnalysisCard extends StatelessWidget {
                     
                     if (isBadItem) {
                        catColor = const Color(0xFFEF4444); // Red for bad
-                       if (!displayTitle.contains('ส่งผลเสีย') && !displayTitle.contains('ส่งผลร้าย')) {
-                          displayTitle = '$displayTitle : ส่งผลเสีย';
-                       }
                     }
 
                     return Container(
                       width: double.infinity,
                       margin: isLast ? EdgeInsets.zero : const EdgeInsets.only(bottom: 8),
                       padding: isLast ? EdgeInsets.zero : const EdgeInsets.only(bottom: 8),
-                      decoration: isLast ? null : BoxDecoration(
-                         border: Border(
-                           bottom: BorderSide(
-                             color: catColor.withOpacity(0.2), // Thin colored divider
-                             width: 1.0,
-                           ),
-                         ),
-                      ),
+                      // decoration: removed border here
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                          Row(
                            children: [
-                             // Icon Box
+                             // Icon Box Matching Web Style (48px)
                              Container(
-                               width: 32, height: 32,
+                               width: 48, height: 48,
                                decoration: BoxDecoration(
-                                 color: catColor.withOpacity(0.2),
-                                 borderRadius: BorderRadius.circular(8),
+                                 color: catColor.withOpacity(0.15), // Softer background like Web
+                                 borderRadius: BorderRadius.circular(12), // Web uses 12px radius
                                ),
-                               padding: const EdgeInsets.all(10), // Small colored square inside
-                               child: Container(
-                                 decoration: BoxDecoration(
+                               padding: const EdgeInsets.all(0),
+                               alignment: Alignment.center,
+                                 child: Icon(
+                                   isBadItem ? Icons.lightbulb_outline : Icons.lightbulb, // Outlined = Off, Filled = On
                                    color: catColor,
-                                   borderRadius: BorderRadius.circular(2),
+                                   size: 24,
                                  ),
-                               ),
                              ),
                              const SizedBox(width: 12),
-                             Text(
-                               displayTitle, 
-                               style: GoogleFonts.kanit(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: isBadItem ? const Color(0xFFEF4444) : const Color(0xFF1E293B),
+                             RichText(
+                               text: TextSpan(
+                                 children: [
+                                   TextSpan(
+                                     text: displayTitle,
+                                     style: GoogleFonts.kanit(
+                                       fontSize: 18,
+                                       fontWeight: FontWeight.w600,
+                                       color: const Color(0xFF1E293B),
+                                     ),
+                                   ),
+                                   if (isBadItem)
+                                     TextSpan(
+                                       text: ' (ร้าย)',
+                                       style: GoogleFonts.kanit(
+                                         fontSize: 18,
+                                         fontWeight: FontWeight.w600,
+                                         color: const Color(0xFFEF4444),
+                                       ),
+                                     ),
+                                 ],
                                ),
                              ),
                            ],

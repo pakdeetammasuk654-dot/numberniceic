@@ -1462,8 +1462,145 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
                AnimatedSwitcher(
                   duration: const Duration(milliseconds: 800),
                    child: KeyedSubtree(
-                      key: ValueKey('solar_${_analysisResult!['solar_system']['cleaned_name']}'), 
-                      child: _buildSolarSystemSection(),
+                      child: Builder(builder: (context) {
+                          final solar = _analysisResult!['solar_system'] as Map<String, dynamic>;
+                          final name = solar['cleaned_name'] ?? '';
+                          return Column(
+                            children: [
+                              Stack(
+                                alignment: Alignment.topCenter,
+                                children: [
+                                      // Name Analysis Header (Layer 1 - Bottom)
+                                      Container(
+                                        margin: const EdgeInsets.only(top: 215), 
+                                        child: Column(
+                                        children: [
+                                          // 1. Big Name
+                                          Wrap(
+                                              alignment: WrapAlignment.center,
+                                              children: ((solar['sun_display_name_html'] as List?) ?? []).map<Widget>((dc) {
+                                                return Text(
+                                                  dc['char'] ?? '',
+                                                  style: GoogleFonts.kanit(
+                                                    fontSize: 48,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: dc['is_bad'] == true ? const Color(0xFFEF4444) : const Color(0xFF2D3748),
+                                                    height: 1.0,
+                                                  ),
+                                                );
+                                              }).toList(),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          // 2. Pills Row
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                                // Date Pill
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    border: Border.all(color: Colors.grey[200]!),
+                                                    borderRadius: BorderRadius.circular(30),
+                                                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      const Icon(Icons.calendar_today_outlined, size: 18, color: Color(0xFF1E293B)),
+                                                      const SizedBox(width: 8),
+                                                      Builder(builder: (context) {
+                                                          String raw = (solar['input_day_raw'] ?? '-').toString().toLowerCase();
+                                                          String dayThai = raw;
+                                                          const days = {'sunday': 'วันอาทิตย์', 'monday': 'วันจันทร์', 'tuesday': 'วันอังคาร', 'wednesday': 'วันพุธ', 'thursday': 'วันพฤหัสบดี', 'friday': 'วันศุกร์', 'saturday': 'วันเสาร์'};
+                                                          days.forEach((k, v) { if (raw.contains(k)) dayThai = v; });
+                                                          return Text(dayThai, style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF334155)));
+                                                      }),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                // Klakini Badge
+                                                Builder(builder: (context) {
+                                                    List<String> kChars = (solar['klakini_chars'] as List?)?.map((e) => e.toString()).toList() ?? [];
+                                                    if (kChars.isEmpty) {
+                                                        for (var item in (solar['sun_display_name_html'] as List? ?? [])) {
+                                                          if (item['is_bad'] == true) {
+                                                            String c = (item['char'] ?? '').toString().trim();
+                                                            if (c.isNotEmpty && !kChars.contains(c)) kChars.add(c);
+                                                          }
+                                                        }
+                                                    }
+                                                    if (kChars.isEmpty) {
+                                                        return Container(
+                                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                                            decoration: BoxDecoration(color: const Color(0xFFF0FDF4), border: Border.all(color: const Color(0xFFBBF7D0)), borderRadius: BorderRadius.circular(30)),
+                                                            child: Text('ไม่มีกาลกิณี', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF15803D))),
+                                                        );
+                                                    } else {
+                                                        return Container(
+                                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                                            decoration: BoxDecoration(color: const Color(0xFFFEF2F2), border: Border.all(color: const Color(0xFFFECACA)), borderRadius: BorderRadius.circular(30)),
+                                                            child: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.warning_amber_rounded, size: 18, color: Color(0xFFDC2626)), const SizedBox(width: 6), Text(kChars.join('  '), style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFFDC2626)))]),
+                                                        );
+                                                    }
+                                                }),
+                                            ],
+                                          ),
+                                          // 3. Explanation
+                                          Builder(builder: (context) {
+                                                  List<String> kChars = (solar['klakini_chars'] as List?)?.map((e) => e.toString()).toList() ?? [];
+                                                  if (kChars.isEmpty) {
+                                                      for (var item in (solar['sun_display_name_html'] as List? ?? [])) {
+                                                        if (item['is_bad'] == true) {
+                                                            String c = (item['char'] ?? '').toString().trim();
+                                                            if (c.isNotEmpty && !kChars.contains(c)) kChars.add(c);
+                                                        }
+                                                      }
+                                                  }
+                                                  if (kChars.isNotEmpty) {
+                                                      return Padding(padding: const EdgeInsets.only(top: 12), child: RichText(textAlign: TextAlign.center, text: TextSpan(style: GoogleFonts.kanit(fontSize: 14, color: const Color(0xFF64748B), fontWeight: FontWeight.w500), children: [const TextSpan(text: 'พยัญชนะหรือสระ'), TextSpan(text: 'สีแดง', style: TextStyle(color: const Color(0xFFEF4444), fontWeight: FontWeight.bold)), const TextSpan(text: 'คือกาลกิณี')])));
+                                                  }
+                                                  return const SizedBox.shrink();
+                                          }),
+                                        ],
+                                        ),
+                                      ),
+
+                                    // Solar System (Layer 2 - Top)
+                                    _buildSolarSystemSection(solar, MediaQuery.of(context).size.width, name),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+
+                              // 1.5 Analysis Card
+                              SolarSystemAnalysisCard(
+                                data: solar,
+                                cleanedName: name,
+                                onSaveName: _saveCurrentName,
+                                onPerfectName: () {}, // Handled by button below
+                              ),
+                              
+                              const SizedBox(height: 16),
+
+                              // 1.5.5 Action Buttons
+                              _buildActionButtons(),
+                              
+                              // 1.5.6 Perfect Name Button
+                              _buildPerfectNameButton(solar, name),
+
+                              // 1.6 Donut Chart
+                              if (solar['category_breakdown'] != null)
+                                CategoryNestedDonut(
+                                  categoryBreakdown: solar['category_breakdown'],
+                                  totalPairs: (solar['numerology_pairs'] as List? ?? []).length + (solar['shadow_pairs'] as List? ?? []).length,
+                                  grandTotalScore: solar['grand_total_score'] as int? ?? 0,
+                                  totalPositiveScore: (solar['num_positive_score'] as int? ?? 0) + (solar['sha_positive_score'] as int? ?? 0),
+                                  totalNegativeScore: (solar['num_negative_score'] as int? ?? 0) + (solar['sha_negative_score'] as int? ?? 0),
+                                ),
+                            ],
+                          );
+                      }),
                    ),
                ),
                
@@ -1885,64 +2022,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
           
           const SizedBox(height: 12),
 
-          // 2. Main Action Buttons
-          Row(
-            children: [
-              Expanded(
-                child: InkWell(
-                  onTap: _showNumerologyDetail,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF4F46E5)], // Indigo 500 to 600
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(color: const Color(0xFF6366F1).withOpacity(0.25), blurRadius: 10, offset: const Offset(0, 5)),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.assignment_outlined, color: Colors.white, size: 22),
-                        const SizedBox(width: 8),
-                        Text('เลขศาสตร์', style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: InkWell(
-                  onTap: _showLinguisticAnalysis,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF10B981), Color(0xFF059669)], // Emerald 500 to 600
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(color: const Color(0xFF10B981).withOpacity(0.25), blurRadius: 10, offset: const Offset(0, 5)),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.menu_book_outlined, color: Colors.white, size: 22),
-                        const SizedBox(width: 8),
-                        Text('ภาษาศาสตร์', style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 12),
+
 
           // 3. Category Nested Donut Chart
           if (solar['category_breakdown'] != null)
@@ -2243,25 +2323,8 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
       );
   }
 
-  Widget _buildSolarSystemSection() {
-    if (_analysisResult == null || _analysisResult!['solar_system'] == null) {
-      return _buildSolarSystemSkeleton();
-    }
-    final solar = _analysisResult!['solar_system'] as Map<String, dynamic>;
-    final name = solar['cleaned_name'] ?? '';
-    final isSunDead = solar['is_sun_dead'] == true;
-    
-    // Determine planets for visualization
-    // We reuse the existing logic if possible, or mapping from 'numerology_pairs'/'shadow_pairs'
-    // But since `paint` logic in OrbitPainter likely uses hardcoded or passed values, 
-    // let's check how planets are rendered in the original code.
-    // Original code used `Positioned` widgets for planets. 
-    
-    // Let's grab the planet widgets logic from previous implementation
-    // The previous implementation had children in the Stack for planets.
-    // I need to preserve that.
-    
-    // Helper to build planet widget
+  Widget _buildSolarSystemSection(Map<String, dynamic> solar, double width, String name) {
+    // 1. Extract Logic for Planets (Same as before)
     Widget buildPlanet({required double angle, required double radius, required Color color, required String text, required bool isGood}) {
       return AnimatedBuilder(
         animation: radius > 100 ? _rotationControllerOuter : _rotationController,
@@ -2278,7 +2341,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
               height: 36,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: color, // Use passed color correctly
+                color: color,
                 shape: BoxShape.circle,
                 border: Border.all(color: isGood ? Colors.green : Colors.red, width: 2),
                 boxShadow: [
@@ -2297,77 +2360,44 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
 
     final numPairs = solar['numerology_pairs'] as List? ?? [];
     final shaPairs = solar['shadow_pairs'] as List? ?? [];
-
     List<Widget> planets = [];
     
-    // Add Numerology Planets (Inner 80 - Matches OrbitPainter)
+    // Add Numerology Planets (Inner 80)
     for (var i = 0; i < numPairs.length; i++) {
         final rawPair = numPairs[i];
-        dynamic val;
+        dynamic val = rawPair is Map ? (rawPair['pair_number'] ?? rawPair['pair'] ?? rawPair['value']) : rawPair;
         bool isBad = false;
-        
         if (rawPair is Map) {
-           val = rawPair['pair_number'] ?? rawPair['pair'] ?? rawPair['value'];
            var badVal = rawPair['is_bad'] ?? (rawPair['meaning'] is Map ? rawPair['meaning']['is_bad'] : null);
-           if (badVal is bool) {
-              isBad = badVal;
-           } else if (badVal is int) {
-              isBad = badVal > 0;
-           } else if (badVal is String) {
-              isBad = badVal.toLowerCase() == 'true';
-           }
+           if (badVal is bool) isBad = badVal;
+           else if (badVal is String) isBad = badVal.toLowerCase() == 'true';
            if (!isBad && rawPair['meaning'] is Map) {
               var type = rawPair['meaning']['pair_type'] ?? '';
               isBad = (type == 'ร้าย' || type == 'ร้ายมาก');
            }
-        } else {
-           val = rawPair; // Fallback for primitives
         }
-        
         double angle = (2 * math.pi / (numPairs.isNotEmpty ? numPairs.length : 1)) * i;
-        planets.add(buildPlanet(
-           angle: angle, 
-           radius: 80, 
-           color: isBad ? const Color(0xFFEF4444) : const Color(0xFF10B981),
-           text: '${val ?? 'X'}', 
-           isGood: !isBad
-        ));
+        planets.add(buildPlanet(angle: angle, radius: 80, color: isBad ? const Color(0xFFEF4444) : const Color(0xFF10B981), text: '${val ?? 'X'}', isGood: !isBad));
     }
-
-    // Add Shadow Planets (Outer 120 - Matches OrbitPainter)
+    // Add Shadow Planets (Outer 120)
     for (var i = 0; i < shaPairs.length; i++) {
         final rawPair = shaPairs[i];
-        dynamic val;
+        dynamic val = rawPair is Map ? (rawPair['pair_number'] ?? rawPair['pair'] ?? rawPair['value']) : rawPair;
         bool isBad = false;
-        
         if (rawPair is Map) {
-           val = rawPair['pair_number'] ?? rawPair['pair'] ?? rawPair['value'];
            var badVal = rawPair['is_bad'] ?? (rawPair['meaning'] is Map ? rawPair['meaning']['is_bad'] : null);
-           if (badVal is bool) {
-              isBad = badVal;
-           } else if (badVal is int) {
-              isBad = badVal > 0;
-           } else if (badVal is String) {
-              isBad = badVal.toLowerCase() == 'true';
-           }
+           if (badVal is bool) isBad = badVal;
+           else if (badVal is String) isBad = badVal.toLowerCase() == 'true';
            if (!isBad && rawPair['meaning'] is Map) {
               var type = rawPair['meaning']['pair_type'] ?? '';
               isBad = (type == 'ร้าย' || type == 'ร้ายมาก');
            }
-        } else {
-           val = rawPair; 
         }
-
         double angle = (2 * math.pi / (shaPairs.isNotEmpty ? shaPairs.length : 1)) * i;
-        planets.add(buildPlanet(
-           angle: angle - 0.5, // Offset slightly
-           radius: 120, 
-           color: isBad ? const Color(0xFFEF4444) : const Color(0xFF10B981), // Green for good, Red for bad
-           text: '${val ?? 'X'}', 
-           isGood: !isBad
-        ));
+        planets.add(buildPlanet(angle: angle - 0.5, radius: 120, color: isBad ? const Color(0xFFEF4444) : const Color(0xFF10B981), text: '${val ?? 'X'}', isGood: !isBad));
     }
 
+    final bool isSunDead = solar['is_sun_dead'] == true;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
@@ -2390,151 +2420,24 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
                         // Orbits
                         CustomPaint(painter: OrbitPainter(), size: const Size(280, 280)),
                         
+                        // Sun (Center) - Painted BEFORE planets so planets appear ON TOP
+                        Container(
+                          width: 110, height: 110,
+                          decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: [BoxShadow(color: isSunDead ? Colors.grey.withOpacity(0.4) : const Color(0xFFFFC107).withOpacity(0.5), blurRadius: 40, spreadRadius: 10)], gradient: RadialGradient(colors: isSunDead ? [const Color(0xFF9E9E9E), const Color(0xFF616161)] : [const Color(0xFFFFECB3), const Color(0xFFFFC107)])),
+                          alignment: Alignment.center,
+                          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [RichText(textAlign: TextAlign.center, text: TextSpan(style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: isSunDead ? Colors.white : const Color(0xFF5D4037), shadows: [const Shadow(color: Colors.black12, offset: Offset(0,1), blurRadius: 2)]), children: [if (solar['sun_display_name_html'] != null) ...(solar['sun_display_name_html'] as List).map((dc) => TextSpan(text: dc['char'], style: TextStyle(color: dc['is_bad'] == true ? Colors.red[900] : null))), if (solar['sun_display_name_html'] == null) TextSpan(text: name)]))]),
+                        ),
+
                         // Planets
                         ...planets,
-
-                // Sun (Center)
-                Container(
-                  width: 110,
-                  height: 110,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: isSunDead ? Colors.grey.withOpacity(0.4) : const Color(0xFFFFC107).withOpacity(0.5), // Soft Gold Glow
-                        blurRadius: 40,
-                        spreadRadius: 10,
-                      )
-                    ],
-                    gradient: RadialGradient(
-                      colors: isSunDead 
-                        ? [const Color(0xFF9E9E9E), const Color(0xFF616161)] // Grey gradient for dead sun
-                        : [const Color(0xFFFFECB3), const Color(0xFFFFC107)], // Soft Gold to Gold
+                      ],
                     ),
-                  ),
-                  alignment: Alignment.center,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Reuse sun_display_name_html for the Sun center text
-                      RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                          style: GoogleFonts.kanit(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isSunDead ? Colors.white : const Color(0xFF5D4037),
-                            shadows: [
-                               const Shadow(color: Colors.black12, offset: Offset(0,1), blurRadius: 2)
-                            ]
-                          ),
-                          children: [
-                            if (solar['sun_display_name_html'] != null)
-                             ...(solar['sun_display_name_html'] as List).map((dc) => TextSpan(
-                               text: dc['char'],
-                               style: TextStyle(
-                                 color: dc['is_bad'] == true ? Colors.red[900] : null, // Dark Red for bad in Sun
-                               )
-                             )),
-                            if (solar['sun_display_name_html'] == null)
-                              TextSpan(text: name),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                  )),
+               ],
             ),
-          )),
-        ],
-      ),
-    ),
-          
-          const SizedBox(height: 16),
-
-          // 1.5 Analysis Card (Moved up to be closer to Solar System)
-          SolarSystemAnalysisCard(
-            data: solar,
-            cleanedName: name,
-            onSaveName: _saveCurrentName,
-            onPerfectName: () {}, // Handled by button below
           ),
-          
-          const SizedBox(height: 16),
-
-          // 1.5.5 Action Buttons
-          _buildActionButtons(),
-          
-          // 1.5.6 Perfect Name Button (Moved here)
-          _buildPerfectNameButton(solar, name), // Inside built-in margin
-
-          // 1.6 Donut Chart
-          if (solar['category_breakdown'] != null)
-             CategoryNestedDonut(
-               categoryBreakdown: solar['category_breakdown'],
-               totalPairs: (solar['numerology_pairs'] as List? ?? []).length + (solar['shadow_pairs'] as List? ?? []).length,
-               grandTotalScore: solar['grand_total_score'] as int? ?? 0,
-               totalPositiveScore: (solar['num_positive_score'] as int? ?? 0) + (solar['sha_positive_score'] as int? ?? 0),
-               totalNegativeScore: (solar['num_negative_score'] as int? ?? 0) + (solar['sha_negative_score'] as int? ?? 0),
-             ),
- 
-
         ],
       ),
-    );
-  }
-
-  Widget _buildPlanets(List pairs, double radius, AnimationController controller, bool reverse) {
-    if (pairs.isEmpty) return const SizedBox();
-    
-    final angleStep = (2 * math.pi) / pairs.length;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Calculate center dynamically based on actual size
-        // This ensures alignment with OrbitPainter even if the view shrinks below 280x280
-        final cx = constraints.maxWidth / 2;
-        final cy = constraints.maxHeight / 2;
-        
-        return AnimatedBuilder(
-          animation: controller,
-          builder: (context, child) {
-            final rotationValue = controller.value * 2 * math.pi * (reverse ? -1 : 1);
-            
-            return Stack(
-              clipBehavior: Clip.none,
-              children: pairs.asMap().entries.map((entry) {
-                final idx = entry.key;
-                final pair = entry.value;
-                final angle = rotationValue + (idx * angleStep);
-                
-                final color = _getPairColor(pair['meaning']?['pair_type'] ?? '');
-
-                return Positioned(
-                  left: cx + radius * math.cos(angle) - 18, 
-                  top: cy + radius * math.sin(angle) - 18,
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: color,
-                      boxShadow: [BoxShadow(color: color.withOpacity(0.5), blurRadius: 8)],
-                    ),
-                    child: Center(
-                      child: Text(
-                        pair['pair_number'] ?? '',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            );
-          },
-        );
-      },
     );
   }
 
@@ -2693,9 +2596,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
         }
     }
 
-    return Transform.translate(
-      offset: const Offset(0, -40),
-      child: Container(
+    return Container(
         color: Colors.white,
         child: Material(
             type: MaterialType.transparency,
@@ -2803,40 +2704,55 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
                  ),
               if (showLockMessage)
                 Container(
-                  padding: const EdgeInsets.all(24),
-                  margin: const EdgeInsets.all(16),
                   width: double.infinity,
+                  padding: const EdgeInsets.only(top: 24, bottom: 100),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFFDE7),
-                    border: Border.all(color: const Color(0xFFFBC02D), style: BorderStyle.none),
-                    borderRadius: BorderRadius.circular(12),
+                    color: const Color(0xFFFFFBEB), // Light yellow background
+                    border: Border(
+                       top: BorderSide(color: const Color(0xFFFFC107), width: 1.0), // Gold top border
+                       // Bottom border removed to extend color
+                    ),
+                    boxShadow: [
+                       BoxShadow(
+                         color: const Color(0xFFFFC107).withOpacity(0.2), // Gold Aura/Glow
+                         blurRadius: 8,
+                         spreadRadius: 1,
+                         offset: const Offset(0, 0),
+                       )
+                    ]
                   ),
                   child: Column(
                     children: [
-                      const Icon(Icons.lock_outline, color: Color(0xFFF57F17), size: 28),
-                      const SizedBox(height: 12),
-                      Text(
-                        'ชื่อดีถูกล็อกแสดงแค่ 3 รายชื่อเท่านั้น',
-                        style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: const Color(0xFFF57F17)),
-                      ),
+                      Icon(Icons.lock_outline, size: 28, color: Colors.orange[800]),
                       const SizedBox(height: 8),
-                      TextButton(
+                      Text(
+                        'ชื่อดีล็อกแสดง 3 รายชื่อเท่านั้น',
+                        style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.orange[900]),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
                         onPressed: _handleUnlockAction,
-                        style: TextButton.styleFrom(
-                          backgroundColor: const Color(0xFF2C3E50),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF8F00),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                          elevation: 2,
                         ),
-                        child: Text(
-                          _isLoggedIn ? 'ซื้อสินค้าร้านมาดี' : 'เข้าสู่ระบบเพื่อดูเพิ่มเติม',
-                          style: GoogleFonts.kanit(color: Colors.white, fontSize: 13),
-                        ),
+                        child: Text(_isLoggedIn ? 'ซื้อสินค้าร้านมาดี' : 'เข้าสู่ระบบ', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
                 ),
+              // Filler to ensure bottom is covered
+              if (showLockMessage)
+                 Container(
+                   width: double.infinity,
+                   height: 1000, // Massive filler to cover any scroll bounce or gap
+                   color: const Color(0xFFFFFBEB),
+                 ),
             ],
           ),
-        ),
       ),
     );
   }
