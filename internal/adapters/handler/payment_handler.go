@@ -67,7 +67,7 @@ func (h *PaymentHandler) GetUpgradeModal(c *fiber.Ctx) error {
 	amount := 599.00 // VIP Price 599 THB Lifetime
 
 	// 3. Create Order in Database
-	err := h.service.CreateOrder(refNo, amount, userID)
+	err := h.service.CreateOrder(refNo, amount, userID, "VIP Upgrade")
 	if err != nil {
 		log.Printf("Error creating order: %v", err)
 	} else {
@@ -191,7 +191,7 @@ func (h *PaymentHandler) GetUpgradeModalAPI(c *fiber.Ctx) error {
 	amount := 599.00 // VIP Price 599 THB Lifetime
 
 	// 3. Create Order in Database
-	err := h.service.CreateOrder(refNo, amount, userID)
+	err := h.service.CreateOrder(refNo, amount, userID, "VIP Upgrade Mobile")
 	if err != nil {
 		log.Printf("Error creating order: %v", err)
 	}

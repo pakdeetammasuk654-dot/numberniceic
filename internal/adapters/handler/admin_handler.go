@@ -30,10 +30,11 @@ type AdminHandler struct {
 	shippingAddressService *service.ShippingAddressService
 	mobileConfigService    *service.MobileConfigService
 	notificationService    *service.NotificationService
+	memberService          *service.MemberService
 }
 
-func NewAdminHandler(service *service.AdminService, sampleCache *cache.SampleNamesCache, store *session.Store, buddhistDayService *service.BuddhistDayService, walletColorService *service.WalletColorService, shippingAddressService *service.ShippingAddressService, mobileConfigService *service.MobileConfigService, notificationService *service.NotificationService) *AdminHandler {
-	return &AdminHandler{service: service, sampleCache: sampleCache, store: store, buddhistDayService: buddhistDayService, walletColorService: walletColorService, shippingAddressService: shippingAddressService, mobileConfigService: mobileConfigService, notificationService: notificationService}
+func NewAdminHandler(service *service.AdminService, sampleCache *cache.SampleNamesCache, store *session.Store, buddhistDayService *service.BuddhistDayService, walletColorService *service.WalletColorService, shippingAddressService *service.ShippingAddressService, mobileConfigService *service.MobileConfigService, notificationService *service.NotificationService, memberService *service.MemberService) *AdminHandler {
+	return &AdminHandler{service: service, sampleCache: sampleCache, store: store, buddhistDayService: buddhistDayService, walletColorService: walletColorService, shippingAddressService: shippingAddressService, mobileConfigService: mobileConfigService, notificationService: notificationService, memberService: memberService}
 }
 
 // --- Sample Names Management ---
@@ -60,6 +61,7 @@ func (h *AdminHandler) ShowSampleNamesPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -100,6 +102,7 @@ func (h *AdminHandler) ShowDashboard(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -133,6 +136,7 @@ func (h *AdminHandler) ShowAuspiciousNumbersPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -164,6 +168,7 @@ func (h *AdminHandler) ShowUsersPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -270,6 +275,7 @@ func (h *AdminHandler) ShowArticlesPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -295,6 +301,7 @@ func (h *AdminHandler) ShowCreateArticlePage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -372,6 +379,7 @@ func (h *AdminHandler) ShowEditArticlePage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -485,6 +493,7 @@ func (h *AdminHandler) ShowImagesPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -566,6 +575,7 @@ func (h *AdminHandler) ShowAddNamePage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -682,10 +692,18 @@ func (h *AdminHandler) DeleteSystemName(c *fiber.Ctx) error {
 // --- Buddhist Day Management ---
 
 func (h *AdminHandler) ShowBuddhistDaysPage(c *fiber.Ctx) error {
-	days, err := h.buddhistDayService.GetAllDays()
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	if page < 1 {
+		page = 1
+	}
+	pageSize := 20
+
+	days, total, err := h.buddhistDayService.GetPaginatedDays(page, pageSize)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error loading buddhist days")
 	}
+
+	totalPages := (total + pageSize - 1) / pageSize
 
 	getLocStr := func(key string) string {
 		v := c.Locals(key)
@@ -703,24 +721,42 @@ func (h *AdminHandler) ShowBuddhistDaysPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
 		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
-		admin.BuddhistDays(days),
+		admin.BuddhistDays(days, page, totalPages),
 	))
 }
 
 func (h *AdminHandler) AddBuddhistDay(c *fiber.Ctx) error {
 	dateStr := c.FormValue("date")
-	err := h.buddhistDayService.AddDay(dateStr)
+	title := c.FormValue("title")
+	message := c.FormValue("message")
+
+	err := h.buddhistDayService.AddDay(dateStr, title, message)
 	if err != nil {
-		// Handle error (e.g., duplicate date)
 		sess, _ := h.store.Get(c)
 		sess.Set("toast_error", "Error adding date: "+err.Error())
 		sess.Save()
 		return c.Redirect("/admin/buddhist-days")
 	}
+	return c.Redirect("/admin/buddhist-days")
+}
+
+func (h *AdminHandler) UpdateBuddhistDay(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	title := c.FormValue("title")
+	message := c.FormValue("message")
+
+	err := h.buddhistDayService.UpdateDay(id, title, message)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	// For HTMX inline editing, we might want to return the updated record or just success
+	c.Set("HX-Trigger", "show-toast")
 	return c.Redirect("/admin/buddhist-days")
 }
 
@@ -807,6 +843,7 @@ func (h *AdminHandler) ShowAPIDocsPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -839,6 +876,7 @@ func (h *AdminHandler) ShowWalletColorsPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -915,6 +953,7 @@ func (h *AdminHandler) ShowProductsPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -940,6 +979,7 @@ func (h *AdminHandler) ShowCreateProductPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -1010,6 +1050,7 @@ func (h *AdminHandler) ShowEditProductPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -1096,6 +1137,7 @@ func (h *AdminHandler) ShowCustomerColorReportPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -1166,6 +1208,7 @@ func (h *AdminHandler) HandleManageOrders(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -1231,6 +1274,7 @@ func (h *AdminHandler) ShowMobileConfigPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -1298,6 +1342,7 @@ func (h *AdminHandler) ShowNotificationPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true,
 		"admin",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -1370,4 +1415,165 @@ func (h *AdminHandler) MarkNotificationReadAPI(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update"})
 	}
 	return c.JSON(fiber.Map{"success": true})
+}
+
+// --- VIP Codes Management ---
+
+func (h *AdminHandler) ShowVIPCodesPage(c *fiber.Ctx) error {
+	codes, err := h.service.GetAllPromotionalCodes()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error loading codes")
+	}
+
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "Manage VIP Codes",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		true,
+		"admin",
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
+		admin.VIPCodes(codes),
+	))
+}
+
+func (h *AdminHandler) HandleGenerateVIPCode(c *fiber.Ctx) error {
+	// Generate Random Code
+	const charset = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+	seed := time.Now().UnixNano()
+	code := "VIP-"
+	for i := 0; i < 8; i++ {
+		code += string(charset[seed%int64(len(charset))])
+		seed = seed / int64(len(charset))
+	}
+
+	err := h.service.GenerateVIPCode(code)
+	if err != nil {
+		c.Set("HX-Trigger", `{"show-toast-error": "Failed to generate code"}`)
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	c.Set("HX-Trigger", `{"show-toast-success": "Generated Code: `+code+`"}`)
+
+	// Fetch latest to get ID
+	codes, _ := h.service.GetAllPromotionalCodes()
+	var newCode domain.PromotionalCode
+	if len(codes) > 0 {
+		newCode = codes[0] // Assuming sorted by DESC
+	} else {
+		newCode = domain.PromotionalCode{Code: code}
+	}
+
+	return templ_render.Render(c, admin.VIPCodeRow(newCode))
+}
+
+func (h *AdminHandler) HandleBlockUserByVIPCode(c *fiber.Ctx) error {
+	code := c.Params("code")
+	err := h.service.SetUserStatusByVIPCode(code, -1) // Block
+	if err != nil {
+		c.Set("HX-Trigger", `{"show-toast-error": "`+err.Error()+`"}`)
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+	return h.refreshVIPCodeRow(c, code, "User blocked successfully")
+}
+
+func (h *AdminHandler) HandleUnblockUserByVIPCode(c *fiber.Ctx) error {
+	code := c.Params("code")
+	// Restore to VIP (2) because they used a VIP code
+	err := h.service.SetUserStatusByVIPCode(code, 2)
+	if err != nil {
+		c.Set("HX-Trigger", `{"show-toast-error": "`+err.Error()+`"}`)
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+	return h.refreshVIPCodeRow(c, code, "User restored successfully")
+}
+
+func (h *AdminHandler) refreshVIPCodeRow(c *fiber.Ctx, code string, successMsg string) error {
+	codes, err := h.service.GetAllPromotionalCodes()
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	var updatedCode domain.PromotionalCode
+	for _, pc := range codes {
+		if pc.Code == code {
+			updatedCode = pc
+			break
+		}
+	}
+
+	c.Set("HX-Trigger", `{"show-toast-success": "`+successMsg+`"}`)
+	return templ_render.Render(c, admin.VIPCodeRow(updatedCode))
+}
+
+// --- Notification Management ---
+
+func (h *AdminHandler) ShowSendNotificationPage(c *fiber.Ctx) error {
+	members, err := h.service.GetAllMembers()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error loading members")
+	}
+
+	success := c.Query("success")
+	errorMsg := c.Query("error")
+
+	avatarURL, _ := c.Locals("AvatarURL").(string)
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "ส่งการแจ้งเตือน",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		false, // hasShippingAddress
+		avatarURL,
+		admin.SendNotification(members, success, errorMsg),
+	))
+}
+
+func (h *AdminHandler) HandleSendNotification(c *fiber.Ctx) error {
+	title := c.FormValue("title")
+	message := c.FormValue("message")
+	broadcast := c.FormValue("broadcast") == "true"
+	userIDStr := c.FormValue("user_id")
+
+	if title == "" || message == "" {
+		return c.Redirect("/admin/send-notification?error=กรุณากรอกข้อมูลให้ครบถ้วน")
+	}
+
+	var err error
+	if broadcast {
+		// Send to all users
+		err = h.memberService.CreateBroadcastNotification(title, message)
+		if err != nil {
+			return c.Redirect("/admin/send-notification?error=" + err.Error())
+		}
+		return c.Redirect("/admin/send-notification?success=ส่งการแจ้งเตือนให้ทุกคนเรียบร้อยแล้ว")
+	} else {
+		// Send to specific user
+		userID, parseErr := strconv.Atoi(userIDStr)
+		if parseErr != nil || userID == 0 {
+			return c.Redirect("/admin/send-notification?error=กรุณาเลือกผู้ใช้งาน")
+		}
+
+		err = h.memberService.CreateUserNotification(userID, title, message)
+		if err != nil {
+			return c.Redirect("/admin/send-notification?error=" + err.Error())
+		}
+		return c.Redirect("/admin/send-notification?success=ส่งการแจ้งเตือนเรียบร้อยแล้ว")
+	}
 }

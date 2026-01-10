@@ -1,0 +1,199 @@
+package admin
+
+import (
+	"numberniceic/internal/core/domain"
+)
+
+type NotificationFormData struct {
+	UserID    int
+	Title     string
+	Message   string
+	Broadcast bool
+}
+
+templ SendNotification(members []domain.Member, success string, errorMsg string) {
+	<style>
+		.notif-container {
+			max-width: 900px;
+			margin: 2rem auto;
+			padding: 0 1.5rem;
+			font-family: 'Sarabun', sans-serif;
+		}
+		.notif-header h1 {
+			font-family: 'Kanit', sans-serif;
+			font-size: 2.25rem;
+			font-weight: 800;
+			color: #1a202c;
+			margin-bottom: 0.5rem;
+			display: flex;
+			align-items: center;
+			gap: 1rem;
+		}
+		.notif-icon-box {
+			background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+			padding: 0.75rem;
+			border-radius: 1rem;
+			box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+		.notif-card {
+			background: white;
+			border-radius: 1.5rem;
+			box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+			border: 1px solid #f1f5f9;
+			padding: 2.5rem;
+			margin-top: 2rem;
+		}
+		.form-group {
+			margin-bottom: 1.5rem;
+		}
+		.form-label {
+			display: block;
+			font-size: 0.875rem;
+			font-weight: 700;
+			color: #64748b;
+			margin-bottom: 0.5rem;
+		}
+		.form-control {
+			width: 100%;
+			border: 2px solid #f1f5f9;
+			border-radius: 0.75rem;
+			padding: 0.75rem 1rem;
+			font-family: inherit;
+			font-size: 1rem;
+			transition: all 0.2s;
+			box-sizing: border-box;
+		}
+		.form-control:focus {
+			outline: none;
+			border-color: #3b82f6;
+			box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+		}
+		textarea.form-control {
+			min-height: 120px;
+			resize: vertical;
+		}
+		.checkbox-group {
+			display: flex;
+			align-items: center;
+			gap: 0.75rem;
+			padding: 1rem;
+			background: #eff6ff;
+			border-radius: 0.75rem;
+			border: 2px solid #dbeafe;
+		}
+		.checkbox-group input[type="checkbox"] {
+			width: 1.25rem;
+			height: 1.25rem;
+			cursor: pointer;
+		}
+		.checkbox-group label {
+			font-weight: 600;
+			color: #1e40af;
+			cursor: pointer;
+		}
+		.btn-submit {
+			background: linear-gradient(to right, #3b82f6, #2563eb);
+			color: white;
+			border: none;
+			padding: 1rem 2rem;
+			border-radius: 0.75rem;
+			font-weight: 800;
+			font-size: 1rem;
+			cursor: pointer;
+			box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+			transition: all 0.2s;
+			width: 100%;
+		}
+		.btn-submit:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.4);
+		}
+		.alert {
+			padding: 1rem 1.5rem;
+			border-radius: 0.75rem;
+			margin-bottom: 1.5rem;
+			font-weight: 600;
+		}
+		.alert-success {
+			background: #d1fae5;
+			color: #065f46;
+			border: 1px solid #6ee7b7;
+		}
+		.alert-error {
+			background: #fee2e2;
+			color: #991b1b;
+			border: 1px solid #fca5a5;
+		}
+	</style>
+
+	<div class="notif-container">
+		<div class="notif-header">
+			<h1>
+				<span class="notif-icon-box">
+					<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+				</span>
+				ส่งการแจ้งเตือน
+			</h1>
+			<p style="color: #64748b; margin-top: 0.5rem;">ส่งข้อความแจ้งเตือนให้กับผู้ใช้งานรายบุคคลหรือทุกคน</p>
+		</div>
+
+		<div class="notif-card">
+			if success != "" {
+				<div class="alert alert-success">✅ { success }</div>
+			}
+			if errorMsg != "" {
+				<div class="alert alert-error">❌ { errorMsg }</div>
+			}
+
+			<form method="POST" action="/admin/send-notification">
+				<div class="form-group">
+					<label class="form-label">ผู้รับ</label>
+					<select name="user_id" id="user_id" class="form-control">
+						<option value="0">เลือกผู้ใช้งาน...</option>
+						for _, member := range members {
+							<option value={ templ.EscapeString(string(rune(member.ID))) }>
+								{ member.Username } ({ member.Email })
+							</option>
+						}
+					</select>
+				</div>
+
+				<div class="form-group">
+					<div class="checkbox-group">
+						<input type="checkbox" id="broadcast" name="broadcast" value="true" onchange="toggleUserSelect(this)"/>
+						<label for="broadcast">📢 ส่งให้ทุกคนในระบบ (Broadcast)</label>
+					</div>
+				</div>
+
+				<div class="form-group">
+					<label class="form-label">หัวข้อ</label>
+					<input type="text" name="title" class="form-control" placeholder="เช่น ประกาศสำคัญ" required/>
+				</div>
+
+				<div class="form-group">
+					<label class="form-label">ข้อความ</label>
+					<textarea name="message" class="form-control" placeholder="พิมพ์ข้อความที่ต้องการส่ง..." required></textarea>
+				</div>
+
+				<button type="submit" class="btn-submit">
+					ส่งการแจ้งเตือน
+				</button>
+			</form>
+		</div>
+	</div>
+
+	<script>
+		function toggleUserSelect(checkbox) {
+			const userSelect = document.getElementById('user_id');
+			if (checkbox.checked) {
+				userSelect.disabled = true;
+				userSelect.value = '0';
+			} else {
+				userSelect.disabled = false;
+			}
+		}
+	</script>
+}

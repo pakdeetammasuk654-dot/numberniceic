@@ -164,7 +164,7 @@ class _PaymentModalState extends State<PaymentModal> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                           'รับ Code วิเคราะห์ชื่อ VIP\nที่หน้า Dashboard',
+                           'เป็น VIP อัตโนมัติเมื่อชำระสำเร็จ',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.kanit(
                               color: const Color(0xFFD97706),
@@ -173,13 +173,32 @@ class _PaymentModalState extends State<PaymentModal> {
                               height: 1.2
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.camera_alt_outlined, size: 14, color: Colors.blue),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Capture หน้าจอเพื่อสแกนจ่ายผ่านแอปธนาคาร',
+                                  style: GoogleFonts.kanit(fontSize: 11, color: Colors.blue[700], fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
                       // QR Code
                       Container(
-                        width: 250,
-                        height: 250,
+                        width: 200,
+                        height: 200,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
@@ -221,7 +240,7 @@ class _PaymentModalState extends State<PaymentModal> {
                         const Icon(Icons.timer, color: Colors.red, size: 16),
                         const SizedBox(width: 8),
                         Text(
-                          'ชำระภายใน $_formattedTime นาที',
+                          'อายุ QR นี้เหลือ $_formattedTime',
                           style: GoogleFonts.kanit(
                             color: Colors.red,
                             fontWeight: FontWeight.bold,

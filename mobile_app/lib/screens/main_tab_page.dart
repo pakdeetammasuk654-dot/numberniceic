@@ -50,7 +50,18 @@ class MainTabPageState extends State<MainTabPage> {
     // Check for first time launch after UI builds
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkFirstTimeUser();
+      _checkPendingPurchaseOnStartup();
     });
+  }
+
+  Future<void> _checkPendingPurchaseOnStartup() async {
+    final pending = await AuthService.getPendingPurchase();
+    if (pending != null) {
+      // Switch to Shop tab automatically
+      setState(() {
+        _currentIndex = 2;
+      });
+    }
   }
 
   Future<void> _checkFirstTimeUser() async {

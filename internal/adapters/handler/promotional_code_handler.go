@@ -126,7 +126,7 @@ func (h *PromotionalCodeHandler) BuyProduct(c *fiber.Ctx) error {
 		seed = seed / int64(len(charset))
 	}
 
-	err := h.repo.CreatePurchase(code, memberID, req.ProductName)
+	_, err := h.repo.CreatePurchase(code, memberID, req.ProductName)
 	if err != nil {
 		log.Printf("Purchase Error: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to process purchase"})

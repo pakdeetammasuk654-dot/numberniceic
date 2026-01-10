@@ -11,11 +11,13 @@ import 'article_detail_page.dart';
 import 'articles_page.dart';
 import 'dashboard_page.dart';
 import 'analyzer_page.dart';
+import 'shipping_address_page.dart';
 import 'notification_list_page.dart';
 import 'login_page.dart';
 import 'main_tab_page.dart';
 import 'number_analysis_page.dart';
 import '../widgets/shared_footer.dart';
+import '../widgets/adaptive_footer_scroll_view.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -52,18 +54,38 @@ class _LandingPageState extends State<LandingPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkNotification());
   }
 
+  // New State for Address Notification
+  bool _hasMissingAddressWarning = false;
+
   Future<void> _checkNotification() async {
     final token = await AuthService.getToken();
     _isLoggedIn = token != null;
     
     if (_isLoggedIn) {
-        // Logged In: Check individual notifications
+        // Logged In: Check individual notifications AND System Status (Missing Address)
         try {
+            // 1. Check Unread Messages
             final count = await ApiService.getUnreadNotificationCount();
+            
+            // 2. Check Missing Address Status (fetch lightweight dashboard info if possible, or full)
+            bool missingAddr = false;
+            try {
+               final dbData = await ApiService.getDashboard();
+               final isVip = dbData['is_vip'] == true || dbData['IsVIP'] == true;
+               final hasAddress = dbData['has_shipping_address'] == true || dbData['HasShippingAddress'] == true;
+               if (isVip && !hasAddress) {
+                  missingAddr = true;
+               }
+            } catch (_) {
+               // Ignore dashboard fetch error, notification icon just won't show for this part
+            }
+
             if (mounted) {
                 setState(() {
                     _unreadCount = count;
-                    _hasUnreadNotification = count > 0;
+                    _hasMissingAddressWarning = missingAddr;
+                    // Light up if EITHER has unread messages OR has missing address warning
+                    _hasUnreadNotification = (count > 0) || missingAddr;
                 });
             }
         } catch (_) {}
@@ -94,13 +116,55 @@ class _LandingPageState extends State<LandingPage> {
   
   void _handleNotificationTap() {
     if (_isLoggedIn) {
-        Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const NotificationListPage()),
-        ).then((_) {
-            // Refresh badge on return
-            _checkNotification();
-        });
+        // PRIORITY: Show Missing Address Dialog first if active
+        if (_hasMissingAddressWarning) {
+             showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Row(
+                    children: [
+                      const Icon(Icons.notifications_active, color: Colors.red),
+                      const SizedBox(width: 8),
+                      Text('แจ้งเตือน', style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  content: Text(
+                    'คุณชำระเงินเรียบร้อยแล้ว โปรดระบุที่อยู่เพื่อให้เราจัดส่งสินค้าให้คุณ', 
+                    style: GoogleFonts.kanit()
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                         Navigator.pop(ctx);
+                         Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationListPage()))
+                            .then((_) => _checkNotification());
+                      }, 
+                      child: Text('ภายหลัง', style: GoogleFonts.kanit(color: Colors.grey))
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                         Navigator.pop(ctx);
+                         Navigator.push(context, MaterialPageRoute(builder: (context) => const ShippingAddressPage()))
+                            .then((_) => _checkNotification());
+                      },
+                      style: ElevatedButton.styleFrom(
+                         backgroundColor: Colors.redAccent,
+                         foregroundColor: Colors.white,
+                      ),
+                      child: Text('ระบุที่อยู่', style: GoogleFonts.kanit(fontWeight: FontWeight.bold))
+                    )
+                  ]
+                )
+             );
+        } else {
+            // Normal Navigation
+            Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NotificationListPage()),
+            ).then((_) {
+                _checkNotification();
+            });
+        }
     } else {
         _showWelcomeDialog();
     }
@@ -177,15 +241,32 @@ class _LandingPageState extends State<LandingPage> {
               ),
               if (_hasUnreadNotification)
                 Positioned(
-                  right: 12,
-                  top: 12,
+                  right: 8,
+                  top: 8,
                   child: Container(
-                    width: 10,
-                    height: 10,
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.red,
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: const Color(0xFF333333), width: 1.5),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Center(
+                      child: Text(
+                        (_unreadCount + (_hasMissingAddressWarning ? 1 : 0)) > 9 
+                            ? '9+' 
+                            : '${_unreadCount + (_hasMissingAddressWarning ? 1 : 0)}',
+                        style: GoogleFonts.kanit(
+                          color: Colors.white, 
+                          fontSize: 10, 
+                          fontWeight: FontWeight.bold,
+                          height: 1.0,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
                 ),
@@ -195,52 +276,45 @@ class _LandingPageState extends State<LandingPage> {
         ],
       ),
 
-      body: RefreshIndicator(
+      body: AdaptiveFooterScrollView(
         onRefresh: _refresh,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              FutureBuilder<List<Article>>(
-                future: _articlesFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const SizedBox(
-                      height: 300,
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  } else if (snapshot.hasError) {
-                    return Container(
-                      height: 200,
-                      padding: const EdgeInsets.all(16),
-                      child: Center(
-                        child: Text(
-                          'Error loading articles.\nMake sure server is running.\n${snapshot.error}',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    );
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const SizedBox(
-                      height: 200,
-                      child: Center(child: Text('No articles found.')),
-                    );
-                  }
+        children: [
+          FutureBuilder<List<Article>>(
+            future: _articlesFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(
+                  height: 300,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              } else if (snapshot.hasError) {
+                return Container(
+                  height: 200,
+                  padding: const EdgeInsets.all(16),
+                  child: Center(
+                    child: Text(
+                      'Error loading articles.\nMake sure server is running.\n${snapshot.error}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                );
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const SizedBox(
+                  height: 200,
+                  child: Center(child: Text('No articles found.')),
+                );
+              }
 
-                  final articles = snapshot.data!;
-                  return _buildHeroSection(context, articles);
-                },
-              ),
-              
-              _buildTrustStatsSection(context),
-
-              const SizedBox(height: 48),
-              const SharedFooter(),
-            ],
+              final articles = snapshot.data!;
+              return _buildHeroSection(context, articles);
+            },
           ),
-        ),
+          
+          _buildTrustStatsSection(context),
+
+          const SizedBox(height: 48),
+        ],
       ),
     );
   }

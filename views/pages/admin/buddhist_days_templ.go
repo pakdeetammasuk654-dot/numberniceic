@@ -11,9 +11,10 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 	"numberniceic/internal/core/domain"
+	"time"
 )
 
-func BuddhistDays(days []domain.BuddhistDay) templ.Component {
+func BuddhistDays(days []domain.BuddhistDay, currentPage, totalPages int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -34,87 +35,317 @@ func BuddhistDays(days []domain.BuddhistDay) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"container mx-auto px-4 py-8\"><h1 class=\"text-3xl font-bold mb-6 text-gray-800\">จัดการวันพระ</h1><!-- Add New Day Form --><div class=\"bg-white p-6 rounded-lg shadow-md mb-8\"><h2 class=\"text-xl font-semibold mb-4\">เพิ่มวันพระ</h2><form action=\"/admin/buddhist-days\" method=\"POST\" class=\"flex gap-4 items-end\"><div class=\"flex-1\"><label class=\"block text-sm font-medium text-gray-700 mb-1\">วันที่</label> <input type=\"date\" name=\"date\" required class=\"w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500\"></div><button type=\"submit\" class=\"bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors\">เพิ่ม</button></form></div><!-- List of Days --><div class=\"bg-white rounded-lg shadow-md overflow-hidden\"><table class=\"min-w-full divide-y divide-gray-200\"><thead class=\"bg-gray-50\"><tr><th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">ID</th><th class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">วันที่</th><th class=\"px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider\">จัดการ</th></tr></thead> <tbody class=\"bg-white divide-y divide-gray-200\">")
+		now := time.Now().In(time.FixedZone("ICT", 7*60*60)).Truncate(24 * time.Hour)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<style>\n\t\t.admin-container {\n\t\t\tmax-width: 1100px;\n\t\t\tmargin: 2rem auto;\n\t\t\tpadding: 0 1rem;\n\t\t\tfont-family: 'Sarabun', sans-serif;\n\t\t}\n\t\t.admin-header-flex {\n\t\t\tdisplay: flex;\n\t\t\tjustify-content: space-between;\n\t\t\talign-items: flex-start;\n\t\t\tmargin-bottom: 2rem;\n\t\t\tgap: 1.5rem;\n\t\t\tflex-wrap: wrap;\n\t\t}\n\t\t.admin-title-group h1 {\n\t\t\tmargin: 0;\n\t\t\tfont-family: 'Kanit', sans-serif;\n\t\t\tfont-size: 2.25rem;\n\t\t\tfont-weight: 800;\n\t\t\tcolor: #1a202c;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tgap: 1rem;\n\t\t}\n\t\t.admin-icon-box {\n\t\t\tbackground: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);\n\t\t\tpadding: 0.75rem;\n\t\t\tborder-radius: 1rem;\n\t\t\tbox-shadow: 0 10px 15px -3px rgba(251, 191, 36, 0.3);\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t}\n\t\t.admin-subtitle {\n\t\t\tcolor: #718096;\n\t\t\tmargin-top: 0.5rem;\n\t\t\tfont-weight: 500;\n\t\t}\n\t\t.today-status-chip {\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tgap: 0.75rem;\n\t\t\tbackground: white;\n\t\t\tpadding: 0.4rem 1rem;\n\t\t\tborder-radius: 0.75rem;\n\t\t\tborder: 1px solid #edf2f7;\n\t\t\tbox-shadow: 0 1px 3px rgba(0,0,0,0.05);\n\t\t}\n\t\t.status-indicator {\n\t\t\twidth: 0.65rem;\n\t\t\theight: 0.65rem;\n\t\t\tborder-radius: 50%;\n\t\t\tbackground: #3b82f6;\n\t\t\tposition: relative;\n\t\t}\n\t\t.status-indicator::after {\n\t\t\tcontent: '';\n\t\t\tposition: absolute;\n\t\t\twidth: 100%;\n\t\t\theight: 100%;\n\t\t\tbackground: inherit;\n\t\t\tborder-radius: inherit;\n\t\t\tanimation: pulse-ring 1.5s cubic-bezier(0.24, 0, 0.38, 1) infinite;\n\t\t}\n\t\t@keyframes pulse-ring {\n\t\t\t0% { transform: scale(0.95); opacity: 0.8; }\n\t\t\t70% { transform: scale(2.5); opacity: 0; }\n\t\t\t100% { transform: scale(0.95); opacity: 0; }\n\t\t}\n\n\t\t.buddhist-table-card {\n\t\t\tbackground: white;\n\t\t\tborder-radius: 1.5rem;\n\t\t\tbox-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);\n\t\t\tborder: 1px solid #f1f5f9;\n\t\t\toverflow: hidden;\n\t\t}\n\t\t.table-responsive {\n\t\t\toverflow-x: auto;\n\t\t}\n\t\ttable.buddhist-table {\n\t\t\twidth: 100%;\n\t\t\tborder-collapse: separate;\n\t\t\tborder-spacing: 0;\n\t\t}\n\t\t.buddhist-table th {\n\t\t\tbackground: #f8fafc;\n\t\t\tpadding: 1.25rem 2rem;\n\t\t\ttext-align: left;\n\t\t\tfont-size: 0.75rem;\n\t\t\tfont-weight: 700;\n\t\t\ttext-transform: uppercase;\n\t\t\tletter-spacing: 0.1em;\n\t\t\tcolor: #64748b;\n\t\t\tborder-bottom: 1px solid #f1f5f9;\n\t\t}\n\t\t.buddhist-table td {\n\t\t\tpadding: 1.25rem 2rem;\n\t\t\tborder-bottom: 1px solid #f1f5f9;\n\t\t\tvertical-align: middle;\n\t\t}\n\t\t.buddhist-table tr.row-today {\n\t\t\tbackground-color: rgba(254, 252, 232, 0.8);\n\t\t}\n\t\t.buddhist-table tr.row-today:hover {\n\t\t\tbackground-color: rgba(254, 249, 195, 1);\n\t\t}\n\t\t.buddhist-table tr:not(.row-today):nth-child(even) {\n\t\t\tbackground-color: #fcfdfe;\n\t\t}\n\t\t.buddhist-table tr:hover:not(.row-today) {\n\t\t\tbackground-color: #f1f5f9;\n\t\t}\n\t\t\n\t\t.date-badge {\n\t\t\tfont-family: 'Kanit', sans-serif;\n\t\t\tfont-weight: 600;\n\t\t\tfont-size: 0.95rem;\n\t\t}\n\t\t.date-badge.is-today {\n\t\t\tcolor: #b45309;\n\t\t}\n\t\t.today-label {\n\t\t\tdisplay: inline-flex;\n\t\t\talign-items: center;\n\t\t\tgap: 0.4rem;\n\t\t\tbackground: #fef3c7;\n\t\t\tcolor: #92400e;\n\t\t\tpadding: 0.1rem 0.5rem;\n\t\t\tborder-radius: 1rem;\n\t\t\tfont-size: 0.65rem;\n\t\t\tfont-weight: 900;\n\t\t\ttext-transform: uppercase;\n\t\t\tmargin-top: 0.25rem;\n\t\t}\n\t\t\n\t\t.cell-title { font-weight: 600; color: #1e293b; }\n\t\t.cell-message { color: #475569; font-size: 0.875rem; line-height: 1.5; }\n\t\t.text-muted-italic { color: #cbd5e1; font-style: italic; font-size: 0.75rem; }\n\n\t\t.action-btns {\n\t\t\tdisplay: flex;\n\t\t\tgap: 0.5rem;\n\t\t\tjustify-content: flex-end;\n\t\t}\n\t\t.btn-edit {\n\t\t\tbackground: #eff6ff;\n\t\t\tcolor: #2563eb;\n\t\t\tborder: none;\n\t\t\tpadding: 0.5rem 1rem;\n\t\t\tborder-radius: 0.75rem;\n\t\t\tfont-size: 0.875rem;\n\t\t\tfont-weight: 700;\n\t\t\tcursor: pointer;\n\t\t\ttransition: all 0.2s;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tgap: 0.4rem;\n\t\t}\n\t\t.btn-edit:hover { background: #2563eb; color: white; transform: scale(1.05); }\n\t\t.btn-delete {\n\t\t\tbackground: transparent;\n\t\t\tcolor: #94a3b8;\n\t\t\tborder: none;\n\t\t\tpadding: 0.5rem;\n\t\t\tborder-radius: 0.75rem;\n\t\t\tcursor: pointer;\n\t\t\ttransition: all 0.2s;\n\t\t}\n\t\t.btn-delete:hover { background: #fee2e2; color: #ef4444; }\n\n\t\t.pagination-bar {\n\t\t\tpadding: 1.5rem 2rem;\n\t\t\tbackground: #f8fafc;\n\t\t\tdisplay: flex;\n\t\t\tjustify-content: space-between;\n\t\t\talign-items: center;\n\t\t\tflex-wrap: wrap;\n\t\t\tgap: 1rem;\n\t\t}\n\t\t.page-info { font-size: 0.875rem; color: #64748b; }\n\t\t.page-info b { color: #1e293b; }\n\t\t.progress-bar-bg { width: 8rem; height: 0.4rem; background: #e2e8f0; border-radius: 1rem; margin-top: 0.5rem; overflow: hidden; }\n\t\t.progress-bar-fill { height: 100%; background: #3b82f6; border-radius: inherit; transition: width 0.3s; }\n\t\t.btn-page {\n\t\t\tbackground: white;\n\t\t\tborder: 1px solid #e2e8f0;\n\t\t\tpadding: 0.6rem 1.25rem;\n\t\t\tborder-radius: 1rem;\n\t\t\tfont-size: 0.875rem;\n\t\t\tfont-weight: 700;\n\t\t\tcolor: #475569;\n\t\t\ttext-decoration: none;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tgap: 0.5rem;\n\t\t\ttransition: all 0.2s;\n\t\t}\n\t\t.btn-page:hover { background: #f1f5f9; border-color: #cbd5e1; }\n\t\t\n\t\t/* Modal Styling */\n\t\t.modal-wrapper {\n\t\t\tposition: fixed;\n\t\t\tinset: 0;\n\t\t\tz-index: 999;\n\t\t\tdisplay: none;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t\tpadding: 1rem;\n\t\t\topacity: 0;\n\t\t\ttransition: opacity 0.3s;\n\t\t}\n\t\t.modal-wrapper.is-open { display: flex; opacity: 1; }\n\t\t.modal-overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }\n\t\t.modal-content {\n\t\t\tposition: relative;\n\t\t\tbackground: white;\n\t\t\twidth: 100%;\n\t\t\tmax-width: 500px;\n\t\t\tborder-radius: 2rem;\n\t\t\tbox-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);\n\t\t\toverflow: hidden;\n\t\t\ttransform: scale(0.95);\n\t\t\ttransition: transform 0.3s;\n\t\t}\n\t\t.modal-wrapper.is-open .modal-content { transform: scale(1); }\n\t\t.modal-header { padding: 2rem 2.5rem 0; display: flex; justify-content: space-between; align-items: flex-start; }\n\t\t.modal-title-box { display: flex; align-items: center; gap: 1rem; }\n\t\t.modal-icon { background: #eff6ff; color: #2563eb; width: 3rem; height: 3rem; border-radius: 1rem; display: flex; align-items: center; justify-content: center; }\n\t\t.modal-title-text { font-family: 'Kanit', sans-serif; font-size: 1.5rem; font-weight: 800; color: #0f172a; }\n\t\t.btn-close { background: transparent; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer; }\n\t\t.modal-body { padding: 2rem 2.5rem 2.5rem; }\n\t\t\n\t\t.form-label { display: block; font-size: 0.875rem; font-weight: 700; color: #64748b; margin-bottom: 0.5rem; margin-left: 0.25rem; }\n\t\t.form-input-box { position: relative; margin-bottom: 1.5rem; }\n\t\t.form-input-icon { position: absolute; left: 1rem; top: 1.15rem; color: #94a3b8; width: 1.25rem; }\n\t\t.form-control {\n\t\t\twidth: 100%;\n\t\t\tborder: 2px solid #f1f5f9;\n\t\t\tborder-radius: 1.25rem;\n\t\t\tpadding: 1rem 1rem 1rem 3rem;\n\t\t\tfont-family: inherit;\n\t\t\tfont-size: 1rem;\n\t\t\ttransition: all 0.2s;\n\t\t\tbox-sizing: border-box;\n\t\t}\n\t\t.form-control:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }\n\t\t.form-control[readonly] { background: #f8fafc; }\n\t\ttextarea.form-control { padding: 1rem; height: 8rem; resize: none; }\n\t\t\n\t\t.modal-footer-btns { display: flex; gap: 1rem; margin-top: 1rem; }\n\t\t.btn-cancel { flex: 1; background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 1.25rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }\n\t\t.btn-save { flex: 1.5; background: linear-gradient(to right, #2563eb, #4f46e5); color: white; border: none; padding: 1rem; border-radius: 1.25rem; font-weight: 800; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); transition: all 0.2s; }\n\t\t.btn-save:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.4); }\n\t</style><div class=\"admin-container\"><div class=\"admin-header-flex\"><div class=\"admin-title-group\"><h1><span class=\"admin-icon-box\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\" ry=\"2\"></rect><line x1=\"16\" y1=\"2\" x2=\"16\" y2=\"6\"></line><line x1=\"8\" y1=\"2\" x2=\"8\" y2=\"6\"></line><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"></line></svg></span> จัดการปฏิทินวันพระ</h1><p class=\"admin-subtitle text-slate-500 mt-2 font-medium\">ตั้งค่าหัวข้อและข้อความแจ้งเตือนสำหรับวันพระแต่ละวัน</p></div><div class=\"today-status-chip\"><span style=\"font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: #94a3b8;\">สถานะวันนี้:</span><div style=\"display: flex; align-items: center; gap: 0.5rem; background: #f8fafc; padding: 0.35rem 0.75rem; border-radius: 0.5rem; border: 1px solid #f1f5f9;\"><div class=\"status-indicator\"></div><span style=\"font-size: 0.875rem; font-weight: 700; color: #334155;\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var2 string
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(now.Format("02/01/2006"))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 284, Col: 100}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</span></div></div></div><div class=\"buddhist-table-card\"><div class=\"table-responsive\"><table class=\"buddhist-table\"><thead><tr><th>วันที่</th><th>หัวข้อการแจ้งเตือน</th><th>ข้อความมงคลที่แสดง</th><th style=\"text-align: right;\">จัดการทรัพยากร</th></tr></thead> <tbody>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, day := range days {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<tr id=\"")
+			isToday := day.Date.Equal(now)
+			var templ_7745c5c3_Var3 = []any{templ.KV("row-today", isToday)}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var3...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var2 string
-			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("day-%d", day.ID))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 38, Col: 44}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\"><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-500\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", day.ID))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 39, Col: 96}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</td><td class=\"px-6 py-4 whitespace-nowrap text-sm text-gray-900\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<tr id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(day.Date.Format("02/01/2006"))
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("day-%d", day.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 41, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 303, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</td><td class=\"px-6 py-4 whitespace-nowrap text-right text-sm font-medium\"><button hx-delete=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/admin/buddhist-days/%d", day.ID))
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var3).String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 45, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 1, Col: 0}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" hx-confirm=\"ยืนยันการลบ?\" hx-target=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\"><td>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("#day-%d", day.ID))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 47, Col: 51}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+			var templ_7745c5c3_Var6 = []any{templ.KV("is-today", isToday)}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var6...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" hx-swap=\"outerHTML\" class=\"text-red-600 hover:text-red-900\">ลบ</button></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"date-badge\" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var7 string
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var6).String())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 1, Col: 0}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var8 string
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(day.Date.Format("02/01/2006"))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 306, Col: 41}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if isToday {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div class=\"today-label\"><span style=\"width: 6px; height: 6px; border-radius: 50%; background: #92400e;\"></span> วันพระวันนี้</div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</td><td>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if day.Title != "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<span class=\"cell-title\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var9 string
+				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(day.Title)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 317, Col: 46}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<span class=\"text-muted-italic\">ใช้ค่าเริ่มต้น</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</td><td><div style=\"max-width: 300px;\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if day.Message != "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<p class=\"cell-message\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var10 string
+				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(day.Message)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 325, Col: 48}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</p>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<span class=\"text-muted-italic\">ใช้ค่าเริ่มต้น</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div></td><td><div class=\"action-btns\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, showEditModal(day.ID, day.Date.Format("02/01/2006"), day.Title, day.Message))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<button onclick=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var11 templ.ComponentScript = showEditModal(day.ID, day.Date.Format("02/01/2006"), day.Title, day.Message)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11.Call)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" class=\"btn-edit\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 20h9\"></path><path d=\"M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z\"></path></svg> แก้ไข</button> <button hx-delete=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var12 string
+			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/admin/buddhist-days/%d", day.ID))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 341, Col: 69}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\" hx-confirm=\"คุณแน่ใจหรือไม่?\" hx-target=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var13 string
+			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("#day-%d", day.ID))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 343, Col: 53}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" hx-swap=\"outerHTML\" class=\"btn-delete\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"3 6 5 6 21 6\"></polyline><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"></path><line x1=\"10\" y1=\"11\" x2=\"10\" y2=\"17\"></line><line x1=\"14\" y1=\"11\" x2=\"14\" y2=\"17\"></line></svg></button></div></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</tbody></table></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</tbody></table></div><div class=\"pagination-bar\"><div style=\"display: flex; align-items: center; gap: 1.5rem;\"><div class=\"page-info\">หน้า <b>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var14 string
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", currentPage))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 360, Col: 54}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</b> จาก <b>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var15 string
+		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", totalPages))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 360, Col: 105}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</b><div class=\"progress-bar-bg\"><div class=\"progress-bar-fill\" style=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var16 string
+		templ_7745c5c3_Var16, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("width: %d%%", (currentPage*100)/totalPages))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 362, Col: 102}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\"></div></div></div></div><div style=\"display: flex; gap: 0.75rem;\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if currentPage > 1 {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var17 templ.SafeURL
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/admin/buddhist-days?page=%d", currentPage-1)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 369, Col: 85}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" class=\"btn-page\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"></polyline></svg> ก่อนหน้า</a> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		if currentPage < totalPages {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var18 templ.SafeURL
+			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/admin/buddhist-days?page=%d", currentPage+1)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/buddhist_days.templ`, Line: 375, Col: 85}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" class=\"btn-page\">ถัดไป <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"9 18 15 12 9 6\"></polyline></svg></a>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</div></div></div></div><!-- Modal --><div id=\"edit-modal-wrapper\" class=\"modal-wrapper\"><div class=\"modal-overlay\" onclick=\"closeModal()\"></div><div class=\"modal-content\"><div class=\"modal-header\"><div class=\"modal-title-box\"><div class=\"modal-icon\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7\"></path><path d=\"M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z\"></path></svg></div><span class=\"modal-title-text\">แก้ไขรายละเอียดวันพระ</span></div><button class=\"btn-close\" onclick=\"closeModal()\">×</button></div><div class=\"modal-body\"><form id=\"edit-form\" method=\"POST\"><label class=\"form-label\">วันที่</label><div class=\"form-input-box\"><svg class=\"form-input-icon\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\" fill=\"currentColor\"><path fill-rule=\"evenodd\" d=\"M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z\" clip-rule=\"evenodd\"></path></svg> <input type=\"text\" id=\"edit-date\" readonly class=\"form-control\" style=\"font-weight: bold; color: #1e293b;\"></div><label class=\"form-label\">หัวข้อการแจ้งเตือน</label><div class=\"form-input-box\"><input type=\"text\" name=\"title\" id=\"edit-title\" placeholder=\"เช่น วันนี้วันพระ\" class=\"form-control\" style=\"padding-left: 1rem;\"></div><label class=\"form-label\">ข้อความมงคลที่ต้องการส่ง</label><div class=\"form-input-box\"><textarea name=\"message\" id=\"edit-message\" placeholder=\"ระบุข้อความอำนวยพรที่นี่...\" class=\"form-control\"></textarea></div><div class=\"modal-footer-btns\"><button type=\"button\" class=\"btn-cancel\" onclick=\"closeModal()\">ยกเลิก</button> <button type=\"submit\" class=\"btn-save\">บันทึกข้อมูล</button></div></form></div></div></div><script>\n\t\tfunction closeModal() {\n\t\t\tconst wrapper = document.getElementById('edit-modal-wrapper');\n\t\t\twrapper.classList.remove('is-open');\n\t\t\tsetTimeout(() => {\n\t\t\t\tif (!wrapper.classList.contains('is-open')) {\n\t\t\t\t\twrapper.style.display = 'none';\n\t\t\t\t}\n\t\t\t}, 300);\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		return nil
 	})
+}
+
+func showEditModal(id int, date string, title string, message string) templ.ComponentScript {
+	return templ.ComponentScript{
+		Name: `__templ_showEditModal_0bae`,
+		Function: `function __templ_showEditModal_0bae(id, date, title, message){const wrapper = document.getElementById('edit-modal-wrapper');
+	const form = document.getElementById('edit-form');
+	const dateInput = document.getElementById('edit-date');
+	const titleInput = document.getElementById('edit-title');
+	const messageInput = document.getElementById('edit-message');
+
+	form.action = '/admin/buddhist-days/' + id + '/update';
+	dateInput.value = date;
+	titleInput.value = title || '';
+	messageInput.value = message || '';
+
+	wrapper.style.display = 'flex';
+	setTimeout(() => {
+		wrapper.classList.add('is-open');
+	}, 10);
+}`,
+		Call:       templ.SafeScript(`__templ_showEditModal_0bae`, id, date, title, message),
+		CallInline: templ.SafeScriptInline(`__templ_showEditModal_0bae`, id, date, title, message),
+	}
 }
 
 var _ = templruntime.GeneratedTemplate

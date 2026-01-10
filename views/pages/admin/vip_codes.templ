@@ -1,0 +1,190 @@
+package admin
+
+import (
+	"fmt"
+	"time"
+	"numberniceic/internal/core/domain"
+)
+
+type VIPTargetInfo struct {
+	ID        *int
+	Name      string
+	Avatar    string
+	Status    int
+	Expiry    *time.Time
+	IsDirect  bool
+}
+
+func GetVIPTargetInfo(pc domain.PromotionalCode) VIPTargetInfo {
+	if pc.UsedByMemberID != nil {
+		return VIPTargetInfo{
+			ID:       pc.UsedByMemberID,
+			Name:     pc.UsedByMemberName,
+			Avatar:   pc.UsedByMemberAvatar,
+			Status:   pc.UsedByMemberStatus,
+			Expiry:   pc.UsedByMemberVIPExpiresAt,
+			IsDirect: true,
+		}
+	}
+	return VIPTargetInfo{
+		ID:       pc.OwnerMemberID,
+		Name:     pc.OwnerMemberName,
+		Avatar:   pc.OwnerMemberAvatar,
+		Status:   pc.OwnerMemberStatus,
+		Expiry:   pc.OwnerMemberVIPExpiresAt,
+		IsDirect: false,
+	}
+}
+
+
+templ VIPCodes(codes []domain.PromotionalCode) {
+	<div style="margin-bottom: 2rem; display:flex; justify-content:space-between; align-items:center;">
+		<div>
+			<h1 style="font-family: 'Kanit', sans-serif;">จัดการรหัส VIP</h1>
+			<a href="/admin" class="link-button">&larr; กลับไปหน้า Dashboard</a>
+		</div>
+		<form hx-post="/admin/vip-codes/generate" hx-target="#codes-table-body" hx-swap="afterbegin">
+			 <button type="submit" class="submit-button" hx-disabled-elt="this" style="background-color: #4CAF50;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px; vertical-align:text-bottom;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                สร้างรหัส VIP ใหม่
+             </button>
+		</form>
+	</div>
+
+	<div class="dashboard-table-container">
+		<table class="dashboard-table">
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>Code</th>
+					<th>Product / Owner</th>
+					<th>Status</th>
+					<th>Created At</th>
+					<th>Used At</th>
+					<th>Used By</th>
+					<th>Action</th>
+				</tr>
+			</thead>
+			<tbody id="codes-table-body">
+				for _, pc := range codes {
+					@VIPCodeRow(pc)
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+templ MemberBadge(id *int, name string, avatar string, status int, expiry *time.Time) {
+	if id != nil {
+		<div style="display: flex; align-items: center; gap: 8px;">
+			if avatar != "" {
+				<img src={ avatar } alt={ name } style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #eee;" />
+			} else {
+				<div style="width: 32px; height: 32px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border: 1px solid #eee;">
+					<span style="font-size: 0.8rem; color: #999;">{ string([]rune(name)[0]) }</span>
+				</div>
+			}
+			<div style="display: flex; flex-direction: column;">
+				<span style="font-weight: 500; font-size: 0.95rem;">{ name }</span>
+				<div style="display: flex; align-items: center; gap: 4px;">
+					<span style="font-size: 0.75rem; color: #999;">ID: { fmt.Sprintf("%d", *id) }</span>
+					if status == domain.StatusVIP {
+						<span style="background: #fff3cd; color: #856404; font-size: 10px; padding: 1px 4px; border-radius: 4px; font-weight: bold;">VIP</span>
+						if expiry != nil {
+							if time.Now().After(*expiry) {
+								<span style="font-size: 0.7rem; color: #e74c3c; font-weight: bold; margin-left: 4px;">(Expired)</span>
+							} else {
+								<span style="font-size: 0.7rem; color: #7f8c8d; margin-left: 4px;">Exp: { expiry.Format("02/01/06") }</span>
+							}
+						} else {
+							<span style="font-size: 0.7rem; color: #7f8c8d; margin-left: 4px;">(ตลอดชีพ)</span>
+						}
+					} else if status == 1 {
+						<span style="background: #e2e3e5; color: #383d41; font-size: 10px; padding: 1px 4px; border-radius: 4px; font-weight: bold;">Normal</span>
+					} else if status == -1 {
+						<span style="background: #f8d7da; color: #721c24; font-size: 10px; padding: 1px 4px; border-radius: 4px; font-weight: bold;">Banned</span>
+					}
+				</div>
+			</div>
+		</div>
+	} else {
+		<span>-</span>
+	}
+}
+
+templ MemberActions(code string, name string, status int) {
+	if status != -1 && status != 9 {
+		<button 
+			hx-post={ "/admin/vip-codes/" + code + "/block" }
+			hx-confirm={ fmt.Sprintf("ต้องการระงับการใช้งานผู้ใช้ %s ใช่หรือไม่?", name) }
+			hx-target="closest tr"
+			hx-swap="outerHTML"
+			class="link-button" 
+			style="color: #e74c3c; border: 1px solid #e74c3c; border-radius: 4px; padding: 2px 6px; font-size: 0.8rem;"
+		>
+			Block User
+		</button>
+	} else if status == -1 {
+		<button 
+			hx-post={ "/admin/vip-codes/" + code + "/unblock" }
+			hx-confirm={ fmt.Sprintf("ต้องการคืนสถานะสแกน VIP ให้ผู้ใช้ %s ใช่หรือไม่?", name) }
+			hx-target="closest tr"
+			hx-swap="outerHTML"
+			class="link-button" 
+			style="color: #27ae60; border: 1px solid #27ae60; border-radius: 4px; padding: 2px 6px; font-size: 0.8rem;"
+		>
+			Restore Status
+		</button>
+	}
+}
+
+templ VIPCodeRow(pc domain.PromotionalCode) {
+	<tr>
+		<td>{ fmt.Sprintf("%d", pc.ID) }</td>
+		<td style="font-family: monospace; font-weight: bold; font-size: 1.1em; color: #333;">{ pc.Code }</td>
+		<td>
+			if pc.ProductName != "" {
+				<div style="font-weight: 500; color: #2c3e50;">{ pc.ProductName }</div>
+			}
+			if !pc.IsUsed && pc.OwnerMemberID != nil {
+				<div style="font-size: 0.75rem; color: #27ae60; font-weight: 500;">(Auto-VIP Applied)</div>
+			} else if pc.ProductName == "" && pc.OwnerMemberID == nil {
+				<span style="color: #ccc; font-size: 0.8rem;">System Generated</span>
+			}
+		</td>
+		<td>
+			if pc.IsUsed {
+				<span style="color: red; font-weight: bold;">Used</span>
+			} else {
+				<span style="color: green; font-weight: bold;">Active</span>
+			}
+		</td>
+		<td>{ pc.CreatedAt.Format("02/01/2006 15:04") }</td>
+		<td>
+			if pc.UsedByMemberID != nil && pc.UsedAt != nil {
+				{ pc.UsedAt.Format("02/01/2006 15:04") }
+			} else if !pc.IsUsed && pc.OwnerMemberID != nil {
+				<span style="font-size: 0.8rem; color: #999;">{ pc.CreatedAt.Format("02/01/06 15:04") }</span>
+				<div style="font-size: 0.7rem; color: #27ae60;">(Auto)</div>
+			} else {
+				<span>-</span>
+			}
+		</td>
+		<td>
+			if pc.UsedByMemberID != nil {
+				@MemberBadge(pc.UsedByMemberID, pc.UsedByMemberName, pc.UsedByMemberAvatar, pc.UsedByMemberStatus, pc.UsedByMemberVIPExpiresAt)
+			} else if pc.OwnerMemberID != nil {
+				@MemberBadge(pc.OwnerMemberID, pc.OwnerMemberName, pc.OwnerMemberAvatar, pc.OwnerMemberStatus, pc.OwnerMemberVIPExpiresAt)
+			} else {
+				<span>-</span>
+			}
+		</td>
+		<td>
+			if pc.UsedByMemberID != nil {
+				@MemberActions(pc.Code, pc.UsedByMemberName, pc.UsedByMemberStatus)
+			} else if pc.OwnerMemberID != nil {
+				@MemberActions(pc.Code, pc.OwnerMemberName, pc.OwnerMemberStatus)
+			}
+		</td>
+	</tr>
+}

@@ -18,9 +18,9 @@ class AnalysisResult {
 
   factory AnalysisResult.fromJson(Map<String, dynamic> json) {
     if (json['solar_system'] == null) {
-       debugPrint('❌ AnalysisResult: solar_system key missing! Keys: ${json.keys.toList()}');
+       // Detected flattened data (Legacy or Single Result)
        if (json.containsKey('cleaned_name')) {
-          debugPrint('⚠️ AnalysisResult: Detected flattened data. Wrapping as solar_system.');
+          if (kDebugMode) debugPrint('🔍 AnalysisResult: Detected flattened data. Wrapping as solar_system.');
           return AnalysisResult(
             solarSystem: SolarSystemData.fromJson(json),
             isVip: json['is_vip'] == true,
@@ -28,6 +28,10 @@ class AnalysisResult {
                 .map((e) => NameAnalysis.fromJson(e))
                 .toList(),
           );
+       }
+       // If no solar_system and no cleaned_name, it's likely a partial section result (e.g. 'names')
+       if (kDebugMode && !json.containsKey('best_names')) {
+          debugPrint('ℹ️ AnalysisResult: Partial data received (No solar_system). Keys: ${json.keys.toList()}');
        }
     }
     

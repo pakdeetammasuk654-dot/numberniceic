@@ -145,6 +145,16 @@ func (r *PostgresOrderRepository) UpdateRefNo(id uint, newRefNo string) error {
 	return err
 }
 
+func (r *PostgresOrderRepository) UpdatePromoCodeID(refNo string, codeID int) error {
+	query := `
+		UPDATE orders
+		SET promo_code_id = $1, updated_at = $2
+		WHERE ref_no = $3
+	`
+	_, err := r.db.Exec(query, codeID, time.Now(), refNo)
+	return err
+}
+
 func (r *PostgresOrderRepository) GetAll() ([]domain.Order, error) {
 	query := `
 		SELECT id, ref_no, user_id, amount, status, product_name, slip_url, promo_code_id, created_at, updated_at

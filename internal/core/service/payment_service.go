@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -16,6 +17,7 @@ type PaymentService struct {
 }
 
 func NewPaymentService(orderRepo ports.OrderRepository, memberRepo ports.MemberRepository, promoRepo ports.PromotionalCodeRepository) *PaymentService {
+	rand.Seed(time.Now().UnixNano())
 	return &PaymentService{
 		orderRepo:  orderRepo,
 		memberRepo: memberRepo,
@@ -23,12 +25,13 @@ func NewPaymentService(orderRepo ports.OrderRepository, memberRepo ports.MemberR
 	}
 }
 
-func (s *PaymentService) CreateOrder(refNo string, amount float64, userID *int) error {
+func (s *PaymentService) CreateOrder(refNo string, amount float64, userID *int, productName string) error {
 	order := &domain.Order{
-		RefNo:  refNo,
-		Amount: amount,
-		UserID: userID,
-		Status: "pending",
+		RefNo:       refNo,
+		Amount:      amount,
+		UserID:      userID,
+		ProductName: productName,
+		Status:      "pending",
 	}
 	return s.orderRepo.Create(order)
 }
@@ -58,17 +61,24 @@ func (s *PaymentService) ProcessPaymentSuccess(refNo string, amountPaid float64)
 		}
 
 		// Create Purchase (Save Code)
-		// Assuming ports.PromotionalCodeRepository interface matches Postgres implementation
-		// We might need to confirm interface methods. Use CreatePurchase.
-		err = s.promoRepo.CreatePurchase(vipCode, ownerID, order.ProductName)
+		codeID, err := s.promoRepo.CreatePurchase(vipCode, ownerID, order.ProductName)
 		if err != nil {
 			return err
 		}
-	}
 
-	// 5. Grant VIP Status if UserID is present (Legacy & Shop)
-	if order.UserID != nil {
-		err = s.memberRepo.SetVIP(*order.UserID, true)
+		// Link code back to order
+		_ = s.orderRepo.UpdatePromoCodeID(refNo, codeID)
+
+		// 5. Auto-Redeem for Owner (Fix: No sharing, used immediately)
+		if ownerID > 0 {
+			err = s.promoRepo.Redeem(codeID, ownerID)
+			if err != nil {
+				return err
+			}
+		}
+	} else if order.UserID != nil {
+		// Non-shop VIP upgrade (Legacy path)
+		err = s.memberRepo.SetVIPWithExpiry(*order.UserID, "365 days")
 		if err != nil {
 			return err
 		}

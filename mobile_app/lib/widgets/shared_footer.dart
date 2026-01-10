@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../screens/privacy_policy_page.dart';
 import '../screens/delete_account_page.dart';
+import '../screens/how_to_order_page.dart';
 
 class SharedFooter extends StatelessWidget {
   final Color? textColor;
@@ -103,6 +104,20 @@ class SharedFooter extends StatelessWidget {
                 spacing: 24,
                 runSpacing: 12,
                 children: [
+                   InkWell(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const HowToOrderPage()));
+                    },
+                    child: Text(
+                      'วิธีการสั่งซื้อ',
+                      style: GoogleFonts.kanit(
+                        fontSize: 16, 
+                        color: textLight, 
+                        decoration: TextDecoration.underline,
+                        decorationColor: textLight,
+                      ),
+                    ),
+                  ),
                    InkWell(
                     onTap: () {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => const PrivacyPolicyPage()));

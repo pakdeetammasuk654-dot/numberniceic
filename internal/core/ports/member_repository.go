@@ -17,6 +17,9 @@ type MemberRepository interface {
 	GetAllMembers() ([]domain.Member, error)
 	UpdateStatus(id int, status int) error
 	SetVIP(id int, isVIP bool) error
+	SetVIPWithExpiry(id int, duration string) error
 	UpdateAssignedColors(id int, colors string) error
 	GetMembersWithAssignedColors() ([]domain.Member, error)
+	CreateNotification(userID int, title, message string) error
+	CreateBroadcastNotification(title, message string) error
 }

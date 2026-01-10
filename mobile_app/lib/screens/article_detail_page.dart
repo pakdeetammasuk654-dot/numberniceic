@@ -152,7 +152,15 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
                   ],
                 ),
               ),
-              const SliverToBoxAdapter(child: SharedFooter()),
+              const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Column(
+                  children: [
+                    Spacer(),
+                    SharedFooter(),
+                  ],
+                ),
+              ),
             ],
           );
         },

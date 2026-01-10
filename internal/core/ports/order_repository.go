@@ -8,6 +8,7 @@ type OrderRepository interface {
 	GetByUserID(userID int) ([]domain.Order, error)
 	UpdateStatus(refNo string, status string) error
 	UpdateRefNo(id uint, newRefNo string) error
+	UpdatePromoCodeID(refNo string, codeID int) error
 	GetAll() ([]domain.Order, error)
 	GetWithPagination(limit, offset int, search string) ([]domain.Order, int64, error)
 	Delete(id int) error

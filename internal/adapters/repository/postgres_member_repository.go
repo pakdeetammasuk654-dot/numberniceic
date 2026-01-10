@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
 	"strings"
@@ -41,13 +42,13 @@ func (r *PostgresMemberRepository) GetByEmail(email string) (*domain.Member, err
 		return nil, nil
 	}
 	query := `
-		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, '')
+		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, ''), vip_expires_at
 		FROM member
 		WHERE email = $1
 	`
 	var m domain.Member
 	var provider, providerID, avatarURL sql.NullString
-	err := r.db.QueryRow(query, email).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &provider, &providerID, &avatarURL)
+	err := r.db.QueryRow(query, email).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &provider, &providerID, &avatarURL, &m.VIPExpiresAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -66,13 +67,13 @@ func (r *PostgresMemberRepository) GetByEmail(email string) (*domain.Member, err
 func (r *PostgresMemberRepository) GetByUsername(username string) (*domain.Member, error) {
 	// Use 'status' but skip timestamps for now
 	query := `
-		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, '')
+		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, ''), vip_expires_at
 		FROM member
 		WHERE username = $1
 	`
 	var m domain.Member
 	var provider, providerID, avatarURL sql.NullString
-	err := r.db.QueryRow(query, username).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &provider, &providerID, &avatarURL)
+	err := r.db.QueryRow(query, username).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &provider, &providerID, &avatarURL, &m.VIPExpiresAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -91,13 +92,13 @@ func (r *PostgresMemberRepository) GetByUsername(username string) (*domain.Membe
 func (r *PostgresMemberRepository) GetByID(id int) (*domain.Member, error) {
 	// Use 'status' but skip timestamps for now
 	query := `
-		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, '')
+		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, ''), vip_expires_at
 		FROM member
 		WHERE id = $1
 	`
 	var m domain.Member
 	var provider, providerID, avatarURL sql.NullString
-	err := r.db.QueryRow(query, id).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &provider, &providerID, &avatarURL)
+	err := r.db.QueryRow(query, id).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &provider, &providerID, &avatarURL, &m.VIPExpiresAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -213,11 +214,15 @@ func (r *PostgresMemberRepository) SetVIP(id int, isVIP bool) error {
 		newStatus = 1 // Normal
 	}
 
-	// Ensure we don't downgrade Admin (9) accidentally, so we should check current status first or use conditional update
-	// But simplest is just setting it for now as requested.
-	// Or better: UPDATE member SET status = 2 WHERE id = $1 AND status < 9
 	query := `UPDATE member SET status = $1 WHERE id = $2 AND status < 9`
 	_, err := r.db.Exec(query, newStatus, id)
+	return err
+}
+
+func (r *PostgresMemberRepository) SetVIPWithExpiry(id int, duration string) error {
+	// duration should be like '365 days'
+	query := fmt.Sprintf(`UPDATE member SET status = 2, vip_expires_at = NOW() + INTERVAL '%s' WHERE id = $1 AND status < 9`, duration)
+	_, err := r.db.Exec(query, id)
 	return err
 }
 
@@ -259,4 +264,21 @@ func (r *PostgresMemberRepository) GetMembersWithAssignedColors() ([]domain.Memb
 		members = append(members, m)
 	}
 	return members, nil
+}
+
+func (r *PostgresMemberRepository) CreateNotification(userID int, title, message string) error {
+	query := `INSERT INTO user_notifications (user_id, title, message, created_at) VALUES ($1, $2, $3, NOW())`
+	_, err := r.db.Exec(query, userID, title, message)
+	return err
+}
+
+func (r *PostgresMemberRepository) CreateBroadcastNotification(title, message string) error {
+	query := `
+		INSERT INTO user_notifications (user_id, title, message, created_at)
+		SELECT id, $1, $2, NOW()
+		FROM members
+		WHERE status >= 0
+	`
+	_, err := r.db.Exec(query, title, message)
+	return err
 }

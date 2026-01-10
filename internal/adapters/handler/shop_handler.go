@@ -7,36 +7,38 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
-	"numberniceic/internal/adapters/repository"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
+	"numberniceic/internal/core/service"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 )
 
 type ShopHandler struct {
-	orderRepo   ports.OrderRepository
-	promoRepo   *repository.PostgresPromotionalCodeRepository
-	memberRepo  ports.MemberRepository
-	productRepo ports.ProductRepository
+	orderRepo      ports.OrderRepository
+	promoRepo      ports.PromotionalCodeRepository
+	memberRepo     ports.MemberRepository
+	productRepo    ports.ProductRepository
+	paymentService *service.PaymentService
 }
 
 func NewShopHandler(
 	orderRepo ports.OrderRepository,
-	promoRepo *repository.PostgresPromotionalCodeRepository,
+	promoRepo ports.PromotionalCodeRepository,
 	memberRepo ports.MemberRepository,
 	productRepo ports.ProductRepository,
+	paymentService *service.PaymentService,
 ) *ShopHandler {
 	return &ShopHandler{
-		orderRepo:   orderRepo,
-		promoRepo:   promoRepo,
-		memberRepo:  memberRepo,
-		productRepo: productRepo,
+		orderRepo:      orderRepo,
+		promoRepo:      promoRepo,
+		memberRepo:     memberRepo,
+		productRepo:    productRepo,
+		paymentService: paymentService,
 	}
 }
 
@@ -180,47 +182,22 @@ func (h *ShopHandler) ConfirmPayment(c *fiber.Ctx) error {
 	}
 
 	// AUTO APPROVE LOGIC (For User Requirement)
-	// "Successful transfer will see item and vip code" => So we process it now.
+	// Using centralized PaymentService to handle VIP upgrade, code generation, and linking.
+	if err := h.paymentService.ProcessPaymentSuccess(refNo, order.Amount); err != nil {
+		fmt.Printf("Payment Success processing error: %v\n", err)
+		return c.Status(500).JSON(fiber.Map{"error": "เกิดข้อผิดพลาดในการประมวลผลการชำระเงิน"})
+	}
 
-	// 1. Generate VIP Code
-	vipCode := fmt.Sprintf("VIP-%s-%d", uuid.New().String()[0:4], rand.Intn(9999))
-
-	// 2. Save Code
-	// Need to check if PromoRepo has Create function that returns ID or we just save it.
-	// PostgresPromotionalCodeRepository.CreatePurchase saves directly.
+	// Fetch newly created code to return in response if user wants to see it immediately
+	var vipCode string
 	ownerID := 0
 	if order.UserID != nil {
 		ownerID = *order.UserID
 	}
-
-	if err := h.promoRepo.CreatePurchase(vipCode, ownerID, order.ProductName); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "สร้างรหัส VIP ไม่สำเร็จ"})
+	codes, err := h.promoRepo.GetByOwnerID(ownerID)
+	if err == nil && len(codes) > 0 {
+		vipCode = codes[0].Code // Latest one
 	}
-
-	// 3. Update Order Status
-	// We need to update status, slip_url, and maybe link code?
-	// The repo doesn't support updating slip_url dynamically well in UpdateStatus method (only status).
-	// But let's assume UpdateStatus is enough for now, slip_url is saved but maybe not queryable easily without updating repo again.
-	// Wait, we need to update slip_url too.
-	// I'll create a quick raw SQL exec here or add method to repo.
-	// To be safe and quick -> Add method to Repo or Exec SQL using db handle if reachable? Handler shouldn't touch DB directly.
-	// Solution: Use UpdateStatus, and ignore slip_url update in DB for this iteration, OR trust that creating the code is the most important part.
-
-	// Let's rely on UpdateStatus to mark 'paid'.
-	// *Ideally* we should save the slip_url.
-
-	if err := h.orderRepo.UpdateStatus(refNo, "paid"); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "อัปเดตสถานะไม่สำเร็จ"})
-	}
-
-	// Also Set VIP Status immediately if ownerID > 0? User asked for "VIP Code", so maybe they use code manually.
-	// But `CreatePurchase` in repo doesn't set status 2.
-	// Let's Auto-Assign VIP if user is logged in?
-	// "รับรหัส VIP สำหรับใช้งานในแอปฟรี!" implies manual redemption OR auto-apply.
-	// Code redemption logic sets status=2.
-	// If we automate it, we might skip the code step.
-	// User said: "transfer successful -> see purchase item and vip code".
-	// So we return the code. They can copy it.
 
 	return c.JSON(fiber.Map{
 		"success":  true,

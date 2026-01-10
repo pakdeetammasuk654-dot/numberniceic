@@ -94,6 +94,7 @@ func (h *MemberHandler) ShowLoginPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		false, // hasShippingAddress (Not logged in)
 		"login",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -177,6 +178,7 @@ func (h *MemberHandler) ShowDashboard(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		hasShippingAddress,
 		"dashboard",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -525,6 +527,7 @@ func (h *MemberHandler) ShowShippingAddressPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		len(addresses) > 0, // hasShippingAddress
 		"shipping_address",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -723,4 +726,82 @@ func (h *MemberHandler) DeleteShippingAddressAPI(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"success": true, "message": "Address deleted successfully"})
+}
+
+// ShowBuddhistCalendarPage displays the upcoming buddhist days
+func (h *MemberHandler) ShowBuddhistCalendarPage(c *fiber.Ctx) error {
+	// Gets Upcoming Buddhist Days (e.g., next 50 days)
+	days, err := h.buddhistDayService.GetUpcomingDays(50)
+	if err != nil {
+		// handle error nicely or just show empty
+		days = []domain.BuddhistDay{}
+	}
+
+	// Helper to get string from Locals safely
+	getLocStr := func(key string) string {
+		v := c.Locals(key)
+		if v == nil || v == "<nil>" {
+			return ""
+		}
+		return fmt.Sprintf("%v", v)
+	}
+
+	isLoggedIn, _ := c.Locals("IsLoggedIn").(bool)
+	isAdmin, _ := c.Locals("IsAdmin").(bool)
+	isVIP, _ := c.Locals("IsVIP").(bool)
+	avatarURL := getLocStr("AvatarURL")
+
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:       "ปฏิทินวันพระ",
+			Description: "ปฏิทินวันพระ และวันสำคัญทางศาสนา เช็ควันพระวันนี้ วันพระหน้า",
+			Keywords:    "วันพระ, วันพระวันนี้, ปฏิทินวันพระ, วันศีล",
+			Canonical:   "https://xn--b3cu8e7ah6h.com/buddhist-calendar",
+			OGType:      "website",
+		},
+		isLoggedIn,
+		isAdmin,
+		isVIP,
+		true,                // Active Page (Highlight)
+		"buddhist-calendar", // Page Key
+		getLocStr("toast_success"),
+		getLocStr("toast_error"),
+		avatarURL,
+		pages.BuddhistCalendar(days),
+	))
+}
+
+// CreateNotificationAPI allows a user to create a notification for themselves locally from the app
+func (h *MemberHandler) CreateNotificationAPI(c *fiber.Ctx) error {
+	var userID int
+	if uid, ok := c.Locals("user_id").(int); ok {
+		userID = uid
+	} else if uid, ok := c.Locals("UserID").(int); ok {
+		userID = uid
+	} else {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	type CreateNotificationRequest struct {
+		Title   string `json:"title"`
+		Message string `json:"message"`
+	}
+
+	var req CreateNotificationRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	if req.Title == "" || req.Message == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Title and Message are required"})
+	}
+
+	// Implementation note: h.service usually has a repository pattern.
+	// Let's call a new method in MemberService.
+	err := h.service.CreateUserNotification(userID, req.Title, req.Message)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create notification"})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"success": true, "message": "Notification created"})
 }

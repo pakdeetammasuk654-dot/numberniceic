@@ -5,6 +5,7 @@ import '../models/order_model.dart';
 import '../services/api_service.dart';
 import '../widgets/payment_modal.dart';
 import '../widgets/shared_footer.dart';
+import '../widgets/adaptive_footer_scroll_view.dart';
 import '../utils/custom_toast.dart';
 import 'main_tab_page.dart';
 
@@ -115,16 +116,10 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
             return _buildEmptyState();
           }
 
-          return RefreshIndicator(
+          return AdaptiveFooterScrollView(
             onRefresh: () async => _loadOrders(),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: orders.length + 1,
-              itemBuilder: (context, index) {
-                if (index == orders.length) return const SharedFooter();
-                return _buildOrderCard(orders[index]);
-              },
-            ),
+            padding: const EdgeInsets.all(16),
+            children: orders.map((order) => _buildOrderCard(order)).toList(),
           );
         },
       ),

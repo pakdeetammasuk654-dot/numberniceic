@@ -4,11 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/sample_name.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../utils/custom_toast.dart';
 import '../models/analysis_result.dart';
 import '../models/solar_system_data.dart';
 import '../viewmodels/analyzer_view_model.dart';
 import '../widgets/analyzer/top_4_section.dart';
 import '../widgets/shared_footer.dart';
+import '../widgets/adaptive_footer_scroll_view.dart';
 import '../widgets/solar_system_analysis_card.dart';
 import '../widgets/auto_scrolling_avatar_list.dart';
 import '../widgets/shimmering_gold_wrapper.dart';
@@ -21,6 +23,8 @@ import 'numerology_detail_page.dart';
 import 'linguistic_detail_page.dart';
 import 'shop_page.dart';
 import 'number_analysis_page.dart';
+import 'shipping_address_page.dart';
+import 'notification_list_page.dart';
 import 'main_tab_page.dart';
 
 class AnalyzerPage extends StatefulWidget {
@@ -87,6 +91,8 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
         });
       }
     });
+
+    _checkNotification();
   }
   
   void _onViewModelUpdate() {
@@ -102,6 +108,93 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
     _rotationController.dispose();
     _rotationControllerOuter.dispose();
     super.dispose();
+  }
+
+  // --- Notification Logic ---
+  bool _hasUnreadNotification = false;
+  bool _hasMissingAddressWarning = false;
+  int _unreadCount = 0;
+
+  Future<void> _checkNotification() async {
+    final token = await AuthService.getToken();
+    final isLoggedIn = token != null;
+    
+    if (isLoggedIn) {
+        try {
+            final count = await ApiService.getUnreadNotificationCount();
+            
+            bool missingAddr = false;
+            try {
+               final dbData = await ApiService.getDashboard();
+               final isVip = dbData['is_vip'] == true || dbData['IsVIP'] == true;
+               final hasAddress = dbData['has_shipping_address'] == true || dbData['HasShippingAddress'] == true;
+               if (isVip && !hasAddress) {
+                  missingAddr = true;
+               }
+            } catch (_) {}
+
+            if (mounted) {
+                setState(() {
+                    _unreadCount = count;
+                    _hasMissingAddressWarning = missingAddr;
+                    _hasUnreadNotification = (count > 0) || missingAddr;
+                });
+            }
+        } catch (_) {}
+    } else {
+       // Guest logic (simplified for Analyzer)
+       // We only check if there's a welcome message update that differs, but maybe skip welcome dialog here to avoid annoyance
+    }
+  }
+
+  void _handleNotificationTap() {
+    if (_hasMissingAddressWarning) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.notifications_active, color: Colors.red),
+                const SizedBox(width: 8),
+                Text('แจ้งเตือน', style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: Text(
+              'คุณชำระเงินเรียบร้อยแล้ว โปรดระบุที่อยู่เพื่อให้เราจัดส่งสินค้าให้คุณ', 
+              style: GoogleFonts.kanit()
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationListPage()))
+                      .then((_) => _checkNotification());
+                }, 
+                child: Text('ภายหลัง', style: GoogleFonts.kanit(color: Colors.grey))
+              ),
+              ElevatedButton(
+                onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const ShippingAddressPage()))
+                      .then((_) => _checkNotification());
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                child: Text('ระบุที่อยู่', style: GoogleFonts.kanit(fontWeight: FontWeight.bold))
+              )
+            ]
+          )
+        );
+    } else {
+        // Only navigate if logged in, otherwise show toast
+        AuthService.isLoggedIn().then((isLoggedIn) {
+           if (isLoggedIn) {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationListPage()))
+                  .then((_) => _checkNotification());
+           } else {
+              CustomToast.show(context, 'ไม่มีการแจ้งเตือนใหม่'); 
+           }
+        });
+    }
   }
 
   // --- Handlers ---
@@ -371,7 +464,46 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(icon: const Icon(Icons.dialpad, color: Colors.white), onPressed: () { NumberAnalysisPage.show(context); }, tooltip: 'วิเคราะห์เบอร์'),
-          IconButton(icon: const Icon(Icons.notifications_outlined, color: Colors.white), onPressed: () {}, tooltip: 'การแจ้งเตือน'),
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined, color: Colors.white), 
+                onPressed: _handleNotificationTap, 
+                tooltip: 'การแจ้งเตือน'
+              ),
+              if (_hasUnreadNotification)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF333333), width: 1.5),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Center(
+                      child: Text(
+                        (_unreadCount + (_hasMissingAddressWarning ? 1 : 0)) > 9 
+                            ? '9+' 
+                            : '${_unreadCount + (_hasMissingAddressWarning ? 1 : 0)}',
+                        style: GoogleFonts.kanit(
+                          color: Colors.white, 
+                          fontSize: 10, 
+                          fontWeight: FontWeight.bold,
+                          height: 1.0,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           const SizedBox(width: 8),
         ],
       ),
@@ -383,218 +515,214 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
             colors: [const Color(0xFF667EEA).withOpacity(0.05), const Color(0xFF764BA2).withOpacity(0.03), Colors.white],
           ),
         ),
-        child: SingleChildScrollView(
+        child: AdaptiveFooterScrollView(
           controller: _scrollController,
-          child: Column(
-            children: [
-              // 0. Search & Sample
-              _buildSearchForm(),
-              _buildSampleNamesSection(),
-              
-              if (result == null && _viewModel.isLoading)
-                  Padding(padding: const EdgeInsets.only(top: 40), child: _buildSolarSystemSkeleton()),
+          children: [
+            // 0. Search & Sample
+            _buildSearchForm(),
+            _buildSampleNamesSection(),
+            
+            if (result == null && _viewModel.isLoading)
+                Padding(padding: const EdgeInsets.only(top: 40), child: _buildSolarSystemSkeleton()),
 
-              if (result != null)
-                 AnimatedSwitcher(
-                   duration: const Duration(milliseconds: 800),
-                   layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+            if (result != null)
+               AnimatedSwitcher(
+                 duration: const Duration(milliseconds: 800),
+                 layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+                   return Stack(
+                     alignment: Alignment.topCenter,
+                     clipBehavior: Clip.none,
+                     children: <Widget>[
+                       ...previousChildren,
+                       if (currentChild != null) currentChild,
+                     ],
+                   );
+                 },
+                 child: Builder(
+                   key: ValueKey(solar?.cleanedName),
+                   builder: (context) {
+                     if (solar == null) return const SizedBox.shrink();
+
+                     // FLATTENED STACK: This ensures the planets are on top of EVERYTHING in this analysis block.
                      return Stack(
-                       alignment: Alignment.topCenter,
-                       clipBehavior: Clip.none,
-                       children: <Widget>[
-                         ...previousChildren,
-                         if (currentChild != null) currentChild,
+                       clipBehavior: Clip.none, // Ensure orbits are not clipped
+                       children: [
+                         // Layer 1: The Main Content Column (Everything scrollable together)
+                         Column(
+                           children: [
+                             // 1. Text Info (Name & Pills)
+                             Padding(
+                               padding: const EdgeInsets.only(top: 205), 
+                               child: Column(
+                                  children: [
+                                     Builder(
+                                       builder: (context) {
+                                         final bool isPerfect = (solar.numNegativeScore == 0 && solar.shaNegativeScore == 0 && solar.klakiniChars.isEmpty);
+                                         return ShimmeringGoldWrapper(
+                                           enabled: isPerfect,
+                                           child: Wrap(
+                                             alignment: WrapAlignment.center,
+                                             children: solar.sunDisplayNameHtml.map((dc) => Text(
+                                                 dc.char,
+                                                 style: GoogleFonts.kanit(
+                                                   fontSize: 48, 
+                                                   fontWeight: FontWeight.bold, 
+                                                   color: dc.isBad ? const Color(0xFFFF1744) : (isPerfect ? const Color(0xFF8B6F00) : Colors.black87), 
+                                                   height: 1.0
+                                                 ),
+                                             )).toList(),
+                                           ),
+                                         );
+                                       },
+                                     ),
+                                     const SizedBox(height: 8),
+                                     Row(
+                                       mainAxisAlignment: MainAxisAlignment.center,
+                                       children: [
+                                         _buildPill(Icons.calendar_today_outlined, _viewModel.days.firstWhere((d) => solar.inputDayRaw.contains(d.value), orElse: () => _viewModel.days[0]).label, const Color(0xFFF1F5F9), const Color(0xFF334155)),
+                                         const SizedBox(width: 12),
+                                         if (solar.klakiniChars.isNotEmpty)
+                                           _buildPill(Icons.warning_amber_rounded, solar.klakiniChars.join(' '), const Color(0xFFFFEBEE), const Color(0xFFFF1744))
+                                         else
+                                           _buildPill(null, 'ไม่มีกาลกิณี', const Color(0xFFE8F5E9), const Color(0xFF00C853)),
+                                       ],
+                                     ),
+                                     const SizedBox(height: 12),
+                                     RichText(
+                                       text: TextSpan(
+                                         style: GoogleFonts.kanit(fontSize: 14, color: const Color(0xFF64748B), fontWeight: FontWeight.w500),
+                                         children: [
+                                           const TextSpan(text: 'พยัญชนะหรือสระ'),
+                                           TextSpan(text: 'สีแดง', style: GoogleFonts.kanit(color: const Color(0xFFFF1744), fontWeight: FontWeight.bold)), // Highlighted red
+                                           const TextSpan(text: 'คือกาลกิณี'),
+                                         ],
+                                       ),
+                                     ),
+                                     const SizedBox(height: 24),
+                                     // Donut Chart Removed as per design request
+                                     Padding(
+                                       padding: const EdgeInsets.only(bottom: 16),
+                                       child: SolarSystemAnalysisCard(data: solar.toJson(), cleanedName: solar.cleanedName),
+                                     ),
+                                     _buildThreeActionButtons(),
+                                     const SizedBox(height: 24),
+                                     CategoryNestedDonut(
+                                       categoryBreakdown: solar.categoryBreakdown,
+                                       totalPairs: solar.totalPairs,
+                                       grandTotalScore: solar.grandTotalScore.toInt(),
+                                       totalPositiveScore: solar.totalPositiveScore,
+                                       totalNegativeScore: solar.totalNegativeScore,
+                                       analyzedName: solar.cleanedName,
+                                     ),
+                                  ],
+                               ),
+                             ),
+
+                             // 2. Extra Sections (Top 4, Actions)
+                             // _buildActionsGrid(), // Removed in favor of 3-button row above
+                             const SizedBox(height: 40),
+                             // 2. Extra Sections (Top 4, Actions) - Restored
+                             Top4Section(
+                               data: result.bestNames,
+                               showTop4: _viewModel.showTop4,
+                               showKlakini: _viewModel.showKlakiniTop4,
+                               isLoading: _viewModel.isNamesLoading,
+                               isSwitching: _viewModel.isTop4Switching,
+                               onToggleTop4: _viewModel.toggleShowTop4,
+                               onToggleKlakini: _viewModel.toggleShowKlakiniTop4,
+                               onNameSelected: (name) {
+                                  _viewModel.setName(name);
+                                  _nameController.text = name;
+                                  _viewModel.analyze();
+                                  _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+                               },
+                             ),
+                             const SizedBox(height: 24),
+                             ActionsSection(
+                               similarNames: result.similarNames,
+                               showKlakini: _viewModel.showKlakini,
+                               showGoodOnly: _viewModel.isAuspicious, 
+                               isVip: result.isVip,
+                               isLoading: _viewModel.isNamesLoading, // Added
+                               badNumbers: _badNumbers,
+                               onToggleKlakini: _viewModel.toggleShowKlakini,
+                               onToggleGoodOnly: _viewModel.toggleAuspicious,
+                               onNameSelected: (name) {
+                                  _viewModel.setName(name);
+                                  _nameController.text = name;
+                                  _viewModel.analyze(); 
+                                  _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+                               },
+                             ),
+                             const SizedBox(height: 40),
+                           ],
+                         ),
+
+                         // Layer 2: Score Summary (Positioned over Layer 1)
+                         Positioned(
+                           left: 16,
+                           top: 75, 
+                           width: 190,
+                           child: Column(
+                             crossAxisAlignment: CrossAxisAlignment.start,
+                             mainAxisSize: MainAxisSize.min,
+                             children: [
+                               Text('คะแนนรวม', style: GoogleFonts.kanit(fontSize: 14, color: const Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                               const SizedBox(height: 0), 
+                               FittedBox(
+                                 fit: BoxFit.scaleDown,
+                                 alignment: Alignment.centerLeft,
+                                 child: Row(
+                                   children: [
+                                     Text(solar.grandTotalScore >= 0 ? '😊' : '😭', style: const TextStyle(fontSize: 36)),
+                                     const SizedBox(width: 10),
+                                     Text(
+                                       '${solar.grandTotalScore >= 0 ? '+' : ''}${solar.grandTotalScore.toInt()}',
+                                       softWrap: false,
+                                       maxLines: 1,
+                                       style: GoogleFonts.kanit(
+                                         fontSize: 36, 
+                                         fontWeight: FontWeight.w900, 
+                                         color: solar.grandTotalScore >= 0 ? const Color(0xFF00C853) : const Color(0xFFFF1744),
+                                         height: 1.0
+                                       ),
+                                     ),
+                                   ],
+                                 ),
+                               ),
+                               const SizedBox(height: 0), 
+                               Row(
+                                 children: [
+                                   _buildSmallPill('ดี +${solar.totalPositiveScore}', const Color(0xFFE8F5E9), const Color(0xFF00C853)),
+                                   const SizedBox(width: 8),
+                                   _buildSmallPill('ร้าย ${solar.totalNegativeScore}', const Color(0xFFFFEBEE), const Color(0xFFFF1744)),
+                                 ],
+                               ),
+                             ],
+                           ),
+                         ),
+
+                         // Layer 3: Solar System (ABSOLUTELY ON TOP)
+                         Positioned(
+                           right: -50, 
+                           top: -15, 
+                           left: 80, 
+                           height: 280, // Increased height to prevent planet clipping
+                           child: SolarSystemWidget(
+                             sumPair: solar.sumPair,
+                             mainPairs: solar.mainPairs,
+                             hiddenPairs: solar.hiddenPairs,
+                             title: solar.cleanedName,
+                             displayName: solar.sunDisplayNameHtml,
+                             isDead: solar.grandTotalScore < 0,
+                           ),
+                         ),
                        ],
                      );
                    },
-                   child: Builder(
-                     key: ValueKey(solar?.cleanedName),
-                     builder: (context) {
-                       if (solar == null) return const SizedBox.shrink();
-
-                       // FLATTENED STACK: This ensures the planets are on top of EVERYTHING in this analysis block.
-                       return Stack(
-                         clipBehavior: Clip.none, // Ensure orbits are not clipped
-                         children: [
-                           // Layer 1: The Main Content Column (Everything scrollable together)
-                           Column(
-                             children: [
-                               // 1. Text Info (Name & Pills)
-                               Padding(
-                                 padding: const EdgeInsets.only(top: 205), 
-                                 child: Column(
-                                    children: [
-                                       Builder(
-                                         builder: (context) {
-                                           final bool isPerfect = (solar.numNegativeScore == 0 && solar.shaNegativeScore == 0 && solar.klakiniChars.isEmpty);
-                                           return ShimmeringGoldWrapper(
-                                             enabled: isPerfect,
-                                             child: Wrap(
-                                               alignment: WrapAlignment.center,
-                                               children: solar.sunDisplayNameHtml.map((dc) => Text(
-                                                   dc.char,
-                                                   style: GoogleFonts.kanit(
-                                                     fontSize: 48, 
-                                                     fontWeight: FontWeight.bold, 
-                                                     color: dc.isBad ? const Color(0xFFFF1744) : (isPerfect ? const Color(0xFF8B6F00) : Colors.black87), 
-                                                     height: 1.0
-                                                   ),
-                                               )).toList(),
-                                             ),
-                                           );
-                                         },
-                                       ),
-                                       const SizedBox(height: 8),
-                                       Row(
-                                         mainAxisAlignment: MainAxisAlignment.center,
-                                         children: [
-                                           _buildPill(Icons.calendar_today_outlined, _viewModel.days.firstWhere((d) => solar.inputDayRaw.contains(d.value), orElse: () => _viewModel.days[0]).label, const Color(0xFFF1F5F9), const Color(0xFF334155)),
-                                           const SizedBox(width: 12),
-                                           if (solar.klakiniChars.isNotEmpty)
-                                             _buildPill(Icons.warning_amber_rounded, solar.klakiniChars.join(' '), const Color(0xFFFFEBEE), const Color(0xFFFF1744))
-                                           else
-                                             _buildPill(null, 'ไม่มีกาลกิณี', const Color(0xFFE8F5E9), const Color(0xFF00C853)),
-                                         ],
-                                       ),
-                                       const SizedBox(height: 12),
-                                       RichText(
-                                         text: TextSpan(
-                                           style: GoogleFonts.kanit(fontSize: 14, color: const Color(0xFF64748B), fontWeight: FontWeight.w500),
-                                           children: [
-                                             const TextSpan(text: 'พยัญชนะหรือสระ'),
-                                             TextSpan(text: 'สีแดง', style: GoogleFonts.kanit(color: const Color(0xFFFF1744), fontWeight: FontWeight.bold)), // Highlighted red
-                                             const TextSpan(text: 'คือกาลกิณี'),
-                                           ],
-                                         ),
-                                       ),
-                                       const SizedBox(height: 24),
-                                       // Donut Chart Removed as per design request
-                                       Padding(
-                                         padding: const EdgeInsets.only(bottom: 16),
-                                         child: SolarSystemAnalysisCard(data: solar.toJson(), cleanedName: solar.cleanedName),
-                                       ),
-                                       _buildThreeActionButtons(),
-                                       const SizedBox(height: 24),
-                                       CategoryNestedDonut(
-                                         categoryBreakdown: solar.categoryBreakdown,
-                                         totalPairs: solar.totalPairs,
-                                         grandTotalScore: solar.grandTotalScore.toInt(),
-                                         totalPositiveScore: solar.totalPositiveScore,
-                                         totalNegativeScore: solar.totalNegativeScore,
-                                         analyzedName: solar.cleanedName,
-                                       ),
-                                    ],
-                                 ),
-                               ),
-
-                               // 2. Extra Sections (Top 4, Actions)
-                               // _buildActionsGrid(), // Removed in favor of 3-button row above
-                               const SizedBox(height: 40),
-                               // 2. Extra Sections (Top 4, Actions) - Restored
-                               Top4Section(
-                                 data: result.bestNames,
-                                 showTop4: _viewModel.showTop4,
-                                 showKlakini: _viewModel.showKlakiniTop4,
-                                 isLoading: _viewModel.isNamesLoading,
-                                 isSwitching: _viewModel.isTop4Switching,
-                                 onToggleTop4: _viewModel.toggleShowTop4,
-                                 onToggleKlakini: _viewModel.toggleShowKlakiniTop4,
-                                 onNameSelected: (name) {
-                                    _viewModel.setName(name);
-                                    _nameController.text = name;
-                                    _viewModel.analyze();
-                                    _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
-                                 },
-                               ),
-                               const SizedBox(height: 24),
-                               ActionsSection(
-                                 similarNames: result.similarNames,
-                                 showKlakini: _viewModel.showKlakini,
-                                 showGoodOnly: _viewModel.isAuspicious, 
-                                 isVip: result.isVip,
-                                 isLoading: _viewModel.isNamesLoading, // Added
-                                 badNumbers: _badNumbers,
-                                 onToggleKlakini: _viewModel.toggleShowKlakini,
-                                 onToggleGoodOnly: _viewModel.toggleAuspicious,
-                                 onNameSelected: (name) {
-                                    _viewModel.setName(name);
-                                    _nameController.text = name;
-                                    _viewModel.analyze(); 
-                                    _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
-                                 },
-                               ),
-
-                               const SharedFooter(),
-                               const SizedBox(height: 40),
-                             ],
-                           ),
-
-                           // Layer 2: Score Summary (Positioned over Layer 1)
-                           Positioned(
-                             left: 16,
-                             top: 75, 
-                             width: 190,
-                             child: Column(
-                               crossAxisAlignment: CrossAxisAlignment.start,
-                               mainAxisSize: MainAxisSize.min,
-                               children: [
-                                 Text('คะแนนรวม', style: GoogleFonts.kanit(fontSize: 14, color: const Color(0xFF64748B), fontWeight: FontWeight.bold)),
-                                 const SizedBox(height: 0), 
-                                 FittedBox(
-                                   fit: BoxFit.scaleDown,
-                                   alignment: Alignment.centerLeft,
-                                   child: Row(
-                                     children: [
-                                       Text(solar.grandTotalScore >= 0 ? '😊' : '😭', style: const TextStyle(fontSize: 36)),
-                                       const SizedBox(width: 10),
-                                       Text(
-                                         '${solar.grandTotalScore >= 0 ? '+' : ''}${solar.grandTotalScore.toInt()}',
-                                         softWrap: false,
-                                         maxLines: 1,
-                                         style: GoogleFonts.kanit(
-                                           fontSize: 36, 
-                                           fontWeight: FontWeight.w900, 
-                                           color: solar.grandTotalScore >= 0 ? const Color(0xFF00C853) : const Color(0xFFFF1744),
-                                           height: 1.0
-                                         ),
-                                       ),
-                                     ],
-                                   ),
-                                 ),
-                                 const SizedBox(height: 0), 
-                                 Row(
-                                   children: [
-                                     _buildSmallPill('ดี +${solar.totalPositiveScore}', const Color(0xFFE8F5E9), const Color(0xFF00C853)),
-                                     const SizedBox(width: 8),
-                                     _buildSmallPill('ร้าย ${solar.totalNegativeScore}', const Color(0xFFFFEBEE), const Color(0xFFFF1744)),
-                                   ],
-                                 ),
-                               ],
-                             ),
-                           ),
-
-                           // Layer 3: Solar System (ABSOLUTELY ON TOP)
-                           Positioned(
-                             right: -50, 
-                             top: -15, 
-                             left: 80, 
-                             height: 280, // Increased height to prevent planet clipping
-                             child: SolarSystemWidget(
-                               sumPair: solar.sumPair,
-                               mainPairs: solar.mainPairs,
-                               hiddenPairs: solar.hiddenPairs,
-                               title: solar.cleanedName,
-                               displayName: solar.sunDisplayNameHtml,
-                               isDead: solar.grandTotalScore < 0,
-                             ),
-                           ),
-                         ],
-                       );
-                     },
-                   ),
                  ),
-            ],
-          ),
+               ),
+          ],
         ),
       ),
       floatingActionButton: _showScrollToTop ? FloatingActionButton(

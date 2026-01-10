@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/main_tab_page.dart';
 import 'utils/social_auth_config.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  await initializeDateFormatting('th', null);
   
   // Initialize LINE SDK in background
   SocialAuthConfig.initializeLineSDK();

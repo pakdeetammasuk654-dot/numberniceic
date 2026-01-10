@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:ui' as ui;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -15,11 +16,18 @@ import 'login_page.dart';
 import 'main_tab_page.dart';
 import 'shop_page.dart';
 import 'shipping_address_page.dart';
+import 'notification_list_page.dart';
 import 'order_history_page.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../services/notification_service.dart';
 import 'privacy_policy_page.dart';
 import 'delete_account_page.dart';
 import '../widgets/shared_footer.dart';
+import '../widgets/adaptive_footer_scroll_view.dart';
 import '../widgets/lucky_number_card.dart'; // Import for Saved Number Display
+
+import '../services/notification_service.dart';
+import '../services/local_notification_storage.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -32,16 +40,129 @@ class _DashboardPageState extends State<DashboardPage> {
   late Future<Map<String, dynamic>> _dashboardFuture;
   late Future<bool> _isBuddhistDayFuture;
   late Future<Map<String, dynamic>> _userInfoFuture;
+  int _unreadCount = 0;
+  bool _isNotificationEnabled = false;
 
   @override
   void initState() {
     super.initState();
+    _dashboardFuture = ApiService.getDashboard(); // Initialize immediately to avoid late error
     _loadDashboard();
     _isBuddhistDayFuture = ApiService.isBuddhistDayToday();
     _userInfoFuture = AuthService.getUserInfo();
+    _checkNotification();
+    _loadNotificationSetting(); // Load setting
+    
+    // Init notification service
+    NotificationService().init();
+    
+    // Clear old shipping address notifications and then auto-enable
+    _initializeNotifications();
+    
     // Listen for refresh signals from other pages (e.g. AnalyzerPage after saving)
     ApiService.dashboardRefreshSignal.addListener(_loadDashboard);
   }
+
+  Future<void> _initializeNotifications() async {
+    // Clear old shipping address notifications first
+    await LocalNotificationStorage.clearShippingAddressNotifications();
+    
+    // Then auto-enable notifications on first launch
+    await _autoEnableNotificationsOnFirstLaunch();
+  }
+
+  Future<void> _autoEnableNotificationsOnFirstLaunch() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasConfigured = prefs.containsKey('buddhist_notification_enabled');
+    
+    if (!hasConfigured) {
+      // First time - try to auto-enable
+      _toggleNotification(true);
+    }
+  }
+
+  Future<void> _loadNotificationSetting() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isNotificationEnabled = prefs.getBool('buddhist_notification_enabled') ?? true; // Default: enabled
+    });
+  }
+
+  Future<void> _toggleNotification(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Show Loading
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+            child: const CircularProgressIndicator(color: Colors.amber),
+          ),
+        ),
+      );
+    }
+
+    try {
+      if (value) {
+        // Enable
+        bool granted = await NotificationService().requestPermissions();
+        if (!granted) {
+          if (mounted) {
+            Navigator.pop(context); // Remove loading
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text('การแจ้งเตือนถูกปิดอยู่', style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
+                content: Text('กรุณาอนุญาตการแจ้งเตือนใน "การตั้งค่า" ของตัวเครื่อง เพื่อรับข่าวสารวันพระ', style: GoogleFonts.kanit()),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('รับทราบ', style: GoogleFonts.kanit()),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      openAppSettings();
+                    },
+                    child: Text('ไปที่ตั้งค่า', style: GoogleFonts.kanit(color: Colors.amber, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            );
+          }
+          return;
+        }
+
+        final days = await ApiService.getBuddhistDays();
+        await NotificationService().scheduleBuddhistDayNotifications(days);
+        
+        if (mounted) CustomToast.show(context, 'เปิดการแจ้งเตือนวันพระเรียบร้อยแล้ว');
+      } else {
+        // Disable
+        await NotificationService().cancelAll();
+        if (mounted) CustomToast.show(context, 'ปิดการแจ้งเตือนแล้ว');
+      }
+
+      // Success - Update state
+      await prefs.setBool('buddhist_notification_enabled', value);
+      if (mounted) {
+        setState(() {
+          _isNotificationEnabled = value;
+        });
+        _checkNotification();
+      }
+    } catch (e) {
+      print("❌ Error in toggle notification: $e");
+      if (mounted) CustomToast.show(context, 'เกิดข้อผิดพลาดในการตั้งค่า', isSuccess: false);
+    } finally {
+      if (mounted) Navigator.pop(context); // Remove loading
+    }
+  }
+
 
   @override
   void dispose() {
@@ -49,10 +170,69 @@ class _DashboardPageState extends State<DashboardPage> {
     super.dispose();
   }
 
-  void _loadDashboard() {
+  void _loadDashboard() async {
+    // Check previous VIP status before fetching
+    final prefs = await SharedPreferences.getInstance();
+    final wasVip = prefs.getBool(AuthService.keyIsVip) ?? false;
+
     setState(() {
-      _dashboardFuture = ApiService.getDashboard();
+      _dashboardFuture = ApiService.getDashboard().then((data) {
+          final isVip = data['is_vip'] == true || data['IsVIP'] == true;
+          final hasAddress = data['has_shipping_address'] == true || data['HasShippingAddress'] == true;
+          
+          // Alert if VIP expired (Was VIP -> Now Not VIP)
+          if (wasVip && !isVip && mounted) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              showDialog(
+                context: context, 
+                builder: (_) => AlertDialog(
+                  title: Text('สถานะ VIP หมดอายุ', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: Colors.orange)),
+                  content: Text('คุณสามารถต่ออายุ VIP ได้โดยการกรอกรหัส VIP ใหม่', style: GoogleFonts.kanit()),
+                  actions: [TextButton(onPressed: ()=>Navigator.pop(context), child: Text('ตกลง', style: GoogleFonts.kanit()))]
+                )
+              );
+            });
+          }
+
+          return data;
+      }).catchError((error) {
+         // Handle Suspension / 403
+         if (error.toString().contains('suspended') || error.toString().contains('403')) {
+            if (mounted) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                 CustomToast.show(context, 'บัญชีของคุณถูกระงับการใช้งาน', isSuccess: false);
+                 AuthService.logout();
+                 Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 0)),
+                    (route) => false,
+                 );
+              });
+            }
+         }
+         throw error;
+      });
     });
+  }
+
+  Future<void> _checkNotification() async {
+      try {
+        final serverNotifs = await ApiService.getUserNotifications();
+        final hiddenIds = await LocalNotificationStorage.getHiddenServerIds();
+        
+        // Count server unread that are NOT hidden
+        final serverUnreadCount = serverNotifs.where((n) => !n.isRead && !hiddenIds.contains(n.id)).length;
+        
+        // Count local unread
+        final localCount = await LocalNotificationStorage.getUnreadCount();
+        
+        if (mounted) {
+           setState(() {
+             _unreadCount = serverUnreadCount + localCount;
+           });
+        }
+      } catch (e) {
+        debugPrint('Error checking notifications: $e');
+      }
   }
 
   Future<void> _confirmDelete(int id) async {
@@ -83,6 +263,36 @@ class _DashboardPageState extends State<DashboardPage> {
         CustomToast.show(context, e.toString().replaceAll('Exception: ', ''), isSuccess: false);
       }
     }
+  }
+  Future<void> _confirmLogout() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('ยืนยันออกจากระบบ', style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
+        content: Text('คุณต้องการออกจากระบบใช่หรือไม่?', style: GoogleFonts.kanit()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('ยกเลิก', style: GoogleFonts.kanit(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await AuthService.logout();
+              if (mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 0)),
+                  (route) => false,
+                );
+                CustomToast.show(context, 'ออกจากระบบเรียบร้อยแล้ว');
+              }
+            },
+            child: Text('ออกจากระบบ', style: GoogleFonts.kanit(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showUpgradeDialog() async {
@@ -138,50 +348,96 @@ class _DashboardPageState extends State<DashboardPage> {
               final tel = data['tel'] ?? data['Tel'] ?? '';
               final hasAddress = data['has_shipping_address'] == true || data['HasShippingAddress'] == true;
 
-              return SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  children: [
-                    // 1. Premium Header with Avatar
-                    _buildPremiumHeader(context, username, email, avatarUrl, isVip, isAdmin),
-                    
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20), // More breathing room
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const SizedBox(height: 24),
-                          
-                          // 2. VIP Privilege Card
-                          _buildPrivilegeCard(isVip),
-                          
-                          const SizedBox(height: 24),
-                          
-                          // 3. Saved Names Section
-                          _buildSavedNamesHeader(savedNames.length),
-                          const SizedBox(height: 12),
-                          if (savedNames.isEmpty)
-                            _buildEmptyState()
-                          else
-                            _buildSavedNamesTable(savedNames, isVip),
-                            
-                          const SizedBox(height: 32),
-                          
-                          // 4. Menu Section (Clean List)
-                          Text('เมนูบัญชีผู้ใช้', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-                          const SizedBox(height: 12),
-                          _buildMenuCard(context, hasAddress),
+              return AdaptiveFooterScrollView(
+                onRefresh: () async => _loadDashboard(),
+                children: [
+                  // 1. Premium Header with Avatar
+                  _buildPremiumHeader(context, username, email, avatarUrl, isVip, isAdmin, hasAddress, _unreadCount),
 
-                        ],
-                      ),
+                  // Buddhist Day Banner
+                  FutureBuilder<bool>(
+                    future: _isBuddhistDayFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData && snapshot.data == true) {
+                        return Container(
+                          margin: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(color: Colors.orange.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4)),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.3),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.wb_sunny_rounded, color: Colors.white, size: 24),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'วันนี้วันพระ',
+                                      style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                                    ),
+                                    Text(
+                                      'ทำจิตใจให้ผ่องใส คิดดี ทำดี พูดดี',
+                                      style: GoogleFonts.kanit(fontSize: 12, color: Colors.white.withOpacity(0.9)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      return const SizedBox();
+                    },
+                  ),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 24),
+                        
+                        // 2. VIP Privilege Card
+                        _buildPrivilegeCard(isVip),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // 3. Saved Names Section
+                        _buildSavedNamesHeader(savedNames.length),
+                        const SizedBox(height: 12),
+                        if (savedNames.isEmpty)
+                          _buildEmptyState()
+                        else
+                          _buildSavedNamesTable(savedNames, isVip),
+                          
+                        const SizedBox(height: 32),
+                        
+                        // 4. Menu Section (Clean List)
+                        Text('เมนูบัญชีผู้ใช้', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                        const SizedBox(height: 12),
+                        _buildMenuCard(context, hasAddress),
+                      ],
                     ),
-                    
-                    const SizedBox(height: 40), // Add spacing before footer
-                    
-                    // Footer - Full Width
-                    const SharedFooter(),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
               );
             },
           ),
@@ -190,8 +446,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // --- New Header Widget ---
-  Widget _buildPremiumHeader(BuildContext context, String username, String email, String? avatarUrl, bool isVip, bool isAdmin) {
+  Widget _buildPremiumHeader(BuildContext context, String username, String email, String? avatarUrl, bool isVip, bool isAdmin, bool hasAddress, int unreadCount) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -202,25 +457,58 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       ),
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-      child: Stack( // Wrap Column with Stack for absolute positioning
+      child: Stack(
         children: [
-          // Logout Button (Top Right)
+          // Top Buttons (Notification + Logout)
           Positioned(
             top: 0,
             right: 0,
-            child: IconButton(
-              onPressed: () async {
-                 await AuthService.logout();
-                 if (context.mounted) {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 0)),
-                      (route) => false,
-                    );
-                    CustomToast.show(context, 'ออกจากระบบเรียบร้อยแล้ว');
-                 }
-              },
-              icon: const Icon(Icons.logout, color: Colors.grey),
-              tooltip: 'ออกจากระบบ',
+            child: Row(
+              children: [
+                // Notification Bell
+                Stack(
+                  alignment: Alignment.topRight,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                         Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationListPage()))
+                            .then((_) => _checkNotification());
+                      },
+                      icon: const Icon(Icons.notifications_none_rounded, color: Colors.grey, size: 28),
+                      tooltip: 'การแจ้งเตือน',
+                    ),
+                    if (unreadCount > 0)
+                      Positioned(
+                        right: 6,
+                        top: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.white, width: 1.5),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
+                          child: Center(
+                            child: Text(
+                              unreadCount > 9 ? '9+' : '$unreadCount',
+                              style: GoogleFonts.kanit(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                height: 1.0,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
             ),
           ),
           
@@ -261,16 +549,16 @@ class _DashboardPageState extends State<DashboardPage> {
                       : null,
                  ),
                ),
-               if (isAdmin)
-                 Positioned(
-                   bottom: 0,
-                   right: 0,
-                   child: Container(
-                     padding: const EdgeInsets.all(6),
-                     decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                     child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 16),
-                   ),
-                 )
+                if (isAdmin)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                      child: const Icon(Icons.verified_user, color: Colors.white, size: 16),
+                    ),
+                  )
              ],
            ),
            const SizedBox(height: 16),
@@ -377,6 +665,31 @@ class _DashboardPageState extends State<DashboardPage> {
                  await Navigator.push(context, MaterialPageRoute(builder: (context) => const ShippingAddressPage()));
                  _loadDashboard();
              },
+           ),
+           const Divider(height: 1, indent: 60),
+           SwitchListTile(
+              value: _isNotificationEnabled,
+              onChanged: _toggleNotification,
+              title: Text('แจ้งเตือนวันพระ', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.w500)),
+              subtitle: Text('รับการแจ้งเตือนวันสำคัญทางศาสนา', style: GoogleFonts.kanit(fontSize: 12, color: Colors.grey)),
+              secondary: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.notifications_active_outlined, color: Colors.amber, size: 22),
+              ),
+              activeColor: Colors.amber,
+              contentPadding: const EdgeInsets.only(left: 16, right: 8),
+           ),
+           const Divider(height: 1, indent: 60),
+           _buildMenuItem(
+             context,
+             icon: Icons.logout,
+             title: 'ออกจากระบบ',
+             iconColor: Colors.redAccent,
+             onTap: _confirmLogout,
            ),
         ],
       ),

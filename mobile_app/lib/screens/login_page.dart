@@ -57,8 +57,11 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) {
         CustomToast.show(context, 'เข้าสู่ระบบสำเร็จ ยินดีต้อนรับ!');
         
+        final pending = await AuthService.getPendingPurchase();
+        int targetIndex = pending != null ? 2 : 3;
+
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 4)),
+          MaterialPageRoute(builder: (context) => MainTabPage(initialIndex: targetIndex)),
           (Route<dynamic> route) => false,
         );
       }
@@ -103,8 +106,11 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) {
         CustomToast.show(context, 'เข้าสู่ระบบสำเร็จ ยินดีต้อนรับ!');
         
+        final pending = await AuthService.getPendingPurchase();
+        int targetIndex = pending != null ? 2 : 3;
+
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 4)),
+          MaterialPageRoute(builder: (context) => MainTabPage(initialIndex: targetIndex)),
           (Route<dynamic> route) => false,
         );
       }

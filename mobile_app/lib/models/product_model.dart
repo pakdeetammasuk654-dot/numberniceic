@@ -31,4 +31,17 @@ class ProductModel {
       imagePath: json['image_path'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'price': price,
+      'image_color_1': imageColor1,
+      'image_color_2': imageColor2,
+      'icon_type': iconType,
+      'image_path': imagePath,
+    };
+  }
 }

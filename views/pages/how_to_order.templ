@@ -1,0 +1,170 @@
+package pages
+
+templ HowToOrder() {
+	<div class="page-wrapper">
+		<div class="page-container">
+			<h1 class="page-title">วิธีการสั่งซื้อและสิทธิประโยชน์ VIP</h1>
+			<p class="page-subtitle">อัปเกรดสถานะของคุณเพื่อเข้าถึงการวิเคราะห์เชิงลึก</p>
+
+			<div class="step-section">
+				<div class="step-card">
+					<div class="step-number">1</div>
+					<div class="step-content">
+						<h3>เลือกสินค้าที่ต้องการ</h3>
+						<p>เลือกเบอร์โทรศัพท์หรือสินค้ามงคลที่คุณต้องการจากหน้า "ร้านค้า" ของเรา</p>
+					</div>
+				</div>
+				<div class="step-card">
+					<div class="step-number">2</div>
+					<div class="step-content">
+						<h3>ชำระเงินผ่าน QR Code</h3>
+						<p>ระบบจะสร้าง QR Code สำหรับชำระเงิน คุณสามารถสแกนจ่ายได้ทันที หรือ <strong>Capture หน้าจอ</strong> เพื่อนำไปสแกนจ่ายผ่านแอปธนาคารทุกธนาคาร</p>
+					</div>
+				</div>
+				<div class="step-card">
+					<div class="step-number">3</div>
+					<div class="step-content">
+						<h3>เปิดใช้งาน VIP อัตโนมัติ</h3>
+						<p>เมื่อระบบตรวจสอบยอดเงินสำเร็จ บัญชีของคุณจะถูกปรับสถานะเป็น VIP ทันที โดยไม่ต้องกรอกรหัสใดๆ เพิ่มเติม</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="vip-benefits-box">
+				<h2><span class="premium-gold-text">⭐ สิทธิพิเศษสำหรับ VIP</span></h2>
+				<ul class="benefits-list">
+					<li><strong>วิเคราะห์เชิงลึก:</strong> เข้าถึงผลลัพธ์การวิเคราะห์พยัญชนะ สระ และพลังเงาแบบละเอียด</li>
+					<li><strong>บันทึกประวัติ:</strong> จัดเก็บรายชื่อและผลการวิเคราะห์ไว้ดูย้อนหลังได้ไม่จำกัด</li>
+					<li><strong>ฟีเจอร์ใหม่:</strong> ได้รับสิทธิ์ใช้งานฟีเจอร์พรีเมียมใหม่ๆ ก่อนใคร</li>
+					<li><strong>ระยะเวลา:</strong> ใช้งานได้นาน 1 ปีเต็ม นับจากวันที่เปิดใช้งาน</li>
+				</ul>
+			</div>
+
+			<div class="tip-box">
+				<div class="tip-icon">💡</div>
+				<div class="tip-text">
+					<strong>คำแนะนำ:</strong> ในหน้าชำระเงิน คุณสามารถใช้มือถือ Capture (บันทึกภาพหน้าจอ) QR Code เก็บไว้ในเครื่อง แล้วเปิดแอปธนาคาร เลือกเมนู "สแกน" และเลือก "รูปภาพจากคลังภาพ" เพื่อชำระเงินได้ทันที
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<style type="text/css">
+		.page-wrapper {
+			background-color: #f8f9fa;
+			min-height: 80vh;
+			padding: 4rem 1rem;
+			font-family: 'Sarabun', sans-serif;
+		}
+		.page-container {
+			max-width: 900px;
+			margin: 0 auto;
+			background: white;
+			padding: 3rem;
+			border-radius: 20px;
+			box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+		}
+		.page-title {
+			font-family: 'Kanit', sans-serif;
+			font-size: 2.2rem;
+			color: #1a202c;
+			margin-bottom: 0.5rem;
+			text-align: center;
+		}
+		.page-subtitle {
+			text-align: center;
+			color: #718096;
+			margin-bottom: 3rem;
+			font-size: 1.1rem;
+		}
+		.step-section {
+			display: flex;
+			flex-direction: column;
+			gap: 1.5rem;
+			margin-bottom: 3rem;
+		}
+		.step-card {
+			display: flex;
+			gap: 1.5rem;
+			padding: 1.5rem;
+			background: #fcfcfc;
+			border-radius: 12px;
+			border: 1px solid #edf2f7;
+			align-items: flex-start;
+		}
+		.step-number {
+			background: #2d3748;
+			color: white;
+			width: 40px;
+			height: 40px;
+			min-width: 40px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-family: 'Kanit', sans-serif;
+			font-weight: bold;
+			font-size: 1.2rem;
+		}
+		.step-content h3 {
+			font-family: 'Kanit', sans-serif;
+			font-size: 1.25rem;
+			margin-bottom: 0.5rem;
+			color: #1a202c;
+		}
+		.step-content p {
+			color: #4a5568;
+			font-size: 1rem;
+			line-height: 1.6;
+		}
+		.vip-benefits-box {
+			background: #fffdf2;
+			padding: 2.5rem;
+			border-radius: 16px;
+			border: 2px solid #f6e05e;
+			margin-bottom: 2rem;
+		}
+		.vip-benefits-box h2 {
+			font-family: 'Kanit', sans-serif;
+			margin-bottom: 1.5rem;
+			text-align: center;
+		}
+		.benefits-list {
+			list-style: none;
+			padding: 0;
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 1.5rem;
+		}
+		.benefits-list li {
+			position: relative;
+			padding-left: 2rem;
+			color: #2d3748;
+			line-height: 1.5;
+		}
+		.benefits-list li::before {
+			content: "✅";
+			position: absolute;
+			left: 0;
+			top: 0;
+		}
+		.tip-box {
+			background: #ebf8ff;
+			padding: 1.5rem;
+			border-radius: 12px;
+			border-left: 4px solid #4299e1;
+			display: flex;
+			gap: 1rem;
+			align-items: center;
+		}
+		.tip-icon { font-size: 1.5rem; }
+		.tip-text { color: #2c5282; font-size: 0.95rem; line-height: 1.6; }
+		
+		@media (max-width: 768px) {
+			.page-container { padding: 1.5rem; }
+			.page-title { font-size: 1.8rem; }
+			.benefits-list { grid-template-columns: 1fr; }
+			.step-card { padding: 1rem; }
+		}
+	</style>
+}

@@ -51,6 +51,7 @@ func (h *ArticleHandler) ShowArticlesPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true, // HasShippingAddress (suppress)
 		"articles",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
@@ -97,6 +98,7 @@ func (h *ArticleHandler) ShowArticleDetailPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
+		true, // HasShippingAddress (suppress)
 		"articles",
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),

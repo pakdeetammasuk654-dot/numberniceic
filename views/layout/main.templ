@@ -11,7 +11,7 @@ type SEOProps struct {
 	OGType      string
 }
 
-templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage string, toastSuccess string, toastError string, avatarURL string, content templ.Component) {
+templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, hasShippingAddress bool, activePage string, toastSuccess string, toastError string, avatarURL string, content templ.Component) {
 	<!DOCTYPE html>
 	<html lang="th">
 		<head>
@@ -121,10 +121,9 @@ templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage s
 				<!-- HTMX will inject content here -->
 			</div>
 
-			<!-- Buddhist Day Banner (Loaded via HTMX) -->
-			<div hx-get="/buddhist-day-banner" hx-trigger="load" hx-swap="outerHTML"></div>
 
-			@components.Navbar(isLoggedIn, isAdmin, isVIP, activePage, avatarURL)
+
+			@components.Navbar(isLoggedIn, isAdmin, isVIP, hasShippingAddress, activePage, avatarURL)
 			
 			<main class="main-content">
 				@content
@@ -233,6 +232,10 @@ templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage s
 
                 // Structured Toast Listeners
                 document.body.addEventListener('show-toast-success', function(evt) {
+                    // Clear existing toasts
+                    var toasts = document.querySelectorAll('.toastify');
+                    toasts.forEach(function(t) { t.remove(); });
+
                     Toastify({
                         text: evt.detail.value || "ดำเนินการสำเร็จ",
                         duration: 3000,
@@ -243,6 +246,10 @@ templ Main(seo SEOProps, isLoggedIn bool, isAdmin bool, isVIP bool, activePage s
                 });
 
                 document.body.addEventListener('show-toast-error', function(evt) {
+                    // Clear existing toasts
+                    var toasts = document.querySelectorAll('.toastify');
+                    toasts.forEach(function(t) { t.remove(); });
+
                     Toastify({
                         text: evt.detail.value || "เกิดข้อผิดพลาด",
                         duration: 3000,

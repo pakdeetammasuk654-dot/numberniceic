@@ -31,9 +31,9 @@ templ Shop(isLoggedIn bool) {
 					<h3 id="confirm-product-name" style="font-size: 1.25rem; color: #2d3748; margin-bottom: 0.25rem; font-weight: bold;">-</h3>
 					<div id="confirm-product-price" style="font-size: 1.5rem; color: #2da44e; font-weight: bold; margin-bottom: 1rem;">0.00 ฿</div>
 					
-					<div style="background: #ebf8ff; color: #2b6cb0; padding: 0.75rem; border-radius: 12px; display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; font-weight: bold; border: 1px solid #bee3f8;">
+					<div style="background: #fff8e1; color: #d97706; padding: 0.75rem; border-radius: 12px; display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; font-weight: bold; border: 1px solid #ffe082;">
 						<span style="font-size: 1.25rem;">⭐</span>
-						<span>แถมฟรี! รหัส VIP 1 ปี</span>
+						<span>เป็น VIP อัตโนมัติเมื่อชำระสำเร็จ</span>
 					</div>
 				</div>
 
@@ -59,13 +59,14 @@ templ Shop(isLoggedIn bool) {
 				</div>
 				<div style="padding: 2rem;">
 					<div style="text-align: center; margin-bottom: 2rem;">
-						<p style="color: #718096; margin-bottom: 1rem;">กรุณาสแกน QR Code เพื่อชำระเงิน</p>
-						<div style="width: 200px; height: 200px; background: #f7fafc; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; border: 1px solid #edf2f7; border-radius: 12px;">
+						<p style="color: #718096; margin-bottom: 0.5rem;">กรุณาสแกน QR Code เพื่อชำระเงิน</p>
+						<p style="color: #2d3748; font-size: 0.85rem; margin-bottom: 1rem; font-weight: bold;">Capture หน้าจอเพื่อสแกนจ่ายผ่านแอปธนาคาร</p>
+						<div style="width: 200px; height: 200px; background: white; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; border: 1px solid #edf2f7; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
 							<img id="qr-code-img" src="" alt="PromptPay QR" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;">
 						</div>
 						<h2 id="pay-amount" style="font-size: 2rem; color: #2d3748; font-weight: bold; margin: 0;">0.00 ฿</h2>
 						<p style="margin-top: 0.5rem; color: #e53e3e; font-weight: bold;">
-							ชำระภายใน <span id="payment-timer">10:00</span> นาที
+							อายุ QR นี้เหลือ <span id="payment-timer">10:00</span>
 						</p>
 					</div>
 					
@@ -89,23 +90,18 @@ templ Shop(isLoggedIn bool) {
 		<!-- Success Modal -->
 		<div id="shop-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1001; align-items: center; justify-content: center; padding: 1rem;">
 			<div style="background: white; padding: 2.5rem; border-radius: 24px; max-width: 450px; width: 100%; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
-				<div style="width: 70px; height: 70px; background: #2da44e; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
-					<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+				<div style="width: 80px; height: 80px; background: #2ecc71; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+					<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
 				</div>
-				<h2 style="font-size: 1.75rem; color: #2d3748; margin-bottom: 0.5rem;">ชำระเงินสำเร็จ!</h2>
-				<p style="color: #718096; margin-bottom: 2rem;">ขอบคุณสำหรับการสั่งซื้อ</p>
-				
-				<div style="background: #f7fafc; border: 2px dashed #cbd5e0; padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem;">
-					<p style="font-size: 0.85rem; color: #718096; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px;">รหัส VIP ของคุณคือ</p>
-					<h3 id="modal-promo-code" style="font-size: 2rem; color: #2d3748; font-family: monospace; letter-spacing: 2px; margin: 0;">--------</h3>
-				</div>
-
-				<p id="shop-modal-desc" style="font-size: 0.9rem; color: #718096; margin-bottom: 2rem;">*รหัสนี้ถูกบันทึกในประวัติการสั่งซื้อของคุณแล้ว</p>
+				<h2 style="font-size: 1.75rem; color: #2d3748; margin-bottom: 0.75rem; font-weight: bold;">ชำระเงินสำเร็จ!</h2>
+				<p style="color: #718096; margin-bottom: 2rem; font-size: 1.1rem; line-height: 1.5;">ระบบเปิดใช้งานสถานะ VIP<br/>ให้คุณเรียบร้อยแล้ว!</p>
 				
 				<button 
-					onclick="window.closeShopModal()"
-					style="width: 100%; background: #edf2f7; color: #4a5568; border: none; padding: 1rem; border-radius: 12px; font-weight: bold; font-family: 'Kanit', sans-serif; cursor: pointer;"
-				>ปิดหน้าต่าง</button>
+					onclick="window.location.href='/dashboard'"
+					style="width: 100%; background: #2ecc71; color: white; border: none; padding: 1.1rem; border-radius: 12px; font-weight: bold; font-family: 'Kanit', sans-serif; cursor: pointer; font-size: 1.1rem; transition: transform 0.2s;"
+					onmouseover="this.style.transform='scale(1.02)'"
+					onmouseout="this.style.transform='scale(1)'"
+				>เข้าสู่แดชบอร์ด</button>
 			</div>
 		</div>
 		
@@ -179,7 +175,7 @@ templ Shop(isLoggedIn bool) {
 
 					if (--timer < 0) {
 						clearInterval(window.timerInterval);
-						alert("หมดเวลาทำรายการ กรุณาทำรายการใหม่");
+						alert("หมดเวลาทำรายการ (อายุ QR สิ้นสุดแล้ว) กรุณาทำรายการใหม่");
 						window.closePaymentModal();
 					}
 				}, 1000);
@@ -187,6 +183,8 @@ templ Shop(isLoggedIn bool) {
 
 			window.initiatePurchase = function(productName, price) {
 				if (!window.isLoggedIn) {
+					// Save pending purchase in localStorage
+					localStorage.setItem('pending_purchase', JSON.stringify({ name: productName, price: price }));
 					window.location.href = '/login';
 					return;
 				}
@@ -295,6 +293,28 @@ templ Shop(isLoggedIn bool) {
 				document.getElementById('shop-modal').style.display = 'none';
                 // Optional: Redirect to Dashboard?
 			};
+
+			window.checkAndResumePendingPurchase = function() {
+				const pendingData = localStorage.getItem('pending_purchase');
+				if (pendingData && window.isLoggedIn) {
+					try {
+						const product = JSON.parse(pendingData);
+						localStorage.removeItem('pending_purchase');
+						
+						// Delay slightly to ensure everything is ready
+						setTimeout(() => {
+							window.initiatePurchase(product.name, product.price);
+						}, 500);
+					} catch (e) {
+						console.error("Error resuming purchase", e);
+						localStorage.removeItem('pending_purchase');
+					}
+				}
+			};
+
+			// Check for pending purchase on load
+			window.checkAndResumePendingPurchase();
+
 
 
 

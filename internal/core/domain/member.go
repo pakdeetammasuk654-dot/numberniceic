@@ -25,6 +25,7 @@ type Member struct {
 
 const (
 	// Status Constants
+	StatusBanned = -1
 	StatusMember = 1
 	StatusVIP    = 2
 )
@@ -76,8 +77,12 @@ func (m *Member) GetVIPExpiryText() string {
 		return ""
 	}
 
+	if m.Status == 9 {
+		return "ผู้ดูแลระบบ"
+	}
+
 	if m.VIPExpiresAt == nil {
-		return "หนึ่งปี"
+		return "ตลอดชีพ"
 	}
 
 	days := m.GetVIPDaysRemaining()

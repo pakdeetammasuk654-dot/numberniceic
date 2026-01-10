@@ -188,6 +188,19 @@ class ApiService {
     }
   }
 
+  // Get Upcoming Buddhist Days List
+  static Future<List<dynamic>> getBuddhistDays() async {
+    final response = await http.get(Uri.parse('$baseUrl/api/buddhist-days'));
+
+    if (response.statusCode == 200) {
+      // Returns List<Map<String, dynamic>>
+      // Each item: { "id": 1, "date": "2024-01-01T00:00:00Z" }
+      return json.decode(utf8.decode(response.bodyBytes));
+    } else {
+      throw Exception('Failed to load buddhist days');
+    }
+  }
+
   static Future<bool> isBuddhistDayToday() async {
     final now = DateTime.now();
     final dateStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
@@ -695,6 +708,36 @@ class ApiService {
       return response.statusCode == 200;
     } catch (e) {
       if (kDebugMode) print('❌ API ERROR: Mark as read: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> createNotification(String title, String message) async {
+    final url = Uri.parse('$baseUrl/api/notifications');
+    final token = await AuthService.getToken();
+    if (token == null) return false;
+
+    try {
+      if (kDebugMode) print('🚀 API REQUEST: POST $url (Authenticated)');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'title': title,
+          'message': message,
+        }),
+      );
+      
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return true;
+      }
+      if (kDebugMode) print('❌ API RESPONSE: ${response.statusCode} for create notification');
+      return false;
+    } catch (e) {
+      if (kDebugMode) print('❌ API ERROR: Create notification: $e');
       return false;
     }
   }

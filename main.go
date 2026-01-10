@@ -13,6 +13,7 @@ import (
 	"numberniceic/views/layout"
 	"numberniceic/views/pages"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -74,7 +75,8 @@ func main() {
 	articleService := service.NewArticleService(articleRepo)
 	productRepo := repository.NewPostgresProductRepository(db)
 	orderRepo := repository.NewPostgresOrderRepository(db)
-	adminService := service.NewAdminService(memberRepo, articleRepo, sampleNamesRepo, namesMiracleRepo, productRepo, orderRepo, numerologySvc, phoneNumberSvc)
+	promotionalCodeRepo := repository.NewPostgresPromotionalCodeRepository(db)
+	adminService := service.NewAdminService(memberRepo, articleRepo, sampleNamesRepo, namesMiracleRepo, productRepo, orderRepo, numerologySvc, phoneNumberSvc, promotionalCodeRepo)
 
 	buddhistDayRepo := repository.NewPostgresBuddhistDayRepository(db)
 	buddhistDayService := service.NewBuddhistDayService(buddhistDayRepo)
@@ -99,6 +101,7 @@ func main() {
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 60 * time.Second,
 		IdleTimeout:  120 * time.Second,
+		BodyLimit:    20 * 1024 * 1024, // 20MB
 	})
 	app.Use(recover.New())
 	app.Use(cors.New()) // Enable CORS for API access
@@ -137,6 +140,15 @@ func main() {
 			// Fetch Member from DB to get real-time status
 			member, err := memberRepo.GetByID(memberID)
 			if err == nil && member != nil {
+				// Check for Banned Status
+				if member.Status == domain.StatusBanned {
+					sess.Destroy()
+					if strings.HasPrefix(c.Path(), "/api/") {
+						return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "suspended", "message": "Your account has been suspended."})
+					}
+					return c.Redirect("/login?error=suspended")
+				}
+
 				isRealTimeVIP := member.IsVIP()
 				c.Locals("IsVIP", isRealTimeVIP)
 				c.Locals("AvatarURL", member.AvatarURL)
@@ -182,11 +194,10 @@ func main() {
 	// --- Handlers ---
 	// --- Handlers ---
 	numerologyHandler := handler.NewNumerologyHandler(numerologyCache, shadowCache, klakiniCache, numberPairCache, numberCategoryCache, namesMiracleRepo, linguisticService, sampleNamesCache, phoneNumberSvc, db)
-	promotionalCodeRepo := repository.NewPostgresPromotionalCodeRepository(db)
 	memberHandler := handler.NewMemberHandler(memberService, savedNameService, buddhistDayService, shippingAddressService, klakiniCache, numberPairCache, store, promotionalCodeRepo)
 	savedNameHandler := handler.NewSavedNameHandler(savedNameService, klakiniCache, numberPairCache, store)
 	articleHandler := handler.NewArticleHandler(articleService, store)
-	adminHandler := handler.NewAdminHandler(adminService, sampleNamesCache, store, buddhistDayService, walletColorService, shippingAddressService, mobileConfigService, notificationService)
+	adminHandler := handler.NewAdminHandler(adminService, sampleNamesCache, store, buddhistDayService, walletColorService, shippingAddressService, mobileConfigService, notificationService, memberService)
 
 	paymentService := service.NewPaymentService(orderRepo, memberRepo, promotionalCodeRepo)
 	// We need to pass store to paymentHandler if we want to read session user_id
@@ -305,6 +316,7 @@ func main() {
 			c.Locals("IsLoggedIn").(bool),
 			c.Locals("IsAdmin").(bool),
 			c.Locals("IsVIP").(bool),
+			true,
 			"home",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
@@ -312,6 +324,8 @@ func main() {
 			pages.Landing(pinnedArticles),
 		))
 	})
+
+	app.Get("/buddhist-calendar", memberHandler.ShowBuddhistCalendarPage)
 
 	// Buddhist Day Banner Route (HTMX)
 	app.Get("/buddhist-day-banner", func(c *fiber.Ctx) error {
@@ -327,10 +341,10 @@ func main() {
 		// Check if today is the buddhist day
 		if today.Equal(targetDay) {
 			return c.SendString(`
-				<div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
-					<p class="font-bold">วันนี้วันพระ</p>
-					<p>ขอให้ท่านมีความสุขกาย สุขใจ คิดสิ่งใดสมปรารถนา</p>
-				</div>
+				<a href="/buddhist-calendar" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255, 215, 0, 0.2); border: 1px solid #FFD700; color: #FFD700; padding: 4px 12px; border-radius: 20px; text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(255, 215, 0, 0.3)'" onmouseout="this.style.background='rgba(255, 215, 0, 0.2)'">
+					<span style="font-size: 1rem;">🌕</span>
+					<span style="font-weight: 500;">วันนี้วันพระ</span>
+				</a>
 			`)
 		}
 
@@ -338,10 +352,10 @@ func main() {
 		tomorrow := today.Add(24 * time.Hour)
 		if tomorrow.Equal(targetDay) {
 			return c.SendString(`
-				<div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4" role="alert">
-					<p class="font-bold">พรุ่งนี้วันพระ</p>
-					<p>เตรียมตัวทำบุญ ตักบาตร เพื่อความเป็นสิริมงคล</p>
-				</div>
+				<a href="/buddhist-calendar" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: #e2e8f0; padding: 4px 12px; border-radius: 20px; text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(255, 255, 255, 0.25)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.15)'">
+					<span style="font-size: 1rem;">🙏</span>
+					<span style="font-weight: 500;">พรุ่งนี้วันพระ</span>
+				</a>
 			`)
 		}
 
@@ -368,11 +382,41 @@ func main() {
 			c.Locals("IsLoggedIn").(bool),
 			c.Locals("IsAdmin").(bool),
 			c.Locals("IsVIP").(bool),
+			true,
 			"chart-logic",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
 			getLocStr("AvatarURL"),
 			pages.ChartLogic(),
+		))
+	})
+
+	// How to Order Page
+	app.Get("/how-to-order", func(c *fiber.Ctx) error {
+		getLocStr := func(key string) string {
+			v := c.Locals(key)
+			if v == nil || v == "<nil>" {
+				return ""
+			}
+			return fmt.Sprintf("%v", v)
+		}
+		return templ_render.Render(c, layout.Main(
+			layout.SEOProps{
+				Title:       "วิธีการสั่งซื้อและสิทธิประโยชน์ VIP",
+				Description: "เรียนรู้วิธีการสั่งซื้อสินค้าและสิทธิพิเศษที่คุณจะได้รับเมื่ออัปเกรดเป็น VIP",
+				Keywords:    "วิธีการสั่งซื้อ, สิทธิ์ VIP, ชำระเงิน",
+				Canonical:   "https://xn--b3cu8e7ah6h.com/how-to-order",
+				OGType:      "website",
+			},
+			c.Locals("IsLoggedIn").(bool),
+			c.Locals("IsAdmin").(bool),
+			c.Locals("IsVIP").(bool),
+			true,
+			"how-to-order",
+			getLocStr("toast_success"),
+			getLocStr("toast_error"),
+			getLocStr("AvatarURL"),
+			pages.HowToOrder(),
 		))
 	})
 
@@ -398,6 +442,7 @@ func main() {
 			c.Locals("IsLoggedIn").(bool),
 			c.Locals("IsAdmin").(bool),
 			c.Locals("IsVIP").(bool),
+			true,
 			"about",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
@@ -426,6 +471,7 @@ func main() {
 			c.Locals("IsLoggedIn").(bool),
 			c.Locals("IsAdmin").(bool),
 			c.Locals("IsVIP").(bool),
+			true,
 			"privacy",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
@@ -454,6 +500,7 @@ func main() {
 			c.Locals("IsLoggedIn").(bool),
 			c.Locals("IsAdmin").(bool),
 			c.Locals("IsVIP").(bool),
+			true,
 			"delete-account",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
@@ -482,6 +529,7 @@ func main() {
 			c.Locals("IsLoggedIn").(bool),
 			c.Locals("IsAdmin").(bool),
 			c.Locals("IsVIP").(bool),
+			true,
 			"shop",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
@@ -513,6 +561,7 @@ func main() {
 			c.Locals("IsLoggedIn").(bool),
 			c.Locals("IsAdmin").(bool),
 			c.Locals("IsVIP").(bool),
+			true,
 			"number-analysis",
 			getLocStr("toast_success"),
 			getLocStr("toast_error"),
@@ -585,7 +634,7 @@ func main() {
 	app.Post("/api/redeem-code", optionalAuthMiddleware, promotionalCodeHandler.RedeemCode)
 	app.Post("/api/admin/generate-mock-code", promotionalCodeHandler.GenerateMockCode)
 	// Shop API
-	shopHandler := handler.NewShopHandler(orderRepo, promotionalCodeRepo, memberRepo, productRepo)
+	shopHandler := handler.NewShopHandler(orderRepo, promotionalCodeRepo, memberRepo, productRepo, paymentService)
 
 	// Shop & Payment API (Use direct app paths for consistency)
 	app.Get("/api/shop/products", shopHandler.GetProductsAPI)
@@ -595,6 +644,7 @@ func main() {
 	app.Get("/api/shop/my-orders", optionalAuthMiddleware, shopHandler.GetMyOrders)
 	app.Post("/api/shop/buy", optionalAuthMiddleware, promotionalCodeHandler.BuyProduct)
 	app.Post("/api/shop/confirm", shopHandler.ConfirmPayment)
+	app.Post("/api/shop/webhook", paymentHandler.HandlePaymentWebhook) // Map same webhook handler for shop too
 
 	// Shipping Address API
 	api.Get("/shipping", optionalAuthMiddleware, memberHandler.GetShippingAddressesAPI)
@@ -659,6 +709,7 @@ func main() {
 	// Buddhist Day Management
 	admin.Get("/buddhist-days", adminHandler.ShowBuddhistDaysPage)
 	admin.Post("/buddhist-days", adminHandler.AddBuddhistDay)
+	admin.Post("/buddhist-days/:id/update", adminHandler.UpdateBuddhistDay)
 	admin.Delete("/buddhist-days/:id", adminHandler.DeleteBuddhistDay)
 
 	// API Routes for Mobile App
@@ -699,6 +750,16 @@ func main() {
 	admin.Get("/notification", adminHandler.ShowNotificationPage)
 	admin.Post("/notification/send", adminHandler.SendNotification)
 
+	// Send Notification to Users
+	admin.Get("/send-notification", adminHandler.ShowSendNotificationPage)
+	admin.Post("/send-notification", adminHandler.HandleSendNotification)
+
+	// VIP Codes Management
+	admin.Get("/vip-codes", adminHandler.ShowVIPCodesPage)
+	admin.Post("/vip-codes/generate", adminHandler.HandleGenerateVIPCode)
+	admin.Post("/vip-codes/:code/block", adminHandler.HandleBlockUserByVIPCode)
+	admin.Post("/vip-codes/:code/unblock", adminHandler.HandleUnblockUserByVIPCode)
+
 	// Payment Routes
 	app.Get("/payment/upgrade", paymentHandler.GetUpgradeModal)
 	app.Post("/api/mock-payment/success", paymentHandler.SimulatePaymentSuccess)
@@ -708,6 +769,7 @@ func main() {
 
 	// API Notification Routes
 	app.Get("/api/notifications", optionalAuthMiddleware, adminHandler.GetUserNotificationsAPI)
+	app.Post("/api/notifications", optionalAuthMiddleware, memberHandler.CreateNotificationAPI) // Added this POST
 	app.Get("/api/notifications/unread", optionalAuthMiddleware, adminHandler.GetUnreadCountAPI)
 	app.Post("/api/notifications/:id/read", optionalAuthMiddleware, adminHandler.MarkNotificationReadAPI)
 
@@ -775,6 +837,40 @@ func setupDatabase() *sql.DB {
 	`
 	if _, err := db.Exec(migrationNotifySQL); err != nil {
 		log.Printf("Migration Warning (Notification): %v", err)
+	}
+
+	// Auto-migrate VIP Expiry
+	migrationVIPExpirySQL := `
+		ALTER TABLE member ADD COLUMN IF NOT EXISTS vip_expires_at TIMESTAMP;
+	`
+	if _, err := db.Exec(migrationVIPExpirySQL); err != nil {
+		log.Printf("Migration Warning (VIP Expiry): %v", err)
+	}
+
+	// Auto-migrate Promotional Codes
+	migrationPromoSQL := `
+		CREATE TABLE IF NOT EXISTS promotional_codes (
+			id SERIAL PRIMARY KEY,
+			code VARCHAR(50) UNIQUE NOT NULL,
+			is_used BOOLEAN DEFAULT FALSE,
+			used_by_member_id INTEGER REFERENCES member(id),
+			owner_member_id INTEGER REFERENCES member(id) ON DELETE SET NULL,
+			product_name TEXT,
+			used_at TIMESTAMP,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+	`
+	if _, err := db.Exec(migrationPromoSQL); err != nil {
+		log.Printf("Migration Warning (Promotional Codes): %v", err)
+	}
+
+	// Auto-migrate Buddhist Days columns
+	migrationBuddhistSQL := `
+		ALTER TABLE buddhist_days ADD COLUMN IF NOT EXISTS title VARCHAR(255);
+		ALTER TABLE buddhist_days ADD COLUMN IF NOT EXISTS message TEXT;
+	`
+	if _, err := db.Exec(migrationBuddhistSQL); err != nil {
+		log.Printf("Migration Warning (Buddhist Days): %v", err)
 	}
 
 	fmt.Println("Successfully connected to database and migrated schema!")

@@ -18,6 +18,7 @@ class AuthService {
   static const String keyVipExpiryText = 'auth_vip_expiry_text';
   static const String keyEmail = 'auth_email';
   static const String keyAvatarUrl = 'auth_avatar_url';
+  static const String keyPendingPurchase = 'auth_pending_purchase';
 
   // Google Sign-In Instance
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
@@ -290,5 +291,26 @@ class AuthService {
     if (data['avatar_url'] != null) await prefs.setString(keyAvatarUrl, data['avatar_url']);
     if (data['is_vip'] != null) await prefs.setBool(keyIsVip, data['is_vip']);
     if (data['vip_expiry_text'] != null) await prefs.setString(keyVipExpiryText, data['vip_expiry_text']);
+  }
+
+  // Pending Purchase Management
+  static Future<void> setPendingPurchase(Map<String, dynamic>? productData) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (productData == null) {
+      await prefs.remove(keyPendingPurchase);
+    } else {
+      await prefs.setString(keyPendingPurchase, jsonEncode(productData));
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getPendingPurchase() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString(keyPendingPurchase);
+    if (data == null) return null;
+    try {
+      return jsonDecode(data);
+    } catch (e) {
+      return null;
+    }
   }
 }

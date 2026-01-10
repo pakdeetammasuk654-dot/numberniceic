@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
 )
@@ -14,6 +15,7 @@ type AdminService struct {
 	orderRepo        ports.OrderRepository
 	numerologySvc    *NumerologyService
 	phoneNumberSvc   *PhoneNumberService
+	promoRepo        ports.PromotionalCodeRepository
 }
 
 func NewAdminService(
@@ -25,6 +27,7 @@ func NewAdminService(
 	orderRepo ports.OrderRepository,
 	numerologySvc *NumerologyService,
 	phoneNumberSvc *PhoneNumberService,
+	promoRepo ports.PromotionalCodeRepository,
 ) *AdminService {
 	return &AdminService{
 		memberRepo:       memberRepo,
@@ -35,6 +38,7 @@ func NewAdminService(
 		orderRepo:        orderRepo,
 		numerologySvc:    numerologySvc,
 		phoneNumberSvc:   phoneNumberSvc,
+		promoRepo:        promoRepo,
 	}
 }
 
@@ -190,4 +194,29 @@ func (s *AdminService) GetOrdersPaginated(page, limit int, search string) ([]dom
 
 func (s *AdminService) DeleteOrder(id int) error {
 	return s.orderRepo.Delete(id)
+}
+
+// --- Promotional Code Management ---
+
+func (s *AdminService) GetAllPromotionalCodes() ([]domain.PromotionalCode, error) {
+	return s.promoRepo.GetAll()
+}
+
+func (s *AdminService) GenerateVIPCode(code string) error {
+	return s.promoRepo.GenerateCode(code)
+}
+
+func (s *AdminService) BlockUserByVIPCode(code string) error {
+	return s.SetUserStatusByVIPCode(code, -1) // -1 is Banned
+}
+
+func (s *AdminService) SetUserStatusByVIPCode(code string, status int) error {
+	pc, err := s.promoRepo.GetByCode(code)
+	if err != nil {
+		return err
+	}
+	if pc.UsedByMemberID == nil {
+		return errors.New("code has not been used yet")
+	}
+	return s.memberRepo.UpdateStatus(*pc.UsedByMemberID, status)
 }

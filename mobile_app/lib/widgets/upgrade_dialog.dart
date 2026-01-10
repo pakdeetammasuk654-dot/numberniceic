@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import 'dart:convert';
 import '../services/api_service.dart';
+import '../services/local_notification_storage.dart';
 import '../utils/custom_toast.dart';
 
 class UpgradeDialog extends StatefulWidget {
@@ -61,6 +62,7 @@ class _UpgradeDialogState extends State<UpgradeDialog> {
       final status = await ApiService.checkPaymentStatus(_refNo!);
       if (status == 'paid' && mounted) {
         timer.cancel();
+        
         setState(() {
           _isPaid = true;
         });

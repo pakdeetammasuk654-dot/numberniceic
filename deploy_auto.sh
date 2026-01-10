@@ -12,7 +12,7 @@ echo "--- Deploying to Dedicated Server ($SERVER_IP) with Multiplexing ---"
 
 # 1. Build for Linux
 echo "Generating Templ templates..."
-~/go/bin/templ generate
+go run github.com/a-h/templ/cmd/templ@latest generate
 if [ $? -ne 0 ]; then
     echo "Templ generation failed!"
     exit 1

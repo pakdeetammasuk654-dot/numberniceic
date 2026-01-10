@@ -2,6 +2,7 @@ package analysis
 
 import (
 	"numberniceic/internal/core/domain"
+    "numberniceic/views/components"
 	"strings"
 )
 
@@ -96,6 +97,7 @@ templ Index(props IndexProps) {
 			</div>
 		</div>
 
+
 		<!-- Results Section for initial load and as a target -->
 		<div id="results-container">
 			<div class="result-container-relative">
@@ -128,6 +130,11 @@ templ Index(props IndexProps) {
 					<!-- This is where the streaming data will be injected -->
 					@props.Results
 				</div>
+                
+                <!-- Call to Action Section -->
+                <div style="margin-top: 4rem; margin-bottom: 2rem;">
+                    @components.MobileAppCTA()
+                </div>
 			</div>
 		</div>
 		

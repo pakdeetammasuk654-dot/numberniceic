@@ -131,3 +131,11 @@ func (s *MemberService) UpdateProfile(id int, username, email, tel string) error
 
 	return s.repo.Update(member)
 }
+
+func (s *MemberService) CreateUserNotification(userID int, title, message string) error {
+	return s.repo.CreateNotification(userID, title, message)
+}
+
+func (s *MemberService) CreateBroadcastNotification(title, message string) error {
+	return s.repo.CreateBroadcastNotification(title, message)
+}
