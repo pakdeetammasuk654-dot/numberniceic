@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/article.dart';
 import '../models/sample_name.dart';
 import '../models/analysis_result.dart';
@@ -632,7 +633,6 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>?> getWelcomeMessage() async {
-
     final url = Uri.parse('$baseUrl/api/system/welcome-message');
     try {
       final response = await http.get(url);
@@ -645,28 +645,75 @@ class ApiService {
     }
   }
 
+  // --- FCM Token ---
+  static Future<void> saveDeviceToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jwt = prefs.getString(AuthService.keyToken);
+    
+    if (jwt == null) return; // Not logged in
+
+    final url = Uri.parse('$baseUrl/api/device-token');
+    try {
+      await http.post(
+        url,
+        headers: {
+            'Authorization': 'Bearer $jwt',
+            'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+            'token': token,
+            'platform': Platform.isAndroid ? 'android' : 'ios',
+        }),
+      );
+      print('✅ Device Token sent to server.');
+    } catch (e) {
+      print('❌ Error saving device token: $e');
+    }
+  }
+
   // --- Notifications ---
 
   static Future<List<UserNotification>> getUserNotifications() async {
     final url = Uri.parse('$baseUrl/api/notifications');
     final token = await AuthService.getToken();
-    if (token == null) return [];
+    
+    print('🔔 DEBUG: Fetching Notifications...');
+    print('--------------------------------------------------');
+    print('🌐 URL: $url');
+    print('🔑 Token: ${token != null ? "Present (${token.substring(0, 10)}...)" : "MISSING"}');
+
+    if (token == null) {
+      print('❌ DEBUG: Token is missing, returning empty list.');
+      return [];
+    }
 
     try {
-      if (kDebugMode) print('🚀 API REQUEST: GET $url (Authenticated)');
       final response = await http.get(
         url,
         headers: {'Authorization': 'Bearer $token'},
       );
 
+      print('📥 Status Code: ${response.statusCode}');
+      print('📦 Body Length: ${response.body.length} bytes');
+      
       if (response.statusCode == 200) {
         final List<dynamic> data = _safeDecode(response);
+        print('✅ DEBUG: Got ${data.length} notifications from server');
+        if (data.isNotEmpty) {
+           print('📝 First item: ${data[0]}');
+        }
         return data.map((e) => UserNotification.fromJson(e)).toList();
+      } else if (response.statusCode == 401) {
+        print('⛔ DEBUG: Token expired (401). Logging out...');
+        await AuthService.logout();
+        throw Exception('Session expired');
       }
-      if (kDebugMode) print('❌ API RESPONSE: ${response.statusCode} for notifications');
+      
+      print('❌ DEBUG: Server returned error status: ${response.statusCode}');
+      print('📄 Body: ${response.body}');
       return [];
     } catch (e) {
-      if (kDebugMode) print('❌ API ERROR: Fetch notifications: $e');
+      print('❌ DEBUG: Exception fetching notifications: $e');
       return [];
     }
   }

@@ -2,6 +2,7 @@ package admin
 
 import (
 	"numberniceic/internal/core/domain"
+	"strconv"
 )
 
 type NotificationFormData struct {
@@ -11,7 +12,7 @@ type NotificationFormData struct {
 	Broadcast bool
 }
 
-templ SendNotification(members []domain.Member, success string, errorMsg string) {
+templ SendNotificationForm(members []domain.Member, success string, errorMsg string) {
 	<style>
 		.notif-container {
 			max-width: 900px;
@@ -127,6 +128,35 @@ templ SendNotification(members []domain.Member, success string, errorMsg string)
 			color: #991b1b;
 			border: 1px solid #fca5a5;
 		}
+		.search-box {
+			margin-bottom: 0.75rem;
+		}
+		.user-select-wrapper {
+			position: relative;
+		}
+		.helper-text {
+			font-size: 0.75rem;
+			color: #64748b;
+			margin-top: 0.5rem;
+			font-style: italic;
+		}
+		.section-divider {
+			display: flex;
+			align-items: center;
+			margin: 1.5rem 0;
+			color: #94a3b8;
+			font-size: 0.875rem;
+			font-weight: 600;
+		}
+		.section-divider::before,
+		.section-divider::after {
+			content: '';
+			flex: 1;
+			border-bottom: 1px solid #e2e8f0;
+		}
+		.section-divider span {
+			padding: 0 1rem;
+		}
 	</style>
 
 	<div class="notif-container">
@@ -149,23 +179,40 @@ templ SendNotification(members []domain.Member, success string, errorMsg string)
 			}
 
 			<form method="POST" action="/admin/send-notification">
-				<div class="form-group">
-					<label class="form-label">ผู้รับ</label>
-					<select name="user_id" id="user_id" class="form-control">
-						<option value="0">เลือกผู้ใช้งาน...</option>
-						for _, member := range members {
-							<option value={ templ.EscapeString(string(rune(member.ID))) }>
-								{ member.Username } ({ member.Email })
-							</option>
-						}
-					</select>
-				</div>
-
+				<!-- Broadcast Option First -->
 				<div class="form-group">
 					<div class="checkbox-group">
 						<input type="checkbox" id="broadcast" name="broadcast" value="true" onchange="toggleUserSelect(this)"/>
 						<label for="broadcast">📢 ส่งให้ทุกคนในระบบ (Broadcast)</label>
 					</div>
+					<p class="helper-text">เช็คช่องนี้เพื่อส่งให้ผู้ใช้งานทุกคนในระบบพร้อมกัน</p>
+				</div>
+
+				<div class="section-divider">
+					<span>หรือ</span>
+				</div>
+
+				<!-- Individual User Selection -->
+				<div class="form-group" id="user-selection-group">
+					<label class="form-label">ค้นหาและเลือกผู้ใช้งาน</label>
+					<div class="user-select-wrapper">
+						<input 
+							type="text" 
+							id="user-search" 
+							class="form-control search-box" 
+							placeholder="🔍 พิมพ์ชื่อ หรือ อีเมล เพื่อค้นหา..." 
+							onkeyup="filterUsers()"
+						/>
+						<select name="user_id" id="user_id" class="form-control" size="8">
+							<option value="0">-- ผลการค้นหา --</option>
+							for _, member := range members {
+								<option value={ strconv.Itoa(member.ID) }>
+									{ member.Username } ({ member.Email })
+								</option>
+							}
+						</select>
+					</div>
+					<p class="helper-text">พิมพ์ในช่องค้นหาด้านบน แล้วคลิกเลือกผู้ใช้งานที่ต้องการส่ง</p>
 				</div>
 
 				<div class="form-group">
@@ -187,12 +234,37 @@ templ SendNotification(members []domain.Member, success string, errorMsg string)
 
 	<script>
 		function toggleUserSelect(checkbox) {
+			const userGroup = document.getElementById('user-selection-group');
 			const userSelect = document.getElementById('user_id');
+			const searchBox = document.getElementById('user-search');
+			
 			if (checkbox.checked) {
+				userGroup.style.opacity = '0.5';
+				userGroup.style.pointerEvents = 'none';
 				userSelect.disabled = true;
+				searchBox.disabled = true;
 				userSelect.value = '0';
 			} else {
+				userGroup.style.opacity = '1';
+				userGroup.style.pointerEvents = 'auto';
 				userSelect.disabled = false;
+				searchBox.disabled = false;
+			}
+		}
+
+		function filterUsers() {
+			const searchInput = document.getElementById('user-search');
+			const select = document.getElementById('user_id');
+			const filter = searchInput.value.toLowerCase();
+			const options = select.getElementsByTagName('option');
+
+			for (let i = 1; i < options.length; i++) { // Skip first option (header)
+				const text = options[i].textContent || options[i].innerText;
+				if (text.toLowerCase().indexOf(filter) > -1) {
+					options[i].style.display = '';
+				} else {
+					options[i].style.display = 'none';
+				}
 			}
 		}
 	</script>

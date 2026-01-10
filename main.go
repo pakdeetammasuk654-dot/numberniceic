@@ -67,15 +67,28 @@ func main() {
 	phoneNumberRepo := repository.NewPostgresPhoneNumberRepository(db)
 	phoneNumberSvc := service.NewPhoneNumberService(phoneNumberRepo, numberPairRepo)
 
+	// Repositories
 	memberRepo := repository.NewPostgresMemberRepository(db)
-	memberService := service.NewMemberService(memberRepo)
 	savedNameRepo := repository.NewPostgresSavedNameRepository(db)
-	savedNameService := service.NewSavedNameService(savedNameRepo)
 	articleRepo := repository.NewPostgresArticleRepository(db)
-	articleService := service.NewArticleService(articleRepo)
 	productRepo := repository.NewPostgresProductRepository(db)
 	orderRepo := repository.NewPostgresOrderRepository(db)
 	promotionalCodeRepo := repository.NewPostgresPromotionalCodeRepository(db)
+	shippingAddressRepo := repository.NewPostgresShippingAddressRepository(db)
+
+	// Initialize Firebase
+	firebaseService, err := service.NewFirebaseService("service_account.json")
+	if err != nil {
+		log.Println("⚠️ Warning: Firebase Init failed:", err)
+		firebaseService = nil
+	} else {
+		log.Println("✅ Firebase Initialized successfully")
+	}
+
+	// Services
+	memberService := service.NewMemberService(memberRepo, firebaseService)
+	savedNameService := service.NewSavedNameService(savedNameRepo)
+	articleService := service.NewArticleService(articleRepo)
 	adminService := service.NewAdminService(memberRepo, articleRepo, sampleNamesRepo, namesMiracleRepo, productRepo, orderRepo, numerologySvc, phoneNumberSvc, promotionalCodeRepo)
 
 	buddhistDayRepo := repository.NewPostgresBuddhistDayRepository(db)
@@ -188,7 +201,7 @@ func main() {
 	})
 
 	// Add Shipping Address Support
-	shippingAddressRepo := repository.NewPostgresShippingAddressRepository(db)
+	// shippingAddressRepo declared above
 	shippingAddressService := service.NewShippingAddressService(shippingAddressRepo)
 
 	// --- Handlers ---
@@ -767,8 +780,12 @@ func main() {
 	app.Post("/api/pay/willback", paymentHandler.HandlePaymentWebhook)       // PaySolutions Webhook
 	app.Get("/api/payment/status/:refNo", paymentHandler.CheckPaymentStatus) // Polling Endpoint
 
-	// API Notification Routes
+	// Notification API (Mobile)
+	app.Post("/api/device-token", optionalAuthMiddleware, memberHandler.SaveDeviceTokenAPI)
 	app.Get("/api/notifications", optionalAuthMiddleware, adminHandler.GetUserNotificationsAPI)
+	// Note: GET /api/notifications was using authMiddleware which redirects to HTML Login on failure.
+	// Fixed to use optionalAuthMiddleware (JWT support) and Handler should check IsLoggedIn.
+
 	app.Post("/api/notifications", optionalAuthMiddleware, memberHandler.CreateNotificationAPI) // Added this POST
 	app.Get("/api/notifications/unread", optionalAuthMiddleware, adminHandler.GetUnreadCountAPI)
 	app.Post("/api/notifications/:id/read", optionalAuthMiddleware, adminHandler.MarkNotificationReadAPI)

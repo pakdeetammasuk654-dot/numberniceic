@@ -72,3 +72,9 @@ deploy.tar.gz
 build/
 **/build/
 
+deploy.tar.gz
+numberniceic
+app-linux
+service_account.json
+numberniceic-mobile-firebase-adminsdk-fbsvc-ccaddaba2e.json
+*.json

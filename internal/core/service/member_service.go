@@ -4,16 +4,18 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"log"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
 )
 
 type MemberService struct {
-	repo ports.MemberRepository
+	repo     ports.MemberRepository
+	firebase *FirebaseService
 }
 
-func NewMemberService(repo ports.MemberRepository) *MemberService {
-	return &MemberService{repo: repo}
+func NewMemberService(repo ports.MemberRepository, fb *FirebaseService) *MemberService {
+	return &MemberService{repo: repo, firebase: fb}
 }
 
 func (s *MemberService) GetMemberByID(id int) (*domain.Member, error) {
@@ -133,9 +135,74 @@ func (s *MemberService) UpdateProfile(id int, username, email, tel string) error
 }
 
 func (s *MemberService) CreateUserNotification(userID int, title, message string) error {
-	return s.repo.CreateNotification(userID, title, message)
+	// Save to DB first
+	err := s.repo.CreateNotification(userID, title, message)
+	if err != nil {
+		return err
+	}
+
+	// Send Push Notification (Async)
+	if s.firebase != nil {
+		go func() {
+			tokens, err := s.repo.GetFCMTokens(userID)
+			log.Printf("DEBUG: Found %d FCM Tokens for UserID: %d", len(tokens), userID)
+
+			if err != nil {
+				log.Printf("Error fetching FCM tokens for user %d: %v", userID, err)
+				return
+			}
+			if len(tokens) > 0 {
+				err := s.firebase.SendMulticast(tokens, title, message)
+				if err != nil {
+					log.Printf("ERROR sending multicast: %v", err)
+				}
+			} else {
+				log.Printf("DEBUG: No tokens found for UserID %d. Notification saved but not pushed.", userID)
+			}
+		}()
+	}
+
+	return nil
 }
 
 func (s *MemberService) CreateBroadcastNotification(title, message string) error {
-	return s.repo.CreateBroadcastNotification(title, message)
+	// Save to DB
+	err := s.repo.CreateBroadcastNotification(title, message)
+	if err != nil {
+		return err
+	}
+
+	// Send to All Devices
+	if s.firebase != nil {
+		go func() {
+			tokens, err := s.repo.GetAllFCMTokens()
+			if err == nil && len(tokens) > 0 {
+				// Firebase allows only 500 tokens per batch,
+				// SendMulticast in our wrapper should ideally handle batching or we loop here.
+				// For simple v1 wrapper, we trust SendMulticast or implement simple batching.
+				// Let's rely on basic implementation for now (up to 500 will work).
+				// If > 500, we should slice.
+
+				batchSize := 500
+				for i := 0; i < len(tokens); i += batchSize {
+					end := i + batchSize
+					if end > len(tokens) {
+						end = len(tokens)
+					}
+					batch := tokens[i:end]
+					s.firebase.SendMulticast(batch, title, message)
+				}
+			}
+		}()
+	}
+
+	return nil
+}
+
+func (s *MemberService) GetAllMembers() ([]domain.Member, error) {
+	return s.repo.GetAllMembers()
+}
+
+func (s *MemberService) SaveDeviceToken(userID int, token, platform string) error {
+	return s.repo.SaveFCMToken(userID, token, platform)
 }

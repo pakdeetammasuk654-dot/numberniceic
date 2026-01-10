@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:ui' as ui;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -170,19 +171,32 @@ class _DashboardPageState extends State<DashboardPage> {
     super.dispose();
   }
 
-  void _loadDashboard() async {
+  Future<void> _loadDashboard() async {
     // Check previous VIP status before fetching
     final prefs = await SharedPreferences.getInstance();
     final wasVip = prefs.getBool(AuthService.keyIsVip) ?? false;
 
-    setState(() {
-      _dashboardFuture = ApiService.getDashboard().then((data) {
-          final isVip = data['is_vip'] == true || data['IsVIP'] == true;
-          final hasAddress = data['has_shipping_address'] == true || data['HasShippingAddress'] == true;
-          
-          // Alert if VIP expired (Was VIP -> Now Not VIP)
-          if (wasVip && !isVip && mounted) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Reload User Notifs / Unread Count
+    ApiService.getUserNotifications().then((notifs) {
+       // logic...
+       // Force Update UI
+       if (mounted) {
+         _checkNotification(); // Re-run the full check to update _unreadCount
+       }
+    });
+    
+    // Reload Dashboard Data
+    try {
+      final dashboardData = await ApiService.getDashboard(); // Keep original API call
+      if (mounted) {
+        setState(() {
+          _dashboardFuture = Future.value(dashboardData);
+        });
+
+        // Handle VIP and Session Logic
+        final isVip = dashboardData['is_vip'] == true || dashboardData['IsVIP'] == true;
+        if (wasVip && !isVip) {
+           WidgetsBinding.instance.addPostFrameCallback((_) {
               showDialog(
                 context: context, 
                 builder: (_) => AlertDialog(
@@ -192,43 +206,58 @@ class _DashboardPageState extends State<DashboardPage> {
                 )
               );
             });
+        }
+      }
+    } catch (error) {
+       // Handle Errors like 403/Suspended
+       if (error.toString().contains('suspended') || error.toString().contains('403')) {
+          if (mounted) {
+             AuthService.logout();
+             Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 0)),
+                (route) => false,
+             );
           }
-
-          return data;
-      }).catchError((error) {
-         // Handle Suspension / 403
-         if (error.toString().contains('suspended') || error.toString().contains('403')) {
-            if (mounted) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                 CustomToast.show(context, 'บัญชีของคุณถูกระงับการใช้งาน', isSuccess: false);
-                 AuthService.logout();
-                 Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 0)),
-                    (route) => false,
-                 );
-              });
-            }
-         }
-         throw error;
-      });
-    });
+       }
+       // Don't throw if just refreshing, but FutureBuilder needs a future
+       // _dashboardFuture is already set so we can leave it or set error
+    }
   }
 
   Future<void> _checkNotification() async {
       try {
+        print('🔔 [Step 1] Calling ApiService.getUserNotifications()...');
         final serverNotifs = await ApiService.getUserNotifications();
+        print('🔔 [Step 2] Got ${serverNotifs.length} notifications from Server.');
+
         final hiddenIds = await LocalNotificationStorage.getHiddenServerIds();
+        print('🔔 [Step 3] Found ${hiddenIds.length} hidden IDs.');
         
-        // Count server unread that are NOT hidden
-        final serverUnreadCount = serverNotifs.where((n) => !n.isRead && !hiddenIds.contains(n.id)).length;
-        
-        // Count local unread
+        // Detailed Logic Check
+        int rawUnread = 0;
+        int filteredUnread = 0;
+
+        for (var n in serverNotifs) {
+            if (!n.isRead) rawUnread++;
+            if (!n.isRead && !hiddenIds.contains(n.id)) {
+                filteredUnread++;
+            } else if (!n.isRead) {
+                print('🔔 Ignored Unread ID ${n.id} because it is in hidden list.');
+            }
+        }
+        print('🔔 [Step 4] Raw Unread: $rawUnread, Filtered Unread: $filteredUnread');
+
         final localCount = await LocalNotificationStorage.getUnreadCount();
+        print('🔔 [Step 5] Local Unread: $localCount');
         
+        final total = filteredUnread + localCount;
+        print('🔔 [Step 6] Total Final: $total');
+
         if (mounted) {
            setState(() {
-             _unreadCount = serverUnreadCount + localCount;
+             _unreadCount = total;
            });
+           print('🔔 [Step 7] setState called with _unreadCount = $_unreadCount');
         }
       } catch (e) {
         debugPrint('Error checking notifications: $e');

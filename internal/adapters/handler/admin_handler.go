@@ -1522,7 +1522,7 @@ func (h *AdminHandler) refreshVIPCodeRow(c *fiber.Ctx, code string, successMsg s
 // --- Notification Management ---
 
 func (h *AdminHandler) ShowSendNotificationPage(c *fiber.Ctx) error {
-	members, err := h.service.GetAllMembers()
+	members, err := h.memberService.GetAllMembers()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error loading members")
 	}
@@ -1539,9 +1539,12 @@ func (h *AdminHandler) ShowSendNotificationPage(c *fiber.Ctx) error {
 		c.Locals("IsLoggedIn").(bool),
 		c.Locals("IsAdmin").(bool),
 		c.Locals("IsVIP").(bool),
-		false, // hasShippingAddress
+		false,    // hasShippingAddress
+		"admin",  // activePage
+		success,  // toastSuccess
+		errorMsg, // toastError
 		avatarURL,
-		admin.SendNotification(members, success, errorMsg),
+		admin.SendNotificationForm(members, success, errorMsg),
 	))
 }
 
@@ -1569,9 +1572,13 @@ func (h *AdminHandler) HandleSendNotification(c *fiber.Ctx) error {
 		if parseErr != nil || userID == 0 {
 			return c.Redirect("/admin/send-notification?error=กรุณาเลือกผู้ใช้งาน")
 		}
+		fmt.Printf("DEBUG: Admin Sending Notification to UserID: %d\n", userID)
 
 		err = h.memberService.CreateUserNotification(userID, title, message)
 		if err != nil {
+			if strings.Contains(err.Error(), "foreign key constraint") {
+				return c.Redirect("/admin/send-notification?error=ไม่สามารถส่งให้ผู้ใช้นี้ได้ (ข้อมูลผู้ใช้ไม่สมบูรณ์ หรือ User ID ไม่ตรงกัน)")
+			}
 			return c.Redirect("/admin/send-notification?error=" + err.Error())
 		}
 		return c.Redirect("/admin/send-notification?success=ส่งการแจ้งเตือนเรียบร้อยแล้ว")

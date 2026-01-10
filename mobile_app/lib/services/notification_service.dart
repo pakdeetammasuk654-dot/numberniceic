@@ -5,6 +5,7 @@ import 'api_service.dart';
 import 'local_notification_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:firebase_messaging/firebase_messaging.dart'; // NEW
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -17,15 +18,14 @@ class NotificationService {
   bool _isInitialized = false;
 
   Future<void> init() async {
+    print('🔔 NotificationService: init() called. isInitialized: $_isInitialized');
     if (_isInitialized) return;
 
     tz.initializeTimeZones();
-    // Use Bangkok timezone
     try {
         final LOCATION_NAME = 'Asia/Bangkok';
         tz.setLocalLocation(tz.getLocation(LOCATION_NAME));
     } catch(e) {
-        // Fallback or ignore if location not found
         print("Timezone error: $e");
     }
 
@@ -50,8 +50,87 @@ class NotificationService {
         // Handle notification tap
       },
     );
+    
+    print('🔔 NotificationService: Calling _setupFCM()...');
+    await _setupFCM();
 
     _isInitialized = true;
+    print('🔔 NotificationService: init() completed.');
+  }
+
+  Future<void> _setupFCM() async {
+    print('🔔 NotificationService: _setupFCM() started.');
+    try {
+        final messaging = FirebaseMessaging.instance;
+        
+        // Request Permission
+        print('🔔 NotificationService: Requesting permission...');
+        NotificationSettings settings = await messaging.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        print('🔔 NotificationService: Permission status: ${settings.authorizationStatus}');
+    
+        if (settings.authorizationStatus == AuthorizationStatus.authorized || settings.authorizationStatus == AuthorizationStatus.provisional) {
+           print('✅ FCM Authorization Granted');
+           
+           // Get Token
+           try {
+             String? token = await messaging.getToken();
+             print("📣 FCM Token: $token"); // Log token explicitly
+             if (token != null) {
+                print("🔔 Calling ApiService.saveDeviceToken...");
+                await ApiService.saveDeviceToken(token);
+                print("🔔 ApiService.saveDeviceToken returned.");
+             } else {
+                print("⚠️ FCM Token is NULL");
+             }
+           } catch(e) { print('❌ FCM GetToken Error: $e'); }
+           
+           // Foreground Message Handling
+           FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+               print("📩 Got FCM Message in Foreground: ${message.notification?.title}");
+               if (message.notification != null) {
+                  showNotification(
+                      message.hashCode,
+                      message.notification!.title ?? 'NumberNice',
+                      message.notification!.body ?? '',
+                  );
+                  // Trigger Dashboard Refresh
+                  ApiService.dashboardRefreshSignal.value++;
+               }
+           });
+           print('🔔 FCM Listeners setup completed.');
+
+        } else {
+          print('❌ FCM Permission Declined');
+        }
+    } catch (e) {
+        print('❌ _setupFCM Critical Error: $e');
+    }
+  }
+
+  // Helper to show immediate notification (reusing local plugin)
+  Future<void> showNotification(int id, String title, String body) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+            'general_channel', 'General Notifications',
+            channelDescription: 'General app notifications',
+            importance: Importance.max,
+            priority: Priority.high,
+            icon: '@drawable/ic_lotus_notification',
+            color: Color(0xFFFFA000)); // Gold color
+            
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+        
+    await flutterLocalNotificationsPlugin.show(
+      id,
+      title,
+      body,
+      platformChannelSpecifics,
+    );
   }
 
   Future<bool> requestPermissions() async {

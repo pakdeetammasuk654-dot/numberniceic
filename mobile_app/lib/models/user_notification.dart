@@ -19,7 +19,7 @@ class UserNotification {
       title: json['title'],
       message: json['message'] ?? '',
       isRead: json['is_read'] ?? false,
-      createdAt: DateTime.parse(json['created_at']),
+      createdAt: DateTime.parse(json['created_at']).toLocal(),
     );
   }
 }

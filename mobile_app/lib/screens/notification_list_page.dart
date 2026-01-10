@@ -37,9 +37,10 @@ class _NotificationListPageState extends State<NotificationListPage> {
 
   String _formatThaiDate(DateTime date) {
     // Format Month in Thai, and add 543 to Year for BE
+    final localDate = date.toLocal();
     final formatter = DateFormat('dd MMM', 'th');
     final timeFormatter = DateFormat('HH:mm');
-    return '${formatter.format(date)} ${date.year + 543} ${timeFormatter.format(date)}';
+    return '${formatter.format(localDate)} ${localDate.year + 543} ${timeFormatter.format(localDate)}';
   }
 
   Future<void> _loadData() async {
@@ -51,7 +52,13 @@ class _NotificationListPageState extends State<NotificationListPage> {
       await LocalNotificationStorage.clearShippingAddressNotifications();
       
       final serverList = await ApiService.getUserNotifications();
+      print('DEBUG Load: Server had ${serverList.length} items');
+      for (var n in serverList) print('  Server item: ${n.id} - ${n.title}');
+
       final localList = await LocalNotificationStorage.getAll();
+      print('DEBUG Load: Local had ${localList.length} items');
+      for (var n in localList) print('  Local item: ${n.id} - ${n.title}');
+      
       final hiddenIds = await LocalNotificationStorage.getHiddenServerIds();
       
       final combined = [
@@ -59,11 +66,19 @@ class _NotificationListPageState extends State<NotificationListPage> {
         ...localList
       ];
       
-      combined.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      // Filter out annoying shipping address popups
+      final filtered = combined.where((n) {
+        final t = n.title.toLowerCase();
+        final m = n.message.toLowerCase();
+        return !t.contains('ที่อยู่') && !t.contains('address') &&
+               !m.contains('ที่อยู่') && !m.contains('address');
+      }).toList();
+      
+      filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       
       if (mounted) {
         setState(() {
-          _notifications = combined;
+          _notifications = filtered;
           _isLoading = false;
           _error = null;
         });
@@ -124,7 +139,17 @@ class _NotificationListPageState extends State<NotificationListPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('การแจ้งเตือน', style: GoogleFonts.kanit(color: Colors.white)),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('การแจ้งเตือน', style: GoogleFonts.kanit(color: Colors.white)),
+            if (_notifications != null)
+              Text(
+                'items: ${_notifications!.length}', 
+                style: GoogleFonts.kanit(color: Colors.white70, fontSize: 10)
+              ),
+          ],
+        ),
         backgroundColor: const Color(0xFF333333),
         iconTheme: const IconThemeData(color: Colors.white),
       ),

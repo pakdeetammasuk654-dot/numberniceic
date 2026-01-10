@@ -805,3 +805,45 @@ func (h *MemberHandler) CreateNotificationAPI(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"success": true, "message": "Notification created"})
 }
+
+type DeviceTokenRequest struct {
+	Token    string `json:"token"`
+	Platform string `json:"platform"`
+}
+
+func (h *MemberHandler) SaveDeviceTokenAPI(c *fiber.Ctx) error {
+	userIDVal := c.Locals("UserID")
+	fmt.Printf("DEBUG: SaveDeviceTokenAPI Triggered. Locals UserID: %v\n", userIDVal)
+
+	var userID int
+
+	// Handle type assertion carefully
+	switch v := userIDVal.(type) {
+	case int:
+		userID = v
+	case float64:
+		userID = int(v)
+	default:
+		// If optional auth or missing context
+		fmt.Printf("DEBUG: SaveDeviceTokenAPI Unauthorized. UserIDVal type: %T\n", userIDVal)
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	var req DeviceTokenRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+	}
+
+	fmt.Printf("DEBUG: Saving Token for UserID %d: %s (Type: %s)\n", userID, req.Token, req.Platform)
+
+	if req.Token == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Token required"})
+	}
+
+	err := h.service.SaveDeviceToken(userID, req.Token, req.Platform)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
+	}
+
+	return c.JSON(fiber.Map{"status": "ok"})
+}

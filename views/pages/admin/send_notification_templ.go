@@ -10,6 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"numberniceic/internal/core/domain"
+	"strconv"
 )
 
 type NotificationFormData struct {
@@ -19,7 +20,7 @@ type NotificationFormData struct {
 	Broadcast bool
 }
 
-func SendNotification(members []domain.Member, success string, errorMsg string) templ.Component {
+func SendNotificationForm(members []domain.Member, success string, errorMsg string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -40,7 +41,7 @@ func SendNotification(members []domain.Member, success string, errorMsg string) 
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<style>\n\t\t.notif-container {\n\t\t\tmax-width: 900px;\n\t\t\tmargin: 2rem auto;\n\t\t\tpadding: 0 1.5rem;\n\t\t\tfont-family: 'Sarabun', sans-serif;\n\t\t}\n\t\t.notif-header h1 {\n\t\t\tfont-family: 'Kanit', sans-serif;\n\t\t\tfont-size: 2.25rem;\n\t\t\tfont-weight: 800;\n\t\t\tcolor: #1a202c;\n\t\t\tmargin-bottom: 0.5rem;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tgap: 1rem;\n\t\t}\n\t\t.notif-icon-box {\n\t\t\tbackground: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);\n\t\t\tpadding: 0.75rem;\n\t\t\tborder-radius: 1rem;\n\t\t\tbox-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t}\n\t\t.notif-card {\n\t\t\tbackground: white;\n\t\t\tborder-radius: 1.5rem;\n\t\t\tbox-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);\n\t\t\tborder: 1px solid #f1f5f9;\n\t\t\tpadding: 2.5rem;\n\t\t\tmargin-top: 2rem;\n\t\t}\n\t\t.form-group {\n\t\t\tmargin-bottom: 1.5rem;\n\t\t}\n\t\t.form-label {\n\t\t\tdisplay: block;\n\t\t\tfont-size: 0.875rem;\n\t\t\tfont-weight: 700;\n\t\t\tcolor: #64748b;\n\t\t\tmargin-bottom: 0.5rem;\n\t\t}\n\t\t.form-control {\n\t\t\twidth: 100%;\n\t\t\tborder: 2px solid #f1f5f9;\n\t\t\tborder-radius: 0.75rem;\n\t\t\tpadding: 0.75rem 1rem;\n\t\t\tfont-family: inherit;\n\t\t\tfont-size: 1rem;\n\t\t\ttransition: all 0.2s;\n\t\t\tbox-sizing: border-box;\n\t\t}\n\t\t.form-control:focus {\n\t\t\toutline: none;\n\t\t\tborder-color: #3b82f6;\n\t\t\tbox-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);\n\t\t}\n\t\ttextarea.form-control {\n\t\t\tmin-height: 120px;\n\t\t\tresize: vertical;\n\t\t}\n\t\t.checkbox-group {\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tgap: 0.75rem;\n\t\t\tpadding: 1rem;\n\t\t\tbackground: #eff6ff;\n\t\t\tborder-radius: 0.75rem;\n\t\t\tborder: 2px solid #dbeafe;\n\t\t}\n\t\t.checkbox-group input[type=\"checkbox\"] {\n\t\t\twidth: 1.25rem;\n\t\t\theight: 1.25rem;\n\t\t\tcursor: pointer;\n\t\t}\n\t\t.checkbox-group label {\n\t\t\tfont-weight: 600;\n\t\t\tcolor: #1e40af;\n\t\t\tcursor: pointer;\n\t\t}\n\t\t.btn-submit {\n\t\t\tbackground: linear-gradient(to right, #3b82f6, #2563eb);\n\t\t\tcolor: white;\n\t\t\tborder: none;\n\t\t\tpadding: 1rem 2rem;\n\t\t\tborder-radius: 0.75rem;\n\t\t\tfont-weight: 800;\n\t\t\tfont-size: 1rem;\n\t\t\tcursor: pointer;\n\t\t\tbox-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);\n\t\t\ttransition: all 0.2s;\n\t\t\twidth: 100%;\n\t\t}\n\t\t.btn-submit:hover {\n\t\t\ttransform: translateY(-2px);\n\t\t\tbox-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.4);\n\t\t}\n\t\t.alert {\n\t\t\tpadding: 1rem 1.5rem;\n\t\t\tborder-radius: 0.75rem;\n\t\t\tmargin-bottom: 1.5rem;\n\t\t\tfont-weight: 600;\n\t\t}\n\t\t.alert-success {\n\t\t\tbackground: #d1fae5;\n\t\t\tcolor: #065f46;\n\t\t\tborder: 1px solid #6ee7b7;\n\t\t}\n\t\t.alert-error {\n\t\t\tbackground: #fee2e2;\n\t\t\tcolor: #991b1b;\n\t\t\tborder: 1px solid #fca5a5;\n\t\t}\n\t</style><div class=\"notif-container\"><div class=\"notif-header\"><h1><span class=\"notif-icon-box\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9\"></path><path d=\"M13.73 21a2 2 0 0 1-3.46 0\"></path></svg></span> ส่งการแจ้งเตือน</h1><p style=\"color: #64748b; margin-top: 0.5rem;\">ส่งข้อความแจ้งเตือนให้กับผู้ใช้งานรายบุคคลหรือทุกคน</p></div><div class=\"notif-card\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<style>\n\t\t.notif-container {\n\t\t\tmax-width: 900px;\n\t\t\tmargin: 2rem auto;\n\t\t\tpadding: 0 1.5rem;\n\t\t\tfont-family: 'Sarabun', sans-serif;\n\t\t}\n\t\t.notif-header h1 {\n\t\t\tfont-family: 'Kanit', sans-serif;\n\t\t\tfont-size: 2.25rem;\n\t\t\tfont-weight: 800;\n\t\t\tcolor: #1a202c;\n\t\t\tmargin-bottom: 0.5rem;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tgap: 1rem;\n\t\t}\n\t\t.notif-icon-box {\n\t\t\tbackground: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);\n\t\t\tpadding: 0.75rem;\n\t\t\tborder-radius: 1rem;\n\t\t\tbox-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t}\n\t\t.notif-card {\n\t\t\tbackground: white;\n\t\t\tborder-radius: 1.5rem;\n\t\t\tbox-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);\n\t\t\tborder: 1px solid #f1f5f9;\n\t\t\tpadding: 2.5rem;\n\t\t\tmargin-top: 2rem;\n\t\t}\n\t\t.form-group {\n\t\t\tmargin-bottom: 1.5rem;\n\t\t}\n\t\t.form-label {\n\t\t\tdisplay: block;\n\t\t\tfont-size: 0.875rem;\n\t\t\tfont-weight: 700;\n\t\t\tcolor: #64748b;\n\t\t\tmargin-bottom: 0.5rem;\n\t\t}\n\t\t.form-control {\n\t\t\twidth: 100%;\n\t\t\tborder: 2px solid #f1f5f9;\n\t\t\tborder-radius: 0.75rem;\n\t\t\tpadding: 0.75rem 1rem;\n\t\t\tfont-family: inherit;\n\t\t\tfont-size: 1rem;\n\t\t\ttransition: all 0.2s;\n\t\t\tbox-sizing: border-box;\n\t\t}\n\t\t.form-control:focus {\n\t\t\toutline: none;\n\t\t\tborder-color: #3b82f6;\n\t\t\tbox-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);\n\t\t}\n\t\ttextarea.form-control {\n\t\t\tmin-height: 120px;\n\t\t\tresize: vertical;\n\t\t}\n\t\t.checkbox-group {\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tgap: 0.75rem;\n\t\t\tpadding: 1rem;\n\t\t\tbackground: #eff6ff;\n\t\t\tborder-radius: 0.75rem;\n\t\t\tborder: 2px solid #dbeafe;\n\t\t}\n\t\t.checkbox-group input[type=\"checkbox\"] {\n\t\t\twidth: 1.25rem;\n\t\t\theight: 1.25rem;\n\t\t\tcursor: pointer;\n\t\t}\n\t\t.checkbox-group label {\n\t\t\tfont-weight: 600;\n\t\t\tcolor: #1e40af;\n\t\t\tcursor: pointer;\n\t\t}\n\t\t.btn-submit {\n\t\t\tbackground: linear-gradient(to right, #3b82f6, #2563eb);\n\t\t\tcolor: white;\n\t\t\tborder: none;\n\t\t\tpadding: 1rem 2rem;\n\t\t\tborder-radius: 0.75rem;\n\t\t\tfont-weight: 800;\n\t\t\tfont-size: 1rem;\n\t\t\tcursor: pointer;\n\t\t\tbox-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);\n\t\t\ttransition: all 0.2s;\n\t\t\twidth: 100%;\n\t\t}\n\t\t.btn-submit:hover {\n\t\t\ttransform: translateY(-2px);\n\t\t\tbox-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.4);\n\t\t}\n\t\t.alert {\n\t\t\tpadding: 1rem 1.5rem;\n\t\t\tborder-radius: 0.75rem;\n\t\t\tmargin-bottom: 1.5rem;\n\t\t\tfont-weight: 600;\n\t\t}\n\t\t.alert-success {\n\t\t\tbackground: #d1fae5;\n\t\t\tcolor: #065f46;\n\t\t\tborder: 1px solid #6ee7b7;\n\t\t}\n\t\t.alert-error {\n\t\t\tbackground: #fee2e2;\n\t\t\tcolor: #991b1b;\n\t\t\tborder: 1px solid #fca5a5;\n\t\t}\n\t\t.search-box {\n\t\t\tmargin-bottom: 0.75rem;\n\t\t}\n\t\t.user-select-wrapper {\n\t\t\tposition: relative;\n\t\t}\n\t\t.helper-text {\n\t\t\tfont-size: 0.75rem;\n\t\t\tcolor: #64748b;\n\t\t\tmargin-top: 0.5rem;\n\t\t\tfont-style: italic;\n\t\t}\n\t\t.section-divider {\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tmargin: 1.5rem 0;\n\t\t\tcolor: #94a3b8;\n\t\t\tfont-size: 0.875rem;\n\t\t\tfont-weight: 600;\n\t\t}\n\t\t.section-divider::before,\n\t\t.section-divider::after {\n\t\t\tcontent: '';\n\t\t\tflex: 1;\n\t\t\tborder-bottom: 1px solid #e2e8f0;\n\t\t}\n\t\t.section-divider span {\n\t\t\tpadding: 0 1rem;\n\t\t}\n\t</style><div class=\"notif-container\"><div class=\"notif-header\"><h1><span class=\"notif-icon-box\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9\"></path><path d=\"M13.73 21a2 2 0 0 1-3.46 0\"></path></svg></span> ส่งการแจ้งเตือน</h1><p style=\"color: #64748b; margin-top: 0.5rem;\">ส่งข้อความแจ้งเตือนให้กับผู้ใช้งานรายบุคคลหรือทุกคน</p></div><div class=\"notif-card\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -52,7 +53,7 @@ func SendNotification(members []domain.Member, success string, errorMsg string) 
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(success)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/send_notification.templ`, Line: 145, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/send_notification.templ`, Line: 175, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -71,7 +72,7 @@ func SendNotification(members []domain.Member, success string, errorMsg string) 
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/send_notification.templ`, Line: 148, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/send_notification.templ`, Line: 178, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -82,7 +83,7 @@ func SendNotification(members []domain.Member, success string, errorMsg string) 
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<form method=\"POST\" action=\"/admin/send-notification\"><div class=\"form-group\"><label class=\"form-label\">ผู้รับ</label> <select name=\"user_id\" id=\"user_id\" class=\"form-control\"><option value=\"0\">เลือกผู้ใช้งาน...</option> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<form method=\"POST\" action=\"/admin/send-notification\"><!-- Broadcast Option First --><div class=\"form-group\"><div class=\"checkbox-group\"><input type=\"checkbox\" id=\"broadcast\" name=\"broadcast\" value=\"true\" onchange=\"toggleUserSelect(this)\"> <label for=\"broadcast\">📢 ส่งให้ทุกคนในระบบ (Broadcast)</label></div><p class=\"helper-text\">เช็คช่องนี้เพื่อส่งให้ผู้ใช้งานทุกคนในระบบพร้อมกัน</p></div><div class=\"section-divider\"><span>หรือ</span></div><!-- Individual User Selection --><div class=\"form-group\" id=\"user-selection-group\"><label class=\"form-label\">ค้นหาและเลือกผู้ใช้งาน</label><div class=\"user-select-wrapper\"><input type=\"text\" id=\"user-search\" class=\"form-control search-box\" placeholder=\"🔍 พิมพ์ชื่อ หรือ อีเมล เพื่อค้นหา...\" onkeyup=\"filterUsers()\"> <select name=\"user_id\" id=\"user_id\" class=\"form-control\" size=\"8\"><option value=\"0\">-- ผลการค้นหา --</option> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -92,9 +93,9 @@ func SendNotification(members []domain.Member, success string, errorMsg string) 
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(templ.EscapeString(string(rune(member.ID))))
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(member.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/send_notification.templ`, Line: 157, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/send_notification.templ`, Line: 209, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -107,7 +108,7 @@ func SendNotification(members []domain.Member, success string, errorMsg string) 
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(member.Username)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/send_notification.templ`, Line: 158, Col: 25}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/send_notification.templ`, Line: 210, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -120,7 +121,7 @@ func SendNotification(members []domain.Member, success string, errorMsg string) 
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(member.Email)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/send_notification.templ`, Line: 158, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/send_notification.templ`, Line: 210, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -131,7 +132,7 @@ func SendNotification(members []domain.Member, success string, errorMsg string) 
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</select></div><div class=\"form-group\"><div class=\"checkbox-group\"><input type=\"checkbox\" id=\"broadcast\" name=\"broadcast\" value=\"true\" onchange=\"toggleUserSelect(this)\"> <label for=\"broadcast\">📢 ส่งให้ทุกคนในระบบ (Broadcast)</label></div></div><div class=\"form-group\"><label class=\"form-label\">หัวข้อ</label> <input type=\"text\" name=\"title\" class=\"form-control\" placeholder=\"เช่น ประกาศสำคัญ\" required></div><div class=\"form-group\"><label class=\"form-label\">ข้อความ</label> <textarea name=\"message\" class=\"form-control\" placeholder=\"พิมพ์ข้อความที่ต้องการส่ง...\" required></textarea></div><button type=\"submit\" class=\"btn-submit\">ส่งการแจ้งเตือน</button></form></div></div><script>\n\t\tfunction toggleUserSelect(checkbox) {\n\t\t\tconst userSelect = document.getElementById('user_id');\n\t\t\tif (checkbox.checked) {\n\t\t\t\tuserSelect.disabled = true;\n\t\t\t\tuserSelect.value = '0';\n\t\t\t} else {\n\t\t\t\tuserSelect.disabled = false;\n\t\t\t}\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</select></div><p class=\"helper-text\">พิมพ์ในช่องค้นหาด้านบน แล้วคลิกเลือกผู้ใช้งานที่ต้องการส่ง</p></div><div class=\"form-group\"><label class=\"form-label\">หัวข้อ</label> <input type=\"text\" name=\"title\" class=\"form-control\" placeholder=\"เช่น ประกาศสำคัญ\" required></div><div class=\"form-group\"><label class=\"form-label\">ข้อความ</label> <textarea name=\"message\" class=\"form-control\" placeholder=\"พิมพ์ข้อความที่ต้องการส่ง...\" required></textarea></div><button type=\"submit\" class=\"btn-submit\">ส่งการแจ้งเตือน</button></form></div></div><script>\n\t\tfunction toggleUserSelect(checkbox) {\n\t\t\tconst userGroup = document.getElementById('user-selection-group');\n\t\t\tconst userSelect = document.getElementById('user_id');\n\t\t\tconst searchBox = document.getElementById('user-search');\n\t\t\t\n\t\t\tif (checkbox.checked) {\n\t\t\t\tuserGroup.style.opacity = '0.5';\n\t\t\t\tuserGroup.style.pointerEvents = 'none';\n\t\t\t\tuserSelect.disabled = true;\n\t\t\t\tsearchBox.disabled = true;\n\t\t\t\tuserSelect.value = '0';\n\t\t\t} else {\n\t\t\t\tuserGroup.style.opacity = '1';\n\t\t\t\tuserGroup.style.pointerEvents = 'auto';\n\t\t\t\tuserSelect.disabled = false;\n\t\t\t\tsearchBox.disabled = false;\n\t\t\t}\n\t\t}\n\n\t\tfunction filterUsers() {\n\t\t\tconst searchInput = document.getElementById('user-search');\n\t\t\tconst select = document.getElementById('user_id');\n\t\t\tconst filter = searchInput.value.toLowerCase();\n\t\t\tconst options = select.getElementsByTagName('option');\n\n\t\t\tfor (let i = 1; i < options.length; i++) { // Skip first option (header)\n\t\t\t\tconst text = options[i].textContent || options[i].innerText;\n\t\t\t\tif (text.toLowerCase().indexOf(filter) > -1) {\n\t\t\t\t\toptions[i].style.display = '';\n\t\t\t\t} else {\n\t\t\t\t\toptions[i].style.display = 'none';\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

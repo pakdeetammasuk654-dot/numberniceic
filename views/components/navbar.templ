@@ -17,7 +17,9 @@ templ Navbar(isLoggedIn bool, isAdmin bool, isVIP bool, hasShippingAddress bool,
                 
                 <!-- Expanded Flexible Space for Badge -->
                 <div style="flex-grow: 1; display: flex; justify-content: center; align-items: center;">
-                    <div hx-get="/buddhist-day-banner" hx-trigger="load" hx-swap="outerHTML"></div>
+                    if !isAdmin {
+                        <div hx-get="/buddhist-day-banner" hx-trigger="load" hx-swap="outerHTML"></div>
+                    }
                 </div>
 
 				<div class="auth-links" style="display: flex; align-items: center; gap: 1rem;">
