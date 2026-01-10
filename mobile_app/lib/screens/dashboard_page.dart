@@ -172,39 +172,14 @@ class _DashboardPageState extends State<DashboardPage> {
                           const SizedBox(height: 12),
                           _buildMenuCard(context, hasAddress),
 
-                          const SizedBox(height: 32),
-
-                          // 5. Logout Button (Distinct & Bottom)
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () async {
-                                await AuthService.logout();
-                                if (context.mounted) {
-                                  Navigator.of(context).pushAndRemoveUntil(
-                                    MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 0)),
-                                    (route) => false,
-                                  );
-                                  CustomToast.show(context, 'ออกจากระบบเรียบร้อยแล้ว');
-                                }
-                              },
-                              icon: const Icon(Icons.logout, color: Colors.redAccent),
-                              label: Text('ออกจากระบบ', style: GoogleFonts.kanit(fontSize: 16, color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                side: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                backgroundColor: Colors.red.withOpacity(0.02),
-                              ),
-                            ),
-                          ),
-                          
-                          const SizedBox(height: 48),
-                          const SharedFooter(),
-                          const SizedBox(height: 24),
                         ],
                       ),
                     ),
+                    
+                    const SizedBox(height: 40), // Add spacing before footer
+                    
+                    // Footer - Full Width
+                    const SharedFooter(),
                   ],
                 ),
               );
@@ -227,9 +202,31 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       ),
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-      child: Column(
+      child: Stack( // Wrap Column with Stack for absolute positioning
         children: [
-           // Avatar with Glow
+          // Logout Button (Top Right)
+          Positioned(
+            top: 0,
+            right: 0,
+            child: IconButton(
+              onPressed: () async {
+                 await AuthService.logout();
+                 if (context.mounted) {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 0)),
+                      (route) => false,
+                    );
+                    CustomToast.show(context, 'ออกจากระบบเรียบร้อยแล้ว');
+                 }
+              },
+              icon: const Icon(Icons.logout, color: Colors.grey),
+              tooltip: 'ออกจากระบบ',
+            ),
+          ),
+          
+          Column(
+            children: [
+               // Avatar with Glow
            Stack(
              alignment: Alignment.center,
              children: [
@@ -311,7 +308,9 @@ class _DashboardPageState extends State<DashboardPage> {
            ),
         ],
       ),
-    );
+      ], // Close Stack children
+     ), // Close Stack widget
+    ); // Close Container
   }
 
   // --- Modified Saved Names Header ---
@@ -379,22 +378,6 @@ class _DashboardPageState extends State<DashboardPage> {
                  _loadDashboard();
              },
            ),
-           const Divider(height: 1, indent: 60),
-           _buildMenuItem(
-              context,
-              icon: Icons.lock_outline,
-              title: 'นโยบายความเป็นส่วนตัว',
-              iconColor: Colors.grey[600]!,
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PrivacyPolicyPage()))
-           ),
-           const Divider(height: 1, indent: 60),
-            _buildMenuItem(
-              context,
-              icon: Icons.delete_outline,
-              title: 'ขอลบบัญชีผู้ใช้',
-              iconColor: Colors.grey[400]!,
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const DeleteAccountPage()))
-           ),
         ],
       ),
     );
@@ -428,24 +411,14 @@ class _DashboardPageState extends State<DashboardPage> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isVip 
-            ? [const Color(0xFF480048), const Color(0xFFC04848)] // Majestic Imperial Purple to Deep Red hint for VIP
-            : [const Color(0xFF2D0133), const Color(0xFF5D0E7D)], // Deep Royal Purple for Normal
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFFFD700), width: 1), // Gold border
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: const Color(0xFFFFD700).withOpacity(0.2), // Soft gold shadow
             blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-          BoxShadow(
-            color: const Color(0xFF6A0DAD).withOpacity(0.3), // Royal Purple Glow
-            blurRadius: 40,
-            spreadRadius: -5,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -462,7 +435,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 height: 150,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: (isVip ? const Color(0xFFEAD4AA) : Colors.blue).withOpacity(0.05),
+                  color: const Color(0xFFFFD700).withOpacity(0.1), // Gold tint for all
                 ),
               ),
             ),
@@ -492,7 +465,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               style: GoogleFonts.kanit(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFFFFD700), // Back to Vibrant Gold
+                                color: const Color(0xFFB8860B), // Dark Goldenrod text
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -502,7 +475,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 style: GoogleFonts.kanit(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
-                                  color: Colors.white.withOpacity(0.5),
+                                  color: const Color(0xFFB8860B).withOpacity(0.6),
                                   letterSpacing: 2,
                                 ),
                               ),
@@ -518,7 +491,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       : 'อัปเกรดเป็น VIP เพื่อเข้าถึงข้อมูลเชิงลึกและรายชื่อค้นหาพิเศษกว่า 300,000 รายชื่อ',
                     style: GoogleFonts.kanit(
                       fontSize: 15, 
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.black87, // Dark text
                       height: 1.5,
                     ),
                   ),
@@ -528,35 +501,31 @@ class _DashboardPageState extends State<DashboardPage> {
                   _buildPrivilegeItem('วิเคราะห์ตามตำราโบราณครบทุกชั้น'),
                   if (!isVip) ...[
                     const SizedBox(height: 30),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: BackdropFilter(
-                        filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white.withOpacity(0.1)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF9E6), // Light gold/cream background for inner section
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.confirmation_number_outlined, color: Colors.blueAccent, size: 18),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'มีรหัสโปรโมชันหรือรหัส VIP?', 
-                                    style: GoogleFonts.kanit(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
+                              const Icon(Icons.confirmation_number_outlined, color: Color(0xFFB8860B), size: 20),
+                              const SizedBox(width: 8),
                               Text(
-                                'สามารถนำรหัสที่ได้จากกิจกรรมหรือการสั่งซื้อสินค้า มากรอกเพื่อรับสิทธิ์ได้ทันที', 
-                                style: GoogleFonts.kanit(fontSize: 12, color: Colors.white60, height: 1.4),
+                                'มีรหัสโปรโมชันหรือรหัส VIP?', 
+                                style: GoogleFonts.kanit(fontSize: 15, color: const Color(0xFF8B6914), fontWeight: FontWeight.w600),
                               ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'กรอกรหัส VIP ที่ได้จากกิจกรรม หรือท่านจะได้เป็น VIP อัตโนมัติเมื่อซื้อสินค้าร้าน "ร้านมาดี"', 
+                            style: GoogleFonts.kanit(fontSize: 12, color: Colors.black54, height: 1.4),
+                          ),
                               const SizedBox(height: 20),
                               Row(
                                 children: [
@@ -586,7 +555,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                           children: [
                                             const Icon(Icons.vpn_key_outlined, size: 18),
                                             const SizedBox(width: 8),
-                                            Text('กรอกรหัส VIP', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, fontSize: 14)),
+                                            Text('ใส่รหัส VIP', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, fontSize: 14)),
                                           ],
                                         ),
                                       ),
@@ -597,8 +566,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                     child: OutlinedButton(
                                       onPressed: _goToShop,
                                       style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.white,
-                                        side: BorderSide(color: Colors.white.withOpacity(0.3), width: 1.5),
+                                        foregroundColor: const Color(0xFFB8860B),
+                                        side: const BorderSide(color: Color(0xFFB8860B), width: 1.5),
                                         padding: const EdgeInsets.symmetric(vertical: 14),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
@@ -607,7 +576,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                         children: [
                                           const Icon(Icons.shopping_bag_outlined, size: 18),
                                           const SizedBox(width: 8),
-                                          Text('ซื้อสินค้าร้านมาดี', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, fontSize: 14)),
+                                          Text('ร้านมาดี', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, fontSize: 14)),
                                         ],
                                       ),
                                     ),
@@ -617,9 +586,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             ],
                           ),
                         ),
-                      ),
-                    ),
-                  ],
+                      ],
                 ],
               ),
             ),
@@ -641,7 +608,7 @@ class _DashboardPageState extends State<DashboardPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('กรอกรหัส VIP', style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
+        title: Text('ใส่รหัส VIP', style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -760,7 +727,7 @@ class _DashboardPageState extends State<DashboardPage> {
               text,
               style: GoogleFonts.kanit(
                 fontSize: 14, 
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.black87, // Changed from white for visibility on white background
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -908,12 +875,12 @@ class _DashboardPageState extends State<DashboardPage> {
             },
             child: Row(
               children: [
-                const Icon(Icons.logout, size: 18, color: Colors.grey),
+                const Icon(Icons.logout, size: 18, color: Colors.redAccent), // Red color for visibility
                 const SizedBox(width: 8),
                 Text('ออกจากระบบ', 
                   style: GoogleFonts.kanit(
                     fontSize: 14, 
-                    color: Colors.grey[600], 
+                    color: Colors.redAccent, // Red color text
                     fontWeight: FontWeight.w500
                   )
                 ),
@@ -1020,7 +987,60 @@ class _DashboardPageState extends State<DashboardPage> {
                 );
             }
 
-            return InkWell(
+            // Check if this is a "perfect" name: all pairs good (green) - no bad pairs
+            final hasSatPairs = satPairs.length >= 1; // At least 1 pair
+            final hasShaPairs = shaPairs.length >= 1; // At least 1 pair
+            
+            // Check if all pairs are good (not bad)
+            bool allSatGood = true;
+            for (var p in satPairs.take(2)) {
+              if (p['is_bad'] == true || p['IsBad'] == true) {
+                allSatGood = false;
+                break;
+              }
+            }
+            
+            bool allShaGood = true;
+            for (var p in shaPairs.take(2)) {
+              if (p['is_bad'] == true || p['IsBad'] == true) {
+                allShaGood = false;
+                break;
+              }
+            }
+            
+            // Check if name has any bad characters (kalakini)
+            bool hasKalakini = false;
+            for (var charData in displayNameHtml) {
+              if (charData['is_bad'] == true || charData['IsBad'] == true) {
+                hasKalakini = true;
+                break;
+              }
+            }
+            
+            final isPerfect = hasSatPairs && hasShaPairs && allSatGood && allShaGood && !hasKalakini; // All green pairs + no kalakini characters
+            
+            // Debug log - show details for first item only
+            if (index == 0) {
+              print('🔍 DEBUG First saved name: $name');
+              print('   hasSatPairs: $hasSatPairs (${satPairs.length} pairs)');
+              print('   hasShaPairs: $hasShaPairs (${shaPairs.length} pairs)');
+              print('   allSatGood: $allSatGood');
+              print('   allShaGood: $allShaGood');
+              print('   isPerfect: $isPerfect');
+              print('   isTopTier: $isTopTier');
+            }
+            
+            // Debug second item to find kalakini field
+            if (index == 1 && name == 'ภูดิท') {
+              print('🔍 DEBUG Second saved name (ภูดิท) - ALL DATA:');
+              print('   Full data: $nameData');
+            }
+            
+            if (isPerfect) {
+              print('✨ PERFECT NAME FOUND: $name (Has star: $isTopTier, Will apply gold shimmer animation)');
+            }
+
+            final rowWidget = InkWell(
               onTap: () async {
                 await Navigator.push(context, MaterialPageRoute(builder: (context) => AnalyzerPage(initialName: name, initialDay: birthDayRaw)));
                 _loadDashboard();
@@ -1028,10 +1048,14 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isTopTier ? const Color(0xFFFFFDE7) : (index % 2 == 0 ? Colors.white : Colors.grey[50]),
+                  color: isPerfect 
+                      ? const Color(0xFFFFFBE6) // Very light cream/gold background (lighter than before)
+                      : (isTopTier ? const Color(0xFFFFFDE7) : (index % 2 == 0 ? Colors.white : Colors.grey[50])),
                   border: Border(
                     bottom: isLast ? BorderSide.none : BorderSide(color: Colors.grey.shade100),
-                    left: isTopTier ? const BorderSide(color: Color(0xFFFBC02D), width: 3) : BorderSide.none,
+                    left: isPerfect 
+                        ? const BorderSide(color: Color(0xFFFFD700), width: 4) // Gold border for perfect
+                        : (isTopTier ? const BorderSide(color: Color(0xFFFBC02D), width: 3) : BorderSide.none),
                   ),
                 ),
                 child: Row(
@@ -1056,37 +1080,40 @@ class _DashboardPageState extends State<DashboardPage> {
                                 ),
                               ),
                               Expanded(
-                                child: displayNameHtml.isEmpty
-                                  ? Text(
-                                      name,
-                                      style: GoogleFonts.kanit(
-                                        fontSize: 14,
-                                        fontWeight: isTopTier ? FontWeight.w800 : FontWeight.bold,
-                                        color: isTopTier ? const Color(0xFFB8860B) : Colors.black87,
-                                      ),
-                                    )
-                                  : Row(
-                                      children: [
-                                        Flexible(
-                                          child: Wrap(
-                                            children: displayNameHtml.map((charData) {
-                                              final char = charData['char'] ?? charData['Char'] ?? '';
-                                              final isBad = charData['is_bad'] == true || charData['IsBad'] == true;
-                                              return Text(
-                                                char,
-                                                style: GoogleFonts.kanit(
-                                                  fontSize: 14,
-                                                  fontWeight: isTopTier ? FontWeight.w800 : FontWeight.bold,
-                                                  color: isBad ? const Color(0xFFFF4757) : (isTopTier ? const Color(0xFFB8860B) : Colors.black87),
-                                                ),
-                                              );
-                                            }).toList(),
-                                          ),
+                                child: _ShimmeringGoldWrapper(
+                                  enabled: isPerfect,
+                                  child: displayNameHtml.isEmpty
+                                    ? Text(
+                                        name,
+                                        style: GoogleFonts.kanit(
+                                          fontSize: 14,
+                                          fontWeight: (isTopTier || isPerfect) ? FontWeight.w800 : FontWeight.bold,
+                                          color: (isTopTier || isPerfect) ? const Color(0xFFB8860B) : Colors.black87,
                                         ),
-                                        if (isTopTier)
-                                          const Text(' ⭐', style: TextStyle(fontSize: 12)),
-                                      ],
-                                    ),
+                                      )
+                                    : Row(
+                                        children: [
+                                          Flexible(
+                                            child: Wrap(
+                                              children: displayNameHtml.map((charData) {
+                                                final char = charData['char'] ?? charData['Char'] ?? '';
+                                                final isBad = charData['is_bad'] == true || charData['IsBad'] == true;
+                                                return Text(
+                                                  char,
+                                                  style: GoogleFonts.kanit(
+                                                    fontSize: 14,
+                                                    fontWeight: (isTopTier || isPerfect) ? FontWeight.w800 : FontWeight.bold,
+                                                    color: isBad ? const Color(0xFFFF4757) : ((isTopTier || isPerfect) ? const Color(0xFFB8860B) : Colors.black87),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ),
+                                          if (isTopTier)
+                                            const Text(' ⭐', style: TextStyle(fontSize: 12)),
+                                        ],
+                                      ),
+                                ),
                               ),
                             ],
                           ),
@@ -1158,6 +1185,9 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
             );
+
+            // Perfect names already have gold background and border - no animation for now
+            return rowWidget;
           }).toList(),
         ],
       ),
@@ -1166,7 +1196,19 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildMiniPairCircle(dynamic p) {
     final num = p['number'] ?? p['Number'] ?? '??';
-    final colorStr = p['color'] ?? p['Color'] ?? '#CCCCCC';
+    var colorStr = p['color'] ?? p['Color'] ?? '#CCCCCC';
+    final type = (p['type'] ?? p['Type'] ?? '').toString().toUpperCase();
+
+    // Robust Bad Check (Matches Analyzer Page logic)
+    final isBad = type.startsWith('R') || 
+                  type.contains('BAD') ||
+                  colorStr.toString().toUpperCase().contains('EF4444') || 
+                  colorStr.toString().toUpperCase().contains('D32F2F');
+
+    if (isBad) {
+      colorStr = '#EF4444'; // Force Red
+    }
+
     return Container(
       width: 20,
       height: 20,
@@ -1249,8 +1291,68 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
   
-
 }
+
+// Shimmering Gold Animation for Perfect Names (copied from analyzer_page.dart)
+class _ShimmeringGoldWrapper extends StatefulWidget {
+  final Widget child;
+  final bool enabled;
+
+  const _ShimmeringGoldWrapper({required this.child, this.enabled = true});
+
+  @override
+  State<_ShimmeringGoldWrapper> createState() => _ShimmeringGoldWrapperState();
+}
+
+class _ShimmeringGoldWrapperState extends State<_ShimmeringGoldWrapper> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+       vsync: this, 
+       duration: const Duration(milliseconds: 3000)
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.enabled) return widget.child;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return ShaderMask(
+          blendMode: BlendMode.srcIn,
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              colors: const [
+                Color(0xFF8B6914), // Darker Gold
+                Color(0xFFFFD700), // Gold
+                Color(0xFFFFF8DC), // Cornsilk
+                Color(0xFFFFD700), // Gold
+                Color(0xFF8B6914),
+              ],
+              stops: const [0.0, 0.4, 0.5, 0.6, 1.0],
+              begin: Alignment(-3.0 + (4.0 * _controller.value), -0.5),
+              end: Alignment(-1.0 + (4.0 * _controller.value), 0.5),
+              tileMode: TileMode.clamp,
+            ).createShader(bounds);
+          },
+          child: widget.child,
+        );
+      },
+    );
+  }
+}
+
 
 
 

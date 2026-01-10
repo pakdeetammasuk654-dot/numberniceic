@@ -13,6 +13,7 @@ import '../utils/custom_toast.dart';
 import 'login_page.dart';
 import 'dashboard_page.dart'; // To refresh dashboard or navigate? Actually we'll just show dialog.
 import 'main_tab_page.dart';
+import 'number_analysis_page.dart';
 import '../widgets/contact_purchase_modal.dart';
 
 class ShopPage extends StatefulWidget {
@@ -239,7 +240,7 @@ class _ShopPageState extends State<ShopPage> {
                 // Optionally navigate to Dashboard or just stay here
                 // Navigating to dashboard (Tab 2) to see the code
                 Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 2)),
+                    MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 3)),
                     (route) => false,
                 );
               },
@@ -264,7 +265,26 @@ class _ShopPageState extends State<ShopPage> {
         title: Text('ซื้อสินค้าร้านมาดี', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: const Color(0xFF333333),
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false, // Align title to the left
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.dialpad, color: Colors.white),
+            onPressed: () {
+               NumberAnalysisPage.show(context);
+            },
+            tooltip: 'วิเคราะห์เบอร์',
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('ไม่มีการแจ้งเตือนใหม่')),
+              );
+            },
+            tooltip: 'การแจ้งเตือน',
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Stack(
         children: [

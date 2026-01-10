@@ -13,7 +13,10 @@ class SolarSystemAnalysisCard extends StatelessWidget {
     required this.cleanedName,
     this.onSaveName,
     this.onPerfectName,
+    this.showKlakini = true,
   }) : super(key: key);
+
+  final bool showKlakini;
 
   Color _parseColor(String? hex) {
     if (hex == null || hex.isEmpty) return const Color(0xFF1E293B);
@@ -73,10 +76,10 @@ class SolarSystemAnalysisCard extends StatelessWidget {
         gradient: LinearGradient(
           colors: isGoodName 
             ? [
-                const Color(0xFFECFDF5), // Very light emerald
-                const Color(0xFFD1FAE5), // Light emerald
-                const Color(0xFFA7F3D0), // Medium emerald
-                const Color(0xFFD1FAE5), // Light emerald (back)
+                const Color(0xFFFFFBEF), // Cream
+                const Color(0xFFFFF8E1), // Pale Amber
+                const Color(0xFFFFECB3), // Light Amber
+                const Color(0xFFFFF8E1), // Pale Amber (back)
               ]
             : [
                 const Color(0xFFF5F5F5), 
@@ -88,28 +91,28 @@ class SolarSystemAnalysisCard extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isGoodName ? const Color(0xFFD4AF37) : const Color(0xFFBDBDBD), 
+          color: isGoodName ? const Color(0xFFFFC107) : const Color(0xFFBDBDBD), 
           width: 1.0
         ),
         boxShadow: isGoodName 
           ? [
-              // Soft outer glow - light green
+              // Soft outer glow - Gold
               BoxShadow(
-                color: const Color(0xFFD4AF37).withOpacity(0.4),
+                color: const Color(0xFFFFC107).withOpacity(0.4),
                 blurRadius: 30,
                 spreadRadius: 0,
                 offset: const Offset(0, 0),
               ),
               // Medium glow
               BoxShadow(
-                color: const Color(0xFFD4AF37).withOpacity(0.2),
+                color: const Color(0xFFFFCA28).withOpacity(0.2),
                 blurRadius: 20,
                 spreadRadius: -5,
                 offset: const Offset(0, 4),
               ),
               // Subtle depth shadow
               BoxShadow(
-                color: const Color(0xFF10B981).withOpacity(0.1),
+                color: const Color(0xFFFFB300).withOpacity(0.1),
                 blurRadius: 10,
                 spreadRadius: 0,
                 offset: const Offset(0, 8),
@@ -131,7 +134,16 @@ class SolarSystemAnalysisCard extends StatelessWidget {
           if (resultTitle.isNotEmpty)
              Padding(
                padding: EdgeInsets.zero,
-               child: RichText(
+               child: _ShimmeringGoldWrapper(
+                 // Strict Logic: No Bad Pairs (Negative Score = 0) AND No Bad Letters (Safe check)
+                 enabled: ((data['num_negative_score'] as num? ?? 0) == 0 && (data['sha_negative_score'] as num? ?? 0) == 0) && 
+                          (!(sunDisplayName?.any((dc) {
+                             final val = dc['is_bad'];
+                             if (val is bool) return val;
+                             if (val is String) return val.toLowerCase() == 'true';
+                             return false;
+                          }) ?? false)),
+                 child: RichText(
                   textAlign: TextAlign.center,
                   text: TextSpan(
                     children: [
@@ -145,7 +157,7 @@ class SolarSystemAnalysisCard extends StatelessWidget {
                            style: GoogleFonts.kanit(
                              fontSize: 22,
                              fontWeight: FontWeight.w600,
-                             color: dc['is_bad'] == true ? const Color(0xFFEF4444) : const Color(0xFF1E293B),
+                             color: (showKlakini && dc['is_bad'] == true) ? const Color(0xFFEF4444) : const Color(0xFF1E293B), // Use Black if hidden (will be gold by wrapper)
                              height: 1.3,
                            ),
                         )),
@@ -167,13 +179,14 @@ class SolarSystemAnalysisCard extends StatelessWidget {
                   ),
                ),
              ),
-             const SizedBox(height: 12),
+             ),
+             const SizedBox(height: 8), // Reduced from 12
              Divider(
                height: 1,
                thickness: 1,
-               color: isGoodName ? const Color(0xFF6EE7B7).withOpacity(0.5) : const Color(0xFFFCD34D).withOpacity(0.5),
+               color: const Color(0xFFFFD700).withOpacity(0.6), // Changed to Gold
              ),
-             const SizedBox(height: 24),
+             const SizedBox(height: 16), // Reduced from 24
           
           // 2. Summary List
             if (summaries.isNotEmpty)
@@ -366,5 +379,61 @@ class SolarSystemAnalysisCard extends StatelessWidget {
     if (title.contains("โชคลาภ")) return const Color(0xFF8B5CF6); // Purple
     if (title.contains("กาลกิณี") || title.contains("ร้าย")) return const Color(0xFFEF4444); // Red
     return const Color(0xFF64748B); // Slate
+  }
+}
+
+class _ShimmeringGoldWrapper extends StatefulWidget {
+  final Widget child;
+  final bool enabled;
+
+  const _ShimmeringGoldWrapper({super.key, required this.child, this.enabled = true});
+
+  @override
+  State<_ShimmeringGoldWrapper> createState() => _ShimmeringGoldWrapperState();
+}
+
+class _ShimmeringGoldWrapperState extends State<_ShimmeringGoldWrapper> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.enabled) return widget.child;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return ShaderMask(
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              colors: const [
+                Color(0xFF8B6914), // Darker Gold for contrast
+                Color(0xFFFFD700), // Gold
+                Color(0xFFFFF8DC), // Cornsilk (White-ish Gold)
+                Color(0xFFFFD700), // Gold
+                Color(0xFF8B6914),
+              ],
+              stops: const [0.0, 0.4, 0.5, 0.6, 1.0], // Tighter shine band
+              begin: Alignment(-1.0 + (3.0 * _controller.value), -0.5), // Faster movement
+              end: Alignment(1.0 + (3.0 * _controller.value), 0.5),
+              tileMode: TileMode.clamp,
+            ).createShader(bounds);
+          },
+          child: widget.child,
+        );
+      },
+      child: widget.child,
+    );
   }
 }

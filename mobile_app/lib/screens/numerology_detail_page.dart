@@ -92,6 +92,7 @@ class NumerologyDetailPage extends StatelessWidget {
         title: Text('ชื่อ: $name', style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF333333),
         elevation: 0,
+        centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(

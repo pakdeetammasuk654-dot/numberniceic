@@ -535,7 +535,8 @@ func main() {
 	// API Routes
 	api := app.Group("/api")
 	api.Get("/analyze", numerologyHandler.AnalyzeAPI)
-	api.Get("/number-analysis", numerologyHandler.AnalyzePhoneNumberAPI) // Updated route path
+	api.Get("/numerology/bad-numbers", numerologyHandler.GetBadNumbersAPI) // New Route
+	api.Get("/number-analysis", numerologyHandler.AnalyzePhoneNumberAPI)   // Updated route path
 	api.Get("/analyze-linguistically", numerologyHandler.AnalyzeLinguisticallyAPI)
 	api.Get("/sample-names", numerologyHandler.GetSampleNamesAPI)
 	api.Get("/lucky-number", func(c *fiber.Ctx) error {

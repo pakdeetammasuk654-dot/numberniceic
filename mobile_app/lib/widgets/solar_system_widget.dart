@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../models/name_character.dart';
 import 'dart:math' as math;
 
 class SolarSystemWidget extends StatefulWidget {
   final Map<String, dynamic>? sumPair;
   final List<dynamic>? mainPairs;
   final List<dynamic>? hiddenPairs;
+  final String? title;
+  final List<NameCharacter>? displayName;
+  final bool isDead;
 
   const SolarSystemWidget({
     super.key,
     required this.sumPair,
     required this.mainPairs,
     required this.hiddenPairs,
+    this.title,
+    this.displayName,
+    this.isDead = false,
   });
 
   @override
@@ -56,36 +63,31 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
 
   @override
   Widget build(BuildContext context) {
-    // Safety check
     if (widget.sumPair == null) return const SizedBox.shrink();
 
-    final sumNumber = widget.sumPair!['pair']?.toString() ?? '?';
-    // Sum color usually fixed to Gold/Yellow for the Sun in this design, 
-    // or use the data color? The image shows yellow. 
-    // The web version uses "sun-dead" class for bad suns. 
-    // For phone numbers, let's use a nice Gold gradient for the sun background.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double width = constraints.maxWidth;
+        final double height = constraints.maxHeight;
+        final double centerX = width / 2;
+        final double centerY = height / 2;
+        final double minDim = math.min(width, height);
+        
+        // Outer orbit closer to inner orbit
+        final double innerRadius = minDim * 0.30; 
+        final double outerRadius = minDim * 0.44; 
 
-    return Column(
-      children: [
-        Text(
-          "วงใน: คู่เลขหลัก | วงนอก: คู่เลขแฝง",
-          style: GoogleFonts.kanit(
-            fontSize: 14,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 20),
-        SizedBox(
-          height: 300,
-          width: 300,
+        return SizedBox(
+          width: width,
+          height: height,
           child: Stack(
             alignment: Alignment.center,
+            clipBehavior: Clip.none, // Allow planets to orbit outside container
             children: [
               // Orbits (Painted)
               CustomPaint(
-                size: const Size(300, 300),
-                painter: OrbitsPainter(),
+                size: Size(width, height),
+                painter: OrbitsPainter(innerRadius: innerRadius, outerRadius: outerRadius),
               ),
 
               // Sun (Center)
@@ -94,48 +96,55 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
                 height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const RadialGradient(
-                    colors: [Color(0xFFFFD700), Color(0xFFFBC02D)],
-                    stops: [0.6, 1.0],
-                  ),
+                  gradient: widget.isDead 
+                    ? const RadialGradient(
+                        colors: [Color(0xFF757575), Color(0xFF212121)],
+                        stops: [0.6, 1.0],
+                      )
+                    : const RadialGradient(
+                        colors: [Color(0xFFFFD700), Color(0xFFFBC02D)],
+                        stops: [0.6, 1.0],
+                      ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFFD700).withOpacity(0.5),
+                      color: (widget.isDead ? Colors.black : const Color(0xFFFFD700)).withOpacity(0.5),
                       blurRadius: 30, 
                       spreadRadius: 5,
                     )
                   ],
-                  // border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
                 ),
                 alignment: Alignment.center,
                 child: Container(
-                  width: 54, 
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: _parseColor(widget.sumPair!['meaning']?['color']?.toString()),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2.5),
-                    boxShadow: [
-                       BoxShadow(
-                         color: Colors.black.withOpacity(0.2), 
-                         blurRadius: 4,
-                         offset: const Offset(0, 2),
-                       )
-                    ],
-                  ),
+                  width: 80, 
+                  height: 80,
                   alignment: Alignment.center,
-                  child: Text(
-                    sumNumber,
-                    style: GoogleFonts.kanit(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: (widget.displayName != null && widget.displayName!.isNotEmpty)
+                    ? Wrap(
+                        alignment: WrapAlignment.center,
+                        children: widget.displayName!.map((dc) => Text(
+                          dc.char,
+                          style: GoogleFonts.kanit(
+                            fontSize: 16, // Increased slightly from 12
+                            fontWeight: FontWeight.w900,
+                            color: dc.isBad ? const Color(0xFFFF1744) : (widget.isDead ? Colors.white70 : const Color(0xFF4A3400)),
+                            height: 1.0,
+                          ),
+                        )).toList(),
+                      )
+                    : Text(
+                        widget.title ?? '',
+                        style: GoogleFonts.kanit(
+                          fontSize: 16, // Increased slightly from 12
+                          fontWeight: FontWeight.w900,
+                          color: widget.isDead ? Colors.white70 : const Color(0xFF4A3400),
+                          height: 1.0,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                 ),
               ),
 
-              // Inner Planets (Main Pairs)
+              // Inner Orbit (Animated) - Clockwise (+)
               if (widget.mainPairs != null)
                 AnimatedBuilder(
                   animation: _innerController,
@@ -143,51 +152,26 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
                     return Stack(
                       children: List.generate(widget.mainPairs!.length, (index) {
                         final item = widget.mainPairs![index];
-                        final pairNum = item['pair']?.toString() ?? '';
-                        
-                        // Determine if this pair is bad
+                        final pairNum = item['pair']?.toString() ?? item['pair_number']?.toString() ?? '';
                         bool isBad = false;
-                        final meaning = item['meaning'];
-                        if (meaning != null) {
-                          // Check is_bad flag
-                          final badVal = meaning['is_bad'];
-                          if (badVal is bool) {
-                            isBad = badVal;
-                          } else if (badVal is int) {
-                            isBad = badVal > 0;
-                          } else if (badVal is String) {
-                            isBad = badVal.toLowerCase() == 'true';
-                          }
-                          
-                          // Fallback: check pair_type if is_bad not set
-                          if (!isBad && meaning['pair_type'] != null) {
-                            final pairType = meaning['pair_type'].toString();
-                            isBad = (pairType == 'ร้าย' || pairType == 'ร้ายมาก');
-                          }
+                        if (item['meaning'] != null) {
+                           isBad = item['meaning']['is_bad'] == true;
                         }
-                        
-                        // Use green for good, red for bad
-                        final color = isBad ? const Color(0xFFEF4444) : const Color(0xFF10B981);
-                        
-                        // Calculate position
-                        // Radius for inner orbit = ? (OrbitPainter will define it, let's say 90)
-                        final double orbitRadius = 85.0;
-                        final int count = widget.mainPairs!.length;
-                        final double angleStep = 2 * math.pi / count;
-                        // Add rotation from controller
-                        final double currentAngle = (angleStep * index) + (_innerController.value * 2 * math.pi);
+
+                        // Calculate position - Clockwise
+                        double angle = (2 * math.pi * index / widget.mainPairs!.length) + (2 * math.pi * _innerController.value);
 
                         return Positioned(
-                          left: 150 + orbitRadius * math.cos(currentAngle) - 18, // 150 is center, 18 is half size
-                          top: 150 + orbitRadius * math.sin(currentAngle) - 18,
-                          child: _buildPlanet(pairNum, color),
+                          left: centerX + innerRadius * math.cos(angle) - 14,
+                          top: centerY + innerRadius * math.sin(angle) - 14,
+                          child: _buildPlanet(pairNum, isBad ? const Color(0xFFEF4444) : const Color(0xFF10B981), isBad: isBad),
                         );
                       }),
                     );
                   },
                 ),
 
-              // Outer Planets (Hidden Pairs)
+              // Outer Orbit (Animated) - Changed to Clockwise (+)
               if (widget.hiddenPairs != null)
                 AnimatedBuilder(
                   animation: _outerController,
@@ -195,44 +179,19 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
                     return Stack(
                       children: List.generate(widget.hiddenPairs!.length, (index) {
                         final item = widget.hiddenPairs![index];
-                        final pairNum = item['pair']?.toString() ?? '';
-                        
-                        // Determine if this pair is bad
+                        final pairNum = item['pair']?.toString() ?? item['pair_number']?.toString() ?? '';
                         bool isBad = false;
-                        final meaning = item['meaning'];
-                        if (meaning != null) {
-                          // Check is_bad flag
-                          final badVal = meaning['is_bad'];
-                          if (badVal is bool) {
-                            isBad = badVal;
-                          } else if (badVal is int) {
-                            isBad = badVal > 0;
-                          } else if (badVal is String) {
-                            isBad = badVal.toLowerCase() == 'true';
-                          }
-                          
-                          // Fallback: check pair_type if is_bad not set
-                          if (!isBad && meaning['pair_type'] != null) {
-                            final pairType = meaning['pair_type'].toString();
-                            isBad = (pairType == 'ร้าย' || pairType == 'ร้ายมาก');
-                          }
+                        if (item['meaning'] != null) {
+                           isBad = item['meaning']['is_bad'] == true;
                         }
-                        
-                        // Use green for good, red for bad
-                        final color = isBad ? const Color(0xFFEF4444) : const Color(0xFF10B981);
-                        
-                        // Calculate position
-                        // Radius for outer orbit = ? (OrbitPainter will define it, let's say 135)
-                        final double orbitRadius = 135.0;
-                        final int count = widget.hiddenPairs!.length;
-                        final double angleStep = 2 * math.pi / count;
-                        // Add rotation from controller (slower)
-                        final double currentAngle = (angleStep * index) + (_outerController.value * 2 * math.pi);
+
+                        // Calculate position - Clockwise (+)
+                        double angle = (2 * math.pi * index / widget.hiddenPairs!.length) + (2 * math.pi * _outerController.value);
 
                         return Positioned(
-                          left: 150 + orbitRadius * math.cos(currentAngle) - 18,
-                          top: 150 + orbitRadius * math.sin(currentAngle) - 18,
-                          child: _buildPlanet(pairNum, color),
+                          left: centerX + outerRadius * math.cos(angle) - 14,
+                          top: centerY + outerRadius * math.sin(angle) - 14,
+                          child: _buildPlanet(pairNum, isBad ? const Color(0xFFEF4444) : const Color(0xFF10B981), isBad: isBad),
                         );
                       }),
                     );
@@ -240,24 +199,27 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
                 ),
             ],
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 
-  Widget _buildPlanet(String number, Color color) {
+  Widget _buildPlanet(String number, Color color, {required bool isBad}) {
+    // Exact colors from image
+    final planetColor = isBad ? const Color(0xFFFF1744) : const Color(0xFF00C853);
+    
     return Container(
-      width: 36,
-      height: 36,
+      width: 32, 
+      height: 32,
       decoration: BoxDecoration(
-        color: color,
+        color: planetColor,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
+        // Removed border as requested
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: planetColor.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
           )
         ],
       ),
@@ -265,9 +227,10 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
       child: Text(
         number,
         style: GoogleFonts.kanit(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
           color: Colors.white,
+          height: 1.0,
         ),
       ),
     );
@@ -275,43 +238,46 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
 }
 
 class OrbitsPainter extends CustomPainter {
+  final double innerRadius;
+  final double outerRadius;
+
+  OrbitsPainter({required this.innerRadius, required this.outerRadius});
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final paint = Paint()
-      ..color = const Color(0xFFFFCC80).withOpacity(0.5) // Light Orange/Gold dashed
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
+      ..strokeWidth = 1.0
+      ..color = const Color(0xFFFFCC80).withOpacity(0.5);
 
-    // Inner Orbit Radius = 85
-    _drawDashedCircle(canvas, center, 85, paint);
-
-    // Outer Orbit Radius = 135
-    paint.color = const Color(0xFFFFCC80).withOpacity(0.3);
-    _drawDashedCircle(canvas, center, 135, paint);
+    // Inner orbit
+    _drawDashedCircle(canvas, center, innerRadius, paint);
+    // Outer orbit
+    _drawDashedCircle(canvas, center, outerRadius, paint);
   }
 
   void _drawDashedCircle(Canvas canvas, Offset center, double radius, Paint paint) {
-    const double dashWidth = 4;
-    const double dashSpace = 4;
-    double startAngle = 0;
-    final double circumference = 2 * math.pi * radius;
-    final int dashCount = (circumference / (dashWidth + dashSpace)).floor();
-    final double angleStep = (2 * math.pi) / dashCount;
+    const double dashWidth = 5;
+    const double dashSpace = 5;
+    double circumference = 2 * math.pi * radius;
+    int dashCount = (circumference / (dashWidth + dashSpace)).floor();
 
     for (int i = 0; i < dashCount; i++) {
-        // Draw small arc for dash
-        canvas.drawArc(
-          Rect.fromCircle(center: center, radius: radius),
-          startAngle,
-          angleStep * 0.5, // Half step for dash
-          false,
-          paint,
-        );
-        startAngle += angleStep;
+      double startAngle = (i * (dashWidth + dashSpace)) / radius;
+      double sweepAngle = dashWidth / radius;
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweepAngle,
+        false,
+        paint,
+      );
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant OrbitsPainter oldDelegate) {
+    return oldDelegate.innerRadius != innerRadius || oldDelegate.outerRadius != outerRadius;
+  }
 }

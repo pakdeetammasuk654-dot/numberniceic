@@ -13,7 +13,8 @@ import 'dashboard_page.dart';
 import 'analyzer_page.dart';
 import 'notification_list_page.dart';
 import 'login_page.dart';
-import 'register_page.dart';
+import 'main_tab_page.dart';
+import 'number_analysis_page.dart';
 import '../widgets/shared_footer.dart';
 
 class LandingPage extends StatefulWidget {
@@ -137,9 +138,10 @@ class _LandingPageState extends State<LandingPage> {
         backgroundColor: const Color(0xFF333333),
         elevation: 0,
         scrolledUnderElevation: 2,
-        centerTitle: false,
+        centerTitle: false, // Align title to the left
 
         title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             SvgPicture.asset(
               'assets/images/logo.svg',
@@ -159,6 +161,13 @@ class _LandingPageState extends State<LandingPage> {
         ),
 
         actions: [
+          IconButton(
+            icon: const Icon(Icons.dialpad, color: Colors.white),
+            onPressed: () {
+               NumberAnalysisPage.show(context);
+            },
+            tooltip: 'วิเคราะห์เบอร์',
+          ),
           Stack(
             children: [
               IconButton(

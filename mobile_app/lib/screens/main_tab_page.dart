@@ -16,18 +16,36 @@ class MainTabPage extends StatefulWidget {
   const MainTabPage({super.key, this.initialIndex = 0});
 
   @override
-  State<MainTabPage> createState() => _MainTabPageState();
+  State<MainTabPage> createState() => MainTabPageState();
+
+  static MainTabPageState? of(BuildContext context) {
+    return context.findAncestorStateOfType<MainTabPageState>();
+  }
 }
 
-class _MainTabPageState extends State<MainTabPage> {
+class MainTabPageState extends State<MainTabPage> {
   int _currentIndex = 0;
   bool _isLoggedIn = false;
   String? _avatarUrl;
 
+  set currentIndex(int index) {
+    if (index == 3) {
+      _checkLoginStatus();
+    }
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  int get currentIndex => _currentIndex;
+  bool get isLoggedIn => _isLoggedIn;
+  String? get avatarUrl => _avatarUrl;
+
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex;
+    // Ensure initialIndex is valid for 4-tab layout (0-3)
+    _currentIndex = widget.initialIndex.clamp(0, 3);
     _checkLoginStatus();
     // Check for first time launch after UI builds
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -94,7 +112,6 @@ class _MainTabPageState extends State<MainTabPage> {
     final List<Widget> pages = [
       const LandingPage(),
       const AnalyzerPage(),
-      const NumberAnalysisPage(),
       const ShopPage(),
       dashboardPage,
     ];
@@ -113,10 +130,9 @@ class _MainTabPageState extends State<MainTabPage> {
           backgroundColor: const Color(0xFF333333),
           currentIndex: _currentIndex,
           onTap: (index) async {
-              // Now Dashboard/Login is index 4
-              if(index == 4) {
-                  await _checkLoginStatus(); 
-              }
+            if (index == 3) {
+              await _checkLoginStatus();
+            }
             setState(() {
               _currentIndex = index;
             });
@@ -139,11 +155,6 @@ class _MainTabPageState extends State<MainTabPage> {
               label: 'วิเคราะห์ชื่อ',
             ),
              const BottomNavigationBarItem(
-              icon: Icon(Icons.dialpad_outlined),
-              activeIcon: Icon(Icons.dialpad),
-              label: 'วิเคราะห์เบอร์',
-            ),
-             const BottomNavigationBarItem(
               icon: Icon(Icons.storefront_outlined),
               activeIcon: Icon(Icons.storefront),
               label: 'ร้านค้า',
@@ -156,27 +167,7 @@ class _MainTabPageState extends State<MainTabPage> {
           ],
         ),
       ),
-      floatingActionButton: _currentIndex == 3 
-        ? null 
-        : FloatingActionButton(
-            onPressed: () => setState(() => _currentIndex = 3),
-            backgroundColor: Colors.transparent,
-            elevation: 10,
-            shape: const CircleBorder(),
-            clipBehavior: Clip.antiAlias,
-            child: Container(
-              width: 56,
-              height: 56,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFFFFD700), Color(0xFFFDB931)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: const Icon(Icons.shopping_cart, color: Color(0xFF4A3B00), size: 28),
-            ),
-          ),
+      floatingActionButton: null,
     );
   }
   Widget _buildUserIcon(bool isActive) {

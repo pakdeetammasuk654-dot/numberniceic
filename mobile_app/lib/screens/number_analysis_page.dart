@@ -8,9 +8,22 @@ import '../widgets/wreath_score_grid.dart';
 import '../widgets/solar_system_widget.dart';
 import '../services/api_service.dart';
 import 'vip_grade_info_page.dart';
+import 'main_tab_page.dart';
 
 class NumberAnalysisPage extends StatefulWidget {
-  const NumberAnalysisPage({super.key});
+  final bool isBottomSheet;
+  final String? initialPhoneNumber;
+  const NumberAnalysisPage({super.key, this.isBottomSheet = false, this.initialPhoneNumber});
+
+  static Future<void> show(BuildContext context, {String? phoneNumber}) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      enableDrag: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => NumberAnalysisPage(isBottomSheet: true, initialPhoneNumber: phoneNumber),
+    );
+  }
 
   @override
   State<NumberAnalysisPage> createState() => _NumberAnalysisPageState();
@@ -29,6 +42,12 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
   @override
   void initState() {
     super.initState();
+    
+    if (widget.initialPhoneNumber != null) {
+      _phoneController.text = widget.initialPhoneNumber!;
+      _analyzeNumber(widget.initialPhoneNumber!);
+    }
+
     // Inner Orbit: 20s
     _innerOrbitController = AnimationController(
       vsync: this,
@@ -158,13 +177,37 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
       }
     }
 
-    return Scaffold(
+    final content = Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
          title: Text('วิเคราะห์เบอร์โทรศัพท์', style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold)),
          backgroundColor: const Color(0xFF333333),
          elevation: 0,
          centerTitle: true,
+         leading: widget.isBottomSheet 
+            ? IconButton(
+                icon: const Icon(Icons.expand_more, color: Colors.white, size: 28),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
+         actions: [
+            if (!widget.isBottomSheet)
+              IconButton(
+                icon: const Icon(Icons.dialpad, color: Color(0xFFFFD700)),
+                onPressed: () {},
+                tooltip: 'วิเคราะห์เบอร์',
+              ),
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('ไม่มีการแจ้งเตือนใหม่')),
+                );
+              },
+              tooltip: 'การแจ้งเตือน',
+            ),
+            const SizedBox(width: 8),
+         ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -315,6 +358,20 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
         ),
       ),
     );
+
+    if (widget.isBottomSheet) {
+      return Container(
+        height: MediaQuery.of(context).size.height * 0.92,
+        decoration: const BoxDecoration(
+          color: Color(0xFFFAFAFA),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        clipBehavior: Clip.antiAliasWithSaveLayer,
+        child: content,
+      );
+    }
+
+    return content;
   }
 
   Widget _buildGradeBadge(String phoneNumber, String title) {
@@ -1101,7 +1158,7 @@ class _Planet extends StatelessWidget {
               border: Border.all(color: Colors.white, width: 2),
               boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black26)]
             ),
-            child: Text(pair, style: GoogleFonts.kanit(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(pair, style: GoogleFonts.kanit(fontSize: 10, color: isBad ? Colors.black87 : Colors.white, fontWeight: FontWeight.bold)),
           ),
         );
       },

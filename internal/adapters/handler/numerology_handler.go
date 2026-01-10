@@ -188,9 +188,13 @@ func (h *NumerologyHandler) AnalyzeAPI(c *fiber.Ctx) error {
 	name := service.SanitizeInput(c.Query("name"))
 	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
 	if day == "" {
+		day = strings.ToLower(strings.TrimSpace(c.Query("birth_day")))
+	}
+	if day == "" {
 		day = "thursday"
 	}
-	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on" || c.Query("auspicious") == "1"
+	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on" || c.Query("auspicious") == "1" ||
+		c.Query("is_auspicious") == "true" || c.Query("is_auspicious") == "on" || c.Query("is_auspicious") == "1"
 	disableKlakini := c.Query("disable_klakini") == "true" || c.Query("disable_klakini") == "on" || c.Query("disable_klakini") == "1"
 
 	// --- VIP/Admin Detection via Token ---
@@ -304,8 +308,20 @@ func (h *NumerologyHandler) AnalyzeAPI(c *fiber.Ctx) error {
 
 		var fullList []domain.SimilarNameResult
 		top4, last4, fullList, totalBest = h.getBestNames(bestCandidates, 100, allowKlakiniTop4)
-		if len(fullList) > 0 {
+		if isAuspicious && len(fullList) > 0 {
 			tableCandidates = fullList
+		}
+
+		if !isAuspicious {
+			log.Printf("DEBUG: !isAuspicious mode. tableCandidates count: %d", len(tableCandidates))
+			hasBad := false
+			for _, n := range tableCandidates {
+				if n.HasBadPair {
+					hasBad = true
+					break
+				}
+			}
+			log.Printf("DEBUG: !isAuspicious mode. Has any Bad Pair Name? %v", hasBad)
 		}
 
 		// 3. Apply Limit based on VIP/Admin status
@@ -394,6 +410,9 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 	// Parse query params
 	name := service.SanitizeInput(c.Query("name"))
 	day := strings.ToLower(strings.TrimSpace(c.Query("day")))
+	if day == "" {
+		day = strings.ToLower(strings.TrimSpace(c.Query("birth_day")))
+	}
 
 	// Get Sample Names
 	samples, _ := h.sampleNamesCache.GetAll()
@@ -408,7 +427,8 @@ func (h *NumerologyHandler) AnalyzeStreaming(c *fiber.Ctx) error {
 	if day == "" {
 		day = "thursday"
 	}
-	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on"
+	isAuspicious := c.Query("auspicious") == "true" || c.Query("auspicious") == "on" ||
+		c.Query("is_auspicious") == "true" || c.Query("is_auspicious") == "on"
 	disableKlakini := c.Query("disable_klakini") == "true" || c.Query("disable_klakini") == "on"
 	disableKlakiniTable := disableKlakini
 	disableKlakiniTop4 := c.Query("disable_klakini_top4") == "true" || c.Query("disable_klakini_top4") == "on"
@@ -696,7 +716,34 @@ func (h *NumerologyHandler) AnalyzeLinguistically(c *fiber.Ctx) error {
 	return templ_render.Render(c, analysis.LinguisticModal(name, analysisRes))
 }
 
+func (h *NumerologyHandler) GetBadNumbersAPI(c *fiber.Ctx) error {
+	meanings, err := h.numberPairCache.GetAllMeanings()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to load meanings"})
+	}
+
+	uniqueBad := make(map[int]bool)
+	for _, m := range meanings {
+		if service.IsBadPairType(m.PairType) {
+			if val, err := strconv.Atoi(m.PairNumber); err == nil {
+				uniqueBad[val] = true
+			}
+		}
+	}
+
+	badNumbers := []int{}
+	for k := range uniqueBad {
+		badNumbers = append(badNumbers, k)
+	}
+	sort.Ints(badNumbers)
+
+	return c.JSON(fiber.Map{
+		"bad_numbers": badNumbers,
+	})
+}
+
 func (h *NumerologyHandler) GetNumberMeanings(c *fiber.Ctx) error {
+
 	meaningsMap, err := h.numberPairCache.GetAllMeanings()
 	if err != nil {
 		log.Printf("Error getting number meanings from cache: %v", err)

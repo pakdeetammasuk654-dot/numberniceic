@@ -4,11 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/article.dart';
 import '../models/sample_name.dart';
+import '../models/analysis_result.dart';
 import '../models/product_model.dart';
 import '../models/order_model.dart';
 import '../models/shipping_address_model.dart';
-import 'auth_service.dart';
 import '../models/user_notification.dart';
+import 'auth_service.dart';
 
 class ApiService {
   static final ValueNotifier<int> dashboardRefreshSignal = ValueNotifier<int>(0);
@@ -39,8 +40,6 @@ class ApiService {
     // IP สำหรับ Local Development
     const String localIp = '192.168.1.38'; // แก้เป็น IP Mac ของคุณ
     
-    // เลือกโหมด: หากเป็น kReleaseMode (ตอน Build App จริง) ให้ใช้ Domain
-    // หากเป็น Debug Mode ให้ใช้ IP หรือ localhost
     // เลือกโหมด: หากเป็น kReleaseMode (ตอน Build App จริง) ให้ใช้ Domain
     // หากเป็น Debug Mode ให้ใช้ IP หรือ localhost
     const bool useProduction = true; // Set to true for production builds
@@ -206,13 +205,13 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> analyzeName(
+  static Future<AnalysisResult> analyzeName(
     String name,
     String day, {
     bool auspicious = false,
     bool disableKlakini = false,
     bool disableKlakiniTop4 = false,
-    String? section,
+    String section = 'all',
   }) async {
     final queryParams = {
       'name': name,
@@ -220,26 +219,23 @@ class ApiService {
       'auspicious': auspicious.toString(),
       'disable_klakini': disableKlakini.toString(),
       'disable_klakini_top4': disableKlakiniTop4.toString(),
+      'section': section,
     };
-    if (section != null) queryParams['section'] = section;
-    final url = Uri.parse('$baseUrl/api/analyze').replace(queryParameters: queryParams);
-    debugPrint('🚀 API REQUEST: GET $url');
     
-    try {
-      final token = await AuthService.getToken();
-      final Map<String, String> headers = {
-        'Content-Type': 'application/json',
-      };
-      if (token != null) {
-        headers['Authorization'] = 'Bearer $token';
-      }
+    final url = Uri.parse('$baseUrl/api/analyze').replace(queryParameters: queryParams);
+    debugPrint('🚀 API REQUEST: GET $url (Section: $section)');
 
-      final response = await http.get(url, headers: headers);
+    try {
+      final response = await http.get(
+          url,
+          headers: {'Content-Type': 'application/json'},
+      );
+
       if (response.statusCode == 200) {
-        return _safeDecode(response);
+        final Map<String, dynamic> data = _safeDecode(response);
+        return AnalysisResult.fromJson(data);
       } else {
-        final errorMsg = response.statusCode == 401 ? 'Session expired' : 'Server error: ${response.statusCode}';
-        throw Exception(errorMsg);
+        throw Exception('Failed to analyze name: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Connection error at $url: $e');
@@ -308,7 +304,7 @@ class ApiService {
         url,
         headers: {
           'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $token',
         },
       );
 
@@ -606,7 +602,24 @@ class ApiService {
       return null;
     }
   }
+  static Future<Set<int>> getBadNumbers() async {
+    final url = Uri.parse('$baseUrl/api/numerology/bad-numbers');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = _safeDecode(response);
+        final list = List<int>.from(data['bad_numbers']);
+        return list.toSet();
+      }
+      return {};
+    } catch (e) {
+      if (kDebugMode) print('Fetch Bad Numbers Error: $e');
+      return {};
+    }
+  }
+
   static Future<Map<String, dynamic>?> getWelcomeMessage() async {
+
     final url = Uri.parse('$baseUrl/api/system/welcome-message');
     try {
       final response = await http.get(url);
