@@ -212,7 +212,7 @@ func main() {
 	articleHandler := handler.NewArticleHandler(articleService, store)
 	adminHandler := handler.NewAdminHandler(adminService, sampleNamesCache, store, buddhistDayService, walletColorService, shippingAddressService, mobileConfigService, notificationService, memberService)
 
-	paymentService := service.NewPaymentService(orderRepo, memberRepo, promotionalCodeRepo)
+	paymentService := service.NewPaymentService(orderRepo, memberRepo, promotionalCodeRepo, memberService)
 	// We need to pass store to paymentHandler if we want to read session user_id
 	paymentHandler := handler.NewPaymentHandler(paymentService, store)
 	seoHandler := handler.NewSEOHandler(articleService)
@@ -348,8 +348,15 @@ func main() {
 		}
 
 		nextDay := days[0]
-		today := time.Now().Truncate(24 * time.Hour)
-		targetDay := nextDay.Date.Truncate(24 * time.Hour)
+
+		// Use Thailand timezone for accurate date comparison
+		loc, err := time.LoadLocation("Asia/Bangkok")
+		if err != nil {
+			loc = time.FixedZone("ICT", 7*60*60) // Fallback to UTC+7
+		}
+
+		today := time.Now().In(loc).Truncate(24 * time.Hour)
+		targetDay := nextDay.Date.In(loc).Truncate(24 * time.Hour)
 
 		// Check if today is the buddhist day
 		if today.Equal(targetDay) {
@@ -719,17 +726,17 @@ func main() {
 	admin.Post("/add-name/bulk", adminHandler.BulkUploadNames)
 	admin.Delete("/add-name/:id", adminHandler.DeleteSystemName)
 
-	// Buddhist Day Management
-	admin.Get("/buddhist-days", adminHandler.ShowBuddhistDaysPage)
-	admin.Post("/buddhist-days", adminHandler.AddBuddhistDay)
-	admin.Post("/buddhist-days/:id/update", adminHandler.UpdateBuddhistDay)
-	admin.Delete("/buddhist-days/:id", adminHandler.DeleteBuddhistDay)
+	// Buddhist Day Management (Disabled as requested)
+	// admin.Get("/buddhist-days", adminHandler.ShowBuddhistDaysPage)
+	// admin.Post("/buddhist-days", adminHandler.AddBuddhistDay)
+	// admin.Post("/buddhist-days/:id/update", adminHandler.UpdateBuddhistDay)
+	// admin.Delete("/buddhist-days/:id", adminHandler.DeleteBuddhistDay)
 
 	// API Routes for Mobile App
 	app.Get("/api/analyze", numerologyHandler.AnalyzeAPI)
 
-	// API Docs
-	admin.Get("/api-docs", adminHandler.ShowAPIDocsPage)
+	// API Docs (Disabled as requested)
+	// admin.Get("/api-docs", adminHandler.ShowAPIDocsPage)
 
 	// Wallet Color Management
 	admin.Get("/wallet-colors", adminHandler.ShowWalletColorsPage)
@@ -737,7 +744,9 @@ func main() {
 	admin.Post("/wallet-colors/:day", adminHandler.UpdateWalletColor)
 	admin.Get("/wallet-colors/:day/cancel", adminHandler.CancelEditWalletColorRow)
 	admin.Get("/customer-color-report", adminHandler.ShowCustomerColorReportPage)
+	admin.Get("/api/search-users", adminHandler.SearchUsersAPI)
 	admin.Post("/assign-customer-colors", adminHandler.AssignCustomerColors)
+	admin.Post("/send-wallet-notification", adminHandler.SendWalletColorNotification)
 
 	// Product Management Routes
 	admin.Get("/products", adminHandler.ShowProductsPage)
@@ -766,6 +775,10 @@ func main() {
 	// Send Notification to Users
 	admin.Get("/send-notification", adminHandler.ShowSendNotificationPage)
 	admin.Post("/send-notification", adminHandler.HandleSendNotification)
+
+	// Send Article Notification (NEW)
+	admin.Get("/send-article-notification", adminHandler.SendArticleNotificationPage)
+	admin.Post("/send-article-notification", adminHandler.SendArticleNotificationPost)
 
 	// VIP Codes Management
 	admin.Get("/vip-codes", adminHandler.ShowVIPCodesPage)
@@ -888,6 +901,74 @@ func setupDatabase() *sql.DB {
 	`
 	if _, err := db.Exec(migrationBuddhistSQL); err != nil {
 		log.Printf("Migration Warning (Buddhist Days): %v", err)
+	}
+
+	// Fix Foreign Key Constraints for User Deletion
+	migrationFKFixSQL := `
+		-- Ensure fcm_tokens exists and has cascade
+		CREATE TABLE IF NOT EXISTS fcm_tokens (
+			id SERIAL PRIMARY KEY,
+			user_id INTEGER REFERENCES member(id) ON DELETE CASCADE,
+			token TEXT UNIQUE NOT NULL,
+			platform TEXT,
+			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+
+		DO $$ 
+		DECLARE
+		    r RECORD;
+		BEGIN
+		    -- Clean orphans in saved_names first (otherwise FK creation fails)
+		    DELETE FROM saved_names WHERE user_id NOT IN (SELECT id FROM member);
+
+		    -- Fix orders (add FK if missing)
+		    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'orders_user_id_fkey') THEN
+		        ALTER TABLE orders ADD CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES member(id) ON DELETE CASCADE;
+		    END IF;
+
+		    -- Fix saved_names (add FK if missing)
+		    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'saved_names_user_id_fkey') THEN
+		        ALTER TABLE saved_names ADD CONSTRAINT saved_names_user_id_fkey FOREIGN KEY (user_id) REFERENCES member(id) ON DELETE CASCADE;
+		    END IF;
+
+		    -- Comprehensive Fix: Search for all FKs referencing table 'member' and update them to ON DELETE CASCADE
+		    FOR r IN (
+		        SELECT 
+		            tc.constraint_name, 
+		            tc.table_name, 
+		            kcu.column_name 
+		        FROM 
+		            information_schema.table_constraints AS tc 
+		            JOIN information_schema.key_column_usage AS kcu 
+		              ON tc.constraint_name = kcu.constraint_name 
+		            JOIN information_schema.constraint_column_usage AS ccu 
+		              ON ccu.constraint_name = tc.constraint_name 
+		        WHERE tc.constraint_type = 'FOREIGN KEY' AND ccu.table_name = 'member'
+		    ) LOOP
+		        -- Skip promotional_codes used_by_member_id as we want SET NULL there
+		        IF r.table_name = 'promotional_codes' AND r.column_name = 'used_by_member_id' THEN
+		            EXECUTE 'ALTER TABLE ' || quote_ident(r.table_name) || ' DROP CONSTRAINT ' || quote_ident(r.constraint_name);
+		            EXECUTE 'ALTER TABLE ' || quote_ident(r.table_name) || ' ADD CONSTRAINT ' || quote_ident(r.constraint_name) || 
+		                    ' FOREIGN KEY (' || quote_ident(r.column_name) || ') REFERENCES member(id) ON DELETE SET NULL';
+		        ELSE
+		            -- Standard fix: DROP and ADD with ON DELETE CASCADE
+		            EXECUTE 'ALTER TABLE ' || quote_ident(r.table_name) || ' DROP CONSTRAINT ' || quote_ident(r.constraint_name);
+		            EXECUTE 'ALTER TABLE ' || quote_ident(r.table_name) || ' ADD CONSTRAINT ' || quote_ident(r.constraint_name) || 
+		                    ' FOREIGN KEY (' || quote_ident(r.column_name) || ') REFERENCES member(id) ON DELETE CASCADE';
+		        END IF;
+		    END LOOP;
+		END $$;
+
+		-- Add wallet_colors_notified_at to member table if not exists
+		DO $$ 
+		BEGIN 
+			IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='member' AND column_name='wallet_colors_notified_at') THEN
+				ALTER TABLE member ADD COLUMN wallet_colors_notified_at TIMESTAMP;
+			END IF;
+		END $$;
+	`
+	if _, err := db.Exec(migrationFKFixSQL); err != nil {
+		log.Printf("Migration Warning (FK Fix): %v", err)
 	}
 
 	fmt.Println("Successfully connected to database and migrated schema!")

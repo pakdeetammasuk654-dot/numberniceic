@@ -9,18 +9,19 @@ type Member struct {
 	ID       int    `json:"id"`
 	Username string `json:"username"`
 
-	Provider       string     `json:"provider"`    // "line", "facebook", "google"
-	ProviderID     string     `json:"provider_id"` // Unique ID from provider
-	Email          string     `json:"email"`
-	AvatarURL      string     `json:"avatar_url"`
-	Tel            string     `json:"tel"`
-	Status         int        `json:"status"`
-	DayOfBirth     *int       `json:"day_of_birth"` // 0=Sunday, 1=Monday, ..., 6=Saturday
-	AssignedColors string     `json:"assigned_colors"`
-	VIPExpiresAt   *time.Time `json:"vip_expires_at"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
-	DeletedAt      *time.Time `json:"deleted_at"`
+	Provider               string     `json:"provider"`    // "line", "facebook", "google"
+	ProviderID             string     `json:"provider_id"` // Unique ID from provider
+	Email                  string     `json:"email"`
+	AvatarURL              string     `json:"avatar_url"`
+	Tel                    string     `json:"tel"`
+	Status                 int        `json:"status"`
+	DayOfBirth             *int       `json:"day_of_birth"` // 0=Sunday, 1=Monday, ..., 6=Saturday
+	AssignedColors         string     `json:"assigned_colors"`
+	VIPExpiresAt           *time.Time `json:"vip_expires_at"`
+	WalletColorsNotifiedAt *time.Time `json:"wallet_colors_notified_at"` // New: tracked for notification status
+	CreatedAt              time.Time  `json:"created_at"`
+	UpdatedAt              time.Time  `json:"updated_at"`
+	DeletedAt              *time.Time `json:"deleted_at"`
 }
 
 const (

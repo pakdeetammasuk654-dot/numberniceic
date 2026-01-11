@@ -202,7 +202,8 @@ func (h *AdminHandler) DeleteUser(c *fiber.Ctx) error {
 	id, _ := strconv.Atoi(c.Params("id"))
 	err := h.service.DeleteUser(id)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Error deleting user")
+		fmt.Printf("ERROR deleting user %d: %v\n", id, err)
+		return c.Status(fiber.StatusInternalServerError).SendString("Error deleting user: " + err.Error())
 	}
 	return c.SendString("") // Remove row from DOM
 }
@@ -1146,6 +1147,45 @@ func (h *AdminHandler) ShowCustomerColorReportPage(c *fiber.Ctx) error {
 	))
 }
 
+func (h *AdminHandler) SearchUsersAPI(c *fiber.Ctx) error {
+	query := c.Query("q")
+	if query == "" {
+		return templ_render.Render(c, admin.SearchUserResults([]domain.Member{}))
+	}
+
+	members, err := h.service.SearchMembers(query)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error searching users")
+	}
+
+	return templ_render.Render(c, admin.SearchUserResults(members))
+}
+
+func (h *AdminHandler) SendWalletColorNotification(c *fiber.Ctx) error {
+	memberID, _ := strconv.Atoi(c.FormValue("member_id"))
+	username := c.FormValue("username")
+
+	if memberID == 0 {
+		sess, _ := h.store.Get(c)
+		sess.Set("toast_error", "ไม่พบคะแนนไอดีลูกค้า")
+		sess.Save()
+		return c.Redirect("/admin/customer-color-report")
+	}
+
+	err := h.memberService.SendWalletColorNotification(memberID)
+	if err != nil {
+		sess, _ := h.store.Get(c)
+		sess.Set("toast_error", "ส่งแจ้งเตือนไม่สำเร็จ: "+err.Error())
+		sess.Save()
+		return c.Redirect("/admin/customer-color-report?username=" + username)
+	}
+
+	sess, _ := h.store.Get(c)
+	sess.Set("toast_success", "ส่งผลสีกระเป๋าให้ลูกค้าเรียบร้อยแล้ว!")
+	sess.Save()
+	return c.Redirect("/admin/customer-color-report?username=" + username)
+}
+
 func (h *AdminHandler) AssignCustomerColors(c *fiber.Ctx) error {
 	memberID, _ := strconv.Atoi(c.FormValue("member_id"))
 	username := c.FormValue("username")
@@ -1154,6 +1194,10 @@ func (h *AdminHandler) AssignCustomerColors(c *fiber.Ctx) error {
 	colors := make([]string, 5)
 	for i := 1; i <= 5; i++ {
 		cHex := c.FormValue(fmt.Sprintf("color_%d", i))
+		// Default to white/gray if empty to avoid issues
+		if cHex == "" {
+			cHex = "#E5E7EB"
+		}
 		colors[i-1] = cHex
 	}
 
@@ -1161,6 +1205,18 @@ func (h *AdminHandler) AssignCustomerColors(c *fiber.Ctx) error {
 
 	err := h.service.UpdateAssignedColors(memberID, colorsStr)
 
+	// Check if this is an HTMX request (Auto-Save)
+	if c.Get("HX-Request") == "true" {
+		c.Set("Content-Type", "text/html")
+		if err != nil {
+			return c.SendString(fmt.Sprintf(`<span class="status-badge error">❌ บันทึกไม่สำเร็จ: %s</span>`, err.Error()))
+		}
+		// Return a success indicator with timestamp
+		currentTime := time.Now().Format("15:04:05")
+		return c.SendString(fmt.Sprintf(`<span class="status-badge success">✅ บันทึกอัตโนมัติเมื่อ %s</span>`, currentTime))
+	}
+
+	// Normal Form Submit (Fallback)
 	sess, _ := h.store.Get(c)
 	if err != nil {
 		sess.Set("toast_error", "บันทึกสีไม่สำเร็จ: "+err.Error())
@@ -1544,7 +1600,7 @@ func (h *AdminHandler) ShowSendNotificationPage(c *fiber.Ctx) error {
 		success,  // toastSuccess
 		errorMsg, // toastError
 		avatarURL,
-		admin.SendNotificationForm(members, success, errorMsg),
+		admin.SendNotificationForm(members, success, errorMsg, admin.NotificationFormData{}),
 	))
 }
 
@@ -1554,8 +1610,33 @@ func (h *AdminHandler) HandleSendNotification(c *fiber.Ctx) error {
 	broadcast := c.FormValue("broadcast") == "true"
 	userIDStr := c.FormValue("user_id")
 
+	userID, _ := strconv.Atoi(userIDStr)
+
+	formData := admin.NotificationFormData{
+		UserID:    userID,
+		Title:     title,
+		Message:   message,
+		Broadcast: broadcast,
+	}
+
+	renderError := func(msg string) error {
+		members, err := h.memberService.GetAllMembers()
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Error loading members")
+		}
+		avatarURL, _ := c.Locals("AvatarURL").(string)
+		return templ_render.Render(c, layout.Main(
+			layout.SEOProps{Title: "ส่งการแจ้งเตือน", OGType: "website"},
+			c.Locals("IsLoggedIn").(bool),
+			c.Locals("IsAdmin").(bool),
+			c.Locals("IsVIP").(bool),
+			false, "admin", "", msg, avatarURL,
+			admin.SendNotificationForm(members, "", msg, formData),
+		))
+	}
+
 	if title == "" || message == "" {
-		return c.Redirect("/admin/send-notification?error=กรุณากรอกข้อมูลให้ครบถ้วน")
+		return renderError("กรุณากรอกข้อมูลให้ครบถ้วน")
 	}
 
 	var err error
@@ -1563,23 +1644,21 @@ func (h *AdminHandler) HandleSendNotification(c *fiber.Ctx) error {
 		// Send to all users
 		err = h.memberService.CreateBroadcastNotification(title, message)
 		if err != nil {
-			return c.Redirect("/admin/send-notification?error=" + err.Error())
+			return renderError(err.Error())
 		}
 		return c.Redirect("/admin/send-notification?success=ส่งการแจ้งเตือนให้ทุกคนเรียบร้อยแล้ว")
 	} else {
 		// Send to specific user
-		userID, parseErr := strconv.Atoi(userIDStr)
-		if parseErr != nil || userID == 0 {
-			return c.Redirect("/admin/send-notification?error=กรุณาเลือกผู้ใช้งาน")
+		if userID == 0 {
+			return renderError("กรุณาเลือกผู้ใช้งาน")
 		}
-		fmt.Printf("DEBUG: Admin Sending Notification to UserID: %d\n", userID)
 
-		err = h.memberService.CreateUserNotification(userID, title, message)
+		err = h.memberService.CreateUserNotification(userID, title, message, nil)
 		if err != nil {
 			if strings.Contains(err.Error(), "foreign key constraint") {
-				return c.Redirect("/admin/send-notification?error=ไม่สามารถส่งให้ผู้ใช้นี้ได้ (ข้อมูลผู้ใช้ไม่สมบูรณ์ หรือ User ID ไม่ตรงกัน)")
+				return renderError("ไม่สามารถส่งให้ผู้ใช้นี้ได้ (ข้อมูลผู้ใช้ไม่สมบูรณ์ หรือ User ID ไม่ตรงกัน)")
 			}
-			return c.Redirect("/admin/send-notification?error=" + err.Error())
+			return renderError(err.Error())
 		}
 		return c.Redirect("/admin/send-notification?success=ส่งการแจ้งเตือนเรียบร้อยแล้ว")
 	}

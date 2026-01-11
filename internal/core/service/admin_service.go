@@ -129,6 +129,10 @@ func (s *AdminService) GetMembersWithAssignedColors() ([]domain.Member, error) {
 	return s.memberRepo.GetMembersWithAssignedColors()
 }
 
+func (s *AdminService) SearchMembers(query string) ([]domain.Member, error) {
+	return s.memberRepo.SearchMembers(query)
+}
+
 // --- Article Management ---
 
 func (s *AdminService) GetAllArticles() ([]domain.Article, error) {

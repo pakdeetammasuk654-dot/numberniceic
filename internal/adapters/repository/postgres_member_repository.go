@@ -42,13 +42,13 @@ func (r *PostgresMemberRepository) GetByEmail(email string) (*domain.Member, err
 		return nil, nil
 	}
 	query := `
-		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, ''), vip_expires_at
+		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, ''), vip_expires_at, wallet_colors_notified_at
 		FROM member
 		WHERE email = $1
 	`
 	var m domain.Member
 	var provider, providerID, avatarURL sql.NullString
-	err := r.db.QueryRow(query, email).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &provider, &providerID, &avatarURL, &m.VIPExpiresAt)
+	err := r.db.QueryRow(query, email).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &provider, &providerID, &avatarURL, &m.VIPExpiresAt, &m.WalletColorsNotifiedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -67,13 +67,13 @@ func (r *PostgresMemberRepository) GetByEmail(email string) (*domain.Member, err
 func (r *PostgresMemberRepository) GetByUsername(username string) (*domain.Member, error) {
 	// Use 'status' but skip timestamps for now
 	query := `
-		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, ''), vip_expires_at
+		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, ''), vip_expires_at, wallet_colors_notified_at
 		FROM member
 		WHERE username = $1
 	`
 	var m domain.Member
 	var provider, providerID, avatarURL sql.NullString
-	err := r.db.QueryRow(query, username).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &provider, &providerID, &avatarURL, &m.VIPExpiresAt)
+	err := r.db.QueryRow(query, username).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &provider, &providerID, &avatarURL, &m.VIPExpiresAt, &m.WalletColorsNotifiedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -92,13 +92,13 @@ func (r *PostgresMemberRepository) GetByUsername(username string) (*domain.Membe
 func (r *PostgresMemberRepository) GetByID(id int) (*domain.Member, error) {
 	// Use 'status' but skip timestamps for now
 	query := `
-		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, ''), vip_expires_at
+		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), COALESCE(provider, ''), COALESCE(provider_id, ''), COALESCE(avatar_url, ''), vip_expires_at, wallet_colors_notified_at
 		FROM member
 		WHERE id = $1
 	`
 	var m domain.Member
 	var provider, providerID, avatarURL sql.NullString
-	err := r.db.QueryRow(query, id).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &provider, &providerID, &avatarURL, &m.VIPExpiresAt)
+	err := r.db.QueryRow(query, id).Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &provider, &providerID, &avatarURL, &m.VIPExpiresAt, &m.WalletColorsNotifiedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -240,7 +240,7 @@ func (r *PostgresMemberRepository) UpdateAssignedColors(id int, colors string) e
 
 func (r *PostgresMemberRepository) GetMembersWithAssignedColors() ([]domain.Member, error) {
 	query := `
-		SELECT id, username, email, tel, status, day_of_birth, assigned_colors
+		SELECT id, username, email, tel, status, day_of_birth, assigned_colors, wallet_colors_notified_at
 		FROM member
 		WHERE assigned_colors IS NOT NULL AND assigned_colors != ''
 		ORDER BY id DESC
@@ -254,7 +254,7 @@ func (r *PostgresMemberRepository) GetMembersWithAssignedColors() ([]domain.Memb
 	var members []domain.Member
 	for rows.Next() {
 		var m domain.Member
-		err := rows.Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors)
+		err := rows.Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &m.WalletColorsNotifiedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -312,9 +312,11 @@ func (r *PostgresMemberRepository) SaveFCMToken(userID int, token, platform stri
 
 func (r *PostgresMemberRepository) GetFCMTokens(userID int) ([]string, error) {
 	rows, err := r.db.Query("SELECT token FROM fcm_tokens WHERE user_id = $1", userID)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	defer rows.Close()
-	
+
 	var tokens []string
 	for rows.Next() {
 		var t string
@@ -327,9 +329,11 @@ func (r *PostgresMemberRepository) GetFCMTokens(userID int) ([]string, error) {
 
 func (r *PostgresMemberRepository) GetAllFCMTokens() ([]string, error) {
 	rows, err := r.db.Query("SELECT token FROM fcm_tokens")
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	defer rows.Close()
-	
+
 	var tokens []string
 	for rows.Next() {
 		var t string
@@ -338,4 +342,39 @@ func (r *PostgresMemberRepository) GetAllFCMTokens() ([]string, error) {
 		}
 	}
 	return tokens, nil
+}
+
+func (r *PostgresMemberRepository) SearchMembers(query string) ([]domain.Member, error) {
+	q := "%" + query + "%"
+	sql := `
+		SELECT id, username, email, tel, status, day_of_birth, COALESCE(assigned_colors, ''), wallet_colors_notified_at
+		FROM member
+		WHERE username ILIKE $1 OR email ILIKE $1 OR tel ILIKE $1
+		ORDER BY username ASC
+		LIMIT 10
+	`
+	rows, err := r.db.Query(sql, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var members []domain.Member
+	for rows.Next() {
+		var m domain.Member
+		err := rows.Scan(&m.ID, &m.Username, &m.Email, &m.Tel, &m.Status, &m.DayOfBirth, &m.AssignedColors, &m.WalletColorsNotifiedAt)
+		if err != nil {
+			return nil, err
+		}
+		m.Username = strings.TrimSpace(m.Username)
+		m.Email = strings.TrimSpace(m.Email)
+		m.Tel = strings.TrimSpace(m.Tel)
+		members = append(members, m)
+	}
+	return members, nil
+}
+
+func (r *PostgresMemberRepository) UpdateWalletColorsNotifiedAt(id int) error {
+	_, err := r.db.Exec("UPDATE member SET wallet_colors_notified_at = NOW() WHERE id = $1", id)
+	return err
 }

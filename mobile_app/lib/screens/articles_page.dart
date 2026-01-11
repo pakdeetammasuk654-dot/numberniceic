@@ -4,6 +4,7 @@ import '../models/article.dart';
 import '../services/api_service.dart';
 import 'article_detail_page.dart';
 import '../widgets/shared_footer.dart';
+import '../widgets/buddhist_day_badge.dart';
 
 class ArticlesPage extends StatefulWidget {
   const ArticlesPage({super.key});
@@ -32,12 +33,18 @@ class _ArticlesPageState extends State<ArticlesPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(
-          'บทความทั้งหมด',
-          style: GoogleFonts.kanit(
-            color: Colors.black87,
-            fontWeight: FontWeight.bold,
-          )
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'บทความทั้งหมด',
+              style: GoogleFonts.kanit(
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+              )
+            ),
+            const BuddhistDayBadge(),
+          ],
         ),
         backgroundColor: Colors.white,
         elevation: 0,

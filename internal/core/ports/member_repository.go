@@ -25,4 +25,6 @@ type MemberRepository interface {
 	SaveFCMToken(userID int, token, platform string) error // New
 	GetFCMTokens(userID int) ([]string, error)
 	GetAllFCMTokens() ([]string, error)
+	SearchMembers(query string) ([]domain.Member, error)
+	UpdateWalletColorsNotifiedAt(id int) error
 }

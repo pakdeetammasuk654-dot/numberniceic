@@ -12,7 +12,7 @@ type NotificationFormData struct {
 	Broadcast bool
 }
 
-templ SendNotificationForm(members []domain.Member, success string, errorMsg string) {
+templ SendNotificationForm(members []domain.Member, success string, errorMsg string, formData NotificationFormData) {
 	<style>
 		.notif-container {
 			max-width: 900px;
@@ -182,7 +182,7 @@ templ SendNotificationForm(members []domain.Member, success string, errorMsg str
 				<!-- Broadcast Option First -->
 				<div class="form-group">
 					<div class="checkbox-group">
-						<input type="checkbox" id="broadcast" name="broadcast" value="true" onchange="toggleUserSelect(this)"/>
+						<input type="checkbox" id="broadcast" name="broadcast" value="true" onchange="toggleUserSelect(this)" checked?={ formData.Broadcast }/>
 						<label for="broadcast">📢 ส่งให้ทุกคนในระบบ (Broadcast)</label>
 					</div>
 					<p class="helper-text">เช็คช่องนี้เพื่อส่งให้ผู้ใช้งานทุกคนในระบบพร้อมกัน</p>
@@ -206,7 +206,7 @@ templ SendNotificationForm(members []domain.Member, success string, errorMsg str
 						<select name="user_id" id="user_id" class="form-control" size="8">
 							<option value="0">-- ผลการค้นหา --</option>
 							for _, member := range members {
-								<option value={ strconv.Itoa(member.ID) }>
+								<option value={ strconv.Itoa(member.ID) } selected?={ member.ID == formData.UserID }>
 									{ member.Username } ({ member.Email })
 								</option>
 							}
@@ -217,12 +217,12 @@ templ SendNotificationForm(members []domain.Member, success string, errorMsg str
 
 				<div class="form-group">
 					<label class="form-label">หัวข้อ</label>
-					<input type="text" name="title" class="form-control" placeholder="เช่น ประกาศสำคัญ" required/>
+					<input type="text" name="title" class="form-control" placeholder="เช่น ประกาศสำคัญ" value={ formData.Title } required/>
 				</div>
 
 				<div class="form-group">
 					<label class="form-label">ข้อความ</label>
-					<textarea name="message" class="form-control" placeholder="พิมพ์ข้อความที่ต้องการส่ง..." required></textarea>
+					<textarea name="message" class="form-control" placeholder="พิมพ์ข้อความที่ต้องการส่ง..." required>{ formData.Message }</textarea>
 				</div>
 
 				<button type="submit" class="btn-submit">
@@ -267,5 +267,12 @@ templ SendNotificationForm(members []domain.Member, success string, errorMsg str
 				}
 			}
 		}
+		// Initialize state on load
+		document.addEventListener('DOMContentLoaded', function() {
+			const broadcastCheckbox = document.getElementById('broadcast');
+			if (broadcastCheckbox) {
+				toggleUserSelect(broadcastCheckbox);
+			}
+		});
 	</script>
 }

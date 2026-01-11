@@ -1,11 +1,15 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // For rootBundle
+import 'package:flutter/foundation.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:async'; // For StreamController
+import 'dart:convert'; // For JSON decoding
 import 'api_service.dart';
 import 'local_notification_storage.dart';
-import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:firebase_messaging/firebase_messaging.dart'; // NEW
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -16,6 +20,10 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   bool _isInitialized = false;
+  
+  // Stream to allow UI to listen for incoming messages (e.g. to show bottom sheets)
+  final StreamController<RemoteMessage> _messageStreamController = StreamController<RemoteMessage>.broadcast();
+  Stream<RemoteMessage> get messageStream => _messageStreamController.stream;
 
   Future<void> init() async {
     print('🔔 NotificationService: init() called. isInitialized: $_isInitialized');
@@ -47,12 +55,29 @@ class NotificationService {
     await flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse details) {
-        // Handle notification tap
+        print("🔔 Notification Tapped (Local): ${details.payload}");
+        if (details.payload != null) {
+          try {
+            final dynamic parsed = jsonDecode(details.payload!);
+            if (parsed is Map<String, dynamic>) {
+               // Convert all values to string to match RemoteMessage.data type
+               final Map<String, dynamic> dataMap = parsed;
+               final Map<String, String> stringData = dataMap.map((key, value) => MapEntry(key, value.toString()));
+               
+               // Create a pseudo RemoteMessage to feed into the same stream
+               final message = RemoteMessage(data: stringData);
+               _messageStreamController.add(message);
+            }
+          } catch (e) {
+            print("❌ Payload parse error: $e");
+          }
+        }
       },
     );
     
     print('🔔 NotificationService: Calling _setupFCM()...');
     await _setupFCM();
+    await _setupBackgroundHandlers();
 
     _isInitialized = true;
     print('🔔 NotificationService: init() completed.');
@@ -77,8 +102,26 @@ class NotificationService {
            
            // Get Token
            try {
+             if (defaultTargetPlatform == TargetPlatform.iOS) {
+               String? apnsToken = await messaging.getAPNSToken();
+               int retry = 0;
+               while (apnsToken == null && retry < 10) {
+                 print("⚠️ APNS Token is null. Waiting for it... (Attempt ${retry + 1}/10)");
+                 await Future<void>.delayed(const Duration(seconds: 2));
+                 apnsToken = await messaging.getAPNSToken();
+                 retry++;
+               }
+               
+               if (apnsToken != null) {
+                 print("🍏 APNS Token: $apnsToken");
+               } else {
+                 print("❌ Timed out waiting for APNS Token.");
+                 // Should we return or try getToken anyway? getToken will fail but let's try.
+               }
+             }
+
              String? token = await messaging.getToken();
-             print("📣 FCM Token: $token"); // Log token explicitly
+             print("📣 FCM Token: $token"); 
              if (token != null) {
                 print("🔔 Calling ApiService.saveDeviceToken...");
                 await ApiService.saveDeviceToken(token);
@@ -88,17 +131,77 @@ class NotificationService {
              }
            } catch(e) { print('❌ FCM GetToken Error: $e'); }
            
-           // Foreground Message Handling
-           FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-               print("📩 Got FCM Message in Foreground: ${message.notification?.title}");
-               if (message.notification != null) {
-                  showNotification(
-                      message.hashCode,
-                      message.notification!.title ?? 'NumberNice',
-                      message.notification!.body ?? '',
-                  );
-                  // Trigger Dashboard Refresh
-                  ApiService.dashboardRefreshSignal.value++;
+           // --- SETUP ANDROID CHANNEL ---
+           try {
+             const AndroidNotificationChannel channel = AndroidNotificationChannel(
+               'high_importance_channel', // id
+               'High Importance Notifications', // title
+               description: 'This channel is used for important notifications.', // description
+               importance: Importance.max,
+             );
+
+             final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+             await flutterLocalNotificationsPlugin
+                 .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+                 ?.createNotificationChannel(channel);
+                 
+             print("✅ Android Notification Channel Setup Complete");
+           } catch (e) {
+             print("❌ Error Setting up Android Channel: $e");
+           }
+
+           // --- CRITICAL: Set Foreground Presentation Options ---
+           await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+             alert: true, 
+             badge: true,
+             sound: true,
+           );
+           print("✅ Foreground Presentation Options Set");
+           // ---------------------------------------------------
+           
+           FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+               try {
+                   print("=================== FCM MESSAGE RECEIVED (FOREGROUND) ===================");
+                   print("📩 Notification Title: ${message.notification?.title}");
+                   print("📩 Notification Body: ${message.notification?.body}");
+                   print("📩 Data Payload: ${message.data}");
+                   
+                   if (message.notification != null) {
+                      print("🔔 [DEBUG] Showing local notification...");
+                      showNotification(
+                          message.hashCode,
+                          message.notification!.title ?? 'NumberNice',
+                          message.notification!.body ?? '',
+                          data: message.data,
+                      );
+                      
+                      print("🔔 [DEBUG] Saving to local storage...");
+                      await LocalNotificationStorage.save(
+                        message.notification!.title ?? 'NumberNice',
+                        message.notification!.body ?? '',
+                      );
+                      print("✅ [DEBUG] Saved to local storage.");
+
+                      // Trigger Dashboard Refresh
+                      print("🔔 [DEBUG] Updating ApiService.unreadNotificationCount...");
+                      print("   - Current Value: ${ApiService.unreadNotificationCount.value}");
+                      
+                      final newVal = ApiService.unreadNotificationCount.value + 1;
+                      ApiService.unreadNotificationCount.value = newVal;
+                      
+                      print("   - New Value: ${ApiService.unreadNotificationCount.value} (Should be $newVal)");
+                      print("🔔 IMMEDIATE UPDATE: Incrementing unread count to $newVal");
+                      
+                      print("🔔 [DEBUG] Updating dashboardRefreshSignal...");
+                      ApiService.dashboardRefreshSignal.value++;
+                   }
+                   
+                   // Broadcast the message to any listeners
+                   _messageStreamController.add(message);
+                   print("=========================================================================");
+               } catch (e, stackTrace) {
+                   print("❌❌ ERROR in FCM Handler: $e");
+                   print(stackTrace);
                }
            });
            print('🔔 FCM Listeners setup completed.');
@@ -111,8 +214,27 @@ class NotificationService {
     }
   }
 
+  Future<void> _setupBackgroundHandlers() async {
+      // Background Tap Handling
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+          print("📩 Notification Tapped (Background): ${message.notification?.title}");
+          _messageStreamController.add(message);
+      });
+
+      // Terminated State Handling
+      try {
+          RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+          if (initialMessage != null) {
+               print("📩 Notification Tapped (Terminated): ${initialMessage.notification?.title}");
+               _messageStreamController.add(initialMessage);
+          }
+      } catch (e) {
+          print("Error getting initial message: $e");
+      }
+  }
+
   // Helper to show immediate notification (reusing local plugin)
-  Future<void> showNotification(int id, String title, String body) async {
+  Future<void> showNotification(int id, String title, String body, {Map<String, dynamic>? data}) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
             'general_channel', 'General Notifications',
@@ -130,11 +252,12 @@ class NotificationService {
       title,
       body,
       platformChannelSpecifics,
+      payload: data != null ? jsonEncode(data) : null,
     );
   }
 
   Future<bool> requestPermissions() async {
-    // Android 13+ handles
+    // Android 13+ notification permission
     PermissionStatus status = await Permission.notification.status;
     if (status.isDenied) {
       status = await Permission.notification.request();
@@ -143,6 +266,24 @@ class NotificationService {
     if (status.isPermanentlyDenied) {
       // User needs to go to settings
       return false;
+    }
+
+    // Android 12+ exact alarm permission (for precise Buddhist day notifications)
+    try {
+      final scheduleStatus = await Permission.scheduleExactAlarm.status;
+      print('🔔 Exact Alarm Permission Status: $scheduleStatus');
+      
+      if (scheduleStatus.isDenied) {
+        print('🔔 Requesting Exact Alarm Permission...');
+        final result = await Permission.scheduleExactAlarm.request();
+        print('🔔 Exact Alarm Permission Result: $result');
+        
+        if (result.isPermanentlyDenied) {
+          print('⚠️ Exact Alarm Permission permanently denied - notifications may not be precise');
+        }
+      }
+    } catch (e) {
+      print('⚠️ Exact Alarm Permission not available on this device: $e');
     }
 
     // iOS handles via flutter_local_notifications
@@ -161,11 +302,24 @@ class NotificationService {
   Future<void> scheduleBuddhistDayNotifications(List<dynamic> days) async {
     await cancelAll(); // Clear old ones first
 
+    // Load Buddhist days from local JSON file
+    List<dynamic> buddhistDays = [];
+    try {
+      print('📂 Loading Buddhist days from local JSON...');
+      final String jsonString = await rootBundle.loadString('assets/buddhist_days.json');
+      buddhistDays = json.decode(jsonString) as List<dynamic>;
+      print('✅ Loaded ${buddhistDays.length} Buddhist days from local file');
+    } catch (e) {
+      print('❌ Error loading local Buddhist days: $e');
+      print('⚠️ Falling back to API data...');
+      buddhistDays = days; // Fallback to API data if local file fails
+    }
+
     int id = 1000; // Start with ID 1000 to avoid conflict
     final now = DateTime.now();
     
     // Sort and Filter: Only future days, and only up to 50 upcoming ones to avoid OS limits
-    List<dynamic> upcomingDays = days.where((d) {
+    List<dynamic> upcomingDays = buddhistDays.where((d) {
       final date = DateTime.parse(d['date']);
       return date.isAfter(now.subtract(const Duration(hours: 24))); // Include today
     }).toList();

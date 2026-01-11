@@ -18,6 +18,7 @@ class AuthService {
   static const String keyVipExpiryText = 'auth_vip_expiry_text';
   static const String keyEmail = 'auth_email';
   static const String keyAvatarUrl = 'auth_avatar_url';
+  static const String keyAssignedColors = 'auth_assigned_colors';
   static const String keyPendingPurchase = 'auth_pending_purchase';
 
   // Google Sign-In Instance
@@ -246,11 +247,16 @@ class AuthService {
   // ===== UTILITY METHODS =====
 
   static Future<void> logout() async {
-    try {
-      await _googleSignIn.signOut();
-      await fb_auth.FacebookAuth.instance.logOut();
-      await line_sdk.LineSDK.instance.logout();
-    } catch (e) {}
+    // try {
+    //   try { await _googleSignIn.signOut(); } catch (e) { print("Google SignOut Error: $e"); }
+    //   try { await fb_auth.FacebookAuth.instance.logOut(); } catch (e) { print("Facebook SignOut Error: $e"); }
+    //   try { 
+    //     // Only attempt line logout if we suspect it's available, otherwise skip to prevent crashes
+    //     await line_sdk.LineSDK.instance.logout(); 
+    //   } catch (e) { print("Line SignOut Error: $e"); }
+    // } catch (e) {
+    //   print("Global Logout Error: $e");
+    // }
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(keyToken);
@@ -274,12 +280,18 @@ class AuthService {
       'avatar_url': prefs.getString(keyAvatarUrl),
       'is_vip': prefs.getBool(keyIsVip) ?? false,
       'vip_expiry_text': prefs.getString(keyVipExpiryText),
+      'assigned_colors': prefs.getStringList(keyAssignedColors) ?? [],
     };
   }
 
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(keyToken);
+  }
+
+  static Future<List<String>> getAssignedColors() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList(keyAssignedColors) ?? [];
   }
 
   static Future<void> syncAuthData(Map<String, dynamic> data) async {
@@ -291,6 +303,13 @@ class AuthService {
     if (data['avatar_url'] != null) await prefs.setString(keyAvatarUrl, data['avatar_url']);
     if (data['is_vip'] != null) await prefs.setBool(keyIsVip, data['is_vip']);
     if (data['vip_expiry_text'] != null) await prefs.setString(keyVipExpiryText, data['vip_expiry_text']);
+    
+    if (data['assigned_colors'] != null) {
+      if (data['assigned_colors'] is List) {
+        final List<String> colors = List<String>.from(data['assigned_colors']);
+        await prefs.setStringList(keyAssignedColors, colors);
+      }
+    }
   }
 
   // Pending Purchase Management

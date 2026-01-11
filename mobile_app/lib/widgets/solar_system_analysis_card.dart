@@ -184,7 +184,9 @@ class SolarSystemAnalysisCard extends StatelessWidget {
              Divider(
                height: 1,
                thickness: 1,
-               color: const Color(0xFFFFD700).withOpacity(0.6), // Changed to Gold
+               color: isGoodName 
+                ? const Color(0xFFFFD700).withOpacity(0.6) 
+                : const Color(0xFF1E293B).withOpacity(0.2), // Black-ish for bad names
              ),
              const SizedBox(height: 16), // Reduced from 24
           
@@ -274,8 +276,8 @@ class SolarSystemAnalysisCard extends StatelessWidget {
 
                     return Container(
                       width: double.infinity,
-                      margin: isLast ? EdgeInsets.zero : const EdgeInsets.only(bottom: 8),
-                      padding: isLast ? EdgeInsets.zero : const EdgeInsets.only(bottom: 8),
+                      margin: isLast ? EdgeInsets.zero : const EdgeInsets.only(bottom: 4),
+                      padding: isLast ? EdgeInsets.zero : const EdgeInsets.only(bottom: 4),
                       // decoration: removed border here
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,20 +325,20 @@ class SolarSystemAnalysisCard extends StatelessWidget {
                              ),
                            ],
                          ),
-                         Padding(
-                           padding: const EdgeInsets.only(left: 44, top: 4),
-                           child: RichText(
-                               text: TextSpan(
-                                 style: GoogleFonts.sarabun(
-                                   fontSize: 15,
-                                   fontWeight: FontWeight.w400,
-                                   color: const Color(0xFF4B5563),
-                                   height: 1.5,
-                                 ),
-                                 children: _buildContentSpans(content),
-                               ),
-                           ),
-                         ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 60, top: 0),
+                            child: RichText(
+                                text: TextSpan(
+                                  style: GoogleFonts.kanit(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w400,
+                                    color: const Color(0xFF4B5563),
+                                    height: 1.2,
+                                  ),
+                                  children: _buildContentSpans(content),
+                                ),
+                            ),
+                          ),
                       ],
                     ),
                   );
@@ -356,10 +358,14 @@ class SolarSystemAnalysisCard extends StatelessWidget {
         final text = kw['text'] as String? ?? '';
         // Keywords are always black, regardless of is_bad status
         
+        final bool isBad = kw['is_bad'] == true;
         spans.add(TextSpan(
           text: text,
-          style: const TextStyle(
-             color: Color(0xFF1E293B), // Always black for keywords
+          style: GoogleFonts.kanit(
+            color: isBad ? const Color(0xFF64748B) : const Color(0xFF1E293B), // Gray if bad
+            fontWeight: isBad ? FontWeight.bold : FontWeight.w500,
+            fontStyle: isBad ? FontStyle.italic : FontStyle.normal,
+            fontSize: 14,
           ),
         ));
 

@@ -10,10 +10,16 @@ import 'number_analysis_page.dart';
 import 'login_page.dart';
 import 'dashboard_page.dart';
 import 'shop_page.dart';
+import 'notification_list_page.dart';
+import 'article_detail_page.dart';
+import '../widgets/wallet_color_bottom_sheet.dart'; 
+import '../services/notification_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class MainTabPage extends StatefulWidget {
   final int initialIndex;
-  const MainTabPage({super.key, this.initialIndex = 0});
+  final bool forceLogout;
+  const MainTabPage({super.key, this.initialIndex = 0, this.forceLogout = false});
 
   @override
   State<MainTabPage> createState() => MainTabPageState();
@@ -46,11 +52,88 @@ class MainTabPageState extends State<MainTabPage> {
     super.initState();
     // Ensure initialIndex is valid for 4-tab layout (0-3)
     _currentIndex = widget.initialIndex.clamp(0, 3);
-    _checkLoginStatus();
+    
+    if (widget.forceLogout) {
+      _isLoggedIn = false;
+      _avatarUrl = null;
+    } else {
+      _checkLoginStatus();
+    }
+    
     // Check for first time launch after UI builds
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkFirstTimeUser();
       _checkPendingPurchaseOnStartup();
+    });
+
+    // Initialize Notification Service immediately to handle Terminated State taps
+    NotificationService().init();
+
+    // Direct check for terminated state notification launch (Robust Fallback)
+    FirebaseMessaging.instance.getInitialMessage().then((message) {
+      if (message != null) {
+        print('🔔 App opened from TERMINATED state via notification: ${message.data}');
+        
+        // Handle wallet_colors type
+        if (message.data['type'] == 'wallet_colors') {
+          final colorsStr = message.data['colors'];
+          if (colorsStr != null && colorsStr.toString().isNotEmpty) {
+             final colors = colorsStr.toString().split(',').where((c) => c.isNotEmpty).toList();
+             if (colors.isNotEmpty) {
+               WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) WalletColorBottomSheet.show(context, colors);
+               });
+             }
+          }
+        } 
+        // Handle article type
+        else if (message.data['type'] == 'article') {
+          final articleSlug = message.data['article_slug'];
+          if (articleSlug != null && articleSlug.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ArticleDetailPage(slug: articleSlug),
+                  ),
+                );
+              }
+            });
+          }
+        }
+        else {
+          // For all other notifications, open Notification List as Bottom Sheet
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => const NotificationListPage(isBottomSheet: true),
+              );
+            }
+          });
+        }
+      }
+    });
+
+    // Listen for Notification Stream globally at MainTab level
+    NotificationService().messageStream.listen((message) {
+      if (message.data['type'] == 'wallet_colors') {
+        final colorsStr = message.data['colors'];
+        if (colorsStr != null && colorsStr.toString().isNotEmpty) {
+           final colors = colorsStr.toString().split(',').where((c) => c.isNotEmpty).toList();
+           if (colors.isNotEmpty) {
+             // Show BottomSheet globally on top of any tab
+             WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  WalletColorBottomSheet.show(context, colors);
+                }
+             });
+           }
+        }
+      }
     });
   }
 

@@ -7,11 +7,18 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../widgets/shared_footer.dart';
 import '../widgets/adaptive_footer_scroll_view.dart';
+
+import '../widgets/wallet_color_bottom_sheet.dart';
 import 'shipping_address_page.dart';
+import '../services/auth_service.dart';
 import 'articles_page.dart';
 
+import 'dart:async';
+import '../services/notification_service.dart';
+
 class NotificationListPage extends StatefulWidget {
-  const NotificationListPage({super.key});
+  final bool isBottomSheet;
+  const NotificationListPage({super.key, this.isBottomSheet = false});
 
   @override
   State<NotificationListPage> createState() => _NotificationListPageState();
@@ -21,11 +28,24 @@ class _NotificationListPageState extends State<NotificationListPage> {
   List<UserNotification>? _notifications;
   bool _isLoading = true;
   String? _error;
+  StreamSubscription? _notifSubscription;
 
   @override
   void initState() {
     super.initState();
     _clearAndLoad();
+    
+    // Auto-refresh when a new notification arrives (foreground)
+    _notifSubscription = NotificationService().messageStream.listen((_) {
+      print("🔔 NotificationListPage: New notification received. Refreshing list...");
+      _loadData();
+    });
+  }
+  
+  @override
+  void dispose() {
+    _notifSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _clearAndLoad() async {
@@ -67,12 +87,7 @@ class _NotificationListPageState extends State<NotificationListPage> {
       ];
       
       // Filter out annoying shipping address popups
-      final filtered = combined.where((n) {
-        final t = n.title.toLowerCase();
-        final m = n.message.toLowerCase();
-        return !t.contains('ที่อยู่') && !t.contains('address') &&
-               !m.contains('ที่อยู่') && !m.contains('address');
-      }).toList();
+      final filtered = combined;
       
       filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       
@@ -94,17 +109,30 @@ class _NotificationListPageState extends State<NotificationListPage> {
   }
 
   void _deleteNotification(int id) async {
-    // 1. Update UI Immediately (Optimistic Update)
+    // 1. Check if notification was unread BEFORE removing it
+    final notif = _notifications?.firstWhere((n) => n.id == id, orElse: () => UserNotification(
+      id: 0, title: '', message: '', isRead: true, createdAt: DateTime.now(),
+    ));
+    
+    final wasUnread = notif != null && !notif.isRead;
+    
+    // 2. Update UI Immediately (Optimistic Update)
     if (_notifications != null) {
       setState(() {
         _notifications = _notifications!.where((n) => n.id != id).toList();
       });
     }
 
-    // 2. Perform background storage task
+    // 3. Decrement unread count if notification was unread
+    if (wasUnread && ApiService.unreadNotificationCount.value > 0) {
+      ApiService.unreadNotificationCount.value--;
+      print('🔔 Deleted unread notification. Count: ${ApiService.unreadNotificationCount.value}');
+    }
+
+    // 4. Perform background storage task
     await LocalNotificationStorage.delete(id);
     
-    // 3. If it's a server notification, mark it as read on the server 
+    // 5. If it's a server notification, mark it as read on the server 
     // so the unread count in dashboard is correct.
     // Server IDs are typically small integers, while local IDs are large timestamps.
     if (id < 1000000000) {
@@ -136,6 +164,59 @@ class _NotificationListPageState extends State<NotificationListPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.isBottomSheet) {
+      return Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Handle & Header
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'การแจ้งเตือน',
+                          style: GoogleFonts.kanit(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF333333),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // Body
+            Expanded(child: _buildBody()),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -171,7 +252,7 @@ class _NotificationListPageState extends State<NotificationListPage> {
     return AdaptiveFooterScrollView(
       onRefresh: _loadData,
       children: [
-        const SizedBox(height: 16), // Added spacing at the top
+        const SizedBox(height: 16),
         if (notifications.isEmpty)
           SizedBox(
             height: 400,
@@ -187,61 +268,114 @@ class _NotificationListPageState extends State<NotificationListPage> {
             ),
           )
         else
-          ...notifications.map((notif) => Column(
-            children: [
-              ListTile(
-                tileColor: notif.isRead ? Colors.white : Colors.orange.withOpacity(0.05),
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: notif.isRead ? Colors.grey[200] : Colors.orange[100],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.notifications,
-                    color: notif.isRead ? Colors.grey : Colors.orange,
-                  ),
-                ),
-                title: Text(
-                  notif.title,
-                  style: GoogleFonts.kanit(
-                    fontWeight: notif.isRead ? FontWeight.normal : FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      notif.message,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.kanit(fontSize: 14, color: Colors.black54),
+          ...notifications.map((notif) => Dismissible(
+            key: Key('notif_${notif.id}'),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20),
+              color: Colors.red,
+              child: const Icon(Icons.delete_sweep_rounded, color: Colors.white, size: 32),
+            ),
+            confirmDismiss: (direction) async {
+              return await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: Text('ยืนยันการลบ', style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
+                  content: Text('คุณต้องการลบการแจ้งเตือนนี้ใช่หรือไม่?', style: GoogleFonts.kanit()),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text('ยกเลิก', style: GoogleFonts.kanit(color: Colors.grey)),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatThaiDate(notif.createdAt),
-                      style: GoogleFonts.kanit(fontSize: 12, color: Colors.grey),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text('ลบ', style: GoogleFonts.kanit(color: Colors.red, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red, size: 26),
-                  onPressed: () => _confirmDelete(notif.id),
+              );
+            },
+            onDismissed: (direction) {
+              _deleteNotification(notif.id);
+            },
+            child: Column(
+              children: [
+                ListTile(
+                  tileColor: notif.isRead ? Colors.white : Colors.orange.withOpacity(0.05),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: notif.isRead ? Colors.grey[100] : Colors.orange[50],
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.notifications_rounded,
+                      color: notif.isRead ? Colors.grey[400] : Colors.orange,
+                      size: 24,
+                    ),
+                  ),
+                  title: Text(
+                    notif.title,
+                    style: GoogleFonts.kanit(
+                      fontWeight: notif.isRead ? FontWeight.w500 : FontWeight.bold,
+                      fontSize: 16,
+                      color: const Color(0xFF334155),
+                    ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        notif.message,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.kanit(fontSize: 14, color: Colors.blueGrey[600]),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _formatThaiDate(notif.createdAt),
+                        style: GoogleFonts.kanit(fontSize: 11, color: Colors.grey[400]),
+                      ),
+                    ],
+                  ),
+                  trailing: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF00C853).withOpacity(0.15), width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF00C853).withOpacity(0.1),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.keyboard_double_arrow_right_rounded,
+                      color: Color(0xFF00C853),
+                      size: 20,
+                    ),
+                  ),
+                  onTap: () {
+                    _showNotificationDetail(notif);
+                  },
                 ),
-                onTap: () {
-                  _showNotificationDetail(notif);
-                },
-              ),
-              const Divider(height: 1),
-            ],
+                const Divider(height: 1, indent: 72, endIndent: 16),
+              ],
+            ),
           )),
       ],
     );
   }
 
   void _confirmDelete(int id) {
-    showDialog(
+     // This method can be removed as we use inline confirmation in Dismissible
+     // or keep it if needed for the detail view delete button.
+     showDialog(
       context: context, 
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -271,6 +405,13 @@ class _NotificationListPageState extends State<NotificationListPage> {
         ApiService.markNotificationAsRead(notif.id);
       }
       LocalNotificationStorage.markAsRead(notif.id);
+      
+      // Decrement unread count
+      if (ApiService.unreadNotificationCount.value > 0) {
+        ApiService.unreadNotificationCount.value--;
+        print('🔔 Marked as read. Count: ${ApiService.unreadNotificationCount.value}');
+      }
+      
       // To avoid flickering, we don't call _loadData() here.
       // The bold will turn to normal next time the page is opened or refreshed.
     }
@@ -309,42 +450,143 @@ class _NotificationListPageState extends State<NotificationListPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    if (notif.title.contains('ที่อยู่'))
-                      ElevatedButton(
+                    if (notif.data?['type'] == 'payment_success' || notif.title.contains('ที่อยู่') || notif.message.contains('ที่อยู่'))
+                      _build3DButton(
+                        label: 'จัดการที่อยู่',
+                        icon: Icons.local_shipping_outlined,
+                        color: Colors.blue[600]!,
+                        shadowColor: Colors.blue[900]!,
                         onPressed: () {
                           Navigator.pop(context);
                           Navigator.push(context, MaterialPageRoute(builder: (context) => const ShippingAddressPage()));
                         },
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
-                        child: Text('ไปหน้าเพิ่มที่อยู่', style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
                       ),
                     if (notif.title.contains('วันพระ'))
-                      ElevatedButton(
+                      _build3DButton(
+                        label: 'อ่านบทความ',
+                        icon: Icons.menu_book_rounded,
+                        color: Colors.orange[600]!,
+                        shadowColor: Colors.orange[900]!,
                         onPressed: () {
                           Navigator.pop(context);
                           Navigator.push(context, MaterialPageRoute(builder: (context) => const ArticlesPage()));
                         },
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
-                        child: Text('อ่านบทความแนะนำ', style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
                       ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.grey),
-                      onPressed: () {
-                        Navigator.pop(context); // Close detail dialog
-                        _confirmDelete(notif.id); // Show confirm delete dialog
-                      },
-                    ),
-                    const Spacer(),
+                    if (notif.data?['type'] == 'wallet_colors' && notif.data?['colors'] != null)
+                      _build3DButton(
+                        label: 'ดูสีกระเป๋า',
+                        icon: Icons.account_balance_wallet_rounded,
+                        color: Colors.amber[700]!,
+                        shadowColor: Colors.amber[900]!,
+                        onPressed: () {
+                          Navigator.pop(context);
+                          try {
+                            // Data format example: "['#FF0000', '#00FF00']" or "#FF0000,#00FF00"
+                            // Backend sends simple comma separated usually if map map[string]string
+                            String raw = notif.data!['colors']!;
+                            List<String> colors = [];
+                            if (raw.startsWith('[')) {
+                               // Simple trim if JSON-like string
+                               colors = raw.replaceAll('[', '').replaceAll(']', '').replaceAll('"', '').replaceAll("'", "").split(',');
+                            } else {
+                               colors = raw.split(',');
+                            }
+                            colors = colors.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                            
+                            WalletColorBottomSheet.show(context, colors);
+                          } catch (e) {
+                             print('Error parsing wallet colors: $e');
+                          }
+                        },
+                      ),
+                    
+                    // Fallback for notifications from DB (History) where data is missing
+                    if (notif.data?['type'] != 'wallet_colors' && notif.title.contains('สีกระเป๋า'))
+                      FutureBuilder<Map<String, dynamic>>(
+                        future: AuthService.getUserInfo(), // Fetch colors from profile
+                        builder: (context, snapshot) {
+                           if (!snapshot.hasData) return const SizedBox.shrink();
+                           
+                           final raw = snapshot.data!['assigned_colors'];
+                           if (raw == null) return const SizedBox.shrink();
+                           
+                           List<String> colors = [];
+                           if (raw is List) {
+                             colors = raw.map((e) => e.toString()).toList();
+                           } else if (raw is String && raw.isNotEmpty) {
+                             colors = raw.split(',');
+                           }
+                           
+                           colors = colors.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                           
+                           if (colors.isEmpty) return const SizedBox.shrink();
+                           
+                           return Padding(
+                             padding: const EdgeInsets.only(right: 12),
+                             child: _build3DButton(
+                              label: 'ดูสีกระเป๋า',
+                              icon: Icons.account_balance_wallet_rounded,
+                              color: Colors.amber[700]!,
+                              shadowColor: Colors.amber[900]!,
+                              onPressed: () {
+                                Navigator.pop(context);
+                                WalletColorBottomSheet.show(context, colors);
+                              },
+                             ),
+                           );
+                        }
+                      ),
+                    const SizedBox(width: 12),
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: Text('ปิด', style: GoogleFonts.kanit(fontSize: 16, color: Colors.grey)),
+                      style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
+                      child: Text('ปิด', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.w500)),
                     ),
                   ],
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _build3DButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required Color shadowColor,
+    required VoidCallback onPressed,
+  }) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: shadowColor,
+              offset: const Offset(0, 4),
+              blurRadius: 0,
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: GoogleFonts.kanit(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       ),
     );

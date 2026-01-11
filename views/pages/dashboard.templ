@@ -214,49 +214,6 @@ templ Dashboard(username string, email string, tel string, avatarURL string, sav
 			}
 	</div>
 
-	<!-- Promotional Code Entry (For Special Promotions Only) -->
-	if !isVIP {
-		<div style="background: linear-gradient(135deg, #fff9f0 0%, #fff5e6 100%); border-radius: 24px; padding: 2rem; border: 2px dashed #ffd89b; margin-bottom: 3rem;">
-			<div style="max-width: 600px; margin: 0 auto;">
-				<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-					<div style="background: #fff; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(255, 165, 0, 0.15);">
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zM12 2l.79 2.13 2.13.79-2.13.79L12 8l-.79-2.13-2.13-.79 2.13-.79L12 2z"></path></svg>
-					</div>
-					<div style="flex: 1;">
-						<h3 style="font-size: 1.3rem; font-weight: 800; color: #92400e; margin: 0;">มีรหัสโปรโมชั่นพิเศษ?</h3>
-						<p style="font-size: 0.9rem; color: #b45309; margin: 0.25rem 0 0; font-weight: 500;">สำหรับรหัสจากแคมเปญพิเศษเท่านั้น</p>
-					</div>
-				</div>
-				
-				<div style="background: white; padding: 1.5rem; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-					<p style="color: #78716c; font-size: 0.95rem; margin: 0 0 1.25rem; line-height: 1.6;">
-						<strong style="color: #57534e;">💡 หมายเหตุ:</strong> การซื้อสินค้าจากร้านมาดีจะได้รับสถานะ VIP <strong>อัตโนมัติทันที</strong> ไม่ต้องกรอกรหัส<br/>
-						ส่วนนี้ใช้สำหรับรหัสโปรโมชั่นพิเศษจากช่องทางอื่นๆ เท่านั้น
-					</p>
-					
-					<div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-						<input 
-							type="text" 
-							id="promo-code-input" 
-							placeholder="ใส่รหัสโปรโมชั่นที่นี่ (ถ้ามี)" 
-							style="flex: 1; min-width: 200px; padding: 1rem 1.25rem; border: 2px solid #e7e5e4; border-radius: 12px; font-family: 'Kanit'; font-size: 1rem; transition: all 0.2s;" 
-							onfocus="this.style.borderColor='#f59e0b'; this.style.boxShadow='0 0 0 3px rgba(245, 158, 11, 0.1)'"
-							onblur="this.style.borderColor='#e7e5e4'; this.style.boxShadow='none'"
-						/>
-						<button 
-							onclick="redeemCode()" 
-							style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border: none; padding: 1rem 2rem; border-radius: 12px; font-weight: 800; cursor: pointer; font-family: 'Kanit'; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); transition: all 0.2s;"
-							onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(245, 158, 11, 0.4)'"
-							onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(245, 158, 11, 0.3)'"
-						>
-							ใช้รหัส
-						</button>
-					</div>
-					<div id="redeem-error" style="color: #dc2626; font-size: 0.9rem; margin-top: 1rem; display: none; padding: 0.75rem; background: #fef2f2; border-radius: 8px; border-left: 4px solid #dc2626;"></div>
-				</div>
-			</div>
-		</div>
-	}
 	</div>
 
 	<!-- Order History Section (AJAX Loaded) -->

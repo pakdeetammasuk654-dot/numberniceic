@@ -28,6 +28,10 @@ void main() async {
      await Firebase.initializeApp();
      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
      print("✅ Firebase Initialized");
+     
+     // Initialize Notification Service (FCM Listeners)
+     await NotificationService().init();
+     print("✅ NotificationService Initialized in main()");
   } catch (e) {
      print("❌ Firebase Init Error: $e");
   }

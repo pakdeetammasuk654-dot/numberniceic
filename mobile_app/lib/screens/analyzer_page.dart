@@ -13,6 +13,7 @@ import '../widgets/shared_footer.dart';
 import '../widgets/adaptive_footer_scroll_view.dart';
 import '../widgets/solar_system_analysis_card.dart';
 import '../widgets/auto_scrolling_avatar_list.dart';
+import '../widgets/buddhist_day_badge.dart';
 import '../widgets/shimmering_gold_wrapper.dart';
 import '../widgets/solar_system_widget.dart';
 import '../widgets/analyzer/actions_section.dart';
@@ -112,7 +113,6 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
 
   // --- Notification Logic ---
   bool _hasUnreadNotification = false;
-  bool _hasMissingAddressWarning = false;
   int _unreadCount = 0;
 
   Future<void> _checkNotification() async {
@@ -122,79 +122,30 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
     if (isLoggedIn) {
         try {
             final count = await ApiService.getUnreadNotificationCount();
-            
-            bool missingAddr = false;
-            try {
-               final dbData = await ApiService.getDashboard();
-               final isVip = dbData['is_vip'] == true || dbData['IsVIP'] == true;
-               final hasAddress = dbData['has_shipping_address'] == true || dbData['HasShippingAddress'] == true;
-               if (isVip && !hasAddress) {
-                  missingAddr = true;
-               }
-            } catch (_) {}
-
             if (mounted) {
                 setState(() {
                     _unreadCount = count;
-                    _hasMissingAddressWarning = missingAddr;
-                    _hasUnreadNotification = (count > 0) || missingAddr;
+                    _hasUnreadNotification = count > 0;
                 });
             }
         } catch (_) {}
-    } else {
-       // Guest logic (simplified for Analyzer)
-       // We only check if there's a welcome message update that differs, but maybe skip welcome dialog here to avoid annoyance
     }
   }
 
   void _handleNotificationTap() {
-    if (_hasMissingAddressWarning) {
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: Row(
-              children: [
-                const Icon(Icons.notifications_active, color: Colors.red),
-                const SizedBox(width: 8),
-                Text('แจ้งเตือน', style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
-              ],
-            ),
-            content: Text(
-              'คุณชำระเงินเรียบร้อยแล้ว โปรดระบุที่อยู่เพื่อให้เราจัดส่งสินค้าให้คุณ', 
-              style: GoogleFonts.kanit()
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                    Navigator.pop(ctx);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationListPage()))
-                      .then((_) => _checkNotification());
-                }, 
-                child: Text('ภายหลัง', style: GoogleFonts.kanit(color: Colors.grey))
-              ),
-              ElevatedButton(
-                onPressed: () {
-                    Navigator.pop(ctx);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const ShippingAddressPage()))
-                      .then((_) => _checkNotification());
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
-                child: Text('ระบุที่อยู่', style: GoogleFonts.kanit(fontWeight: FontWeight.bold))
-              )
-            ]
-          )
-        );
-    } else {
-        // Only navigate if logged in, otherwise show toast
-        AuthService.isLoggedIn().then((isLoggedIn) {
-           if (isLoggedIn) {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationListPage()))
-                  .then((_) => _checkNotification());
-           } else {
-              CustomToast.show(context, 'ไม่มีการแจ้งเตือนใหม่'); 
-           }
+    AuthService.isLoggedIn().then((isLoggedIn) {
+      if (isLoggedIn) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationListPage()),
+        ).then((_) {
+             _checkNotification();
+             // Reset UI in case user deleted notifications
         });
-    }
+      } else {
+        CustomToast.show(context, 'ไม่มีการแจ้งเตือนใหม่');
+      }
+    });
   }
 
   // --- Handlers ---
@@ -404,12 +355,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
             ),
             style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 12),
-          Text(
-            'วิเคราะห์อัตโนมัติเมื่อพิมพ์ชื่อ',
-            style: GoogleFonts.kanit(fontSize: 12, color: const Color(0xFF667EEA)),
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
           
           // Dropdown for Day Selection
           DropdownButtonFormField<String>(
@@ -457,7 +403,13 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('วิเคราะห์ชื่อ', style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('วิเคราะห์ชื่อ', style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold)),
+            const BuddhistDayBadge(),
+          ],
+        ),
         backgroundColor: const Color(0xFF333333),
         elevation: 0,
         centerTitle: false,
@@ -488,9 +440,9 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
                     ),
                     child: Center(
                       child: Text(
-                        (_unreadCount + (_hasMissingAddressWarning ? 1 : 0)) > 9 
+                        _unreadCount > 9 
                             ? '9+' 
-                            : '${_unreadCount + (_hasMissingAddressWarning ? 1 : 0)}',
+                            : '$_unreadCount',
                         style: GoogleFonts.kanit(
                           color: Colors.white, 
                           fontSize: 10, 
@@ -637,7 +589,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
                                   _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
                                },
                              ),
-                             const SizedBox(height: 24),
+                                                           const SizedBox(height: 40),
                              ActionsSection(
                                similarNames: result.similarNames,
                                showKlakini: _viewModel.showKlakini,
@@ -654,7 +606,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
                                   _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
                                },
                              ),
-                             const SizedBox(height: 40),
+                             const SizedBox(height: 0),
                            ],
                          ),
 
@@ -826,7 +778,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
           Expanded(
             child: _buildPillButton(
               icon: Icons.save_outlined, // Changed to match floppy disk reference
-              label: 'บันทึก',
+              label: 'บันทึกชื่อ',
               bgColor: const Color(0xFFF8FAFC), // Slate 50
               borderColor: const Color(0xFFCBD5E1), // Slate 300
               shadowColor: const Color(0xFF94A3B8), // Slate 400 for 3D edge

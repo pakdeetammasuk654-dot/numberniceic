@@ -20,7 +20,7 @@ type NotificationFormData struct {
 	Broadcast bool
 }
 
-func SendNotificationForm(members []domain.Member, success string, errorMsg string) templ.Component {
+func SendNotificationForm(members []domain.Member, success string, errorMsg string, formData NotificationFormData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -83,12 +83,22 @@ func SendNotificationForm(members []domain.Member, success string, errorMsg stri
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<form method=\"POST\" action=\"/admin/send-notification\"><!-- Broadcast Option First --><div class=\"form-group\"><div class=\"checkbox-group\"><input type=\"checkbox\" id=\"broadcast\" name=\"broadcast\" value=\"true\" onchange=\"toggleUserSelect(this)\"> <label for=\"broadcast\">📢 ส่งให้ทุกคนในระบบ (Broadcast)</label></div><p class=\"helper-text\">เช็คช่องนี้เพื่อส่งให้ผู้ใช้งานทุกคนในระบบพร้อมกัน</p></div><div class=\"section-divider\"><span>หรือ</span></div><!-- Individual User Selection --><div class=\"form-group\" id=\"user-selection-group\"><label class=\"form-label\">ค้นหาและเลือกผู้ใช้งาน</label><div class=\"user-select-wrapper\"><input type=\"text\" id=\"user-search\" class=\"form-control search-box\" placeholder=\"🔍 พิมพ์ชื่อ หรือ อีเมล เพื่อค้นหา...\" onkeyup=\"filterUsers()\"> <select name=\"user_id\" id=\"user_id\" class=\"form-control\" size=\"8\"><option value=\"0\">-- ผลการค้นหา --</option> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<form method=\"POST\" action=\"/admin/send-notification\"><!-- Broadcast Option First --><div class=\"form-group\"><div class=\"checkbox-group\"><input type=\"checkbox\" id=\"broadcast\" name=\"broadcast\" value=\"true\" onchange=\"toggleUserSelect(this)\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if formData.Broadcast {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, " checked")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "> <label for=\"broadcast\">📢 ส่งให้ทุกคนในระบบ (Broadcast)</label></div><p class=\"helper-text\">เช็คช่องนี้เพื่อส่งให้ผู้ใช้งานทุกคนในระบบพร้อมกัน</p></div><div class=\"section-divider\"><span>หรือ</span></div><!-- Individual User Selection --><div class=\"form-group\" id=\"user-selection-group\"><label class=\"form-label\">ค้นหาและเลือกผู้ใช้งาน</label><div class=\"user-select-wrapper\"><input type=\"text\" id=\"user-search\" class=\"form-control search-box\" placeholder=\"🔍 พิมพ์ชื่อ หรือ อีเมล เพื่อค้นหา...\" onkeyup=\"filterUsers()\"> <select name=\"user_id\" id=\"user_id\" class=\"form-control\" size=\"8\"><option value=\"0\">-- ผลการค้นหา --</option> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, member := range members {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<option value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<option value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -101,7 +111,17 @@ func SendNotificationForm(members []domain.Member, success string, errorMsg stri
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if member.ID == formData.UserID {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " selected")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, ">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -114,7 +134,7 @@ func SendNotificationForm(members []domain.Member, success string, errorMsg stri
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, " (")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, " (")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -127,12 +147,38 @@ func SendNotificationForm(members []domain.Member, success string, errorMsg stri
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, ")</option>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, ")</option>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</select></div><p class=\"helper-text\">พิมพ์ในช่องค้นหาด้านบน แล้วคลิกเลือกผู้ใช้งานที่ต้องการส่ง</p></div><div class=\"form-group\"><label class=\"form-label\">หัวข้อ</label> <input type=\"text\" name=\"title\" class=\"form-control\" placeholder=\"เช่น ประกาศสำคัญ\" required></div><div class=\"form-group\"><label class=\"form-label\">ข้อความ</label> <textarea name=\"message\" class=\"form-control\" placeholder=\"พิมพ์ข้อความที่ต้องการส่ง...\" required></textarea></div><button type=\"submit\" class=\"btn-submit\">ส่งการแจ้งเตือน</button></form></div></div><script>\n\t\tfunction toggleUserSelect(checkbox) {\n\t\t\tconst userGroup = document.getElementById('user-selection-group');\n\t\t\tconst userSelect = document.getElementById('user_id');\n\t\t\tconst searchBox = document.getElementById('user-search');\n\t\t\t\n\t\t\tif (checkbox.checked) {\n\t\t\t\tuserGroup.style.opacity = '0.5';\n\t\t\t\tuserGroup.style.pointerEvents = 'none';\n\t\t\t\tuserSelect.disabled = true;\n\t\t\t\tsearchBox.disabled = true;\n\t\t\t\tuserSelect.value = '0';\n\t\t\t} else {\n\t\t\t\tuserGroup.style.opacity = '1';\n\t\t\t\tuserGroup.style.pointerEvents = 'auto';\n\t\t\t\tuserSelect.disabled = false;\n\t\t\t\tsearchBox.disabled = false;\n\t\t\t}\n\t\t}\n\n\t\tfunction filterUsers() {\n\t\t\tconst searchInput = document.getElementById('user-search');\n\t\t\tconst select = document.getElementById('user_id');\n\t\t\tconst filter = searchInput.value.toLowerCase();\n\t\t\tconst options = select.getElementsByTagName('option');\n\n\t\t\tfor (let i = 1; i < options.length; i++) { // Skip first option (header)\n\t\t\t\tconst text = options[i].textContent || options[i].innerText;\n\t\t\t\tif (text.toLowerCase().indexOf(filter) > -1) {\n\t\t\t\t\toptions[i].style.display = '';\n\t\t\t\t} else {\n\t\t\t\t\toptions[i].style.display = 'none';\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</select></div><p class=\"helper-text\">พิมพ์ในช่องค้นหาด้านบน แล้วคลิกเลือกผู้ใช้งานที่ต้องการส่ง</p></div><div class=\"form-group\"><label class=\"form-label\">หัวข้อ</label> <input type=\"text\" name=\"title\" class=\"form-control\" placeholder=\"เช่น ประกาศสำคัญ\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var7 string
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(formData.Title)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/send_notification.templ`, Line: 220, Col: 141}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" required></div><div class=\"form-group\"><label class=\"form-label\">ข้อความ</label> <textarea name=\"message\" class=\"form-control\" placeholder=\"พิมพ์ข้อความที่ต้องการส่ง...\" required>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var8 string
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(formData.Message)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/send_notification.templ`, Line: 225, Col: 171}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</textarea></div><button type=\"submit\" class=\"btn-submit\">ส่งการแจ้งเตือน</button></form></div></div><script>\n\t\tfunction toggleUserSelect(checkbox) {\n\t\t\tconst userGroup = document.getElementById('user-selection-group');\n\t\t\tconst userSelect = document.getElementById('user_id');\n\t\t\tconst searchBox = document.getElementById('user-search');\n\t\t\t\n\t\t\tif (checkbox.checked) {\n\t\t\t\tuserGroup.style.opacity = '0.5';\n\t\t\t\tuserGroup.style.pointerEvents = 'none';\n\t\t\t\tuserSelect.disabled = true;\n\t\t\t\tsearchBox.disabled = true;\n\t\t\t\tuserSelect.value = '0';\n\t\t\t} else {\n\t\t\t\tuserGroup.style.opacity = '1';\n\t\t\t\tuserGroup.style.pointerEvents = 'auto';\n\t\t\t\tuserSelect.disabled = false;\n\t\t\t\tsearchBox.disabled = false;\n\t\t\t}\n\t\t}\n\n\t\tfunction filterUsers() {\n\t\t\tconst searchInput = document.getElementById('user-search');\n\t\t\tconst select = document.getElementById('user_id');\n\t\t\tconst filter = searchInput.value.toLowerCase();\n\t\t\tconst options = select.getElementsByTagName('option');\n\n\t\t\tfor (let i = 1; i < options.length; i++) { // Skip first option (header)\n\t\t\t\tconst text = options[i].textContent || options[i].innerText;\n\t\t\t\tif (text.toLowerCase().indexOf(filter) > -1) {\n\t\t\t\t\toptions[i].style.display = '';\n\t\t\t\t} else {\n\t\t\t\t\toptions[i].style.display = 'none';\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\t// Initialize state on load\n\t\tdocument.addEventListener('DOMContentLoaded', function() {\n\t\t\tconst broadcastCheckbox = document.getElementById('broadcast');\n\t\t\tif (broadcastCheckbox) {\n\t\t\t\ttoggleUserSelect(broadcastCheckbox);\n\t\t\t}\n\t\t});\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

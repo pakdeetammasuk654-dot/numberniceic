@@ -7,6 +7,8 @@ class LocalNotificationStorage {
 
   static Future<void> save(String title, String message) async {
     final prefs = await SharedPreferences.getInstance();
+    // Reload list to get latest state
+    await prefs.reload(); 
     final List<String> list = prefs.getStringList(_key) ?? [];
     
     final newNotif = {
@@ -21,10 +23,12 @@ class LocalNotificationStorage {
     if (list.length > 50) list.removeRange(0, list.length - 50);
     
     await prefs.setStringList(_key, list);
+    print("✅ LocalNotificationStorage: Saved new notification '${title}' (Total: ${list.length})");
   }
 
   static Future<List<UserNotification>> getAll() async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.reload(); // Ensure we have the latest data
     final List<String> list = prefs.getStringList(_key) ?? [];
     
     return list.map((item) {

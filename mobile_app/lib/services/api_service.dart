@@ -14,6 +14,7 @@ import 'auth_service.dart';
 
 class ApiService {
   static final ValueNotifier<int> dashboardRefreshSignal = ValueNotifier<int>(0);
+  static final ValueNotifier<int> unreadNotificationCount = ValueNotifier<int>(0); // NEW: instant UI update
 
   static dynamic _safeDecode(http.Response response) {
     if (response.body.isEmpty) {
@@ -50,8 +51,9 @@ class ApiService {
     }
 
     if (Platform.isAndroid) {
-      // 10.0.2.2 is the IP that Android Emulator uses to reach the host machine (localhost)
-      return 'http://10.0.2.2:3000'; 
+      // Use localhost (127.0.0.1) because we used 'adb reverse tcp:3000 tcp:3000'
+      // This works for Physical Devices connected via USB
+      return 'http://127.0.0.1:3000'; 
     }
     
     return 'http://$localIp:3000'; // For iOS Real Device / LAN
@@ -157,35 +159,59 @@ class ApiService {
     try {
       final token = await AuthService.getToken();
       if (token == null) {
+        debugPrint('❌ No token found - user not logged in');
         throw Exception('No token found');
       }
 
+      debugPrint('🔑 Token: ${token.substring(0, 20)}...');
+      
       final response = await http.get(
         url,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
+      ).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          debugPrint('⏱️ Dashboard API timeout after 15 seconds');
+          throw Exception('Request timeout - please check your connection');
+        },
       );
+
+      debugPrint('📥 Dashboard Response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = _safeDecode(response);
         // Sync with SharedPreferences so bottom bar and other widgets get latest info
         await AuthService.syncAuthData(data);
+        debugPrint('✅ Dashboard loaded successfully');
         return data;
       } else if (response.statusCode == 401) {
         // Token expired or invalid
+        debugPrint('⛔ 401 Unauthorized - logging out user');
         await AuthService.logout();
         throw Exception('Session expired');
       } else if (response.statusCode == 404) {
         // User record missing in DB (likely deleted or DB test reset)
+        debugPrint('⛔ 404 Not Found - user no longer exists');
         await AuthService.logout();
         throw Exception('User no longer exists');
       } else {
+        debugPrint('❌ Dashboard API error: ${response.statusCode}');
         throw Exception('Failed to load dashboard: ${response.statusCode}');
       }
-    } catch (e) {
-      throw Exception('Connection error at $url: $e');
+    } on Exception catch (e) {
+      // Rethrow known exceptions (Session expired, User no longer exists, etc.)
+      if (e.toString().contains('Session expired') || 
+          e.toString().contains('User no longer exists') ||
+          e.toString().contains('No token found') ||
+          e.toString().contains('timeout')) {
+        rethrow;
+      }
+      // Wrap other errors
+      debugPrint('❌ Dashboard error: $e');
+      throw Exception('Connection error: ${e.toString().replaceAll('Exception: ', '')}');
     }
   }
 

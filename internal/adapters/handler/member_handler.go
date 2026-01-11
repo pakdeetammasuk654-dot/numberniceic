@@ -796,9 +796,14 @@ func (h *MemberHandler) CreateNotificationAPI(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Title and Message are required"})
 	}
 
+	// PREVENT SPAM/LOOP: Do not allow clients to create system generated notifications
+	if strings.Contains(req.Title, "สีกระเป๋า") {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{"success": true, "message": "Ignored locally duplicated notification"})
+	}
+
 	// Implementation note: h.service usually has a repository pattern.
 	// Let's call a new method in MemberService.
-	err := h.service.CreateUserNotification(userID, req.Title, req.Message)
+	err := h.service.CreateUserNotification(userID, req.Title, req.Message, nil)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create notification"})
 	}

@@ -51,11 +51,21 @@ class ActionsSection extends StatelessWidget {
       }
     }
 
-    return Column(
-      children: [
-        // VIP Banner
-        if (!isVip)
-          GestureDetector(
+    return Container(
+      color: const Color(0xFFFFFDE7), // Same as table row background to fill any gaps below
+      child: Column(
+        children: [
+          // VIP Banner
+          if (!isVip)
+            Container(
+              color: Colors.transparent, // Let scaffold show through for the gap
+              height: 8,
+            ),
+          if (!isVip)
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 24), // Even padding for balance
+              child: GestureDetector(
             onTap: () {
                // Initial action, maybe navigate to shop
             },
@@ -111,61 +121,68 @@ class ActionsSection extends StatelessWidget {
                 ],
               ),
             ),
+            ),
           ),
-        
-        const SizedBox(height: 16),
+          
+          Container(
+            color: Colors.white,
+            height: 16,
+          ),
 
-        // Toggles
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16), 
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              // Toggle: Show Good Only
-              Column(
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16), 
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Transform.scale(
-                    scale: 0.8,
-                    child: Switch.adaptive(
-                      value: showGoodOnly,
-                      onChanged: onToggleGoodOnly, 
-                      activeColor: Colors.white,
-                      activeTrackColor: const Color(0xFF2E7D32),
-                    ),
+                  // Toggle: Show Good Only
+                  Row(
+                    children: [
+                      Text('แสดงเลขดีเท่านั้น', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF2E7D32))),
+                      const SizedBox(width: 8),
+                      Transform.scale(
+                        scale: 0.8,
+                        child: Switch.adaptive(
+                          value: showGoodOnly,
+                          onChanged: onToggleGoodOnly, 
+                          activeColor: Colors.white,
+                          activeTrackColor: const Color(0xFF2E7D32),
+                        ),
+                      ),
+                    ],
                   ),
-                  Text('แสดงเลขดีเท่านั้น', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF2E7D32))), 
+                  const SizedBox(width: 16),
+                  
+                  // Toggle: Show Klakini
+                  Row(
+                    children: [
+                      RichText(
+                        text: TextSpan(
+                          style: GoogleFonts.kanit(fontSize: 12, color: Colors.grey[600]),
+                          children: [
+                            const TextSpan(text: 'แสดง'),
+                            TextSpan(text: 'กาลกิณี', style: TextStyle(color: Color(0xFFD32F2F), fontWeight: FontWeight.bold)),
+                          ]
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Transform.scale(
+                        scale: 0.8,
+                        child: Switch.adaptive(
+                          value: showKlakini,
+                          onChanged: onToggleKlakini,
+                          activeColor: Colors.white,
+                          activeTrackColor: const Color(0xFFD32F2F), // Red Track
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
-              const SizedBox(width: 16),
-              
-              // Toggle: Show Klakini
-              Column(
-                children: [
-                   Transform.scale(
-                    scale: 0.8,
-                    child: Switch.adaptive(
-                      value: showKlakini,
-                      onChanged: onToggleKlakini,
-                      activeColor: Colors.white,
-                      activeTrackColor: const Color(0xFFD32F2F), // Red Track
-                    ),
-                  ),
-                  RichText(
-                    text: TextSpan(
-                      style: GoogleFonts.kanit(fontSize: 12, color: Colors.grey[600]),
-                      children: [
-                        const TextSpan(text: 'แสดง'),
-                        TextSpan(text: 'กาลกิณี', style: TextStyle(color: Color(0xFFD32F2F), fontWeight: FontWeight.bold)),
-                      ]
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
-        ),
-
-        const SizedBox(height: 12),
 
         // Table Header
         Container(
@@ -232,6 +249,9 @@ class ActionsSection extends StatelessWidget {
              final hasKlakini = name.displayNameHtml.any((c) => c.isBad);
              final isPerfectName = !isNumBad && !isShaBad && !hasKlakini;
              final isTop3 = originalIndex < 3;
+             
+             // A name should be gold/shimmer ONLY if it's both Top 3 AND Perfect
+             final bool shouldBeGold = isTop3 && isPerfectName;
 
             // Helper for bubble style
             BoxDecoration getBubbleDecoration(bool isBad) {
@@ -268,29 +288,21 @@ class ActionsSection extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: ShimmeringGoldWrapper(
-                            // Disable gold shimmer if we are showing Klakini and the name has any bad chars
-                            enabled: (isTop3 || isPerfectName) && !(showKlakini && name.displayNameHtml.any((c) => c.isBad)),
+                            enabled: shouldBeGold,
                             child: RichText(
                               text: TextSpan(
-                                // Use black base color if showing Klakini and name is bad, overriding Top3 gold
                                 style: GoogleFonts.kanit(
                                   fontSize: 16, 
                                   fontWeight: FontWeight.bold, 
-                                  color: ((isTop3 || isPerfectName) && !(showKlakini && name.displayNameHtml.any((c) => c.isBad))) 
-                                    ? const Color(0xFF8B6F00) 
-                                    : Colors.black87
+                                  color: shouldBeGold ? const Color(0xFF8B6F00) : Colors.black87
                                 ),
                                 children: name.displayNameHtml.map((char) {
-                                  // Determine base color for this character
-                                  // If Top3 AND NOT (Showing Bad & Has Bad), default to Gold. Else Black.
-                                  final bool isGoldMode = (isTop3 || isPerfectName) && !(showKlakini && name.displayNameHtml.any((c) => c.isBad));
-                                  
                                   return TextSpan(
                                     text: char.char,
                                       style: TextStyle(
                                         color: char.isBad 
-                                            ? (showKlakini ? const Color(0xFFFF1744) : (isGoldMode ? const Color(0xFF8B6F00) : Colors.black87))
-                                            : (isGoldMode ? const Color(0xFF8B6F00) : Colors.black87),
+                                            ? (showKlakini ? const Color(0xFFFF1744) : (shouldBeGold ? const Color(0xFF8B6F00) : Colors.black87))
+                                            : (shouldBeGold ? const Color(0xFF8B6F00) : Colors.black87),
                                       ),
                                   );
                                 }).toList(),
@@ -424,8 +436,9 @@ class ActionsSection extends StatelessWidget {
           // Permanently Attached Locked Section for Non-VIP
           if (!isVip && !isLoading) _buildLockedSection(),
       ],
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildLockedSection() {
     return Column(

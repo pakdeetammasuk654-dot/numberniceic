@@ -26,8 +26,9 @@ import 'delete_account_page.dart';
 import '../widgets/shared_footer.dart';
 import '../widgets/adaptive_footer_scroll_view.dart';
 import '../widgets/lucky_number_card.dart'; // Import for Saved Number Display
+import '../widgets/wallet_color_bottom_sheet.dart'; 
+import '../widgets/notification_bell.dart'; // NEW Reusable Bell
 
-import '../services/notification_service.dart';
 import '../services/local_notification_storage.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -43,12 +44,13 @@ class _DashboardPageState extends State<DashboardPage> {
   late Future<Map<String, dynamic>> _userInfoFuture;
   int _unreadCount = 0;
   bool _isNotificationEnabled = false;
+  StreamSubscription<RemoteMessage>? _notifSubscription;
 
   @override
   void initState() {
     super.initState();
-    _dashboardFuture = ApiService.getDashboard(); // Initialize immediately to avoid late error
-    _loadDashboard();
+    // Initialize dashboard future - this will be used by FutureBuilder
+    _dashboardFuture = _initializeDashboard();
     _isBuddhistDayFuture = ApiService.isBuddhistDayToday();
     _userInfoFuture = AuthService.getUserInfo();
     _checkNotification();
@@ -60,15 +62,52 @@ class _DashboardPageState extends State<DashboardPage> {
     // Clear old shipping address notifications and then auto-enable
     _initializeNotifications();
     
+    // Listen for incoming notifications for Wallet Colors
+    _notifSubscription = NotificationService().messageStream.listen((message) {
+      if (message.data['type'] == 'wallet_colors') {
+        final colorsStr = message.data['colors'] as String?;
+        if (colorsStr != null && colorsStr.isNotEmpty) {
+          final colors = colorsStr.split(',').where((c) => c.isNotEmpty).toList();
+          if (mounted && colors.isNotEmpty) {
+             // Ensure UI is ready before showing bottom sheet on startup
+             WidgetsBinding.instance.addPostFrameCallback((_) {
+                WalletColorBottomSheet.show(context, colors);
+             });
+          }
+        }
+      }
+    });
+
+    // Listen to DIRECT unread count changes (Instant Update)
+    ApiService.unreadNotificationCount.addListener(() {
+      if (mounted) {
+        setState(() {
+          _unreadCount = ApiService.unreadNotificationCount.value;
+        });
+      }
+    });
+
     // Listen for refresh signals from other pages (e.g. AnalyzerPage after saving)
-    ApiService.dashboardRefreshSignal.addListener(_loadDashboard);
+    ApiService.dashboardRefreshSignal.addListener(() {
+      if (mounted) {
+         _loadDashboard();
+         _checkNotification(); // Ensure notification count updates immediately!
+      }
+    });
+  }
+
+  Future<Map<String, dynamic>> _initializeDashboard() async {
+    try {
+      final data = await ApiService.getDashboard();
+      return data;
+    } catch (e) {
+      // Rethrow to let FutureBuilder handle it
+      rethrow;
+    }
   }
 
   Future<void> _initializeNotifications() async {
-    // Clear old shipping address notifications first
-    await LocalNotificationStorage.clearShippingAddressNotifications();
-    
-    // Then auto-enable notifications on first launch
+    // Auto-enable notifications on first launch
     await _autoEnableNotificationsOnFirstLaunch();
   }
 
@@ -167,6 +206,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   void dispose() {
+    _notifSubscription?.cancel();
     ApiService.dashboardRefreshSignal.removeListener(_loadDashboard);
     super.dispose();
   }
@@ -247,21 +287,43 @@ class _DashboardPageState extends State<DashboardPage> {
         }
         print('🔔 [Step 4] Raw Unread: $rawUnread, Filtered Unread: $filteredUnread');
 
-        final localCount = await LocalNotificationStorage.getUnreadCount();
-        print('🔔 [Step 5] Local Unread: $localCount');
-        
-        final total = filteredUnread + localCount;
-        print('🔔 [Step 6] Total Final: $total');
+        // Note: We no longer count local storage notifications because:
+        // 1. Server is the source of truth
+        // 2. Local storage is only for temporary storage before server sync
+        // 3. FCM handles real-time updates now
+        final total = filteredUnread;
+        print('🔔 [Step 5] Total Final: $total (Server only, no local count)');
 
         if (mounted) {
+           // Only update if new total is higher or equal (prevent race condition with immediate FCM updates)
+           final currentCount = ApiService.unreadNotificationCount.value;
+           if (total >= currentCount) {
+             ApiService.unreadNotificationCount.value = total; // Sync global state
+             print('🔔 [Step 6] Updated unreadNotificationCount from $currentCount to $total');
+           } else {
+             print('🔔 [Step 6] Skipped update: calculated $total < current $currentCount (FCM may have incremented)');
+           }
+           
            setState(() {
-             _unreadCount = total;
+             _unreadCount = ApiService.unreadNotificationCount.value; // Use the global value
            });
            print('🔔 [Step 7] setState called with _unreadCount = $_unreadCount');
         }
       } catch (e) {
         debugPrint('Error checking notifications: $e');
       }
+  }
+
+  void _showNotificationsBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => SizedBox(
+        height: MediaQuery.of(context).size.height * 0.85,
+        child: const NotificationListPage(isBottomSheet: true),
+      ),
+    ).then((_) => _checkNotification());
   }
 
   Future<void> _confirmDelete(int id) async {
@@ -307,14 +369,17 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
-              await AuthService.logout();
-              if (mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const MainTabPage(initialIndex: 0)),
-                  (route) => false,
-                );
-                CustomToast.show(context, 'ออกจากระบบเรียบร้อยแล้ว');
+              // Directly logout and navigate to clear everything including the dialog
+              try {
+                await AuthService.logout();
+                if (mounted) {
+                  Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => MainTabPage(initialIndex: 0, forceLogout: true)),
+                    (route) => false,
+                  );
+                }
+              } catch (e) {
+                print("Logout navigation error: $e");
               }
             },
             child: Text('ออกจากระบบ', style: GoogleFonts.kanit(color: Colors.red, fontWeight: FontWeight.bold)),
@@ -381,7 +446,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 onRefresh: () async => _loadDashboard(),
                 children: [
                   // 1. Premium Header with Avatar
-                  _buildPremiumHeader(context, username, email, avatarUrl, isVip, isAdmin, hasAddress, _unreadCount),
+                  _buildPremiumHeader(context, username, email, avatarUrl, isVip, isAdmin, hasAddress),
 
                   // Buddhist Day Banner
                   FutureBuilder<bool>(
@@ -461,7 +526,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         // 4. Menu Section (Clean List)
                         Text('เมนูบัญชีผู้ใช้', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
                         const SizedBox(height: 12),
-                        _buildMenuCard(context, hasAddress),
+                        _buildMenuCard(context, hasAddress, List<String>.from(data['assigned_colors'] ?? [])),
                       ],
                     ),
                   ),
@@ -475,7 +540,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildPremiumHeader(BuildContext context, String username, String email, String? avatarUrl, bool isVip, bool isAdmin, bool hasAddress, int unreadCount) {
+  Widget _buildPremiumHeader(BuildContext context, String username, String email, String? avatarUrl, bool isVip, bool isAdmin, bool hasAddress) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -488,146 +553,108 @@ class _DashboardPageState extends State<DashboardPage> {
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
       child: Stack(
         children: [
-          // Top Buttons (Notification + Logout)
+          // Content Layer (Center Aligned)
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+               // Avatar with Glow & Admin Badge
+               Stack(
+                 alignment: Alignment.center,
+                 children: [
+                   if (isVip)
+                     Container(
+                       width: 108, 
+                       height: 108,
+                       decoration: BoxDecoration(
+                         shape: BoxShape.circle,
+                         gradient: const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFFA000)]),
+                         boxShadow: [
+                            BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.4), blurRadius: 20, spreadRadius: 2)
+                         ],
+                       ),
+                     ),
+                   Container(
+                     decoration: BoxDecoration(
+                       shape: BoxShape.circle,
+                       border: Border.all(color: Colors.white, width: 4),
+                     ),
+                     child: CircleAvatar(
+                       radius: 50,
+                       backgroundColor: Colors.grey[100],
+                       backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty) 
+                          ? NetworkImage(avatarUrl) 
+                          : null,
+                       child: (avatarUrl == null || avatarUrl.isEmpty)
+                          ? Text(
+                              username.isNotEmpty ? username[0].toUpperCase() : '?',
+                              style: GoogleFonts.kanit(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.grey[400]),
+                            )
+                          : null,
+                     ),
+                   ),
+                   if (isAdmin) 
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                          child: const Icon(Icons.verified_user, color: Colors.white, size: 16),
+                        ),
+                      )
+                 ],
+               ),
+               
+               const SizedBox(height: 16),
+               
+               // Username
+               Text(
+                 username, 
+                 style: GoogleFonts.kanit(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87)
+               ),
+               
+               // VIP Badge / Email
+               const SizedBox(height: 4),
+               Row(
+                 mainAxisAlignment: MainAxisAlignment.center,
+                 children: [
+                   if (isVip)
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFDB931)]),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star, color: Colors.white, size: 12),
+                          const SizedBox(width: 4),
+                          Text('VIP MEMBER', style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
+                        ],
+                      ),
+                    ),
+                   Text(email, style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[500])),
+                 ],
+               ),
+            ],
+          ),
+
+          // Top Buttons (Notification + Logout) - Moved to be LAST child for highest Z-Index
           Positioned(
             top: 0,
             right: 0,
             child: Row(
               children: [
                 // Notification Bell
-                Stack(
-                  alignment: Alignment.topRight,
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                         Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationListPage()))
-                            .then((_) => _checkNotification());
-                      },
-                      icon: const Icon(Icons.notifications_none_rounded, color: Colors.grey, size: 28),
-                      tooltip: 'การแจ้งเตือน',
-                    ),
-                    if (unreadCount > 0)
-                      Positioned(
-                        right: 6,
-                        top: 6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.white, width: 1.5),
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 18,
-                            minHeight: 18,
-                          ),
-                          child: Center(
-                            child: Text(
-                              unreadCount > 9 ? '9+' : '$unreadCount',
-                              style: GoogleFonts.kanit(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                height: 1.0,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                const NotificationBell(),
               ],
             ),
           ),
-          
-          Column(
-            children: [
-               // Avatar with Glow
-           Stack(
-             alignment: Alignment.center,
-             children: [
-               if (isVip)
-                 Container(
-                   width: 108, 
-                   height: 108,
-                   decoration: BoxDecoration(
-                     shape: BoxShape.circle,
-                     gradient: const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFFA000)]),
-                     boxShadow: [
-                        BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.4), blurRadius: 20, spreadRadius: 2)
-                     ],
-                   ),
-                 ),
-               Container(
-                 decoration: BoxDecoration(
-                   shape: BoxShape.circle,
-                   border: Border.all(color: Colors.white, width: 4),
-                 ),
-                 child: CircleAvatar(
-                   radius: 50,
-                   backgroundColor: Colors.grey[100],
-                   backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty) 
-                      ? NetworkImage(avatarUrl) 
-                      : null,
-                   child: (avatarUrl == null || avatarUrl.isEmpty)
-                      ? Text(
-                          username.isNotEmpty ? username[0].toUpperCase() : '?',
-                          style: GoogleFonts.kanit(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.grey[400]),
-                        )
-                      : null,
-                 ),
-               ),
-                if (isAdmin)
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
-                      child: const Icon(Icons.verified_user, color: Colors.white, size: 16),
-                    ),
-                  )
-             ],
-           ),
-           const SizedBox(height: 16),
-           
-           // Username
-           Text(
-             username, 
-             style: GoogleFonts.kanit(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87)
-           ),
-           
-           // VIP Badge / Email
-           const SizedBox(height: 4),
-           Row(
-             mainAxisAlignment: MainAxisAlignment.center,
-             children: [
-               if (isVip)
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFDB931)]),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.star, color: Colors.white, size: 12),
-                      const SizedBox(width: 4),
-                      Text('VIP MEMBER', style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
-                    ],
-                  ),
-                ),
-               Text(email, style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[500])),
-             ],
-           ),
-        ],
-      ),
-      ], // Close Stack children
-     ), // Close Stack widget
-    ); // Close Container
+        ], 
+      ), 
+    ); 
   }
 
   // --- Modified Saved Names Header ---
@@ -665,7 +692,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // --- New Menu Card Widget ---
-  Widget _buildMenuCard(BuildContext context, bool hasAddress) {
+  Widget _buildMenuCard(BuildContext context, bool hasAddress, List<String> assignedColors) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -676,6 +703,16 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
       child: Column(
         children: [
+           if (assignedColors.isNotEmpty) ...[
+             _buildMenuItem(
+               context,
+               icon: Icons.account_balance_wallet_outlined,
+               title: 'สีกระเป๋ามงคล',
+               iconColor: Colors.deepPurpleAccent,
+               onTap: () => WalletColorBottomSheet.show(context, assignedColors),
+             ),
+             const Divider(height: 1, indent: 60),
+           ],
            _buildMenuItem(
              context,
              icon: Icons.history,
@@ -1249,6 +1286,7 @@ class _DashboardPageState extends State<DashboardPage> {
           BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
           // Table Header
@@ -1265,7 +1303,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 Expanded(flex: 2, child: Center(child: Text('เลข', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)))),
                 Expanded(flex: 2, child: Center(child: Text('เงา', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)))),
                 Expanded(flex: 1, child: Center(child: Text('คะแนน', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)))),
-                const SizedBox(width: 40), // Space for delete icon
+                const SizedBox(width: 24), // Space for >> icon
               ],
             ),
           ),
@@ -1382,7 +1420,68 @@ class _DashboardPageState extends State<DashboardPage> {
               print('✨ PERFECT NAME FOUND: $name (Has star: $isTopTier, Will apply gold shimmer animation)');
             }
 
-            final rowWidget = InkWell(
+            final rowWidget = Dismissible(
+              key: Key('saved_name_$id'),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  border: Border(
+                    bottom: BorderSide(color: Colors.grey.shade100),
+                  ),
+                ),
+                child: const Icon(Icons.delete, color: Colors.white, size: 28),
+              ),
+              confirmDismiss: (direction) async {
+                // Show confirmation dialog first
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text('ยืนยันการลบ', style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
+                      content: Text('คุณต้องการลบ "$name" ใช่หรือไม่?', style: GoogleFonts.kanit()),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: Text('ยกเลิก', style: GoogleFonts.kanit(color: Colors.grey)),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                          child: Text('ลบ', style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    );
+                  },
+                );
+                
+                // If user confirmed, perform the delete
+                if (confirmed == true) {
+                  try {
+                    final msg = await ApiService.deleteSavedName(id);
+                    if (mounted) {
+                      CustomToast.show(context, msg);
+                      // Reload dashboard after successful delete
+                      _loadDashboard();
+                    }
+                    return true; // Allow dismissal
+                  } catch (e) {
+                    if (mounted) {
+                      CustomToast.show(context, e.toString().replaceAll('Exception: ', ''), isSuccess: false);
+                    }
+                    return false; // Prevent dismissal on error
+                  }
+                }
+                
+                return false; // User cancelled
+              },
+              onDismissed: (direction) {
+                // This will only be called if confirmDismiss returns true
+                // No need to do anything here since we already handled it in confirmDismiss
+              },
+              child: InkWell(
               onTap: () async {
                 await Navigator.push(context, MaterialPageRoute(builder: (context) => AnalyzerPage(initialName: name, initialDay: birthDayRaw)));
                 _loadDashboard();
@@ -1394,7 +1493,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       ? const Color(0xFFFFFBE6) // Very light cream/gold background (lighter than before)
                       : (isTopTier ? const Color(0xFFFFFDE7) : (index % 2 == 0 ? Colors.white : Colors.grey[50])),
                   border: Border(
-                    bottom: isLast ? BorderSide.none : BorderSide(color: Colors.grey.shade100),
+                    bottom: BorderSide(color: Colors.grey.shade100),
                     left: isPerfect 
                         ? const BorderSide(color: Color(0xFFFFD700), width: 4) // Gold border for perfect
                         : (isTopTier ? const BorderSide(color: Color(0xFFFBC02D), width: 3) : BorderSide.none),
@@ -1513,18 +1612,31 @@ class _DashboardPageState extends State<DashboardPage> {
                         ],
                       ),
                     ),
-                    // Column 5: Delete
-                    SizedBox(
-                      width: 40,
-                      child: IconButton(
-                        icon: Icon(Icons.delete_outline, color: Colors.red[300], size: 20),
-                        onPressed: () => _confirmDelete(id),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
+                    // Column 5: Analyze Icon (>>)
+                    Container(
+                      margin: const EdgeInsets.only(left: 4),
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF00C853).withOpacity(0.15), width: 1),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF00C853).withOpacity(0.1),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.keyboard_double_arrow_right_rounded,
+                        color: Color(0xFF00C853),
+                        size: 18,
                       ),
                     ),
                   ],
                 ),
+              ),
               ),
             );
 

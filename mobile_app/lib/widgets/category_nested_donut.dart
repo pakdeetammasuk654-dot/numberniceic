@@ -698,7 +698,7 @@ class CategoryLegendRow extends StatelessWidget {
                 child: Container(
                   alignment: Alignment.center,
                   child: cat.bad > 0
-                  ? Text('${badPct}%', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFFEF4444)))
+                  ? Text('${badPct}%', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, color: const Color(0xFF64748B)))
                   : Text('-', style: GoogleFonts.kanit(fontSize: 16, color: Colors.grey[300])),
                 ),
               ),
@@ -721,9 +721,11 @@ class CategoryLegendRow extends StatelessWidget {
               padding: const EdgeInsets.only(left: 20, right: 8), 
               child: Text(
                 cat.keywords.join(', '),
-                style: GoogleFonts.sarabun(
+                style: GoogleFonts.kanit(
                   fontSize: 13, 
-                  color: hasBad ? const Color(0xFFEF4444) : (showColor ? Colors.grey[600]! : Colors.grey[400]!),
+                  color: hasBad ? const Color(0xFF64748B) : (showColor ? Colors.grey[600]! : Colors.grey[400]!),
+                  fontWeight: hasBad ? FontWeight.bold : FontWeight.normal,
+                  fontStyle: hasBad ? FontStyle.italic : FontStyle.normal,
                 ),
               ),
             ),
@@ -734,7 +736,9 @@ class CategoryLegendRow extends StatelessWidget {
                 '-',
                 style: GoogleFonts.kanit(
                   fontSize: 13, 
-                  color: hasBad ? const Color(0xFFEF4444) : Colors.grey[400],
+                  color: hasBad ? const Color(0xFF64748B) : Colors.grey[400],
+                  fontWeight: hasBad ? FontWeight.bold : FontWeight.normal,
+                  fontStyle: hasBad ? FontStyle.italic : FontStyle.normal,
                 ),
               ),
             ),

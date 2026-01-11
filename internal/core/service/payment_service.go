@@ -11,17 +11,19 @@ import (
 )
 
 type PaymentService struct {
-	orderRepo  ports.OrderRepository
-	memberRepo ports.MemberRepository // To upgrade user status
-	promoRepo  ports.PromotionalCodeRepository
+	orderRepo     ports.OrderRepository
+	memberRepo    ports.MemberRepository // To upgrade user status
+	promoRepo     ports.PromotionalCodeRepository
+	memberService *MemberService
 }
 
-func NewPaymentService(orderRepo ports.OrderRepository, memberRepo ports.MemberRepository, promoRepo ports.PromotionalCodeRepository) *PaymentService {
+func NewPaymentService(orderRepo ports.OrderRepository, memberRepo ports.MemberRepository, promoRepo ports.PromotionalCodeRepository, memberService *MemberService) *PaymentService {
 	rand.Seed(time.Now().UnixNano())
 	return &PaymentService{
-		orderRepo:  orderRepo,
-		memberRepo: memberRepo,
-		promoRepo:  promoRepo,
+		orderRepo:     orderRepo,
+		memberRepo:    memberRepo,
+		promoRepo:     promoRepo,
+		memberService: memberService,
 	}
 }
 
@@ -41,6 +43,10 @@ func (s *PaymentService) ProcessPaymentSuccess(refNo string, amountPaid float64)
 	order, err := s.orderRepo.GetByRefNo(refNo)
 	if err != nil {
 		return err
+	}
+
+	if order.Status == "paid" {
+		return nil // Already processed
 	}
 
 	// 2. Validate Amount (Optional Check)
@@ -82,6 +88,16 @@ func (s *PaymentService) ProcessPaymentSuccess(refNo string, amountPaid float64)
 		if err != nil {
 			return err
 		}
+	}
+
+	// 6. Send Notification if user is logged in
+	if order.UserID != nil && s.memberService != nil {
+		title := "ชำระเงินสำเร็จแล้ว ✨"
+		body := "คุณชำระเงินเรียบร้อยแล้ว โปรดระบุที่อยู่เพื่อให้เราจัดส่งสินค้าให้คุณ"
+		data := map[string]string{
+			"type": "payment_success",
+		}
+		_ = s.memberService.CreateUserNotification(*order.UserID, title, body, data)
 	}
 
 	return nil

@@ -19,6 +19,7 @@ import 'number_analysis_page.dart';
 import 'shipping_address_page.dart';
 import 'notification_list_page.dart';
 import '../widgets/contact_purchase_modal.dart';
+import '../widgets/buddhist_day_badge.dart';
 
 class ShopPage extends StatefulWidget {
   const ShopPage({super.key});
@@ -31,7 +32,6 @@ class _ShopPageState extends State<ShopPage> {
   bool _showScrollToTop = false;
   // Notification State
   bool _hasUnreadNotification = false;
-  bool _hasMissingAddressWarning = false;
   int _unreadCount = 0;
 
   @override
@@ -76,28 +76,17 @@ class _ShopPageState extends State<ShopPage> {
   }
 
   Future<void> _checkNotification() async {
+    // Only check if logged in
     final token = await AuthService.getToken();
     final isLoggedIn = token != null;
     
     if (isLoggedIn) {
         try {
             final count = await ApiService.getUnreadNotificationCount();
-            
-            bool missingAddr = false;
-            try {
-               final dbData = await ApiService.getDashboard();
-               final isVip = dbData['is_vip'] == true || dbData['IsVIP'] == true;
-               final hasAddress = dbData['has_shipping_address'] == true || dbData['HasShippingAddress'] == true;
-               if (isVip && !hasAddress) {
-                  missingAddr = true;
-               }
-            } catch (_) {}
-
             if (mounted) {
                 setState(() {
                     _unreadCount = count;
-                    _hasMissingAddressWarning = missingAddr;
-                    _hasUnreadNotification = (count > 0) || missingAddr;
+                    _hasUnreadNotification = count > 0;
                 });
             }
         } catch (_) {}
@@ -108,7 +97,10 @@ class _ShopPageState extends State<ShopPage> {
     AuthService.isLoggedIn().then((isLoggedIn) {
        if (isLoggedIn) {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationListPage()))
-              .then((_) => _checkNotification());
+              .then((_) {
+                 _checkNotification();
+                 // Reset unread count logic if needed here or let _checkNotification handles it
+              });
        } else {
           CustomToast.show(context, 'กรุณาเข้าสู่ระบบเพื่อดูการแจ้งเตือน'); 
        }
@@ -334,7 +326,13 @@ class _ShopPageState extends State<ShopPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text('ซื้อสินค้าร้านมาดี', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('ซื้อสินค้าร้านมาดี', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: Colors.white)),
+            const BuddhistDayBadge(),
+          ],
+        ),
         backgroundColor: const Color(0xFF333333),
         elevation: 0,
         centerTitle: false, // Align title to the left
@@ -370,9 +368,9 @@ class _ShopPageState extends State<ShopPage> {
                     ),
                     child: Center(
                       child: Text(
-                        (_unreadCount + (_hasMissingAddressWarning ? 1 : 0)) > 9 
+                        _unreadCount > 9 
                             ? '9+' 
-                            : '${_unreadCount + (_hasMissingAddressWarning ? 1 : 0)}',
+                            : '$_unreadCount',
                         style: GoogleFonts.kanit(
                           color: Colors.white, 
                           fontSize: 10, 

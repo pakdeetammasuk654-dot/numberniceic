@@ -29,12 +29,13 @@ func NewFirebaseService(credentialsFile string) (*FirebaseService, error) {
 	return &FirebaseService{client: client}, nil
 }
 
-func (s *FirebaseService) SendToToken(token, title, body string) error {
+func (s *FirebaseService) SendToToken(token, title, body string, data map[string]string) error {
 	message := &messaging.Message{
 		Notification: &messaging.Notification{
 			Title: title,
 			Body:  body,
 		},
+		Data:  data,
 		Token: token,
 	}
 
@@ -46,7 +47,7 @@ func (s *FirebaseService) SendToToken(token, title, body string) error {
 	return nil
 }
 
-func (s *FirebaseService) SendMulticast(tokens []string, title, body string) error {
+func (s *FirebaseService) SendMulticast(tokens []string, title, body string, data map[string]string) error {
 	if len(tokens) == 0 {
 		return nil
 	}
@@ -56,6 +57,7 @@ func (s *FirebaseService) SendMulticast(tokens []string, title, body string) err
 			Title: title,
 			Body:  body,
 		},
+		Data:   data,
 		Tokens: tokens,
 	}
 

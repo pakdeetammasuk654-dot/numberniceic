@@ -6,6 +6,7 @@ import '../utils/custom_toast.dart';
 import '../models/article.dart';
 import '../services/api_service.dart';
 import '../widgets/welcome_dialog.dart';
+import '../widgets/buddhist_day_badge.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'article_detail_page.dart';
 import 'articles_page.dart';
@@ -18,6 +19,7 @@ import 'main_tab_page.dart';
 import 'number_analysis_page.dart';
 import '../widgets/shared_footer.dart';
 import '../widgets/adaptive_footer_scroll_view.dart';
+import '../widgets/notification_bell.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -54,8 +56,7 @@ class _LandingPageState extends State<LandingPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkNotification());
   }
 
-  // New State for Address Notification
-  bool _hasMissingAddressWarning = false;
+
 
   Future<void> _checkNotification() async {
     final token = await AuthService.getToken();
@@ -67,25 +68,11 @@ class _LandingPageState extends State<LandingPage> {
             // 1. Check Unread Messages
             final count = await ApiService.getUnreadNotificationCount();
             
-            // 2. Check Missing Address Status (fetch lightweight dashboard info if possible, or full)
-            bool missingAddr = false;
-            try {
-               final dbData = await ApiService.getDashboard();
-               final isVip = dbData['is_vip'] == true || dbData['IsVIP'] == true;
-               final hasAddress = dbData['has_shipping_address'] == true || dbData['HasShippingAddress'] == true;
-               if (isVip && !hasAddress) {
-                  missingAddr = true;
-               }
-            } catch (_) {
-               // Ignore dashboard fetch error, notification icon just won't show for this part
-            }
-
             if (mounted) {
                 setState(() {
                     _unreadCount = count;
-                    _hasMissingAddressWarning = missingAddr;
-                    // Light up if EITHER has unread messages OR has missing address warning
-                    _hasUnreadNotification = (count > 0) || missingAddr;
+                    // Light up if has unread messages
+                    _hasUnreadNotification = count > 0;
                 });
             }
         } catch (_) {}
@@ -116,57 +103,15 @@ class _LandingPageState extends State<LandingPage> {
   
   void _handleNotificationTap() {
     if (_isLoggedIn) {
-        // PRIORITY: Show Missing Address Dialog first if active
-        if (_hasMissingAddressWarning) {
-             showDialog(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: Row(
-                    children: [
-                      const Icon(Icons.notifications_active, color: Colors.red),
-                      const SizedBox(width: 8),
-                      Text('แจ้งเตือน', style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  content: Text(
-                    'คุณชำระเงินเรียบร้อยแล้ว โปรดระบุที่อยู่เพื่อให้เราจัดส่งสินค้าให้คุณ', 
-                    style: GoogleFonts.kanit()
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                         Navigator.pop(ctx);
-                         Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationListPage()))
-                            .then((_) => _checkNotification());
-                      }, 
-                      child: Text('ภายหลัง', style: GoogleFonts.kanit(color: Colors.grey))
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                         Navigator.pop(ctx);
-                         Navigator.push(context, MaterialPageRoute(builder: (context) => const ShippingAddressPage()))
-                            .then((_) => _checkNotification());
-                      },
-                      style: ElevatedButton.styleFrom(
-                         backgroundColor: Colors.redAccent,
-                         foregroundColor: Colors.white,
-                      ),
-                      child: Text('ระบุที่อยู่', style: GoogleFonts.kanit(fontWeight: FontWeight.bold))
-                    )
-                  ]
-                )
-             );
-        } else {
-            // Normal Navigation
-            Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationListPage()),
-            ).then((_) {
-                _checkNotification();
-            });
-        }
+      // Normal Navigation
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const NotificationListPage()),
+      ).then((_) {
+        _checkNotification();
+      });
     } else {
-        _showWelcomeDialog();
+      _showWelcomeDialog();
     }
   }
 
@@ -221,6 +166,7 @@ class _LandingPageState extends State<LandingPage> {
                 fontSize: 22,
               ),
             ),
+            const BuddhistDayBadge(),
           ],
         ),
 
@@ -232,46 +178,7 @@ class _LandingPageState extends State<LandingPage> {
             },
             tooltip: 'วิเคราะห์เบอร์',
           ),
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-                onPressed: _handleNotificationTap,
-                tooltip: 'การแจ้งเตือน',
-              ),
-              if (_hasUnreadNotification)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFF333333), width: 1.5),
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
-                    ),
-                    child: Center(
-                      child: Text(
-                        (_unreadCount + (_hasMissingAddressWarning ? 1 : 0)) > 9 
-                            ? '9+' 
-                            : '${_unreadCount + (_hasMissingAddressWarning ? 1 : 0)}',
-                        style: GoogleFonts.kanit(
-                          color: Colors.white, 
-                          fontSize: 10, 
-                          fontWeight: FontWeight.bold,
-                          height: 1.0,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          const NotificationBell(iconColor: Colors.white, isWhiteBackground: false),
           const SizedBox(width: 8),
         ],
       ),

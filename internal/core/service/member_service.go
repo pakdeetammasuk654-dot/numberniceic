@@ -134,8 +134,8 @@ func (s *MemberService) UpdateProfile(id int, username, email, tel string) error
 	return s.repo.Update(member)
 }
 
-func (s *MemberService) CreateUserNotification(userID int, title, message string) error {
-	// Save to DB first
+func (s *MemberService) CreateUserNotification(userID int, title, message string, data map[string]string) error {
+	// Save to DB first (DB doesn't store structured data yet, so we just save title/message)
 	err := s.repo.CreateNotification(userID, title, message)
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func (s *MemberService) CreateUserNotification(userID int, title, message string
 				return
 			}
 			if len(tokens) > 0 {
-				err := s.firebase.SendMulticast(tokens, title, message)
+				err := s.firebase.SendMulticast(tokens, title, message, data)
 				if err != nil {
 					log.Printf("ERROR sending multicast: %v", err)
 				}
@@ -166,6 +166,10 @@ func (s *MemberService) CreateUserNotification(userID int, title, message string
 }
 
 func (s *MemberService) CreateBroadcastNotification(title, message string) error {
+	return s.CreateBroadcastNotificationWithData(title, message, nil)
+}
+
+func (s *MemberService) CreateBroadcastNotificationWithData(title, message string, data map[string]string) error {
 	// Save to DB
 	err := s.repo.CreateBroadcastNotification(title, message)
 	if err != nil {
@@ -177,12 +181,6 @@ func (s *MemberService) CreateBroadcastNotification(title, message string) error
 		go func() {
 			tokens, err := s.repo.GetAllFCMTokens()
 			if err == nil && len(tokens) > 0 {
-				// Firebase allows only 500 tokens per batch,
-				// SendMulticast in our wrapper should ideally handle batching or we loop here.
-				// For simple v1 wrapper, we trust SendMulticast or implement simple batching.
-				// Let's rely on basic implementation for now (up to 500 will work).
-				// If > 500, we should slice.
-
 				batchSize := 500
 				for i := 0; i < len(tokens); i += batchSize {
 					end := i + batchSize
@@ -190,13 +188,42 @@ func (s *MemberService) CreateBroadcastNotification(title, message string) error
 						end = len(tokens)
 					}
 					batch := tokens[i:end]
-					s.firebase.SendMulticast(batch, title, message)
+					// Pass data parameter to Firebase
+					s.firebase.SendMulticast(batch, title, message, data)
 				}
 			}
 		}()
 	}
 
 	return nil
+}
+
+func (s *MemberService) SendWalletColorNotification(memberID int) error {
+	member, err := s.repo.GetByID(memberID)
+	if err != nil {
+		return err
+	}
+	if member.AssignedColors == "" || member.AssignedColors == ",,,," {
+		return errors.New("ยังไม่ได้กำหนดสีกระเป๋าให้ลูกค้ารายนี้")
+	}
+
+	title := "สีกระเป๋ามงคลของคุณมาแล้ว! ✨"
+
+	message := "คุณนินได้ทำการวิเคราะห์สีกระเป๋ามงคลให้คุณเรียบร้อยแล้ว สามารถตรวจสอบรายละเอียดได้ที่หน้าโปรไฟล์ของคุณ"
+	log.Printf("DEBUG: SendWalletColorNotification Message: %s", message)
+
+	// CreateUserNotification handles local DB save and Firebase Push
+	data := map[string]string{
+		"type":   "wallet_colors",
+		"colors": member.AssignedColors,
+	}
+	err = s.CreateUserNotification(member.ID, title, message, data)
+	if err != nil {
+		return err
+	}
+
+	// Update notified timestamp in member table
+	return s.repo.UpdateWalletColorsNotifiedAt(member.ID)
 }
 
 func (s *MemberService) GetAllMembers() ([]domain.Member, error) {
