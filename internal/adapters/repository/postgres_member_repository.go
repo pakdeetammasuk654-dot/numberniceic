@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"numberniceic/internal/core/domain"
@@ -266,13 +267,17 @@ func (r *PostgresMemberRepository) GetMembersWithAssignedColors() ([]domain.Memb
 	return members, nil
 }
 
-func (r *PostgresMemberRepository) CreateNotification(userID int, title, message string) error {
-	query := `INSERT INTO user_notifications (user_id, title, message, created_at) VALUES ($1, $2, $3, NOW())`
-	_, err := r.db.Exec(query, userID, title, message)
+func (r *PostgresMemberRepository) CreateNotification(userID int, title, message string, data map[string]string) error {
+	var dataJSON []byte = []byte("{}")
+	if data != nil {
+		dataJSON, _ = json.Marshal(data)
+	}
+	query := `INSERT INTO user_notifications (user_id, title, message, data, created_at) VALUES ($1, $2, $3, $4, NOW())`
+	_, err := r.db.Exec(query, userID, title, message, dataJSON)
 	return err
 }
 
-func (r *PostgresMemberRepository) CreateBroadcastNotification(title, message string) error {
+func (r *PostgresMemberRepository) CreateBroadcastNotification(title, message string, data map[string]string) error {
 	// 1. Get all active member IDs
 	rows, err := r.db.Query("SELECT id FROM member WHERE status >= 0")
 	if err != nil {
@@ -289,11 +294,9 @@ func (r *PostgresMemberRepository) CreateBroadcastNotification(title, message st
 		ids = append(ids, id)
 	}
 
-	// 2. Iterate and insert individually to ignore FK errors
+	// 2. Iterate and insert individually
 	for _, id := range ids {
-		// Use CreateNotification and ignore error
-		// We could log error here but let's keep it simple
-		_ = r.CreateNotification(id, title, message)
+		_ = r.CreateNotification(id, title, message, data)
 	}
 
 	return nil

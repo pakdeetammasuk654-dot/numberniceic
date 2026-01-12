@@ -30,6 +30,10 @@ fi
 if [ -d "static/js" ]; then
     $SCP_CMD -r static/js $SERVER_USER@$SERVER_IP:$REMOTE_DIR/static/
 fi
+if [ -d "static/images" ]; then
+    $SCP_CMD -r static/images $SERVER_USER@$SERVER_IP:$REMOTE_DIR/static/
+fi
+$SCP_CMD static/favicon.* $SERVER_USER@$SERVER_IP:$REMOTE_DIR/static/
 $SCP_CMD -r views $SERVER_USER@$SERVER_IP:$REMOTE_DIR/
 $SCP_CMD .env.production $SERVER_USER@$SERVER_IP:$REMOTE_DIR/.env
 $SCP_CMD run_migration-linux $SERVER_USER@$SERVER_IP:$REMOTE_DIR/

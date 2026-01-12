@@ -179,6 +179,7 @@ class NotificationService {
                       await LocalNotificationStorage.save(
                         message.notification!.title ?? 'NumberNice',
                         message.notification!.body ?? '',
+                        data: message.data,
                       );
                       print("✅ [DEBUG] Saved to local storage.");
 
@@ -242,6 +243,7 @@ class NotificationService {
             importance: Importance.max,
             priority: Priority.high,
             icon: '@drawable/ic_lotus_notification',
+            largeIcon: DrawableResourceAndroidBitmap('@drawable/ic_lotus_yellow'),
             color: Color(0xFFFFA000)); // Gold color
             
     const NotificationDetails platformChannelSpecifics =

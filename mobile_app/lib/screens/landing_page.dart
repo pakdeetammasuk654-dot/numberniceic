@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../widgets/logo_widget.dart';
 import '../services/auth_service.dart';
 import '../utils/custom_toast.dart';
 import '../models/article.dart';
@@ -152,18 +153,14 @@ class _LandingPageState extends State<LandingPage> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SvgPicture.asset(
-              'assets/images/logo.svg',
-              height: 48,
-              width: 48,
-            ),
+            LogoWidget(size: 48),
             const SizedBox(width: 10),
             Text(
               'ชื่อดี.com',
               style: GoogleFonts.kanit(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
-                fontSize: 22,
+                fontSize: 16,
               ),
             ),
             const BuddhistDayBadge(),

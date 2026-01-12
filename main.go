@@ -210,7 +210,7 @@ func main() {
 	memberHandler := handler.NewMemberHandler(memberService, savedNameService, buddhistDayService, shippingAddressService, klakiniCache, numberPairCache, store, promotionalCodeRepo)
 	savedNameHandler := handler.NewSavedNameHandler(savedNameService, klakiniCache, numberPairCache, store)
 	articleHandler := handler.NewArticleHandler(articleService, store)
-	adminHandler := handler.NewAdminHandler(adminService, sampleNamesCache, store, buddhistDayService, walletColorService, shippingAddressService, mobileConfigService, notificationService, memberService)
+	adminHandler := handler.NewAdminHandler(adminService, sampleNamesCache, store, buddhistDayService, walletColorService, shippingAddressService, mobileConfigService, notificationService, memberService, articleService)
 
 	paymentService := service.NewPaymentService(orderRepo, memberRepo, promotionalCodeRepo, memberService)
 	// We need to pass store to paymentHandler if we want to read session user_id

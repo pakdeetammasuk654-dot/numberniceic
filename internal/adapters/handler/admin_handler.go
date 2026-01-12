@@ -31,10 +31,11 @@ type AdminHandler struct {
 	mobileConfigService    *service.MobileConfigService
 	notificationService    *service.NotificationService
 	memberService          *service.MemberService
+	articleService         *service.ArticleService
 }
 
-func NewAdminHandler(service *service.AdminService, sampleCache *cache.SampleNamesCache, store *session.Store, buddhistDayService *service.BuddhistDayService, walletColorService *service.WalletColorService, shippingAddressService *service.ShippingAddressService, mobileConfigService *service.MobileConfigService, notificationService *service.NotificationService, memberService *service.MemberService) *AdminHandler {
-	return &AdminHandler{service: service, sampleCache: sampleCache, store: store, buddhistDayService: buddhistDayService, walletColorService: walletColorService, shippingAddressService: shippingAddressService, mobileConfigService: mobileConfigService, notificationService: notificationService, memberService: memberService}
+func NewAdminHandler(service *service.AdminService, sampleCache *cache.SampleNamesCache, store *session.Store, buddhistDayService *service.BuddhistDayService, walletColorService *service.WalletColorService, shippingAddressService *service.ShippingAddressService, mobileConfigService *service.MobileConfigService, notificationService *service.NotificationService, memberService *service.MemberService, articleService *service.ArticleService) *AdminHandler {
+	return &AdminHandler{service: service, sampleCache: sampleCache, store: store, buddhistDayService: buddhistDayService, walletColorService: walletColorService, shippingAddressService: shippingAddressService, mobileConfigService: mobileConfigService, notificationService: notificationService, memberService: memberService, articleService: articleService}
 }
 
 // --- Sample Names Management ---
@@ -1653,7 +1654,7 @@ func (h *AdminHandler) HandleSendNotification(c *fiber.Ctx) error {
 			return renderError("กรุณาเลือกผู้ใช้งาน")
 		}
 
-		err = h.memberService.CreateUserNotification(userID, title, message, nil)
+		err = h.memberService.CreateUserNotification(userID, title, message, map[string]string{})
 		if err != nil {
 			if strings.Contains(err.Error(), "foreign key constraint") {
 				return renderError("ไม่สามารถส่งให้ผู้ใช้นี้ได้ (ข้อมูลผู้ใช้ไม่สมบูรณ์ หรือ User ID ไม่ตรงกัน)")

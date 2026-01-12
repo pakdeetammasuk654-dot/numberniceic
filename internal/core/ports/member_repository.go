@@ -20,8 +20,8 @@ type MemberRepository interface {
 	SetVIPWithExpiry(id int, duration string) error
 	UpdateAssignedColors(id int, colors string) error
 	GetMembersWithAssignedColors() ([]domain.Member, error)
-	CreateNotification(userID int, title, message string) error
-	CreateBroadcastNotification(title, message string) error
+	CreateNotification(userID int, title, message string, data map[string]string) error
+	CreateBroadcastNotification(title, message string, data map[string]string) error
 	SaveFCMToken(userID int, token, platform string) error // New
 	GetFCMTokens(userID int) ([]string, error)
 	GetAllFCMTokens() ([]string, error)

@@ -12,6 +12,7 @@ import '../widgets/wallet_color_bottom_sheet.dart';
 import 'shipping_address_page.dart';
 import '../services/auth_service.dart';
 import 'articles_page.dart';
+import 'article_detail_page.dart';
 
 import 'dart:async';
 import '../services/notification_service.dart';
@@ -68,8 +69,7 @@ class _NotificationListPageState extends State<NotificationListPage> {
       // Always show loading when clearing/refreshing
       setState(() => _isLoading = true);
       
-      // Clear shipping address notifications first
-      await LocalNotificationStorage.clearShippingAddressNotifications();
+      // (Removed redundant clearShippingAddressNotifications call to avoid data loss)
       
       final serverList = await ApiService.getUserNotifications();
       print('DEBUG Load: Server had ${serverList.length} items');
@@ -199,6 +199,15 @@ class _NotificationListPageState extends State<NotificationListPage> {
                             color: const Color(0xFF333333),
                           ),
                         ),
+                        if (_notifications != null)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Text(
+                              '(${_notifications!.length})',
+                              style: GoogleFonts.kanit(color: Colors.grey, fontSize: 14),
+                            ),
+                          ),
+                        const Spacer(),
                         IconButton(
                           onPressed: () => Navigator.pop(context),
                           icon: const Icon(Icons.close),
@@ -470,6 +479,22 @@ class _NotificationListPageState extends State<NotificationListPage> {
                         onPressed: () {
                           Navigator.pop(context);
                           Navigator.push(context, MaterialPageRoute(builder: (context) => const ArticlesPage()));
+                        },
+                      ),
+                    if (notif.data?['type'] == 'article' && notif.data?['article_slug'] != null)
+                      _build3DButton(
+                        label: 'อ่านฉบับเต็ม',
+                        icon: Icons.article_rounded,
+                        color: Colors.teal[600]!,
+                        shadowColor: Colors.teal[900]!,
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ArticleDetailPage(slug: notif.data!['article_slug']!),
+                            ),
+                          );
                         },
                       ),
                     if (notif.data?['type'] == 'wallet_colors' && notif.data?['colors'] != null)

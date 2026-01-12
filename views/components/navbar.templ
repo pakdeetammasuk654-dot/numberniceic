@@ -7,7 +7,7 @@ templ Navbar(isLoggedIn bool, isAdmin bool, isVIP bool, hasShippingAddress bool,
 			<div class="top-nav-row">
 				<div class="brand-logo">
 					<a href="/" class="brand-link">
-						<img src="/images/logo.svg" alt="ชื่อดี Logo" style="height: 48px; width: 48px; object-fit: contain;"/>
+						@LogoSVG("48px")
 						<span class="premium-gold-text" style="font-size: 1.4rem;">ชื่อดี.com</span>
 						if isVIP {
 							<span style="font-size: 0.7em; background: linear-gradient(45deg, #FFD700, #DAA520); padding: 2px 6px; border-radius: 4px; color: #fff; margin-left: 2px; font-weight: bold; align-self: center;">VIP</span>

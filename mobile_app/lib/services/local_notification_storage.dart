@@ -5,7 +5,7 @@ import '../models/user_notification.dart';
 class LocalNotificationStorage {
   static const String _key = 'local_user_notifications';
 
-  static Future<void> save(String title, String message) async {
+  static Future<void> save(String title, String message, {Map<String, dynamic>? data}) async {
     final prefs = await SharedPreferences.getInstance();
     // Reload list to get latest state
     await prefs.reload(); 
@@ -17,13 +17,14 @@ class LocalNotificationStorage {
       'message': message,
       'is_read': false,
       'created_at': DateTime.now().toIso8601String(),
+      'data': data,
     };
     
     list.add(jsonEncode(newNotif));
     if (list.length > 50) list.removeRange(0, list.length - 50);
     
     await prefs.setStringList(_key, list);
-    print("✅ LocalNotificationStorage: Saved new notification '${title}' (Total: ${list.length})");
+    print("✅ LocalNotificationStorage: Saved new notification '${title}' with data: $data (Total: ${list.length})");
   }
 
   static Future<List<UserNotification>> getAll() async {
@@ -57,11 +58,11 @@ class LocalNotificationStorage {
     return all.where((n) => !n.isRead).length;
   }
 
-  static Future<void> saveUnique(String title, String message) async {
+  static Future<void> saveUnique(String title, String message, {Map<String, dynamic>? data}) async {
     final all = await getAll();
     final exists = all.any((n) => n.title == title && n.message == message && !n.isRead);
     if (!exists) {
-      await save(title, message);
+      await save(title, message, data: data);
     }
   }
 
@@ -94,9 +95,20 @@ class LocalNotificationStorage {
 
   static Future<void> clearShippingAddressNotifications() async {
     final prefs = await SharedPreferences.getInstance();
+    final List<String> list = prefs.getStringList(_key) ?? [];
     
-    // Clear ALL local notifications to ensure shipping address ones are gone
-    await prefs.remove(_key);
-    print('🧹 Cleared all local notifications');
+    // Filter out ONLY notifications that look like shipping address updates
+    final filteredList = list.where((item) {
+      final map = jsonDecode(item);
+      final title = (map['title'] ?? '').toString();
+      final message = (map['message'] ?? '').toString();
+      return !title.contains('ที่อยู่') && !message.contains('ที่อยู่') && 
+             !title.contains('shipping') && !message.contains('shipping');
+    }).toList();
+
+    if (filteredList.length != list.length) {
+      await prefs.setStringList(_key, filteredList);
+      print('🧹 Filtered out shipping address local notifications (${list.length} -> ${filteredList.length})');
+    }
   }
 }

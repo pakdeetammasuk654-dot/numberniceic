@@ -1,0 +1,268 @@
+package admin
+
+import (
+	"numberniceic/internal/core/domain"
+)
+
+templ SendArticleNotificationForm(articles []domain.Article, successMsg, errorMsg string) {
+	<style type="text/css">
+		.notification-admin-container {
+			max-width: 800px;
+			margin: 2rem auto;
+			padding: 0 1rem;
+			font-family: 'Kanit', sans-serif;
+		}
+
+		.admin-title-section {
+			text-align: center;
+			margin-bottom: 2.5rem;
+		}
+
+		.admin-title {
+			font-size: 2.5rem;
+			font-weight: 700;
+			background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			margin-bottom: 0.5rem;
+		}
+
+		.admin-subtitle {
+			color: #64748b;
+			font-size: 1.1rem;
+		}
+
+		.premium-card {
+			background: #ffffff;
+			border-radius: 20px;
+			box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+			padding: 2.5rem;
+			border: 1px solid rgba(226, 232, 240, 0.8);
+			overflow: hidden;
+			position: relative;
+		}
+
+		.premium-card::before {
+			content: "";
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			height: 4px;
+			background: linear-gradient(to right, #2563eb, #7c3aed);
+		}
+
+		.form-group {
+			margin-bottom: 1.8rem;
+		}
+
+		.form-label {
+			display: block;
+			font-size: 1rem;
+			font-weight: 600;
+			color: #1e293b;
+			margin-bottom: 0.6rem;
+		}
+
+		.form-label .required {
+			color: #ef4444;
+		}
+
+		.form-input, .form-select, .form-textarea {
+			width: 100%;
+			padding: 0.75rem 1rem;
+			border: 2px solid #e2e8f0;
+			border-radius: 12px;
+			font-size: 1rem;
+			color: #334155;
+			transition: all 0.3s ease;
+			outline: none;
+			background: #f8fafc;
+		}
+
+		.form-input:focus, .form-select:focus, .form-textarea:focus {
+			border-color: #3b82f6;
+			background: #ffffff;
+			box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+		}
+
+		.form-help {
+			font-size: 0.85rem;
+			color: #64748b;
+			margin-top: 0.4rem;
+		}
+
+		.action-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			margin-top: 2.5rem;
+			gap: 1.5rem;
+		}
+
+		.btn-submit {
+			background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+			color: white;
+			border: none;
+			padding: 0.875rem 2rem;
+			border-radius: 12px;
+			font-size: 1.1rem;
+			font-weight: 700;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+		}
+
+		.btn-submit:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+			filter: brightness(110%);
+		}
+
+		.btn-submit:active {
+			transform: translateY(0);
+		}
+
+		.btn-back {
+			color: #64748b;
+			text-decoration: none;
+			font-weight: 600;
+			display: flex;
+			align-items: center;
+			gap: 0.4rem;
+			transition: color 0.2s ease;
+		}
+
+		.btn-back:hover {
+			color: #1e293b;
+		}
+
+		.instruction-box {
+			margin-top: 3rem;
+			background: #f1f5f9;
+			border-radius: 16px;
+			padding: 1.5rem;
+			border-left: 4px solid #3b82f6;
+		}
+
+		.instruction-title {
+			font-weight: 700;
+			color: #1e293b;
+			margin-bottom: 0.75rem;
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+
+		.instruction-list {
+			margin: 0;
+			padding-left: 1.5rem;
+			color: #475569;
+			line-height: 1.6;
+		}
+
+		.instruction-list li {
+			margin-bottom: 0.4rem;
+		}
+
+		@media (max-width: 640px) {
+			.action-row {
+				flex-direction: column;
+				align-items: stretch;
+			}
+			.btn-submit {
+				justify-content: center;
+			}
+			.btn-back {
+				justify-content: center;
+			}
+		}
+	</style>
+
+	<div class="notification-admin-container">
+		<div class="admin-title-section">
+			<h1 class="admin-title">ส่งการแจ้งเตือนบทความ</h1>
+			<p class="admin-subtitle">กระจายบทความใหม่ให้ถึงมือสมาชิกทุกคนทันที</p>
+		</div>
+
+		<div class="premium-card">
+			<form method="POST" action="/admin/send-article-notification">
+				<div class="form-group">
+					<label class="form-label" for="article_slug">
+						เลือกบทความ <span class="required">*</span>
+					</label>
+					<select 
+						name="article_slug" 
+						id="article_slug" 
+						required
+						class="form-select"
+					>
+						<option value="">-- กรุณาเลือกบทความ --</option>
+						for _, article := range articles {
+							<option value={ article.Slug }>
+								{ article.Title }
+							</option>
+						}
+					</select>
+					<p class="form-help">
+						เลือกบทความที่คุณต้องการส่งเป็นระบบ Push Notification
+					</p>
+				</div>
+				
+				<div class="form-group">
+					<label class="form-label" for="custom_title">
+						หัวข้อการแจ้งเตือน
+					</label>
+					<input 
+						type="text" 
+						name="custom_title" 
+						id="custom_title"
+						placeholder="เช่น: บทความใหม่: เคล็ดลับการตั้งชื่อลูก"
+						class="form-input"
+					/>
+					<p class="form-help">หากไม่ระบุ ระบบจะใช้ "ชื่อบทความ" เป็นหัวข้อ</p>
+				</div>
+				
+				<div class="form-group">
+					<label class="form-label" for="custom_message">
+						ข้อความเกริ่นนำ
+					</label>
+					<textarea 
+						name="custom_message" 
+						id="custom_message"
+						rows="3"
+						placeholder="เช่น: พบกับแนวทางการตั้งชื่อลูกให้เป็นมงคล เสริมบารมี..."
+						class="form-textarea"
+					></textarea>
+					<p class="form-help">หากไม่ระบุ ระบบจะใช้ "คำอธิบายย่อ" ของบทความ</p>
+				</div>
+				
+				<div class="action-row">
+					<a href="/admin/send-notification" class="btn-back">
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+						กลับหน้าจัดการแจ้งเตือน
+					</a>
+					<button type="submit" class="btn-submit">
+						<span>📢</span> ส่งแจ้งเตือนทุกคน
+					</button>
+				</div>
+			</form>
+		</div>
+
+		<div class="instruction-box">
+			<div class="instruction-title">
+				<span>💡</span> วิธีการทำงานของระบบ
+			</div>
+			<ul class="instruction-list">
+				<li><strong>Deep Link Support:</strong> เมื่อผู้ใช้กดที่การแจ้งเตือน แอปในมือถือจะเปิดกระโดดไปยังหน้าบทความนั้นทันที</li>
+				<li><strong>Zero Placeholder:</strong> หากคุณไม่ได้ใส่หัวข้อหรือข้อความ ระบบจะดึงข้อมูลจากบทความมาให้โดยอัตโนมัติ เพื่อความสวยงาม</li>
+				<li><strong>Real-time Delivery:</strong> ข้อมูลจะถูกส่งผ่าน Firebase Cloud Messaging (FCM) ไปยังทุกอุปกรณ์ที่ลงทะเบียนไว้</li>
+				<li><strong>Optimization:</strong> แนะนำให้ใช้ข้อความสั้นๆ กระชับ เพื่อให้แสดงผลได้ครบถ้วนบนหน้าจอมือถือ</li>
+			</ul>
+		</div>
+	</div>
+}
+

@@ -7,6 +7,7 @@ import (
 	"log"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
+	"time"
 )
 
 type MemberService struct {
@@ -136,7 +137,7 @@ func (s *MemberService) UpdateProfile(id int, username, email, tel string) error
 
 func (s *MemberService) CreateUserNotification(userID int, title, message string, data map[string]string) error {
 	// Save to DB first (DB doesn't store structured data yet, so we just save title/message)
-	err := s.repo.CreateNotification(userID, title, message)
+	err := s.repo.CreateNotification(userID, title, message, data)
 	if err != nil {
 		return err
 	}
@@ -171,7 +172,7 @@ func (s *MemberService) CreateBroadcastNotification(title, message string) error
 
 func (s *MemberService) CreateBroadcastNotificationWithData(title, message string, data map[string]string) error {
 	// Save to DB
-	err := s.repo.CreateBroadcastNotification(title, message)
+	err := s.repo.CreateBroadcastNotification(title, message, data)
 	if err != nil {
 		return err
 	}
@@ -205,6 +206,15 @@ func (s *MemberService) SendWalletColorNotification(memberID int) error {
 	}
 	if member.AssignedColors == "" || member.AssignedColors == ",,,," {
 		return errors.New("ยังไม่ได้กำหนดสีกระเป๋าให้ลูกค้ารายนี้")
+	}
+
+	// Check if notification was sent recently (within 5 minutes) to prevent duplicates
+	if member.WalletColorsNotifiedAt != nil {
+		timeSinceLastNotification := time.Since(*member.WalletColorsNotifiedAt)
+		if timeSinceLastNotification < 5*time.Minute {
+			log.Printf("⚠️ Duplicate notification prevented for user %d (last sent: %v ago)", memberID, timeSinceLastNotification)
+			return errors.New("เพิ่งส่งการแจ้งเตือนไปแล้ว กรุณารอสักครู่")
+		}
 	}
 
 	title := "สีกระเป๋ามงคลของคุณมาแล้ว! ✨"

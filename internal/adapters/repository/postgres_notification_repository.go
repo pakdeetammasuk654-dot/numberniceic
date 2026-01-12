@@ -15,16 +15,16 @@ func NewPostgresNotificationRepository(db *sql.DB) *PostgresNotificationReposito
 
 func (r *PostgresNotificationRepository) Create(n *domain.UserNotification) error {
 	query := `
-		INSERT INTO user_notifications (user_id, title, message)
-		VALUES ($1, $2, $3)
+		INSERT INTO user_notifications (user_id, title, message, data)
+		VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at
 	`
-	return r.db.QueryRow(query, n.UserID, n.Title, n.Message).Scan(&n.ID, &n.CreatedAt)
+	return r.db.QueryRow(query, n.UserID, n.Title, n.Message, n.Data).Scan(&n.ID, &n.CreatedAt)
 }
 
 func (r *PostgresNotificationRepository) GetByUserID(userID int) ([]domain.UserNotification, error) {
 	query := `
-		SELECT id, user_id, title, message, is_read, created_at
+		SELECT id, user_id, title, message, is_read, COALESCE(data, '{}'), created_at
 		FROM user_notifications
 		WHERE user_id = $1
 		ORDER BY created_at DESC
@@ -38,7 +38,7 @@ func (r *PostgresNotificationRepository) GetByUserID(userID int) ([]domain.UserN
 	var notifications []domain.UserNotification
 	for rows.Next() {
 		var n domain.UserNotification
-		if err := rows.Scan(&n.ID, &n.UserID, &n.Title, &n.Message, &n.IsRead, &n.CreatedAt); err != nil {
+		if err := rows.Scan(&n.ID, &n.UserID, &n.Title, &n.Message, &n.IsRead, &n.Data, &n.CreatedAt); err != nil {
 			return nil, err
 		}
 		notifications = append(notifications, n)
@@ -61,7 +61,7 @@ func (r *PostgresNotificationRepository) CountUnread(userID int) (int, error) {
 
 func (r *PostgresNotificationRepository) GetAllForAdmin(limit int) ([]domain.AdminNotificationHistory, error) {
 	query := `
-		SELECT n.id, n.user_id, n.title, n.message, n.is_read, n.created_at, m.username, m.email
+		SELECT n.id, n.user_id, n.title, n.message, n.is_read, COALESCE(n.data, '{}'), n.created_at, m.username, m.email
 		FROM user_notifications n
 		JOIN member m ON n.user_id = m.id
 		ORDER BY n.created_at DESC
@@ -76,7 +76,7 @@ func (r *PostgresNotificationRepository) GetAllForAdmin(limit int) ([]domain.Adm
 	var history []domain.AdminNotificationHistory
 	for rows.Next() {
 		var h domain.AdminNotificationHistory
-		if err := rows.Scan(&h.ID, &h.UserID, &h.Title, &h.Message, &h.IsRead, &h.CreatedAt, &h.Username, &h.Email); err != nil {
+		if err := rows.Scan(&h.ID, &h.UserID, &h.Title, &h.Message, &h.IsRead, &h.Data, &h.CreatedAt, &h.Username, &h.Email); err != nil {
 			return nil, err
 		}
 		history = append(history, h)

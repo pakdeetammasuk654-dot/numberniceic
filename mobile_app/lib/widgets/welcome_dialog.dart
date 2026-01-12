@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'logo_widget.dart';
 
 class WelcomeDialog {
   static Future<void> show({
@@ -21,11 +22,7 @@ class WelcomeDialog {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SvgPicture.asset(
-                'assets/images/logo.svg',
-                width: 120,
-                height: 120,
-              ),
+              LogoWidget(size: 120),
               const SizedBox(height: 20),
               Text(
                 title,

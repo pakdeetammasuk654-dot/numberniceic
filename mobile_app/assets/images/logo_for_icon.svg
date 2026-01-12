@@ -34,8 +34,8 @@
   </defs>
 
   <!-- เหรียญทอง -->
-  <circle cx="256" cy="256" r="240" fill="url(#goldCoin)" stroke="#B8860B" stroke-width="4"/>
+  <circle cx="256" cy="256" r="256" fill="url(#goldCoin)" stroke="#B8860B" stroke-width="4"/>
 
   <!-- ตัว ช โดยใช้ Font Kanit จาก Google Fonts โดยตรง -->
-  <text x="256" y="375" text-anchor="middle" font-size="420" class="gold-text" filter="url(#emboss)">ช</text>
+  <text x="256" y="260" text-anchor="middle" dominant-baseline="middle" font-size="420" class="gold-text" filter="url(#emboss)">ช</text>
 </svg>
