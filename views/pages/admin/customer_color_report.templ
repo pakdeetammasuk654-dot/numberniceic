@@ -84,7 +84,11 @@ templ CustomerColorReport(member *domain.Member, username string, recentAssignme
 				} else {
 					<div class="admin-section-card highlight-border">
 						<h2 style="margin-top: 0; margin-bottom: 2rem; font-family: 'Kanit', sans-serif; display: flex; align-items: center; gap: 12px;">
-							<div class="user-avatar-mini">{ strings.ToUpper(member.Username[:1]) }</div>
+							if member.AvatarURL != "" {
+								<img src={ member.AvatarURL } class="user-avatar-mini" style="object-fit: cover;" />
+							} else {
+								<div class="user-avatar-mini">{ getFirstChar(member.Username) }</div>
+							}
 							<span>กำหนดสีกระเป๋าสำหรับ: <span style="color: #007bff;">{ member.Username }</span></span>
 						</h2>
 
@@ -429,6 +433,14 @@ func getColor(assignedColors string, index int) string {
 		return parts[index]
 	}
 	return "#E5E7EB"
+}
+
+func getFirstChar(s string) string {
+	runes := []rune(s)
+	if len(runes) > 0 {
+		return strings.ToUpper(string(runes[0]))
+	}
+	return ""
 }
 
 script navigateToCustomer(username string) {

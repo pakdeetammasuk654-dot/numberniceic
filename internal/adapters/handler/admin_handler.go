@@ -1474,6 +1474,15 @@ func (h *AdminHandler) MarkNotificationReadAPI(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true})
 }
 
+func (h *AdminHandler) DeleteNotificationAPI(c *fiber.Ctx) error {
+	id, _ := strconv.Atoi(c.Params("id"))
+	err := h.notificationService.Delete(id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete"})
+	}
+	return c.JSON(fiber.Map{"success": true})
+}
+
 // --- VIP Codes Management ---
 
 func (h *AdminHandler) ShowVIPCodesPage(c *fiber.Ctx) error {

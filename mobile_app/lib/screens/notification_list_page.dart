@@ -30,6 +30,9 @@ class _NotificationListPageState extends State<NotificationListPage> {
   bool _isLoading = true;
   String? _error;
   StreamSubscription? _notifSubscription;
+  
+  // Track all IDs for each unique notification key (title_message)
+  final Map<String, List<int>> _notifIdGroups = {};
 
   @override
   void initState() {
@@ -37,9 +40,40 @@ class _NotificationListPageState extends State<NotificationListPage> {
     _clearAndLoad();
     
     // Auto-refresh when a new notification arrives (foreground)
-    _notifSubscription = NotificationService().messageStream.listen((_) {
-      print("🔔 NotificationListPage: New notification received. Refreshing list...");
-      _loadData();
+    _notifSubscription = NotificationService().messageStream.listen((message) {
+      if (message.data['tapped'] == 'true') return; // Ignore tap events, only handle foreground arrivals
+      
+      final title = message.notification?.title ?? message.data['title'] ?? 'การแจ้งเตือน';
+      final body = message.notification?.body ?? message.data['message'] ?? message.data['body'] ?? '';
+      
+      print("🔔 [NotificationListPage] STREAM RECEIVED: $title");
+      
+      final newNotif = UserNotification(
+        id: message.hashCode,
+        title: title,
+        message: body,
+        isRead: false,
+        createdAt: DateTime.now(),
+        data: message.data,
+      );
+
+      if (mounted) {
+        setState(() {
+          // Use a very specific key for stream injection to avoid swallowing distinct but similar test messages
+          final streamKey = "${newNotif.title}_${newNotif.message}_${newNotif.createdAt.millisecondsSinceEpoch}";
+          
+          _notifications ??= [];
+          _notifications!.insert(0, newNotif);
+          _notifIdGroups[streamKey] = [newNotif.id];
+          
+          print("✅ [NotificationListPage] Injected successfully (ID: ${newNotif.id}).");
+        });
+        
+        // Background sync after a short delay
+        Future.delayed(const Duration(milliseconds: 800), () {
+          if (mounted) _loadData(isInitial: false);
+        });
+      }
     });
   }
   
@@ -53,7 +87,7 @@ class _NotificationListPageState extends State<NotificationListPage> {
     // Clear problematic notifications FIRST before any loading
     await LocalNotificationStorage.clearShippingAddressNotifications();
     // Then load the data
-    _loadData();
+    _loadData(isInitial: true);
   }
 
   String _formatThaiDate(DateTime date) {
@@ -64,41 +98,32 @@ class _NotificationListPageState extends State<NotificationListPage> {
     return '${formatter.format(localDate)} ${localDate.year + 543} ${timeFormatter.format(localDate)}';
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool isInitial = false}) async {
     try {
-      // Always show loading when clearing/refreshing
-      setState(() => _isLoading = true);
-      
-      // (Removed redundant clearShippingAddressNotifications call to avoid data loss)
-      
-      final serverList = await ApiService.getUserNotifications();
-      print('DEBUG Load: Server had ${serverList.length} items');
-      for (var n in serverList) print('  Server item: ${n.id} - ${n.title}');
-
-      final localList = await LocalNotificationStorage.getAll();
-      print('DEBUG Load: Local had ${localList.length} items');
-      for (var n in localList) print('  Local item: ${n.id} - ${n.title}');
-      
-      final hiddenIds = await LocalNotificationStorage.getHiddenServerIds();
-      
-      final combined = [
-        ...serverList.where((n) => !hiddenIds.contains(n.id)),
-        ...localList
-      ];
-      
-      // Filter out annoying shipping address popups
-      final filtered = combined;
-      
-      filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      
-      if (mounted) {
-        setState(() {
-          _notifications = filtered;
-          _isLoading = false;
-          _error = null;
-        });
+      if (isInitial && mounted && _notifications == null) {
+        setState(() => _isLoading = true);
       }
+      
+      print("🔔 [NotificationListPage] Loading data... (isInitial: $isInitial)");
+      
+      // Load everything in parallel
+      final results = await Future.wait([
+        ApiService.getUserNotifications(),
+        LocalNotificationStorage.getAll(),
+        LocalNotificationStorage.getHiddenServerIds(),
+      ]);
+      
+      final serverNotifs = results[0] as List<UserNotification>;
+      final localNotifs = results[1] as List<UserNotification>;
+      final hiddenIds = (results[2] as List<int>).toSet();
+      
+      _updateUI(
+        serverNotifs: serverNotifs, 
+        localNotifs: localNotifs, 
+        hiddenIds: hiddenIds
+      );
     } catch (e) {
+      print("❌ Error loading notifications: $e");
       if (mounted) {
         setState(() {
           _error = e.toString();
@@ -106,6 +131,54 @@ class _NotificationListPageState extends State<NotificationListPage> {
         });
       }
     }
+  }
+
+  void _updateUI({
+    required List<UserNotification> serverNotifs, 
+    required List<UserNotification> localNotifs, 
+    required Set<int> hiddenIds,
+  }) {
+      _notifIdGroups.clear();
+      final List<UserNotification> combined = [];
+      
+      // 1. Add Filtered Server Notifications (Master List)
+      final filteredServer = serverNotifs.where((n) => !hiddenIds.contains(n.id)).toList();
+      for (var n in filteredServer) {
+          combined.add(n);
+          // Group key for merging: Content + Hour
+          final groupKey = "${n.title}_${n.message}_${n.createdAt.year}${n.createdAt.month}${n.createdAt.day}${n.createdAt.hour}";
+          _notifIdGroups.putIfAbsent(groupKey, () => []).add(n.id);
+      }
+      
+      // 2. Add Local Notifications if they are unique
+      for (var n in localNotifs) {
+          final groupKey = "${n.title}_${n.message}_${n.createdAt.year}${n.createdAt.month}${n.createdAt.day}${n.createdAt.hour}";
+          
+          bool hasMatchingServer = filteredServer.any((sn) => 
+            sn.title == n.title && 
+            sn.message == n.message &&
+            sn.createdAt.difference(n.createdAt).inHours.abs() < 1
+          );
+          
+          if (!hasMatchingServer) {
+            combined.add(n);
+            _notifIdGroups.putIfAbsent(groupKey, () => []).add(n.id);
+          } else {
+            // It matches a server entry, associate the local ID with the server entry's group
+            _notifIdGroups.putIfAbsent(groupKey, () => []).add(n.id);
+          }
+      }
+      
+      combined.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      if (mounted) {
+        setState(() {
+          _notifications = combined;
+          _isLoading = false;
+          _error = null;
+        });
+        print("✅ [NotificationListPage] UI Sync'd: ${combined.length} unique items shown.");
+      }
   }
 
   void _deleteNotification(int id) async {
@@ -132,14 +205,14 @@ class _NotificationListPageState extends State<NotificationListPage> {
     // 4. Perform background storage task
     await LocalNotificationStorage.delete(id);
     
-    // 5. If it's a server notification, mark it as read on the server 
-    // so the unread count in dashboard is correct.
+    // 5. If it's a server notification, delete it on the server 
+    // so it's gone from the database.
     // Server IDs are typically small integers, while local IDs are large timestamps.
     if (id < 1000000000) {
       try {
-        await ApiService.markNotificationAsRead(id);
+        await ApiService.deleteNotification(id);
       } catch (e) {
-        debugPrint('Error marking deleted notif as read on server: $e');
+        debugPrint('Error deleting notif on server: $e');
       }
     }
   }
@@ -410,19 +483,22 @@ class _NotificationListPageState extends State<NotificationListPage> {
   void _showNotificationDetail(UserNotification notif) async {
     // Mark as read immediately
     if (!notif.isRead) {
-      if (notif.id < 99999999) { 
-        ApiService.markNotificationAsRead(notif.id);
-      }
-      LocalNotificationStorage.markAsRead(notif.id);
+      final key = "${notif.title}_${notif.message}";
+      final ids = _notifIdGroups[key] ?? [notif.id];
       
-      // Decrement unread count
+      print('🔔 Marking group as read: $ids ($key)');
+      
+      for (var id in ids) {
+        if (id < 99999999) { 
+          ApiService.markNotificationAsRead(id);
+        }
+        LocalNotificationStorage.markAsRead(id);
+      }
+      
+      // Decrement unread count (by exactly 1 unique item)
       if (ApiService.unreadNotificationCount.value > 0) {
         ApiService.unreadNotificationCount.value--;
-        print('🔔 Marked as read. Count: ${ApiService.unreadNotificationCount.value}');
       }
-      
-      // To avoid flickering, we don't call _loadData() here.
-      // The bold will turn to normal next time the page is opened or refreshed.
     }
 
     if (!mounted) return;

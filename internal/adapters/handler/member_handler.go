@@ -829,9 +829,9 @@ func (h *MemberHandler) SaveDeviceTokenAPI(c *fiber.Ctx) error {
 	case float64:
 		userID = int(v)
 	default:
-		// If optional auth or missing context
-		fmt.Printf("DEBUG: SaveDeviceTokenAPI Unauthorized. UserIDVal type: %T\n", userIDVal)
-		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+		// If optional auth or missing context, allow with userID = 0
+		fmt.Printf("DEBUG: SaveDeviceTokenAPI Optional/Anonymous. UserIDVal type: %T\n", userIDVal)
+		userID = 0
 	}
 
 	var req DeviceTokenRequest

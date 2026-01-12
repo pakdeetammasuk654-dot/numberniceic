@@ -5,13 +5,13 @@ package admin
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import "github.com/a-h/templ"
-import templruntime "github.com/a-h/templ/runtime"
-
 import (
 	"fmt"
 	"numberniceic/internal/core/domain"
 	"strings"
+
+	"github.com/a-h/templ"
+	templruntime "github.com/a-h/templ/runtime"
 )
 
 func updateColorFromHex(index int) templ.ComponentScript {
@@ -120,20 +120,19 @@ func CustomerColorReport(member *domain.Member, username string, recentAssignmen
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"admin-section-card highlight-border\"><h2 style=\"margin-top: 0; margin-bottom: 2rem; font-family: 'Kanit', sans-serif; display: flex; align-items: center; gap: 12px;\"><div class=\"user-avatar-mini\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"admin-section-card highlight-border\"><h2 style=\"margin-top: 0; margin-bottom: 2rem; font-family: 'Kanit', sans-serif; display: flex; align-items: center; gap: 12px;\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(strings.ToUpper(member.Username[:1]))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 87, Col: 75}
+				if member.AvatarURL != "" {
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<img src=\"" + templ.EscapeString(member.AvatarURL) + "\" class=\"user-avatar-mini\" style=\"object-fit: cover;\" />")
+				} else {
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"user-avatar-mini\">" + templ.EscapeString(getFirstChar(member.Username)) + "</div>")
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><span>กำหนดสีกระเป๋าสำหรับ: <span style=\"color: #007bff;\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<span>กำหนดสีกระเป๋าสำหรับ: <span style=\"color: #007bff;\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -354,38 +353,39 @@ func CustomerColorReport(member *domain.Member, username string, recentAssignmen
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if member.AssignedColors != "" && member.AssignedColors != ",,,," {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<div class=\"notification-teaser\"><div style=\"flex: 1;\"><h4 style=\"margin: 0 0 5px 0; color: #1e3a8a; font-family: 'Kanit', sans-serif;\">ส่งแจ้งเตือนให้ลูกค้า</h4><p style=\"margin: 0; font-size: 0.9rem; color: #3b82f6;\">ส่งรหัสสีที่บันทึกไว้ไปยังแอปมือถือของลูกค้าโดยตรง</p></div><form action=\"/admin/send-wallet-notification\" method=\"POST\"><input type=\"hidden\" name=\"member_id\" value=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var18 string
-					templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", member.ID))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 160, Col: 83}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\"> <input type=\"hidden\" name=\"username\" value=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var19 string
-					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(member.Username)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 161, Col: 69}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\"> <button type=\"submit\" class=\"btn-notification\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m22 2-7 20-4-9-9-4Z\"></path><path d=\"M22 2 11 13\"></path></svg> ส่ง Push Notification</button></form></div>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
+				// CONDITION REMOVED FOR MANUAL PATCH
+				// if member.AssignedColors != "" && member.AssignedColors != ",,,," {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<div class=\"notification-teaser\"><div style=\"flex: 1;\"><h4 style=\"margin: 0 0 5px 0; color: #1e3a8a; font-family: 'Kanit', sans-serif;\">ส่งแจ้งเตือนให้ลูกค้า</h4><p style=\"margin: 0; font-size: 0.9rem; color: #3b82f6;\">ส่งรหัสสีที่บันทึกไว้ไปยังแอปมือถือของลูกค้าโดยตรง</p></div><form action=\"/admin/send-wallet-notification\" method=\"POST\"><input type=\"hidden\" name=\"member_id\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
 				}
+				var templ_7745c5c3_Var18 string
+				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", member.ID))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 160, Col: 83}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\"> <input type=\"hidden\" name=\"username\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var19 string
+				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(member.Username)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 161, Col: 69}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\"> <button type=\"submit\" class=\"btn-notification\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m22 2-7 20-4-9-9-4Z\"></path><path d=\"M22 2 11 13\"></path></svg> ส่ง Push Notification</button></form></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				// }
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -497,6 +497,14 @@ func getColor(assignedColors string, index int) string {
 		return parts[index]
 	}
 	return "#E5E7EB"
+}
+
+func getFirstChar(s string) string {
+	runes := []rune(s)
+	if len(runes) > 0 {
+		return strings.ToUpper(string(runes[0]))
+	}
+	return ""
 }
 
 func navigateToCustomer(username string) templ.ComponentScript {

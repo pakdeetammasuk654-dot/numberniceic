@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import '../utils/social_auth_config.dart'; // Import config
 import 'api_service.dart';
+import 'notification_service.dart';
+import 'local_notification_storage.dart';
 
 class AuthService {
   static const String keyToken = 'jwt_token';
@@ -247,17 +249,29 @@ class AuthService {
   // ===== UTILITY METHODS =====
 
   static Future<void> logout() async {
-    // try {
-    //   try { await _googleSignIn.signOut(); } catch (e) { print("Google SignOut Error: $e"); }
-    //   try { await fb_auth.FacebookAuth.instance.logOut(); } catch (e) { print("Facebook SignOut Error: $e"); }
-    //   try { 
-    //     // Only attempt line logout if we suspect it's available, otherwise skip to prevent crashes
-    //     await line_sdk.LineSDK.instance.logout(); 
-    //   } catch (e) { print("Line SignOut Error: $e"); }
-    // } catch (e) {
-    //   print("Global Logout Error: $e");
-    // }
+    // 1. Clear Notifications (System & History)
+    try {
+      await NotificationService().cancelAll();
+      await LocalNotificationStorage.clearAll(); // Clear History List
+      await FirebaseMessaging.instance.deleteToken();
+      print("✅ Notification Token Deleted & History Cleared");
+    } catch (e) {
+      print("Logout Cleanup Error: $e");
+    }
 
+    // 2. Clear Social Auth
+    try {
+      try { await _googleSignIn.signOut(); } catch (e) { print("Google SignOut Error: $e"); }
+      try { await fb_auth.FacebookAuth.instance.logOut(); } catch (e) { print("Facebook SignOut Error: $e"); }
+      try { 
+        // Only attempt line logout if we suspect it's available, otherwise skip to prevent crashes
+        await line_sdk.LineSDK.instance.logout(); 
+      } catch (e) { print("Line SignOut Error: $e"); }
+    } catch (e) {
+      print("Global Logout Error: $e");
+    }
+
+    // 3. Clear Local User Data
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(keyToken);
     await prefs.remove(keyUsername);
@@ -265,6 +279,7 @@ class AuthService {
     await prefs.remove(keyVipExpiryText);
     await prefs.remove(keyEmail);
     await prefs.remove(keyAvatarUrl);
+    await prefs.remove(keyAssignedColors);
   }
 
   static Future<bool> isLoggedIn() async {

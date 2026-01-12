@@ -5,21 +5,40 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'viewmodels/analyzer_view_model.dart';
-import 'screens/landing_page.dart';
-import 'screens/main_tab_page.dart';
+import 'screens/splash_screen.dart';
 import 'services/auth_service.dart';
 import 'services/api_service.dart';
-import 'services/notification_service.dart'; // Ensure correct import
-import 'package:firebase_core/firebase_core.dart'; // NEW
-import 'package:firebase_messaging/firebase_messaging.dart'; // NEW
+import 'services/notification_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 // Background Handler must be top-level
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   print("Handling a background message: ${message.messageId}");
+  
+  // Manually show notification for Data Messages
+  if (message.data.isNotEmpty) {
+      final title = message.data['title'] ?? 'การแจ้งเตือน';
+      final body = message.data['body'] ?? '';
+      
+      // We must initialize the service primarily to get the plugin instance ready
+      final notificationService = NotificationService();
+      // Initialize locally if needed, though showing might just need the plugin.
+      // But safe to call init() to setup channels.
+      await notificationService.init(); 
+      
+      await notificationService.showNotification(
+        message.hashCode, 
+        title, 
+        body, 
+        data: message.data
+      );
+  }
 }
 
+@pragma('vm:entry-point')
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -30,8 +49,9 @@ void main() async {
      print("✅ Firebase Initialized");
      
      // Initialize Notification Service (FCM Listeners)
-     await NotificationService().init();
-     print("✅ NotificationService Initialized in main()");
+     // REMOVED from main to debug lifecycle issues. Will be called in Dashboard.
+     // await NotificationService().init();
+     // print("✅ NotificationService Initialized in main()");
   } catch (e) {
      print("❌ Firebase Init Error: $e");
   }
@@ -44,10 +64,6 @@ void main() async {
   
   // Initialize Date Formatting
   await initializeDateFormatting('th_TH', null);
-
-  // Initialize Notification Service
-  // Note: We call init() in DashboardPage/MainPage usually, 
-  // but calling basic init here is fine too or handled later.
   
   runApp(
     MultiProvider(
@@ -65,6 +81,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'NumberNiceIC Mobile',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
@@ -74,8 +91,8 @@ class MainApp extends StatelessWidget {
           Theme.of(context).textTheme,
         ),
       ),
-      // Set Main Tab Page as the home
-      home: const MainTabPage(),
+      // Set Splash Screen as the initial home
+      home: const SplashScreen(),
     );
   }
 }

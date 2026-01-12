@@ -7,7 +7,6 @@ import (
 	"log"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
-	"time"
 )
 
 type MemberService struct {
@@ -208,14 +207,14 @@ func (s *MemberService) SendWalletColorNotification(memberID int) error {
 		return errors.New("ยังไม่ได้กำหนดสีกระเป๋าให้ลูกค้ารายนี้")
 	}
 
-	// Check if notification was sent recently (within 5 minutes) to prevent duplicates
-	if member.WalletColorsNotifiedAt != nil {
-		timeSinceLastNotification := time.Since(*member.WalletColorsNotifiedAt)
-		if timeSinceLastNotification < 5*time.Minute {
-			log.Printf("⚠️ Duplicate notification prevented for user %d (last sent: %v ago)", memberID, timeSinceLastNotification)
-			return errors.New("เพิ่งส่งการแจ้งเตือนไปแล้ว กรุณารอสักครู่")
-		}
-	}
+	// Check if notification was sent recently (within 5 seconds for testing) to prevent duplicates
+	// if member.WalletColorsNotifiedAt != nil {
+	// 	timeSinceLastNotification := time.Since(*member.WalletColorsNotifiedAt)
+	// 	if timeSinceLastNotification < 5*time.Second {
+	// 		log.Printf("⚠️ Duplicate notification prevented for user %d (last sent: %v ago)", memberID, timeSinceLastNotification)
+	// 		return errors.New("เพิ่งส่งการแจ้งเตือนไปแล้ว กรุณารอสักครู่")
+	// 	}
+	// }
 
 	title := "สีกระเป๋ามงคลของคุณมาแล้ว! ✨"
 

@@ -30,10 +30,17 @@ func NewFirebaseService(credentialsFile string) (*FirebaseService, error) {
 }
 
 func (s *FirebaseService) SendToToken(token, title, body string, data map[string]string) error {
+	// Merge title/body into data
+	if data == nil {
+		data = make(map[string]string)
+	}
+	data["title"] = title
+	data["body"] = body
+
 	message := &messaging.Message{
-		Notification: &messaging.Notification{
-			Title: title,
-			Body:  body,
+		// Notification field REMOVED to force Data Message behavior
+		Android: &messaging.AndroidConfig{
+			Priority: "high", // High priority to wake up the app
 		},
 		Data:  data,
 		Token: token,
@@ -43,7 +50,7 @@ func (s *FirebaseService) SendToToken(token, title, body string, data map[string
 	if err != nil {
 		return err
 	}
-	log.Println("✅ FCM Sent:", response)
+	log.Println("✅ FCM Sent (Data Only):", response)
 	return nil
 }
 
@@ -52,10 +59,16 @@ func (s *FirebaseService) SendMulticast(tokens []string, title, body string, dat
 		return nil
 	}
 
+	if data == nil {
+		data = make(map[string]string)
+	}
+	data["title"] = title
+	data["body"] = body
+
 	message := &messaging.MulticastMessage{
-		Notification: &messaging.Notification{
-			Title: title,
-			Body:  body,
+		// Notification field REMOVED
+		Android: &messaging.AndroidConfig{
+			Priority: "high",
 		},
 		Data:   data,
 		Tokens: tokens,

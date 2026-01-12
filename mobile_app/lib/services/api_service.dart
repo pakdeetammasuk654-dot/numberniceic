@@ -676,24 +676,26 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     final jwt = prefs.getString(AuthService.keyToken);
     
-    if (jwt == null) return; // Not logged in
-
     final url = Uri.parse('$baseUrl/api/device-token');
     try {
+      final headers = {
+        'Content-Type': 'application/json',
+      };
+      if (jwt != null) {
+        headers['Authorization'] = 'Bearer $jwt';
+      }
+
+      if (kDebugMode) print('🚀 Sending FCM token to server (JWT: ${jwt != null})...');
       await http.post(
         url,
-        headers: {
-            'Authorization': 'Bearer $jwt',
-            'Content-Type': 'application/json',
-        },
+        headers: headers,
         body: jsonEncode({
-            'token': token,
-            'platform': Platform.isAndroid ? 'android' : 'ios',
+          'token': token,
+          'platform': defaultTargetPlatform == TargetPlatform.android ? 'android' : 'ios',
         }),
       );
-      print('✅ Device Token sent to server.');
     } catch (e) {
-      print('❌ Error saving device token: $e');
+      if (kDebugMode) print('❌ Error saving device token: $e');
     }
   }
 
@@ -781,6 +783,24 @@ class ApiService {
       return response.statusCode == 200;
     } catch (e) {
       if (kDebugMode) print('❌ API ERROR: Mark as read: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> deleteNotification(int id) async {
+    final url = Uri.parse('$baseUrl/api/notifications/$id');
+    final token = await AuthService.getToken();
+    if (token == null) return false;
+
+    try {
+      if (kDebugMode) print('🚀 API REQUEST: DELETE $url (Authenticated)');
+      final response = await http.delete(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      if (kDebugMode) print('❌ API ERROR: Delete notification: $e');
       return false;
     }
   }

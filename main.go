@@ -802,6 +802,7 @@ func main() {
 	app.Post("/api/notifications", optionalAuthMiddleware, memberHandler.CreateNotificationAPI) // Added this POST
 	app.Get("/api/notifications/unread", optionalAuthMiddleware, adminHandler.GetUnreadCountAPI)
 	app.Post("/api/notifications/:id/read", optionalAuthMiddleware, adminHandler.MarkNotificationReadAPI)
+	app.Delete("/api/notifications/:id", optionalAuthMiddleware, adminHandler.DeleteNotificationAPI)
 
 	log.Println("Starting server on port 3000...")
 	log.Fatal(app.Listen(":3000"))

@@ -64,6 +64,7 @@ class MainTabPageState extends State<MainTabPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkFirstTimeUser();
       _checkPendingPurchaseOnStartup();
+      _validateSession(); // Validate token with server
     });
 
     // Initialize Notification Service immediately to handle Terminated State taps
@@ -120,7 +121,10 @@ class MainTabPageState extends State<MainTabPage> {
 
     // Listen for Notification Stream globally at MainTab level
     NotificationService().messageStream.listen((message) {
-      if (message.data['type'] == 'wallet_colors') {
+      final isTapped = message.data['tapped'] == 'true';
+      final type = message.data['type'];
+
+      if (type == 'wallet_colors') {
         final colorsStr = message.data['colors'];
         if (colorsStr != null && colorsStr.toString().isNotEmpty) {
            final colors = colorsStr.toString().split(',').where((c) => c.isNotEmpty).toList();
@@ -132,6 +136,34 @@ class MainTabPageState extends State<MainTabPage> {
                 }
              });
            }
+        }
+      } 
+      else if (isTapped) {
+        // Redirection logic for tapped notifications
+        if (type == 'article') {
+          final articleSlug = message.data['article_slug'];
+          if (articleSlug != null && articleSlug.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ArticleDetailPage(slug: articleSlug)),
+                );
+              }
+            });
+          }
+        } else {
+          // Default: Open Notification List as Bottom Sheet
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => const NotificationListPage(isBottomSheet: true),
+              );
+            }
+          });
         }
       }
     });
@@ -195,6 +227,38 @@ class MainTabPageState extends State<MainTabPage> {
         _isLoggedIn = userInfo['username'] != null;
         _avatarUrl = userInfo['avatar_url'];
       });
+    }
+  }
+
+  Future<void> _validateSession() async {
+    if (_isLoggedIn) {
+       print("🔐 Validating Session with Server...");
+       try {
+         // This API call handles 401 by calling AuthService.logout() internally
+         await ApiService.getDashboard(); 
+         print("✅ Session Valid");
+         
+         // Force refresh notification token if session is valid
+         // This ensures the backend has the latest FCM token for this user
+         final token = await FirebaseMessaging.instance.getToken();
+         if (token != null) {
+            await ApiService.saveDeviceToken(token);
+         }
+
+       } catch (e) {
+         print("⚠️ Session Validation Failed: $e");
+         // Double check if we are still logged in (ApiService might have logged us out)
+         final stillLoggedIn = await AuthService.isLoggedIn();
+         if (!stillLoggedIn && mounted) {
+            print("🔄 Detected Logout - Updating UI");
+            setState(() {
+              _isLoggedIn = false;
+              _avatarUrl = null;
+            });
+            // Redirect to Home or Refresh
+            // Navigator.of(context).popUntil((route) => route.isFirst);
+         }
+       }
     }
   }
 

@@ -111,4 +111,11 @@ class LocalNotificationStorage {
       print('🧹 Filtered out shipping address local notifications (${list.length} -> ${filteredList.length})');
     }
   }
+
+  static Future<void> clearAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
+    await prefs.remove('hidden_server_notifications');
+    print("🧹 LocalNotificationStorage: Cleared ALL notifications.");
+  }
 }

@@ -30,6 +30,8 @@ import '../widgets/wallet_color_bottom_sheet.dart';
 import '../widgets/notification_bell.dart'; // NEW Reusable Bell
 
 import '../services/local_notification_storage.dart';
+import '../models/user_notification.dart';
+import 'package:shimmer/shimmer.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -44,7 +46,6 @@ class _DashboardPageState extends State<DashboardPage> {
   late Future<Map<String, dynamic>> _userInfoFuture;
   int _unreadCount = 0;
   bool _isNotificationEnabled = false;
-  StreamSubscription<RemoteMessage>? _notifSubscription;
 
   @override
   void initState() {
@@ -61,22 +62,6 @@ class _DashboardPageState extends State<DashboardPage> {
     
     // Clear old shipping address notifications and then auto-enable
     _initializeNotifications();
-    
-    // Listen for incoming notifications for Wallet Colors
-    _notifSubscription = NotificationService().messageStream.listen((message) {
-      if (message.data['type'] == 'wallet_colors') {
-        final colorsStr = message.data['colors'] as String?;
-        if (colorsStr != null && colorsStr.isNotEmpty) {
-          final colors = colorsStr.split(',').where((c) => c.isNotEmpty).toList();
-          if (mounted && colors.isNotEmpty) {
-             // Ensure UI is ready before showing bottom sheet on startup
-             WidgetsBinding.instance.addPostFrameCallback((_) {
-                WalletColorBottomSheet.show(context, colors);
-             });
-          }
-        }
-      }
-    });
 
     // Listen to DIRECT unread count changes (Instant Update)
     ApiService.unreadNotificationCount.addListener(() {
@@ -206,7 +191,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   void dispose() {
-    _notifSubscription?.cancel();
     ApiService.dashboardRefreshSignal.removeListener(_loadDashboard);
     super.dispose();
   }
@@ -264,55 +248,73 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  Future<void> _checkNotification() async {
-      try {
-        print('🔔 [Step 1] Calling ApiService.getUserNotifications()...');
-        final serverNotifs = await ApiService.getUserNotifications();
-        print('🔔 [Step 2] Got ${serverNotifs.length} notifications from Server.');
+      Future<void> _checkNotification() async {
+          try {
+            print('🔔 [Dashboard] Refreshing counts...');
+            
+            List<UserNotification> serverNotifs = [];
+            List<UserNotification> localNotifs = [];
+            Set<int> hiddenIds = {};
 
-        final hiddenIds = await LocalNotificationStorage.getHiddenServerIds();
-        print('🔔 [Step 3] Found ${hiddenIds.length} hidden IDs.');
-        
-        // Detailed Logic Check
-        int rawUnread = 0;
-        int filteredUnread = 0;
-
-        for (var n in serverNotifs) {
-            if (!n.isRead) rawUnread++;
-            if (!n.isRead && !hiddenIds.contains(n.id)) {
-                filteredUnread++;
-            } else if (!n.isRead) {
-                print('🔔 Ignored Unread ID ${n.id} because it is in hidden list.');
+            try {
+              final results = await Future.wait([
+                ApiService.getUserNotifications().timeout(const Duration(seconds: 5)),
+                LocalNotificationStorage.getAll(),
+                LocalNotificationStorage.getHiddenServerIds(),
+              ]);
+              serverNotifs = results[0] as List<UserNotification>;
+              localNotifs = results[1] as List<UserNotification>;
+              hiddenIds = (results[2] as List<int>).toSet();
+            } catch (e) {
+              print('⚠️ [Dashboard] Partial fetch failure: $e');
+              // Fallback: use whatever we have in local storage
+              localNotifs = await LocalNotificationStorage.getAll();
+              hiddenIds = (await LocalNotificationStorage.getHiddenServerIds()).toSet();
             }
-        }
-        print('🔔 [Step 4] Raw Unread: $rawUnread, Filtered Unread: $filteredUnread');
-
-        // Note: We no longer count local storage notifications because:
-        // 1. Server is the source of truth
-        // 2. Local storage is only for temporary storage before server sync
-        // 3. FCM handles real-time updates now
-        final total = filteredUnread;
-        print('🔔 [Step 5] Total Final: $total (Server only, no local count)');
-
-        if (mounted) {
-           // Only update if new total is higher or equal (prevent race condition with immediate FCM updates)
-           final currentCount = ApiService.unreadNotificationCount.value;
-           if (total >= currentCount) {
-             ApiService.unreadNotificationCount.value = total; // Sync global state
-             print('🔔 [Step 6] Updated unreadNotificationCount from $currentCount to $total');
-           } else {
-             print('🔔 [Step 6] Skipped update: calculated $total < current $currentCount (FCM may have incremented)');
-           }
-           
-           setState(() {
-             _unreadCount = ApiService.unreadNotificationCount.value; // Use the global value
-           });
-           print('🔔 [Step 7] setState called with _unreadCount = $_unreadCount');
-        }
-      } catch (e) {
-        debugPrint('Error checking notifications: $e');
+    
+            final Map<String, UserNotification> uniqueUnread = {};
+            
+            // Priority 1: Server (Source of truth)
+            // For server notifications, they are unique by ID. 
+            // We group by title_message_date to handle local vs server matching later.
+            for (var n in serverNotifs) {
+                if (!n.isRead && !hiddenIds.contains(n.id)) {
+                    // Use a more unique key for counting: id itself
+                    uniqueUnread["server_${n.id}"] = n;
+                }
+            }
+            
+            // Priority 2: Local
+            // Only count local unread if it doesn't match an unread server notification
+            for (var n in localNotifs) {
+                if (!n.isRead) {
+                    // Check if this matches ANY server notification (unread or read) 
+                    // that arrived within the same hour
+                    bool existsOnServer = serverNotifs.any((sn) => 
+                      sn.title == n.title && 
+                      sn.message == n.message &&
+                      sn.createdAt.difference(n.createdAt).inHours.abs() < 1
+                    );
+                    
+                    if (!existsOnServer) {
+                       uniqueUnread["local_${n.id}"] = n;
+                    }
+                }
+            }
+            
+            int total = uniqueUnread.length;
+            print('✅ [Dashboard] Unread Count Updated: $total (Server: ${serverNotifs.where((n)=>!n.isRead).length}, Local Unique: ${total - serverNotifs.where((n)=>!n.isRead).length})');
+    
+            if (mounted) {
+               ApiService.unreadNotificationCount.value = total;
+               setState(() {
+                 _unreadCount = total;
+               });
+            }
+          } catch (e) {
+            debugPrint('❌ [Dashboard] Critical error in _checkNotification: $e');
+          }
       }
-  }
 
   void _showNotificationsBottomSheet() {
     showModalBottomSheet(
@@ -409,9 +411,9 @@ class _DashboardPageState extends State<DashboardPage> {
           child: FutureBuilder<Map<String, dynamic>>(
             future: _dashboardFuture,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return _buildSkeleton();
+                } else if (snapshot.hasError) {
                 // ... Error Handling (Same as before)
                 if (snapshot.error.toString().contains('Session expired') || 
                     snapshot.error.toString().contains('User no longer exists')) {
@@ -649,6 +651,16 @@ class _DashboardPageState extends State<DashboardPage> {
               children: [
                 // Notification Bell
                 const NotificationBell(),
+                const SizedBox(width: 4),
+                // Subtle Logout Icon
+                IconButton(
+                  onPressed: _confirmLogout,
+                  icon: Icon(Icons.logout_rounded, color: Colors.grey[400], size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  splashRadius: 20,
+                  tooltip: 'ออกจากระบบ',
+                ),
               ],
             ),
           ),
@@ -1740,11 +1752,77 @@ class _DashboardPageState extends State<DashboardPage> {
           const Icon(Icons.bookmark_outline, size: 48, color: Colors.grey),
           const SizedBox(height: 12),
           Text('ยังไม่มีรายชื่อที่บันทึก', style: GoogleFonts.kanit(color: Colors.grey)),
+          const SizedBox(height: 20),
+          // Debug FCM Token
+          ValueListenableBuilder<String>(
+            valueListenable: NotificationService.debugTokenLog,
+            builder: (context, value, child) {
+              if (value.isEmpty) return const SizedBox();
+              return SelectableText(
+                "DEBUG FCM: $value",
+                style: const TextStyle(fontSize: 10, color: Colors.red),
+                textAlign: TextAlign.center,
+              );
+            },
+          ),
         ],
       ),
     );
   }
-  
+
+  Widget _buildSkeleton() {
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: Column(
+          children: [
+            // Header Skeleton
+            Container(
+              height: 200,
+              width: double.infinity,
+              color: Colors.white,
+            ),
+            const SizedBox(height: 24),
+            // Privilege Card Skeleton
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                height: 120,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            // Section Header Skeleton
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Container(width: 150, height: 24, color: Colors.white),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Table/Items Skeleton
+            ...List.generate(3, (index) => Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              child: Container(
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            )),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // Shimmering Gold Animation for Perfect Names (copied from analyzer_page.dart)
@@ -1806,7 +1884,3 @@ class _ShimmeringGoldWrapperState extends State<_ShimmeringGoldWrapper> with Sin
     );
   }
 }
-
-
-
-

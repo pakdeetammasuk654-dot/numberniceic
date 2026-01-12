@@ -303,13 +303,20 @@ func (r *PostgresMemberRepository) CreateBroadcastNotification(title, message st
 }
 
 func (r *PostgresMemberRepository) SaveFCMToken(userID int, token, platform string) error {
+	var userIDVal interface{}
+	if userID > 0 {
+		userIDVal = userID
+	} else {
+		userIDVal = nil
+	}
+
 	query := `
 		INSERT INTO fcm_tokens (user_id, token, platform, updated_at)
 		VALUES ($1, $2, $3, NOW())
 		ON CONFLICT (token) DO UPDATE 
 		SET user_id = EXCLUDED.user_id, updated_at = NOW();
 	`
-	_, err := r.db.Exec(query, userID, token, platform)
+	_, err := r.db.Exec(query, userIDVal, token, platform)
 	return err
 }
 

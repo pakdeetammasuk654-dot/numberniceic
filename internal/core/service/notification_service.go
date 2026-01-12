@@ -8,6 +8,7 @@ type NotificationRepository interface {
 	Create(n *domain.UserNotification) error
 	GetByUserID(userID int) ([]domain.UserNotification, error)
 	MarkAsRead(id int) error
+	Delete(id int) error
 	CountUnread(userID int) (int, error)
 	GetAllForAdmin(limit int) ([]domain.AdminNotificationHistory, error)
 }
@@ -35,6 +36,10 @@ func (s *NotificationService) GetUserNotifications(userID int) ([]domain.UserNot
 
 func (s *NotificationService) MarkAsRead(id int) error {
 	return s.repo.MarkAsRead(id)
+}
+
+func (s *NotificationService) Delete(id int) error {
+	return s.repo.Delete(id)
 }
 
 func (s *NotificationService) GetUnreadCount(userID int) (int, error) {

@@ -52,6 +52,12 @@ func (r *PostgresNotificationRepository) MarkAsRead(id int) error {
 	return err
 }
 
+func (r *PostgresNotificationRepository) Delete(id int) error {
+	query := `DELETE FROM user_notifications WHERE id = $1`
+	_, err := r.db.Exec(query, id)
+	return err
+}
+
 func (r *PostgresNotificationRepository) CountUnread(userID int) (int, error) {
 	query := `SELECT COUNT(*) FROM user_notifications WHERE user_id = $1 AND is_read = false`
 	var count int
