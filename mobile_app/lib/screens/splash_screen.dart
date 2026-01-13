@@ -281,38 +281,73 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   Widget _buildFloatingParticle(int index) {
     final random = math.Random(index);
     final size = 2.0 + random.nextDouble() * 4;
-    final duration = 3000 + random.nextInt(4000);
     final left = random.nextDouble() * MediaQuery.of(context).size.width;
     final top = random.nextDouble() * MediaQuery.of(context).size.height;
+    final delay = random.nextInt(2000);
     
     return Positioned(
       left: left,
       top: top,
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.0, end: 1.0),
-        duration: Duration(milliseconds: duration),
-        repeat: true,
-        builder: (context, value, child) {
-          return Opacity(
-            opacity: (math.sin(value * 2 * math.pi) + 1) / 2,
-            child: Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFFFFD700).withOpacity(0.3),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFFD700).withOpacity(0.2),
-                    blurRadius: 4,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+      child: _FloatingParticle(
+        size: size,
+        delay: delay,
       ),
+    );
+  }
+}
+
+class _FloatingParticle extends StatefulWidget {
+  final double size;
+  final int delay;
+  
+  const _FloatingParticle({required this.size, required this.delay});
+  
+  @override
+  State<_FloatingParticle> createState() => _FloatingParticleState();
+}
+
+class _FloatingParticleState extends State<_FloatingParticle> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 3000 + widget.delay),
+    )..repeat();
+  }
+  
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: (math.sin(_controller.value * 2 * math.pi) + 1) / 2,
+          child: Container(
+            width: widget.size,
+            height: widget.size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFFFFD700).withOpacity(0.3),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFFD700).withOpacity(0.2),
+                  blurRadius: 4,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
