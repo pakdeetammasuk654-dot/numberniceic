@@ -31,10 +31,14 @@ class WreathScoreGrid extends StatelessWidget {
   }
 
   Widget _buildRow(BuildContext context, List<String> items) {
+    // Calculate fixed width: (Screen Width - Padding) / 3
+    final itemWidth = (MediaQuery.of(context).size.width - 48) / 3;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: items.map((label) => Expanded(
+      children: items.map((label) => SizedBox(
+        width: itemWidth,
         child: GestureDetector(
           onTap: () {
             Navigator.push(
@@ -98,6 +102,7 @@ class WreathItem extends StatelessWidget {
           ),
         ),
       ],
-    );
+    ),
+   );
   }
 }
