@@ -246,7 +246,10 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
                 ],
                 
                 // Wreath Score Grid (Flower bouquet)
-                const WreathScoreGrid(),
+                Container(
+                  margin: const EdgeInsets.only(top: 24),
+                  child: const WreathScoreGrid(),
+                ),
                 
                 const SizedBox(height: 32),
 
@@ -264,11 +267,12 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
                 
                 const SizedBox(height: 40),
             ],
-
-                const SharedFooter(),
               ],
             ),
           ),
+          
+          // MOVED: Footer is now outside the padded container to span full width
+          const SharedFooter(),
         ],
       ),
     ),
