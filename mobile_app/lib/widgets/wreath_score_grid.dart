@@ -19,32 +19,40 @@ class WreathScoreGrid extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min, // Fix: Use minimum space needed
+      child: Table(
+        defaultColumnWidth: const FlexColumnWidth(),
+        defaultVerticalAlignment: TableCellVerticalAlignment.top,
         children: [
-          _buildRow(context, row1),
-          const SizedBox(height: 24), 
-          _buildRow(context, row2),
+          // Row 1
+          TableRow(
+            children: row1.map((label) => _buildCell(context, label)).toList(),
+          ),
+          // Spacer Row
+          const TableRow(
+            children: [
+              SizedBox(height: 24),
+              SizedBox(height: 24),
+              SizedBox(height: 24),
+            ]
+          ),
+          // Row 2
+          TableRow(
+            children: row2.map((label) => _buildCell(context, label)).toList(),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildRow(BuildContext context, List<String> items) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: items.map((label) => Expanded(
-        child: GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const VipGradeInfoPage()),
-            );
-          },
-          child: WreathItem(label: label),
-        ),
-      )).toList(),
+  Widget _buildCell(BuildContext context, String label) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const VipGradeInfoPage()),
+        );
+      },
+      child: WreathItem(label: label),
     );
   }
 }

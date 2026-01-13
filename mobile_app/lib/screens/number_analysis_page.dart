@@ -248,6 +248,7 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
                 // Wreath Score Grid (Flower bouquet)
                 Container(
                   margin: const EdgeInsets.only(top: 24),
+                  height: 180, // Fix: Explicit height to break layout loop from parent
                   child: const WreathScoreGrid(),
                 ),
                 
