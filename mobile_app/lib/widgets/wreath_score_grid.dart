@@ -20,9 +20,10 @@ class WreathScoreGrid extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Column(
+        mainAxisSize: MainAxisSize.min, // Fix: Use minimum space needed
         children: [
           _buildRow(context, row1),
-          const SizedBox(height: 24), // Explicit gap between rows
+          const SizedBox(height: 24), 
           _buildRow(context, row2),
         ],
       ),
@@ -55,14 +56,16 @@ class WreathItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Golden Gradient Text
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
+    return SizedBox(
+      height: 70, // Fix: Explicit height to prevent layout instability
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Golden Gradient Text
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
               colors: [
                 Color(0xFFFDE68A), // Light Gold
                 Color(0xFFD97706), // Amber
