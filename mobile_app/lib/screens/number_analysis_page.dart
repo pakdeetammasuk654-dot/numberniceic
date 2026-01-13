@@ -242,7 +242,7 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
                 // 1. Grade Badge (Moved to top)
                 if (showGoldenBadge && gradeTitle != null) ...[
                   _buildGradeBadge(_phoneController.text, gradeTitle!),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 32),
                 ],
                 
                 // Wreath Score Grid (Flower bouquet)
@@ -334,73 +334,71 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
         ),
 
         // Reduced spacing to keep it tight
-        const SizedBox(height: 8), 
+        const SizedBox(height: 12), 
 
-        // 2. Title (PERFECT) + Stars + Buy Button Row
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-             // Grade & Stars Column
-             GestureDetector(
-               onTap: () {
-                 Navigator.push(
-                   context,
-                   MaterialPageRoute(builder: (context) => const VipGradeInfoPage()),
-                 );
-               },
-               child: Column(
-                 mainAxisSize: MainAxisSize.min,
-                 children: [
-                    ShaderMask(
-                       shaderCallback: (bounds) => const LinearGradient(
-                         colors: [Color(0xFFFDE68A), Color(0xFFD97706), Color(0xFF92400E)],
-                         begin: Alignment.topCenter,
-                         end: Alignment.bottomCenter,
-                       ).createShader(bounds),
-                       child: Row(
-                         mainAxisSize: MainAxisSize.min,
-                         children: [
-                           Text(
-                             title,
-                             style: GoogleFonts.kanit(
-                               fontSize: 30,
-                               fontWeight: FontWeight.w900,
-                               color: Colors.white, // Masked
-                               height: 1.0, 
-                             ),
-                             textAlign: TextAlign.center,
-                           ),
-                           const SizedBox(width: 8),
-                           Container(
-                             padding: const EdgeInsets.all(2),
-                             decoration: const BoxDecoration(
-                               color: Colors.white24,
-                               shape: BoxShape.circle,
-                             ),
-                             child: const Icon(Icons.info_outline, color: Colors.white, size: 20),
-                           ),
-                         ],
-                       ),
+        // 2. Title (PERFECT) + Stars
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const VipGradeInfoPage()),
+            );
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  colors: [Color(0xFFFDE68A), Color(0xFFD97706), Color(0xFF92400E)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ).createShader(bounds),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.kanit(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white, // Masked
+                        height: 1.0, 
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                       mainAxisSize: MainAxisSize.min,
-                       children: List.generate(5, (index) => 
-                          Icon(Icons.star, color: const Color(0xFFF59E0B), size: index == 2 ? 26 : 20)
-                       ),
-                    )
-                 ],
-               ),
-             ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Colors.white24,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.info_outline, color: Colors.white, size: 20),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(5, (index) => 
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: Icon(Icons.star, color: const Color(0xFFF59E0B), size: index == 2 ? 28 : 22),
+                  )
+                ),
+              )
+            ],
+          ),
+        ),
 
-             const SizedBox(width: 12),
+        const SizedBox(height: 16),
 
-             // Buy Button
-             ElevatedButton(
-                onPressed: () {
-                   // Show Contact Dialog
-                   showDialog(
+        // 3. Buy Button (Moved to new line for better layout)
+        ElevatedButton(
+          onPressed: () {
+            // Show Contact Dialog
+            showDialog(
                       context: context,
                       builder: (ctx) => AlertDialog(
                          title: Text("สนใจเบอร์นี้?", style: GoogleFonts.kanit(fontWeight: FontWeight.bold)),
@@ -567,9 +565,7 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
                       height: 1.0,
                    ),
                 ),
-             )
-          ],
-        ),
+             ),
       ],
     );
   }

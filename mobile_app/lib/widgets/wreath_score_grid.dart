@@ -18,28 +18,28 @@ class WreathScoreGrid extends StatelessWidget {
     int crossAxisCount = width > 350 ? 3 : 2;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
-          childAspectRatio: 2.2, // Taller (flatter) cells
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 4, 
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Center(
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 16, // Horizontal gap
+          runSpacing: 20, // Vertical gap
+          children: labels.map((label) {
+            return SizedBox(
+               width: (width - 64) / 3, // 3 Columns accounting for padding/spacing roughly
+               child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const VipGradeInfoPage()),
+                  );
+                },
+                child: WreathItem(label: label),
+              ),
+            );
+          }).toList(),
         ),
-        itemCount: labels.length,
-        itemBuilder: (context, index) {
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const VipGradeInfoPage()),
-              );
-            },
-            child: WreathItem(label: labels[index]),
-          );
-        },
       ),
     );
   }
