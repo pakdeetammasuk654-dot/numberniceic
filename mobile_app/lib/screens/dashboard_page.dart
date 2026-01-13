@@ -48,54 +48,6 @@ class _DashboardPageState extends State<DashboardPage> {
   late Future<Map<String, dynamic>> _userInfoFuture;
   int _unreadCount = 0;
   bool _isNotificationEnabled = false;
-  // Toggle for filtering Saved Names (Default: false = Hide Kalakini names)
-  bool _showKalakini = false;
-
-  // Helper to check if a name has Kalakini (Bad Characters)
-  bool _isNameClean(dynamic item) {
-    try {
-      final name = item['name'] ?? item['Name'] ?? '';
-      
-      // 1. Check direct list from Backend
-      final kChars = (item['klakini_chars'] ?? item['KlakiniChars']);
-      print('🔍 Checking name: $name');
-      print('   klakini_chars: $kChars (type: ${kChars.runtimeType})');
-      
-      if (kChars is List && kChars.isNotEmpty) {
-        print('   ❌ DIRTY (klakini_chars not empty)');
-        return false; // Dirty
-      }
-
-      // 2. HTML parsing
-      final displayNameHtml = (item['display_name_html'] ?? item['DisplayNameHTML']);
-      print('   displayNameHtml: ${displayNameHtml is List ? "List(${(displayNameHtml as List).length})" : displayNameHtml.runtimeType}');
-      
-      if (displayNameHtml is! List || displayNameHtml.isEmpty) {
-        print('   ✅ CLEAN (no HTML data)');
-        return true;
-      }
-
-      for (var charData in displayNameHtml) {
-         if (charData is! Map) continue;
-         
-         final char = charData['char'] ?? charData['Char'] ?? '';
-         final isBad = charData['is_bad'] == true || 
-                       charData['IsBad'] == true || 
-                       charData['is_klakini'] == true;
-         
-         if (isBad) {
-           print('   ❌ DIRTY (found bad char: "$char", is_bad: ${charData['is_bad']})');
-           return false; // Found Kalakini -> Dirty
-         }
-      }
-      print('   ✅ CLEAN (no bad chars found)');
-      return true; // No Kalakini -> Clean
-    } catch (e) {
-      print('❗ Filter Error: $e');
-      return true;
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -492,22 +444,6 @@ class _DashboardPageState extends State<DashboardPage> {
               final statusInt = statusVal is int ? statusVal : (statusVal is num ? statusVal.toInt() : 0);
               final isAdmin = statusInt == 9;
               final savedNames = (data['saved_names'] ?? data['SavedNames']) as List<dynamic>? ?? [];
-
-              print('📊 Total savedNames from API: ${savedNames.length}');
-              if (savedNames.isNotEmpty) {
-                print('   First 5 names: ${savedNames.take(5).map((e) => e['name'] ?? e['Name']).toList()}');
-              }
-
-              // Filter Logic: Hide Kalakini (White Names) if toggle is OFF
-              final visibleSavedNames = savedNames.where((item) {
-                   if (_showKalakini) return true; // Show All
-                   return _isNameClean(item); // Show Valid Only
-              }).toList();
-              
-              print('📊 After filtering: ${visibleSavedNames.length} visible (showKalakini: $_showKalakini)');
-              if (visibleSavedNames.isNotEmpty) {
-                print('   Visible names: ${visibleSavedNames.map((e) => e['name'] ?? e['Name']).toList()}');
-              }
               
               final username = data['username'] ?? data['Username'] ?? 'User';
               final email = data['email'] ?? data['Email'] ?? '';
@@ -587,14 +523,12 @@ class _DashboardPageState extends State<DashboardPage> {
                         const SizedBox(height: 24),
                         
                         // 3. Saved Names Section
-                        _buildSavedNamesHeader(visibleSavedNames.length, _showKalakini, (val) {
-                           setState(() => _showKalakini = val);
-                        }),
+                        _buildSavedNamesHeader(savedNames.length),
                         const SizedBox(height: 12),
-                        if (visibleSavedNames.isEmpty)
+                        if (savedNames.isEmpty)
                           _buildEmptyState()
                         else
-                          _buildSavedNamesTable(visibleSavedNames, isVip),
+                          _buildSavedNamesTable(savedNames, isVip),
                           
                         const SizedBox(height: 32),
                         
@@ -742,8 +676,8 @@ class _DashboardPageState extends State<DashboardPage> {
     ); 
   }
 
-  // --- Modified Saved Names Header ---
-  Widget _buildSavedNamesHeader(int count, bool showKalakini, ValueChanged<bool> onToggle) {
+  // --- Saved Names Header (Simplified - No Toggle) ---
+  Widget _buildSavedNamesHeader(int count) {
      return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -762,43 +696,23 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
             ),
             
-            // Toggle & Count
-            Row(
-              children: [
-                 Row(
-                   children: [
-                     Text('แสดงกาลกิณี', style: GoogleFonts.kanit(fontSize: 12, color: Colors.white54)),
-                     Transform.scale(
-                       scale: 0.8,
-                       child: Switch(
-                         value: showKalakini,
-                         onChanged: onToggle,
-                         activeColor: const Color(0xFFFFD700),
-                         activeTrackColor: const Color(0xFFFFD700).withOpacity(0.3),
-                         inactiveThumbColor: Colors.grey,
-                         inactiveTrackColor: Colors.grey.withOpacity(0.3),
-                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                       ),
-                     ),
-                   ],
-                 ),
-                 Container(
-                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                   decoration: BoxDecoration(
-                     color: const Color(0xFF16213E), // Darker tone
-                     borderRadius: BorderRadius.circular(20),
-                     border: Border.all(color: Colors.white12),
-                   ),
-                   child: Text(
-                     '$count รายชื่อ',
-                     style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70),
-                   ),
-                 ),
-              ],
+            // Count Badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF16213E),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: Text(
+                '$count รายชื่อ',
+                style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70),
+              ),
             ),
         ],
      );
   }
+
 
   // --- New Menu Card Widget ---
   Widget _buildMenuCard(BuildContext context, bool hasAddress, List<String> assignedColors) {
