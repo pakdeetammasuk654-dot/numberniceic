@@ -4,7 +4,7 @@ import '../../viewmodels/analyzer_view_model.dart'; // Adjust path if needed
 
 import '../../screens/number_analysis_page.dart';
 
-class SharedSearchForm extends StatelessWidget {
+class SharedSearchForm extends StatefulWidget {
   final AnalyzerViewModel viewModel;
   final TextEditingController nameController;
 
@@ -13,6 +13,27 @@ class SharedSearchForm extends StatelessWidget {
     required this.viewModel,
     required this.nameController,
   });
+
+  @override
+  State<SharedSearchForm> createState() => _SharedSearchFormState();
+}
+
+class _SharedSearchFormState extends State<SharedSearchForm> {
+  @override
+  void initState() {
+    super.initState();
+    widget.viewModel.addListener(_onViewModelChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.viewModel.removeListener(_onViewModelChanged);
+    super.dispose();
+  }
+
+  void _onViewModelChanged() {
+    if (mounted) setState(() {});
+  }
 
   void _handleSubmitted(BuildContext context, String value) {
      // Phone number search disabled
@@ -47,11 +68,11 @@ class SharedSearchForm extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
-                value: viewModel.selectedDay,
+                value: widget.viewModel.selectedDay,
                 dropdownColor: const Color(0xFF16213E),
                 icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF90CAF9), size: 18),
                 selectedItemBuilder: (context) {
-                  return viewModel.days.map((day) {
+                  return widget.viewModel.days.map((day) {
                     final shortLabel = day.label.replaceAll('วัน', '');
                     return Row(
                       mainAxisSize: MainAxisSize.min,
@@ -63,7 +84,7 @@ class SharedSearchForm extends StatelessWidget {
                     );
                   }).toList();
                 },
-                items: viewModel.days.map((day) {
+                items: widget.viewModel.days.map((day) {
                   // Shorten labels for dropdown menu
                   String menuLabel = day.label.replaceAll('วัน', '');
                   if (day.value == 'wednesday1') menuLabel = 'พุธ (วัน)';
@@ -81,7 +102,7 @@ class SharedSearchForm extends StatelessWidget {
                   );
                 }).toList(),
                 onChanged: (val) {
-                   if (val != null) viewModel.setDay(val);
+                   if (val != null) widget.viewModel.setDay(val);
                 },
               ),
             ),
@@ -117,24 +138,24 @@ class SharedSearchForm extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: TextField(
-                          controller: nameController,
+                          controller: widget.nameController,
                           textInputAction: TextInputAction.done,
                           onSubmitted: (val) { 
                             FocusScope.of(context).unfocus();
                             _handleSubmitted(context, val);
                           },
                           onChanged: (val) {
-                            viewModel.setName(val);
-                            if (viewModel.showTutorial) {
-                              viewModel.setShowTutorial(false);
+                            widget.viewModel.setName(val);
+                            if (widget.viewModel.showTutorial) {
+                              widget.viewModel.setShowTutorial(false);
                             }
-                            if (!viewModel.isAvatarScrolling && val.isNotEmpty) {
-                               viewModel.setAvatarScrolling(true);
+                            if (!widget.viewModel.isAvatarScrolling && val.isNotEmpty) {
+                               widget.viewModel.setAvatarScrolling(true);
                             }
                           },
                           onTap: () {
-                            if (viewModel.showTutorial) {
-                              viewModel.setShowTutorial(false);
+                            if (widget.viewModel.showTutorial) {
+                              widget.viewModel.setShowTutorial(false);
                             }
                           },
                           decoration: InputDecoration(
@@ -148,7 +169,7 @@ class SharedSearchForm extends StatelessWidget {
                           cursorColor: const Color(0xFFFFD700),
                         ),
                       ),
-                      if (nameController.text.isNotEmpty)
+                      if (widget.nameController.text.isNotEmpty)
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -157,8 +178,8 @@ class SharedSearchForm extends StatelessWidget {
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                               onPressed: () {
-                                 nameController.clear();
-                                 viewModel.setName('');
+                                 widget.nameController.clear();
+                                 widget.viewModel.setName('');
                               }
                             ),
                             const SizedBox(width: 4),
@@ -175,7 +196,7 @@ class SharedSearchForm extends StatelessWidget {
                 ),
                 
                 // Tutorial Overlay
-                if (viewModel.showTutorial && nameController.text.isEmpty)
+                if (widget.viewModel.showTutorial && widget.nameController.text.isEmpty)
                   Positioned(
                     bottom: 60,
                     left: 0,
