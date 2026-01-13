@@ -232,7 +232,7 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
     if (finalScoreTarget == 0 && activeCategories > 0) finalScoreTarget = 99; 
 
     return Container(
-      color: widget.backgroundColor ?? const Color(0xFF1A1A2E),
+      color: widget.backgroundColor ?? Colors.transparent,
       child: Column(
         children: [
           // Top Section with Watermark Pattern (No Brown Background)

@@ -435,7 +435,6 @@ class _ShopPageState extends State<ShopPage> {
                           totalPositiveScore: solar.totalPositiveScore, 
                           totalNegativeScore: solar.totalNegativeScore,
                           analyzedName: solar.cleanedName,
-                          backgroundColor: const Color(0xFFFEF3C7).withOpacity(0.3),
                           onAddPhoneNumber: (_) => _scrollToTop(),
                         ),
                       ),
