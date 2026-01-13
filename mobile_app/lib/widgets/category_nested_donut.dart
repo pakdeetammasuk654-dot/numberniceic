@@ -237,9 +237,6 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
         children: [
           // Top Section with Watermark Pattern (No Brown Background)
           Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF1A1A2E), // Match main background
-            ),
             child: Stack(
               children: [
                 // Background Pattern (Watermark-like)
