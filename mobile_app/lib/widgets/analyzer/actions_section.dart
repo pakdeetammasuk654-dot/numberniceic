@@ -12,6 +12,7 @@ class ActionsSection extends StatelessWidget {
   final ValueChanged<bool> onToggleKlakini;
   final ValueChanged<bool> onToggleGoodOnly;
   final ValueChanged<String> onNameSelected;
+  final VoidCallback onShopPressed;
   final Set<int> badNumbers;
 
 
@@ -25,6 +26,7 @@ class ActionsSection extends StatelessWidget {
     required this.onToggleKlakini,
     required this.onToggleGoodOnly,
     required this.onNameSelected,
+    required this.onShopPressed,
     this.badNumbers = const {}, // Empty default, essentially required logic-wise but preventing break
   }) : super(key: key);
 
@@ -52,85 +54,19 @@ class ActionsSection extends StatelessWidget {
     }
 
     return Container(
-      color: const Color(0xFFFFFDE7), // Same as table row background to fill any gaps below
+      color: const Color(0xFF1A1A2E),
       child: Column(
         children: [
           // VIP Banner
-          if (!isVip)
-            Container(
-              color: Colors.transparent, // Let scaffold show through for the gap
-              height: 8,
-            ),
-          if (!isVip)
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 24), // Even padding for balance
-              child: GestureDetector(
-            onTap: () {
-               // Initial action, maybe navigate to shop
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFC107), // Amber 500
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.amber.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.emoji_events_rounded, color: Color(0xFF212121), size: 28),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('ท่านจะได้เป็น VIP', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF212121))),
-                        Text('เมื่ออุดหนุนสินค้า', style: GoogleFonts.kanit(fontSize: 14, color: const Color(0xFF424242))),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF263238),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.storefront_rounded, color: Colors.white, size: 16),
-                        const SizedBox(width: 4),
-                        Text('ร้านมาดี', style: GoogleFonts.kanit(color: Colors.white, fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ),
-          ),
+          // VIP Banner removed as per request
           
           Container(
-            color: Colors.white,
+            color: const Color(0xFF16213E),
             height: 16,
           ),
 
           Container(
-            color: Colors.white,
+            color: const Color(0xFF16213E),
             padding: const EdgeInsets.only(bottom: 12),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16), 
@@ -140,7 +76,7 @@ class ActionsSection extends StatelessWidget {
                   // Toggle: Show Good Only
                   Row(
                     children: [
-                      Text('แสดงเลขดีเท่านั้น', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF2E7D32))),
+                      Text('แสดงเลขดีเท่านั้น', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF34D399))),
                       const SizedBox(width: 8),
                       Transform.scale(
                         scale: 0.8,
@@ -148,7 +84,7 @@ class ActionsSection extends StatelessWidget {
                           value: showGoodOnly,
                           onChanged: onToggleGoodOnly, 
                           activeColor: Colors.white,
-                          activeTrackColor: const Color(0xFF2E7D32),
+                          activeTrackColor: const Color(0xFF34D399),
                         ),
                       ),
                     ],
@@ -160,10 +96,10 @@ class ActionsSection extends StatelessWidget {
                     children: [
                       RichText(
                         text: TextSpan(
-                          style: GoogleFonts.kanit(fontSize: 12, color: Colors.grey[600]),
+                          style: GoogleFonts.kanit(fontSize: 12, color: Colors.white54),
                           children: [
                             const TextSpan(text: 'แสดง'),
-                            TextSpan(text: 'กาลกิณี', style: TextStyle(color: Color(0xFFD32F2F), fontWeight: FontWeight.bold)),
+                            TextSpan(text: 'กาลกิณี', style: const TextStyle(color: Color(0xFFFF6B6B), fontWeight: FontWeight.bold)),
                           ]
                         ),
                       ),
@@ -174,7 +110,7 @@ class ActionsSection extends StatelessWidget {
                           value: showKlakini,
                           onChanged: onToggleKlakini,
                           activeColor: Colors.white,
-                          activeTrackColor: const Color(0xFFD32F2F), // Red Track
+                          activeTrackColor: const Color(0xFFFF6B6B),
                         ),
                       ),
                     ],
@@ -187,14 +123,16 @@ class ActionsSection extends StatelessWidget {
         // Table Header
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          color: const Color(0xFFF8FAFC),
+          decoration: const BoxDecoration(
+            color: Color(0xFF1F2E4D), // Lighter Navy Header
+            border: Border(bottom: BorderSide(color: Colors.white12)),
+          ),
           child: Row(
             children: [
-              Expanded(flex: 3, child: Text('ชื่อดี', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: const Color(0xFF64748B), fontSize: 11))),
-              Expanded(flex: 2, child: Center(child: Text('เลข\nศาสตร์', textAlign: TextAlign.center, style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: const Color(0xFF64748B), fontSize: 10, height: 1.0)))),
-              Expanded(flex: 2, child: Center(child: Text('พลัง\nเงา', textAlign: TextAlign.center, style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: const Color(0xFF64748B), fontSize: 10, height: 1.0)))),
-              Expanded(flex: 2, child: Center(child: Text('คะแนน', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: const Color(0xFF64748B), fontSize: 11)))),
-              Expanded(flex: 2, child: Center(child: Text('คล้าย', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: const Color(0xFF64748B), fontSize: 11)))),
+              Expanded(flex: 3, child: Text('ชื่อดี', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: Colors.white70, fontSize: 11))),
+              Expanded(flex: 2, child: Center(child: Text('ศาสตร์', textAlign: TextAlign.center, style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: Colors.white70, fontSize: 10, height: 1.0)))),
+              Expanded(flex: 2, child: Center(child: Text('เงา', textAlign: TextAlign.center, style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: Colors.white70, fontSize: 10, height: 1.0)))),
+              Expanded(flex: 2, child: Center(child: Text('คะแนน', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: Colors.white70, fontSize: 11)))),
               const SizedBox(width: 34), // Arrow space
             ],
           ),
@@ -204,9 +142,9 @@ class ActionsSection extends StatelessWidget {
         if (isLoading) ...[
           ...List.generate(3, (index) => Container(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-            decoration: BoxDecoration(
-              border: const Border(bottom: BorderSide(color: Color(0xFFFFD54F), width: 1.0)),
-              color: const Color(0xFFFFFDE7),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Colors.white12, width: 1.0)),
+              color: Color(0xFF16213E),
             ),
             child: Row(
               children: [
@@ -215,18 +153,16 @@ class ActionsSection extends StatelessWidget {
                   child: Container(
                     height: 20,
                     margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(4)),
+                    decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(4)),
                   ),
                 ),
-                Expanded(flex: 2, child: Center(child: Container(width: 24, height: 24, decoration: BoxDecoration(color: Colors.grey[200], shape: BoxShape.circle)))),
-                Expanded(flex: 2, child: Center(child: Container(width: 24, height: 24, decoration: BoxDecoration(color: Colors.grey[200], shape: BoxShape.circle)))),
-                Expanded(flex: 2, child: Center(child: Container(width: 40, height: 24, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(6))))),
-                Expanded(flex: 2, child: Center(child: Container(width: 30, height: 16, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(4))))),
-                Container(width: 34, height: 34, decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12))),
+                Expanded(flex: 2, child: Center(child: Container(width: 24, height: 24, decoration: const BoxDecoration(color: Colors.white12, shape: BoxShape.circle)))),
+                Expanded(flex: 2, child: Center(child: Container(width: 24, height: 24, decoration: const BoxDecoration(color: Colors.white12, shape: BoxShape.circle)))),
+                Expanded(flex: 2, child: Center(child: Container(width: 40, height: 24, decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(6))))),
+                Container(width: 34, height: 34, decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12))),
               ],
             ),
           )),
-           if (!isVip) _buildLockedSection(),
         ],
 
         if (!isLoading && filteredList.isNotEmpty)
@@ -241,8 +177,6 @@ class ActionsSection extends StatelessWidget {
             final originalIndex = filteredEntry.key; // Original index in validNames
             final name = filteredEntry.value;
 
-            // Notice strict limit logic removed from here as we use .take()
- 
              final isNumBad = _isListBad(name.tSat);
              final isShaBad = _isListBad(name.tSha);
              final isScorePos = name.totalScore >= 0;
@@ -250,20 +184,15 @@ class ActionsSection extends StatelessWidget {
              final isPerfectName = !isNumBad && !isShaBad && !hasKlakini;
              final isTop3 = originalIndex < 3;
              
-             // A name should be gold/shimmer ONLY if it's both Top 3 AND Perfect
-             final bool shouldBeGold = isTop3 && isPerfectName;
-
-            // Helper for bubble style
-            BoxDecoration getBubbleDecoration(bool isBad) {
-              if (isBad) return const BoxDecoration(color: Color(0xFFD32F2F), shape: BoxShape.circle); // Red
-              return const BoxDecoration(color: Color(0xFF1B5E20), shape: BoxShape.circle); // Green
-            }
+             // A name should be gold/shimmer if it's PerfectName (Good Num + Good Shadow + No Klakini)
+             // regardless of rank.
+             final bool shouldBeGold = isPerfectName;
 
             return Container(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
               decoration: BoxDecoration(
-                border: const Border(bottom: BorderSide(color: Color(0xFFFFD54F), width: 1.0)),
-                color: const Color(0xFFFFFDE7),
+                border: Border(bottom: BorderSide(color: shouldBeGold ? const Color(0xFFFFD700) : Colors.white12, width: 1.0)),
+                color: shouldBeGold ? const Color(0xFF2C250E) : Colors.transparent, // Gold tint or transparent
               ),
               child: Row(
                 children: [
@@ -273,15 +202,16 @@ class ActionsSection extends StatelessWidget {
                     child: Row(
                       children: [
                         SizedBox(
-                          width: 24,
+                          width: 40,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (isTop3) ...[
-                                const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
-                                Text('#${originalIndex + 1}', style: GoogleFonts.kanit(fontSize: 10, color: Colors.amber[800], fontWeight: FontWeight.bold)),
+                                if (showGoodOnly)
+                                  const Icon(Icons.workspace_premium, color: Color(0xFFFFD700), size: 16),
+                                Text('#${originalIndex + 1}', style: GoogleFonts.kanit(fontSize: showGoodOnly ? 10 : 12, color: const Color(0xFFFFD700), fontWeight: FontWeight.bold)),
                               ] else 
-                                Text('#${originalIndex + 1}', style: GoogleFonts.kanit(fontSize: 12, color: Colors.grey[400], fontWeight: FontWeight.bold)),
+                                Text('#${originalIndex + 1}', style: GoogleFonts.kanit(fontSize: 12, color: Colors.white38, fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
@@ -294,15 +224,15 @@ class ActionsSection extends StatelessWidget {
                                 style: GoogleFonts.kanit(
                                   fontSize: 16, 
                                   fontWeight: FontWeight.bold, 
-                                  color: shouldBeGold ? const Color(0xFF8B6F00) : Colors.black87
+                                  color: shouldBeGold ? const Color(0xFFFFD700) : Colors.white
                                 ),
                                 children: name.displayNameHtml.map((char) {
                                   return TextSpan(
                                     text: char.char,
                                       style: TextStyle(
                                         color: char.isBad 
-                                            ? (showKlakini ? const Color(0xFFFF1744) : (shouldBeGold ? const Color(0xFF8B6F00) : Colors.black87))
-                                            : (shouldBeGold ? const Color(0xFF8B6F00) : Colors.black87),
+                                            ? (showKlakini ? const Color(0xFFFF4757) : (shouldBeGold ? const Color(0xFFFFD700) : Colors.white))
+                                            : (shouldBeGold ? const Color(0xFFFFD700) : Colors.white),
                                       ),
                                   );
                                 }).toList(),
@@ -321,12 +251,12 @@ class ActionsSection extends StatelessWidget {
                       child: Container(
                          width: 24, height: 24, 
                          alignment: Alignment.center,
-                         decoration: BoxDecoration(
-                           color: isNumBad ? const Color(0xFFEF4444) : const Color(0xFF1B5E20), // Red if Bad (from API), Dark Green if Good
+                          decoration: BoxDecoration(
+                           color: _getDynamicColor(name.tSat), 
                            shape: BoxShape.circle,
                            boxShadow: [
                              BoxShadow(
-                               color: (isNumBad ? const Color(0xFFEF4444) : const Color(0xFF1B5E20)).withOpacity(0.3),
+                               color: _getDynamicColor(name.tSat).withOpacity(0.3),
                                blurRadius: 4,
                                offset: const Offset(0, 2),
                              )
@@ -334,7 +264,7 @@ class ActionsSection extends StatelessWidget {
                          ),
                          child: Text(
                            '${name.totalNumerology}',
-                           style: GoogleFonts.kanit(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold) // Reduced from 13
+                           style: GoogleFonts.kanit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold) 
                          ),
                       ),
                     )
@@ -347,12 +277,12 @@ class ActionsSection extends StatelessWidget {
                        child: Container(
                          width: 24, height: 24, 
                          alignment: Alignment.center,
-                         decoration: BoxDecoration(
-                           color: isShaBad ? const Color(0xFFEF4444) : const Color(0xFF1B5E20), // Red if Bad (from API), Dark Green if Good
+                          decoration: BoxDecoration(
+                           color: _getDynamicColor(name.tSha),
                            shape: BoxShape.circle,
                            boxShadow: [
                              BoxShadow(
-                               color: (isShaBad ? const Color(0xFFEF4444) : const Color(0xFF1B5E20)).withOpacity(0.3),
+                               color: _getDynamicColor(name.tSha).withOpacity(0.3),
                                blurRadius: 4,
                                offset: const Offset(0, 2),
                              )
@@ -360,7 +290,7 @@ class ActionsSection extends StatelessWidget {
                          ),
                          child: Text(
                            '${name.totalShadow}',
-                           style: GoogleFonts.kanit(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold) // Reduced from 13
+                           style: GoogleFonts.kanit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold) 
                          ),
                        )
                     )
@@ -370,31 +300,13 @@ class ActionsSection extends StatelessWidget {
                   Expanded(
                     flex: 2,
                     child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isScorePos ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE), // Green 50 : Red 50
-                          borderRadius: BorderRadius.circular(6)
-                        ),
-                        child: Text(
+                      child: Text(
                           '${isScorePos ? '+' : ''}${name.totalScore}',
                           style: GoogleFonts.kanit(
-                            color: isScorePos ? const Color(0xFF2E7D32) : const Color(0xFFC62828), 
+                            color: isScorePos ? Colors.greenAccent : Colors.redAccent, 
                             fontWeight: FontWeight.w900, 
-                            fontSize: 13
+                            fontSize: 14
                           ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Similarity
-                  Expanded(
-                    flex: 2,
-                    child: Center(
-                      child: Text(
-                        '${name.similarity <= 1 ? (name.similarity * 100).round() : name.similarity.round()}%',
-                        style: GoogleFonts.kanit(color: Colors.black54, fontSize: 13),
                       ),
                     ),
                   ),
@@ -403,22 +315,16 @@ class ActionsSection extends StatelessWidget {
                   GestureDetector(
                     onTap: () => onNameSelected(name.thName),
                     child: Container(
-                      width: 34,
-                      height: 34,
+                      width: 32,
+                      height: 32,
                       padding: EdgeInsets.zero,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.white.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                            BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 2,
-                            offset: const Offset(0, 1),
-                            )
-                        ]
+                        border: Border.all(color: Colors.white12),
                       ),
-                      child: const Icon(Icons.keyboard_double_arrow_right_rounded, size: 18, color: Colors.green),
+                      child: const Icon(Icons.keyboard_double_arrow_right_rounded, size: 18, color: Colors.white70),
                     ),
                   ),
                 ],
@@ -430,10 +336,10 @@ class ActionsSection extends StatelessWidget {
           if (!isLoading && filteredList.isEmpty)
              Padding(
                padding: const EdgeInsets.all(24),
-               child: Center(child: Text('ไม่พบข้อมูลตามเงื่อนไข', style: GoogleFonts.kanit(color: Colors.grey))),
+               child: Center(child: Text('ไม่พบข้อมูลตามเงื่อนไข', style: GoogleFonts.kanit(color: Colors.white54))),
              ),
              
-          // Permanently Attached Locked Section for Non-VIP
+
           if (!isVip && !isLoading) _buildLockedSection(),
       ],
     ),
@@ -465,32 +371,30 @@ class ActionsSection extends StatelessWidget {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 24),
-          color: const Color(0xFFFFFDE7), // Light yellow background
+          color: const Color(0xFF1A1A2E),
           child: Column(
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.info_outline, color: Colors.orange, size: 20),
+                  const Icon(Icons.info_outline, color: Color(0xFFFFD700), size: 20),
                   const SizedBox(width: 8),
-                  Text('ชื่อดีล็อกแสดง 3 รายชื่อเท่านั้น', style: GoogleFonts.kanit(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.orange[800])),
+                  Text('แสดงแค่ 3 รายชื่อ ไม่จำกัดเฉพาะ VIP', style: GoogleFonts.kanit(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFFFFD700))),
                 ],
               ),
               const SizedBox(height: 12),
               GestureDetector(
-                onTap: () {
-                    // Navigate to Shop
-                },
+                onTap: onShopPressed,
                 child: Container(
                     height: 48,
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     decoration: BoxDecoration(
-                    color: const Color(0xFFFB8C00), // Orange 700
+                    color: const Color(0xFFFFD700),
                     borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
+                    boxShadow: const [
                         BoxShadow(
-                        color: const Color(0xFFE65100), // Darker orange shadow
-                        offset: const Offset(0, 4),
+                        color: Color(0xFFB8860B),
+                        offset: Offset(0, 4),
                         blurRadius: 0, 
                         )
                     ]
@@ -499,9 +403,9 @@ class ActionsSection extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                        const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 20),
+                        const Icon(Icons.shopping_bag_outlined, color: Color(0xFF1A1A2E), size: 20),
                         const SizedBox(width: 8),
-                        Text('ซื้อสินค้าร้านมาดี', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                        Text('ซื้อสินค้าร้านชื่อดี', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A2E))),
                     ],
                     ),
                 ),
@@ -509,11 +413,11 @@ class ActionsSection extends StatelessWidget {
             ],
           ),
         ),
-        // Bottom Yellow Bar
+        // Bottom Gold Bar
         Container(
           height: 8,
           width: double.infinity,
-          color: const Color(0xFFFFC107), // Amber
+          color: const Color(0xFFFFD700),
         ),
       ],
     );
@@ -531,5 +435,38 @@ class ActionsSection extends StatelessWidget {
       
       return isBadColor || isBadType;
     });
+  }
+
+  Color _getDynamicColor(List<Map<String, dynamic>>? list) {
+    String? foundColor;
+    if (list != null) {
+      for (var item in list) {
+        final c = item['color'] as String?;
+        if (c != null && c.isNotEmpty) {
+           foundColor = c;
+           break; 
+        }
+      }
+    }
+    
+    if (foundColor != null) {
+       final parsed = _parseColor(foundColor);
+       if (parsed != null) return parsed;
+    }
+    
+    // Fallback based on badness (Red) or default Green
+    return _isListBad(list) ? const Color(0xFFEF4444) : const Color(0xFF1B5E20);
+  }
+
+  Color? _parseColor(String hexCode) {
+    try {
+      String cleanHex = hexCode.toUpperCase().replaceAll('#', '').replaceAll('0X', '');
+      if (cleanHex.length == 6) {
+        return Color(int.parse('0xFF$cleanHex'));
+      } else if (cleanHex.length == 8) {
+        return Color(int.parse('0x$cleanHex'));
+      }
+    } catch (_) {}
+    return null; 
   }
 }

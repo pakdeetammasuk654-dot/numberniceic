@@ -41,9 +41,11 @@ scp $SSH_OPTS numbernice-linux $SERVER_USER@$SERVER_IP:$REMOTE_DIR/numbernice-li
 scp $SSH_OPTS migrations/*.sql $SERVER_USER@$SERVER_IP:$REMOTE_DIR/migrations/
 
 # Upload Static Files
-echo "Uploading Static Assets (CSS, JS)..."
+echo "Uploading Static Assets (CSS, JS, Images)..."
 scp $SSH_OPTS -r static/css $SERVER_USER@$SERVER_IP:$REMOTE_DIR/static/
 scp $SSH_OPTS -r static/js $SERVER_USER@$SERVER_IP:$REMOTE_DIR/static/
+scp $SSH_OPTS -r static/images $SERVER_USER@$SERVER_IP:$REMOTE_DIR/static/
+scp $SSH_OPTS static/*.png $SERVER_USER@$SERVER_IP:$REMOTE_DIR/static/
 
 # Upload Views (since we are not using go-bindata/embed yet, or just to be safe)
 scp $SSH_OPTS -r views $SERVER_USER@$SERVER_IP:$REMOTE_DIR/

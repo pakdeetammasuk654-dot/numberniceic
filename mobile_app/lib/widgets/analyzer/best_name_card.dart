@@ -10,6 +10,7 @@ class BestNameCard extends StatelessWidget {
   final bool isGold;
   final bool showKlakini;
   final VoidCallback onTap;
+  final bool isCompact;
 
   const BestNameCard({
     Key? key,
@@ -18,10 +19,139 @@ class BestNameCard extends StatelessWidget {
     this.isGold = true,
     required this.showKlakini,
     required this.onTap,
+    this.isCompact = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    if (isCompact) {
+      return _buildCompactCard();
+    }
+    return _buildFullCard();
+  }
+
+  Widget _buildCompactCard() {
+    final displayName = nameAnalysis.displayNameHtml;
+    final similarity = nameAnalysis.similarity * 100;
+    final totalScore = nameAnalysis.totalScore;
+
+    // Background Logic (similar to Dashboard)
+    final bool isTop = nameAnalysis.isTopTier;
+    final Color bgColor = isTop 
+        ? const Color(0xFF2C250E) // Dark Gold Tint
+        : Colors.transparent;
+        
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: bgColor,
+          border: Border(bottom: BorderSide(color: Colors.white12)),
+        ),
+        child: Row(
+          children: [
+            // Rank Badge
+            if (rank <= 3) 
+              Container(
+                margin: const EdgeInsets.only(right: 12),
+                child: Column(
+                  children: [
+                     Icon(Icons.workspace_premium, color: const Color(0xFFFFD700), size: 14),
+                     Text(
+                      '#$rank',
+                      style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.w900, color: const Color(0xFFFFD700)),
+                    ),
+                  ],
+                ),
+              )
+            else
+               Container(
+                 margin: const EdgeInsets.only(right: 12),
+                 width: 36, 
+                 alignment: Alignment.center,
+                 child: Text(
+                    '#$rank',
+                    style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white38),
+                 )
+               ),
+
+            // Name
+            Expanded(
+              flex: 4,
+              child: Row(
+                children: [
+                  Flexible(child: _buildNameText(displayName)),
+                  if (nameAnalysis.isTopTier) const SizedBox(width: 4),
+                  if (nameAnalysis.isTopTier) const Text(' ⭐', style: TextStyle(fontSize: 10)),
+                ],
+              ),
+            ),
+            
+            // Score Circles (Math & Shadow)
+            Expanded(
+              flex: 4,
+              child: Row(
+                 mainAxisAlignment: MainAxisAlignment.center,
+                 children: [
+                    // Math
+                    if (nameAnalysis.tSat.isNotEmpty)
+                      _buildScoreCircle(
+                        nameAnalysis.satNum.isNotEmpty ? nameAnalysis.satNum[0].toString() : '',
+                        _resolveColor(nameAnalysis.tSat[0]),
+                        size: 24,
+                      ),
+                    const SizedBox(width: 8),
+                    // Shadow
+                    if (nameAnalysis.tSha.isNotEmpty)
+                      _buildScoreCircle(
+                        nameAnalysis.shaNum.isNotEmpty ? nameAnalysis.shaNum[0].toString() : '',
+                        _resolveColor(nameAnalysis.tSha[0]),
+                        size: 24,
+                        isShadow: true,
+                      ),
+                 ],
+              ),
+            ),
+
+            // Score Logic (Text Only - No Box)
+            Container(
+              width: 50,
+              alignment: Alignment.centerRight,
+              child: Text(
+                    '${totalScore >= 0 ? '+' : ''}$totalScore',
+                    style: GoogleFonts.kanit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: totalScore >= 0 ? Colors.greenAccent : Colors.redAccent,
+                    ),
+              ),
+            ),
+            
+            const SizedBox(width: 12),
+            
+            // Arrow
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: Icon(
+                Icons.keyboard_double_arrow_right_rounded,
+                size: 16,
+                color: Colors.white70,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFullCard() {
     final displayName = nameAnalysis.displayNameHtml;
     final similarity = nameAnalysis.similarity * 100;
     final totalScore = nameAnalysis.totalScore;
@@ -175,7 +305,7 @@ class BestNameCard extends StatelessWidget {
       children: [
          ...nameAnalysis.tSat.asMap().entries.map((entry) {
             final idx = entry.key;
-            final color = ColorUtils.parseColor(entry.value['color']);
+            final color = _resolveColor(entry.value);
             final numStr = nameAnalysis.satNum.length > idx ? nameAnalysis.satNum[idx].toString() : '';
             return _buildScoreCircle(numStr, color);
          }).toList(),
@@ -183,7 +313,7 @@ class BestNameCard extends StatelessWidget {
             const SizedBox(width: 2),
          ...nameAnalysis.tSha.asMap().entries.map((entry) {
             final idx = entry.key;
-            final color = ColorUtils.parseColor(entry.value['color']);
+            final color = _resolveColor(entry.value);
             final numStr = nameAnalysis.shaNum.length > idx ? nameAnalysis.shaNum[idx].toString() : '';
             return _buildScoreCircle(numStr, color, isShadow: true);
          }).toList(),
@@ -191,10 +321,10 @@ class BestNameCard extends StatelessWidget {
     );
   }
 
-  Widget _buildScoreCircle(String score, Color color, {bool isShadow = false}) {
+  Widget _buildScoreCircle(String score, Color color, {bool isShadow = false, double size = 26}) {
     return Container(
-      width: 26,
-      height: 26,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color,
@@ -209,7 +339,7 @@ class BestNameCard extends StatelessWidget {
         style: GoogleFonts.kanit(
           color: Colors.white, 
           fontWeight: FontWeight.w900, 
-          fontSize: 11,
+          fontSize: size < 24 ? 9 : 11,
           shadows: [
             const Shadow(color: Colors.black26, offset: Offset(0, 1), blurRadius: 1),
           ],
@@ -235,5 +365,19 @@ class BestNameCard extends StatelessWidget {
           color: isGold ? const Color(0xFFF9A825) : const Color(0xFF43A047),
         ),
       );
+  }
+
+
+  Color _resolveColor(Map<String, dynamic> item) {
+      final colorCode = item['color'] as String?;
+      final parsed = ColorUtils.tryParseColor(colorCode);
+      if (parsed != null) return parsed;
+      
+      // Fallback
+      final cStr = (colorCode ?? '').toUpperCase();
+      final type = (item['type'] as String? ?? '').toUpperCase();
+      final isBad = cStr.contains('EF4444') || cStr.contains('D32F2F') || cStr.contains('RED') || type.startsWith('R') || type.contains('BAD');
+      
+      return isBad ? const Color(0xFFEF4444) : const Color(0xFF1B5E20);
   }
 }

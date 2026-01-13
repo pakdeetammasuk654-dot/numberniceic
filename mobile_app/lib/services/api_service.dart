@@ -260,15 +260,22 @@ class ApiService {
       'disable_klakini': disableKlakini.toString(),
       'disable_klakini_top4': disableKlakiniTop4.toString(),
       'section': section,
+      'limit': '100', // Request 100 items explicitly
     };
     
     final url = Uri.parse('$baseUrl/api/analyze').replace(queryParameters: queryParams);
     debugPrint('🚀 API REQUEST: GET $url (Section: $section)');
 
     try {
+      final token = await AuthService.getToken();
+      final Map<String, String> headers = {'Content-Type': 'application/json'};
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token'; // Send Token for VIP Check
+      }
+
       final response = await http.get(
           url,
-          headers: {'Content-Type': 'application/json'},
+          headers: headers,
       );
 
       if (response.statusCode == 200) {

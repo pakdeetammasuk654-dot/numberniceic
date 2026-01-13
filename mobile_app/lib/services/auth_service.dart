@@ -8,6 +8,7 @@ import 'package:flutter_facebook_auth/flutter_facebook_auth.dart' as fb_auth;
 import 'package:flutter_line_sdk/flutter_line_sdk.dart' as line_sdk;
 import 'package:flutter/services.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../utils/social_auth_config.dart'; // Import config
 import 'api_service.dart';
 import 'notification_service.dart';
@@ -297,6 +298,16 @@ class AuthService {
       'vip_expiry_text': prefs.getString(keyVipExpiryText),
       'assigned_colors': prefs.getStringList(keyAssignedColors) ?? [],
     };
+  }
+
+  /// Fetches latest user data from server and updates local storage
+  static Future<void> refreshUserProfile() async {
+    try {
+      final data = await ApiService.getDashboard();
+      await syncAuthData(data);
+    } catch (e) {
+      print("Failed to refresh user profile: $e");
+    }
   }
 
   static Future<String?> getToken() async {

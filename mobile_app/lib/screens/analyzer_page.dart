@@ -31,8 +31,10 @@ import 'main_tab_page.dart';
 class AnalyzerPage extends StatefulWidget {
   final String? initialName;
   final String? initialDay;
+  final AnalyzerViewModel? viewModel;
+  final VoidCallback? onNavigateToNaming;
 
-  const AnalyzerPage({super.key, this.initialName, this.initialDay});
+  const AnalyzerPage({super.key, this.initialName, this.initialDay, this.viewModel, this.onNavigateToNaming});
 
   @override
   State<AnalyzerPage> createState() => _AnalyzerPageState();
@@ -40,6 +42,7 @@ class AnalyzerPage extends StatefulWidget {
 
 class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMixin {
   late AnalyzerViewModel _viewModel;
+  bool _isOwnViewModel = false;
   final TextEditingController _nameController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   
@@ -54,7 +57,14 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
   void initState() {
     super.initState();
     
-    _viewModel = AnalyzerViewModel();
+    if (widget.viewModel != null) {
+      _viewModel = widget.viewModel!;
+      _isOwnViewModel = false;
+    } else {
+      _viewModel = AnalyzerViewModel();
+      _isOwnViewModel = true; 
+    }
+
     _viewModel.init(widget.initialName, widget.initialDay);
     _viewModel.addListener(_onViewModelUpdate); // Rebuild on changes
     
@@ -98,12 +108,19 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
   
   void _onViewModelUpdate() {
      if (mounted) setState(() {});
+     if (_nameController.text != _viewModel.currentName) {
+       _nameController.text = _viewModel.currentName;
+       // Only move cursor to end if focused, otherwise just updating text is enough
+       if (_nameController.selection.baseOffset == -1) {
+          _nameController.selection = TextSelection.fromPosition(TextPosition(offset: _nameController.text.length));
+       }
+     }
   }
 
   @override
   void dispose() {
     _viewModel.removeListener(_onViewModelUpdate);
-    _viewModel.dispose();
+    if (_isOwnViewModel) _viewModel.dispose();
     _nameController.dispose();
     _scrollController.dispose();
     _rotationController.dispose();
@@ -152,6 +169,9 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
   
   void _handleNameChange(String val) {
     _viewModel.setName(val);
+    if (!_viewModel.isAvatarScrolling && val.isNotEmpty) {
+      _viewModel.setAvatarScrolling(true);
+    }
   }
   
   Future<void> _handleUnlockAction() async {
@@ -329,361 +349,216 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
 
   // --- Widgets ---
 
-  Widget _buildSearchForm() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      child: Column(
-        children: [
-          TextField(
-            controller: _nameController,
-            onChanged: _handleNameChange,
-            decoration: InputDecoration(
-              labelText: 'กรอกชื่อที่ต้องการวิเคราะห์',
-              labelStyle: GoogleFonts.kanit(color: Colors.grey[600], fontSize: 14),
-              hintText: 'กรอกชื่อของคุณ',
-              hintStyle: GoogleFonts.kanit(color: Colors.grey[400]),
-              prefixIcon: const Icon(Icons.person_outline, color: Colors.grey),
-              suffixIcon: IconButton(icon: const Icon(Icons.cancel, color: Colors.grey), onPressed: () { _nameController.clear(); _handleNameChange(''); }),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Colors.grey)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: Colors.grey[400]!)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Color(0xFF667EEA), width: 1.5)),
-              floatingLabelBehavior: FloatingLabelBehavior.always,
-            ),
-            style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          
-          // Dropdown for Day Selection
-          DropdownButtonFormField<String>(
-            value: _viewModel.selectedDay,
-            decoration: InputDecoration(
-              labelText: 'วันเกิด',
-              labelStyle: GoogleFonts.kanit(color: Colors.grey[600], fontSize: 14),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Colors.grey)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: Colors.grey[400]!)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Color(0xFF667EEA), width: 1.5)),
-              floatingLabelBehavior: FloatingLabelBehavior.always,
-              prefixIcon: const Icon(Icons.calendar_today_outlined, color: Colors.grey),
-            ),
-            icon: const Icon(Icons.arrow_drop_down_rounded, color: Colors.grey),
-            style: GoogleFonts.kanit(fontSize: 16, color: Colors.black87),
-            items: _viewModel.days.map((day) {
-              return DropdownMenuItem(
-                value: day.value,
-                child: Row(
-                  children: [
-                    Icon(day.icon, color: day.color, size: 22),
-                    const SizedBox(width: 10),
-                    Text(day.label, style: GoogleFonts.kanit(fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              );
-            }).toList(),
-            onChanged: (val) {
-              if (val != null) _viewModel.setDay(val);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
+  
+    @override
   Widget build(BuildContext context) {
     final result = _viewModel.analysisResult;
-    final solar = result?.solarSystem;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('วิเคราะห์ชื่อ', style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold)),
-            const BuddhistDayBadge(),
-          ],
-        ),
-        backgroundColor: const Color(0xFF333333),
-        elevation: 0,
-        centerTitle: false,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(icon: const Icon(Icons.dialpad, color: Colors.white), onPressed: () { NumberAnalysisPage.show(context); }, tooltip: 'วิเคราะห์เบอร์'),
-          Stack(
+      backgroundColor: const Color(0xFF1A1A2E),
+      body: DefaultTabController(
+        length: 2,
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF1A1A2E),
+                Color(0xFF16213E),
+                Color(0xFF1A1A2E),
+              ],
+              stops: [0.0, 0.5, 1.0],
+            ),
+          ),
+          child: Column(
             children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined, color: Colors.white), 
-                onPressed: _handleNotificationTap, 
-                tooltip: 'การแจ้งเตือน'
-              ),
-              if (_hasUnreadNotification)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFF333333), width: 1.5),
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
-                    ),
-                    child: Center(
-                      child: Text(
-                        _unreadCount > 9 
-                            ? '9+' 
-                            : '$_unreadCount',
-                        style: GoogleFonts.kanit(
-                          color: Colors.white, 
-                          fontSize: 10, 
-                          fontWeight: FontWeight.bold,
-                          height: 1.0,
-                        ),
-                        textAlign: TextAlign.center,
+              // Sticky Tab Bar
+              Container(
+                 color: const Color(0xFF16213E),
+                 child: Column(
+                   children: [
+                      TabBar(
+                        labelColor: const Color(0xFFFFD700),
+                        unselectedLabelColor: Colors.white54,
+                        indicatorColor: const Color(0xFFFFD700),
+                        indicatorWeight: 3,
+                        labelStyle: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold),
+                        unselectedLabelStyle: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.normal),
+                        tabs: const [
+                          Tab(text: "ผลการวิเคราะห์"),
+                          Tab(text: "เครื่องมือ"),
+                        ],
                       ),
+                      Container(height: 1, color: Colors.white12),
+                   ],
+                 ),
+              ),
+              
+              if (_viewModel.isSolarLoading)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20, bottom: 20),
+                    child: Center(
+                      child: Column(
+                         children: [
+                           const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFD700))),
+                           const SizedBox(height: 10),
+                           Text('กำลังวิเคราะห์...', style: GoogleFonts.kanit(color: Colors.white70)),
+                         ],
+                       ),
                     ),
                   ),
+
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    _buildAnalysisTab(result),
+                    _buildToolsTab(),
+                  ],
                 ),
+              ),
             ],
           ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [const Color(0xFF667EEA).withOpacity(0.05), const Color(0xFF764BA2).withOpacity(0.03), Colors.white],
-          ),
-        ),
-        child: AdaptiveFooterScrollView(
-          controller: _scrollController,
-          children: [
-            // 0. Search & Sample
-            _buildSearchForm(),
-            _buildSampleNamesSection(),
-            
-            if (result == null && _viewModel.isLoading)
-                Padding(padding: const EdgeInsets.only(top: 40), child: _buildSolarSystemSkeleton()),
-
-            if (result != null)
-               AnimatedSwitcher(
-                 duration: const Duration(milliseconds: 800),
-                 layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
-                   return Stack(
-                     alignment: Alignment.topCenter,
-                     clipBehavior: Clip.none,
-                     children: <Widget>[
-                       ...previousChildren,
-                       if (currentChild != null) currentChild,
-                     ],
-                   );
-                 },
-                 child: Builder(
-                   key: ValueKey(solar?.cleanedName),
-                   builder: (context) {
-                     if (solar == null) return const SizedBox.shrink();
-
-                     // FLATTENED STACK: This ensures the planets are on top of EVERYTHING in this analysis block.
-                     return Stack(
-                       clipBehavior: Clip.none, // Ensure orbits are not clipped
-                       children: [
-                         // Layer 1: The Main Content Column (Everything scrollable together)
-                         Column(
-                           children: [
-                             // 1. Text Info (Name & Pills)
-                             Padding(
-                               padding: const EdgeInsets.only(top: 205), 
-                               child: Column(
-                                  children: [
-                                     Builder(
-                                       builder: (context) {
-                                         final bool isPerfect = (solar.numNegativeScore == 0 && solar.shaNegativeScore == 0 && solar.klakiniChars.isEmpty);
-                                         return ShimmeringGoldWrapper(
-                                           enabled: isPerfect,
-                                           child: Wrap(
-                                             alignment: WrapAlignment.center,
-                                             children: solar.sunDisplayNameHtml.map((dc) => Text(
-                                                 dc.char,
-                                                 style: GoogleFonts.kanit(
-                                                   fontSize: 48, 
-                                                   fontWeight: FontWeight.bold, 
-                                                   color: dc.isBad ? const Color(0xFFFF1744) : (isPerfect ? const Color(0xFF8B6F00) : Colors.black87), 
-                                                   height: 1.0
-                                                 ),
-                                             )).toList(),
-                                           ),
-                                         );
-                                       },
-                                     ),
-                                     const SizedBox(height: 8),
-                                     Row(
-                                       mainAxisAlignment: MainAxisAlignment.center,
-                                       children: [
-                                         _buildPill(Icons.calendar_today_outlined, _viewModel.days.firstWhere((d) => solar.inputDayRaw.contains(d.value), orElse: () => _viewModel.days[0]).label, const Color(0xFFF1F5F9), const Color(0xFF334155)),
-                                         const SizedBox(width: 12),
-                                         if (solar.klakiniChars.isNotEmpty)
-                                           _buildPill(Icons.warning_amber_rounded, solar.klakiniChars.join(' '), const Color(0xFFFFEBEE), const Color(0xFFFF1744))
-                                         else
-                                           _buildPill(null, 'ไม่มีกาลกิณี', const Color(0xFFE8F5E9), const Color(0xFF00C853)),
-                                       ],
-                                     ),
-                                     const SizedBox(height: 12),
-                                     RichText(
-                                       text: TextSpan(
-                                         style: GoogleFonts.kanit(fontSize: 14, color: const Color(0xFF64748B), fontWeight: FontWeight.w500),
-                                         children: [
-                                           const TextSpan(text: 'พยัญชนะหรือสระ'),
-                                           TextSpan(text: 'สีแดง', style: GoogleFonts.kanit(color: const Color(0xFFFF1744), fontWeight: FontWeight.bold)), // Highlighted red
-                                           const TextSpan(text: 'คือกาลกิณี'),
-                                         ],
-                                       ),
-                                     ),
-                                     const SizedBox(height: 24),
-                                     // Donut Chart Removed as per design request
-                                     Padding(
-                                       padding: const EdgeInsets.only(bottom: 16),
-                                       child: SolarSystemAnalysisCard(data: solar.toJson(), cleanedName: solar.cleanedName),
-                                     ),
-                                     _buildThreeActionButtons(),
-                                     const SizedBox(height: 24),
-                                     CategoryNestedDonut(
-                                       categoryBreakdown: solar.categoryBreakdown,
-                                       totalPairs: solar.totalPairs,
-                                       grandTotalScore: solar.grandTotalScore.toInt(),
-                                       totalPositiveScore: solar.totalPositiveScore,
-                                       totalNegativeScore: solar.totalNegativeScore,
-                                       analyzedName: solar.cleanedName,
-                                     ),
-                                  ],
-                               ),
-                             ),
-
-                             // 2. Extra Sections (Top 4, Actions)
-                             // _buildActionsGrid(), // Removed in favor of 3-button row above
-                             const SizedBox(height: 40),
-                             // 2. Extra Sections (Top 4, Actions) - Restored
-                             Top4Section(
-                               data: result.bestNames,
-                               showTop4: _viewModel.showTop4,
-                               showKlakini: _viewModel.showKlakiniTop4,
-                               isLoading: _viewModel.isNamesLoading,
-                               isSwitching: _viewModel.isTop4Switching,
-                               onToggleTop4: _viewModel.toggleShowTop4,
-                               onToggleKlakini: _viewModel.toggleShowKlakiniTop4,
-                               onNameSelected: (name) {
-                                  _viewModel.setName(name);
-                                  _nameController.text = name;
-                                  _viewModel.analyze();
-                                  _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
-                               },
-                             ),
-                                                           const SizedBox(height: 40),
-                             ActionsSection(
-                               similarNames: result.similarNames,
-                               showKlakini: _viewModel.showKlakini,
-                               showGoodOnly: _viewModel.isAuspicious, 
-                               isVip: result.isVip,
-                               isLoading: _viewModel.isNamesLoading, // Added
-                               badNumbers: _badNumbers,
-                               onToggleKlakini: _viewModel.toggleShowKlakini,
-                               onToggleGoodOnly: _viewModel.toggleAuspicious,
-                               onNameSelected: (name) {
-                                  _viewModel.setName(name);
-                                  _nameController.text = name;
-                                  _viewModel.analyze(); 
-                                  _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
-                               },
-                             ),
-                             const SizedBox(height: 0),
-                           ],
-                         ),
-
-                         // Layer 2: Score Summary (Positioned over Layer 1)
-                         Positioned(
-                           left: 16,
-                           top: 75, 
-                           width: 190,
-                           child: Column(
-                             crossAxisAlignment: CrossAxisAlignment.start,
-                             mainAxisSize: MainAxisSize.min,
-                             children: [
-                               Text('คะแนนรวม', style: GoogleFonts.kanit(fontSize: 14, color: const Color(0xFF64748B), fontWeight: FontWeight.bold)),
-                               const SizedBox(height: 0), 
-                               FittedBox(
-                                 fit: BoxFit.scaleDown,
-                                 alignment: Alignment.centerLeft,
-                                 child: Row(
-                                   children: [
-                                     Text(solar.grandTotalScore >= 0 ? '😊' : '😭', style: const TextStyle(fontSize: 36)),
-                                     const SizedBox(width: 10),
-                                     Text(
-                                       '${solar.grandTotalScore >= 0 ? '+' : ''}${solar.grandTotalScore.toInt()}',
-                                       softWrap: false,
-                                       maxLines: 1,
-                                       style: GoogleFonts.kanit(
-                                         fontSize: 36, 
-                                         fontWeight: FontWeight.w900, 
-                                         color: solar.grandTotalScore >= 0 ? const Color(0xFF00C853) : const Color(0xFFFF1744),
-                                         height: 1.0
-                                       ),
-                                     ),
-                                   ],
-                                 ),
-                               ),
-                               const SizedBox(height: 0), 
-                               Row(
-                                 children: [
-                                   _buildSmallPill('ดี +${solar.totalPositiveScore}', const Color(0xFFE8F5E9), const Color(0xFF00C853)),
-                                   const SizedBox(width: 8),
-                                   _buildSmallPill('ร้าย ${solar.totalNegativeScore}', const Color(0xFFFFEBEE), const Color(0xFFFF1744)),
-                                 ],
-                               ),
-                             ],
-                           ),
-                         ),
-
-                         // Layer 3: Solar System (ABSOLUTELY ON TOP)
-                         Positioned(
-                           right: -50, 
-                           top: -15, 
-                           left: 80, 
-                           height: 280, // Increased height to prevent planet clipping
-                           child: SolarSystemWidget(
-                             sumPair: solar.sumPair,
-                             mainPairs: solar.mainPairs,
-                             hiddenPairs: solar.hiddenPairs,
-                             title: solar.cleanedName,
-                             displayName: solar.sunDisplayNameHtml,
-                             isDead: solar.grandTotalScore < 0,
-                           ),
-                         ),
-                       ],
-                     );
-                   },
-                 ),
-               ),
-          ],
         ),
       ),
       floatingActionButton: _showScrollToTop ? FloatingActionButton(
-        onPressed: () => _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut),
-        backgroundColor: Colors.white,
+        onPressed: () {
+          if (_scrollController.hasClients) {
+             _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+          }
+        },
+        backgroundColor: const Color(0xFF16213E),
         mini: true,
         elevation: 4,
-        child: const Icon(Icons.arrow_upward, color: Colors.black87),
+        child: const Icon(Icons.arrow_upward, color: Colors.white),
       ) : null,
+    );
+  }
+
+  Widget _buildAnalysisTab(AnalysisResult? result) {
+    // 1. Loading State
+    if (_viewModel.isSolarLoading) {
+       return CustomScrollView(
+         physics: const BouncingScrollPhysics(),
+         slivers: [
+           SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+           SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.only(top: 20), child: _buildSolarSystemSkeleton())),
+         ],
+       );
+    }
+
+    // 2. Empty State
+    if (result == null) {
+      return CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                   Container(
+                     padding: const EdgeInsets.all(20),
+                     decoration: const BoxDecoration(color: Color(0xFF16213E), shape: BoxShape.circle),
+                     child: const Icon(Icons.touch_app_rounded, size: 64, color: Colors.white24),
+                   ),
+                   const SizedBox(height: 24),
+                   Text(
+                    'วิเคราะห์ชื่อตามตำรา',
+                    style: GoogleFonts.kanit(color: Colors.white70, fontSize: 20, fontWeight: FontWeight.bold),
+                   ),
+                   const SizedBox(height: 8),
+                   Text(
+                    'เลขศาสตร์ พลังเงา',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.kanit(color: Colors.white38, fontSize: 16),
+                   ),
+                   const SizedBox(height: 100), 
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // 3. Result State
+    return CustomScrollView(
+      physics: const ClampingScrollPhysics(),
+      // padding: const EdgeInsets.only(top: 20, bottom: 100), // Slivers don't take padding broadly like this usually, use SliverPadding
+      slivers: [
+        SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+        SliverPadding(
+          padding: const EdgeInsets.only(top: 0, bottom: 20),
+          sliver: SliverToBoxAdapter(
+            child: Transform.translate(
+              offset: const Offset(0, -20),
+              child: Column(
+              children: [
+                 Top4Section(
+                   data: result.bestNames,
+                   showTop4: _viewModel.showTop4,
+                   showKlakini: _viewModel.showKlakiniTop4,
+                   isVip: MainTabPage.of(context)?.isVip ?? result.isVip,
+                   isLoading: _viewModel.isNamesLoading,
+                   isSwitching: _viewModel.isTop4Switching,
+                   onToggleTop4: _viewModel.toggleShowTop4,
+                   onToggleKlakini: _viewModel.toggleShowKlakiniTop4,
+                   onNameSelected: (name) {
+                      _viewModel.setName(name);
+                      _nameController.text = name;
+                      _viewModel.analyze();
+                      _viewModel.triggerScrollToTop();
+                      widget.onNavigateToNaming?.call();
+                   },
+                 ),
+                 const SizedBox(height: 20),
+              ],
+            ),
+           ),
+          ),
+        ),
+        const SliverFillRemaining(
+           hasScrollBody: false,
+           child: Align(
+             alignment: Alignment.bottomCenter,
+             child: SharedFooter(),
+           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildToolsTab() {
+    return CustomScrollView(
+      physics: const ClampingScrollPhysics(),
+      slivers: [
+        SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                   margin: const EdgeInsets.only(bottom: 20),
+                   child: Text('เครื่องมือเพิ่มเติม', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white70)),
+                ),
+                _buildThreeActionButtons(),
+              ],
+            ),
+          ),
+        ),
+        const SliverFillRemaining(
+           hasScrollBody: false,
+           child: Align(
+             alignment: Alignment.bottomCenter,
+             child: SharedFooter(),
+           ),
+        ),
+      ],
     );
   }
 
@@ -711,44 +586,28 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
 
   Widget _buildSolarSystemSkeleton() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       child: Column(
         children: [
-          const SizedBox(height: 180),
-          Container(width: 120, height: 40, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8))),
-          const SizedBox(height: 20),
-          Container(height: 400, decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(24))),
+          Text(
+            'กำลังวิเคราะห์ชื่อ +3 แสนรายชื่อ...',
+            style: GoogleFonts.kanit(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.white70,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 40),
+          Container(height: 200, decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(24))),
         ],
       ),
-    );
-  }
-  
-  Widget _buildSampleNamesSection() {
-    return FutureBuilder<List<SampleName>>(
-      future: _sampleNamesFuture,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox.shrink();
-        return Container(
-          margin: EdgeInsets.zero, // Removed bottom margin to be even closer
-          child: SizedBox(
-            height: 90,
-            child: AutoScrollingAvatarList(
-              samples: snapshot.data!,
-              currentName: _nameController.text,
-              onSelect: (name) {
-                _viewModel.setName(name);
-                _nameController.text = name;
-              },
-            ),
-          ),
-        );
-      },
     );
   }
 
   Widget _buildThreeActionButtons() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 0),
       child: Row(
         children: [
           Expanded(
@@ -816,12 +675,12 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
              ),
           ],
         ),
-        child: Row(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: textColor, size: 24),
-            const SizedBox(width: 6),
-            Text(label, style: GoogleFonts.kanit(fontSize: 13, fontWeight: FontWeight.bold, color: textColor)),
+            const SizedBox(height: 4),
+            Text(label, style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: textColor), textAlign: TextAlign.center, maxLines: 1),
           ],
         ),
       ),
@@ -880,5 +739,34 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
         ),
       ),
     );
+  }
+}
+
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar _tabBar;
+
+  _SliverAppBarDelegate(this._tabBar);
+
+  @override
+  double get minExtent => _tabBar.preferredSize.height + 1; // +1 to avoid pixel gaps
+  @override
+  double get maxExtent => _tabBar.preferredSize.height + 1;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: Colors.white.withOpacity(0.95), // Slight transparency for glass effect?
+      child: Column(
+        children: [
+             _tabBar,
+             Container(height: 1, color: Colors.grey[200]),
+        ],
+      )
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+    return false;
   }
 }

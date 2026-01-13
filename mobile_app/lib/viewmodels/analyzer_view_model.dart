@@ -8,7 +8,7 @@ import '../services/auth_service.dart';
 
 class AnalyzerViewModel extends ChangeNotifier {
   // State
-  String _currentName = 'ณเดชน์';
+  String _currentName = '';
   String _selectedDay = 'sunday';
   bool _isAuspicious = false;
   bool _showKlakini = true;
@@ -22,6 +22,11 @@ class AnalyzerViewModel extends ChangeNotifier {
   
   AnalysisResult? _analysisResult;
   bool _isLoggedIn = false;
+  bool _isAvatarScrolling = true; // Shared state for avatar list scrolling
+  bool _showTutorial = false; 
+  
+  // Scroll to top notifier - increment to trigger scroll
+  final ValueNotifier<int> scrollToTopNotifier = ValueNotifier<int>(0);
   
   // Options
   final List<DayOption> days = [
@@ -51,8 +56,29 @@ class AnalyzerViewModel extends ChangeNotifier {
   bool get isNamesLoading => _isNamesLoading;
   AnalysisResult? get analysisResult => _analysisResult;
   bool get isLoggedIn => _isLoggedIn;
+  bool get isAvatarScrolling => _isAvatarScrolling;
+  bool get showTutorial => _showTutorial;
+
+  // Trigger scroll to top in listening pages
+  void triggerScrollToTop() {
+    scrollToTopNotifier.value++;
+  }
 
   // Actions
+  void setAvatarScrolling(bool val) {
+    if (_isAvatarScrolling != val) {
+      _isAvatarScrolling = val;
+      notifyListeners();
+    }
+  }
+
+  void setShowTutorial(bool val) {
+    if (_showTutorial != val) {
+      _showTutorial = val;
+      notifyListeners();
+    }
+  }
+
   void init(String? initialName, String? initialDay) {
     if (initialName != null && initialName.isNotEmpty) {
       _currentName = initialName;
@@ -141,7 +167,11 @@ class AnalyzerViewModel extends ChangeNotifier {
   }
 
   Future<void> analyze() async {
-    if (_currentName.isEmpty) return;
+    if (_currentName.isEmpty) {
+       _analysisResult = null;
+       notifyListeners();
+       return;
+    }
     
     _isLoading = true;
     _isSolarLoading = true;

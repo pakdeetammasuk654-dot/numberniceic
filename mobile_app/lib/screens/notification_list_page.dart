@@ -250,6 +250,7 @@ class _NotificationListPageState extends State<NotificationListPage> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Column(
                 children: [
+                   const SizedBox(height: 24), // Increased spacing
                   Container(
                     width: 40,
                     height: 4,

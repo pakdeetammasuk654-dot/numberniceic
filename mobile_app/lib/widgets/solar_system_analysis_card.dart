@@ -279,66 +279,73 @@ class SolarSystemAnalysisCard extends StatelessWidget {
                       margin: isLast ? EdgeInsets.zero : const EdgeInsets.only(bottom: 4),
                       padding: isLast ? EdgeInsets.zero : const EdgeInsets.only(bottom: 4),
                       // decoration: removed border here
-                    child: Column(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                         Row(
-                           children: [
-                             // Icon Box Matching Web Style (48px)
-                             Container(
-                               width: 48, height: 48,
-                               decoration: BoxDecoration(
-                                 color: catColor.withOpacity(0.15), // Softer background like Web
-                                 borderRadius: BorderRadius.circular(12), // Web uses 12px radius
-                               ),
-                               padding: const EdgeInsets.all(0),
-                               alignment: Alignment.center,
-                                 child: Icon(
-                                   isBadItem ? Icons.lightbulb_outline : Icons.lightbulb, // Outlined = Off, Filled = On
-                                   color: catColor,
-                                   size: 24,
-                                 ),
-                             ),
-                             const SizedBox(width: 12),
-                             RichText(
-                               text: TextSpan(
-                                 children: [
-                                   TextSpan(
-                                     text: displayTitle,
-                                     style: GoogleFonts.kanit(
-                                       fontSize: 18,
-                                       fontWeight: FontWeight.w600,
-                                       color: const Color(0xFF1E293B),
-                                     ),
-                                   ),
-                                   if (isBadItem)
-                                     TextSpan(
-                                       text: ' (ร้าย)',
-                                       style: GoogleFonts.kanit(
-                                         fontSize: 18,
-                                         fontWeight: FontWeight.w600,
-                                         color: const Color(0xFFEF4444),
-                                       ),
-                                     ),
-                                 ],
-                               ),
-                             ),
-                           ],
-                         ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 60, top: 0),
-                            child: RichText(
+                        // Icon Box Matching Web Style (48px)
+                        Container(
+                          width: 48, height: 48,
+                          decoration: BoxDecoration(
+                            color: catColor.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          alignment: Alignment.center,
+                          child: Icon(
+                            isBadItem ? Icons.lightbulb_outline : Icons.lightbulb,
+                            color: catColor,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        
+                        // Title and Content Column
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Title
+                              RichText(
+                                text: TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: displayTitle,
+                                      style: GoogleFonts.kanit(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF1E293B),
+                                        height: 1.2, // Tighter line height
+                                      ),
+                                    ),
+                                    if (isBadItem)
+                                      TextSpan(
+                                        text: ' (ร้าย)',
+                                        style: GoogleFonts.kanit(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                          color: const Color(0xFFEF4444),
+                                          height: 1.2,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 4), // Tiny gap between Title and Content
+                              
+                              // Content
+                              RichText(
                                 text: TextSpan(
                                   style: GoogleFonts.kanit(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w400,
                                     color: const Color(0xFF4B5563),
-                                    height: 1.2,
+                                    height: 1.2, // Tighter line height
                                   ),
                                   children: _buildContentSpans(content),
                                 ),
-                            ),
+                              ),
+                            ],
                           ),
+                        ),
                       ],
                     ),
                   );

@@ -5,13 +5,13 @@ package admin
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
+import "github.com/a-h/templ"
+import templruntime "github.com/a-h/templ/runtime"
+
 import (
 	"fmt"
 	"numberniceic/internal/core/domain"
 	"strings"
-
-	"github.com/a-h/templ"
-	templruntime "github.com/a-h/templ/runtime"
 )
 
 func updateColorFromHex(index int) templ.ComponentScript {
@@ -125,71 +125,100 @@ func CustomerColorReport(member *domain.Member, username string, recentAssignmen
 					return templ_7745c5c3_Err
 				}
 				if member.AvatarURL != "" {
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<img src=\"" + templ.EscapeString(member.AvatarURL) + "\" class=\"user-avatar-mini\" style=\"object-fit: cover;\" />")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<img src=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var4 string
+					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(member.AvatarURL)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 88, Col: 35}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" class=\"user-avatar-mini\" style=\"object-fit: cover;\"> ")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
 				} else {
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"user-avatar-mini\">" + templ.EscapeString(getFirstChar(member.Username)) + "</div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div class=\"user-avatar-mini\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var5 string
+					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(getFirstChar(member.Username))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 90, Col: 69}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
 				}
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<span>กำหนดสีกระเป๋าสำหรับ: <span style=\"color: #007bff;\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var5 string
-				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(member.Username)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 88, Col: 122}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</span></span></h2><form hx-post=\"/admin/assign-customer-colors\" hx-trigger=\"change delay:500ms from:input, input delay:500ms from:input\" hx-target=\"#save-status\"><input type=\"hidden\" name=\"member_id\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<span>กำหนดสีกระเป๋าสำหรับ: <span style=\"color: #007bff;\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var6 string
-				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", member.ID))
+				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(member.Username)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 96, Col: 81}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 92, Col: 122}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\"> <input type=\"hidden\" name=\"username\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</span></span></h2><form hx-post=\"/admin/assign-customer-colors\" hx-trigger=\"change delay:500ms from:input, input delay:500ms from:input\" hx-target=\"#save-status\"><input type=\"hidden\" name=\"member_id\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
-				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(member.Username)
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", member.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 97, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 100, Col: 81}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"><div class=\"color-grid\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"> <input type=\"hidden\" name=\"username\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var8 string
+				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(member.Username)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 101, Col: 67}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\"><div class=\"color-grid\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				for i := 0; i < 5; i++ {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"color-item\"><label>สีที่ ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"color-item\"><label>สีที่ ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var8 string
-					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", i+1))
+					var templ_7745c5c3_Var9 string
+					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", i+1))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 102, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 106, Col: 57}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</label><div class=\"color-picker-wrapper\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</label><div class=\"color-picker-wrapper\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -197,55 +226,55 @@ func CustomerColorReport(member *domain.Member, username string, recentAssignmen
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<input type=\"color\" id=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var9 string
-					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("color_%d", i+1))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 105, Col: 45}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" name=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<input type=\"color\" id=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("color_%d", i+1))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 106, Col: 47}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 109, Col: 45}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" value=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\" name=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var11 string
-					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(getColor(member.AssignedColors, i))
+					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("color_%d", i+1))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 107, Col: 54}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 110, Col: 47}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" onchange=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" value=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var12 templ.ComponentScript = updateHexFromColor(i + 1)
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12.Call)
+					var templ_7745c5c3_Var12 string
+					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(getColor(member.AssignedColors, i))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 111, Col: 54}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\"></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" onchange=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var13 templ.ComponentScript = updateHexFromColor(i + 1)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13.Call)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -253,237 +282,236 @@ func CustomerColorReport(member *domain.Member, username string, recentAssignmen
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<input type=\"text\" id=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var13 string
-					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("hex_color_%d", i+1))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 112, Col: 48}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" name=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<input type=\"text\" id=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("hex_color_%d", i+1))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 113, Col: 50}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 116, Col: 48}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" value=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" name=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var15 string
-					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(getColor(member.AssignedColors, i))
+					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("hex_color_%d", i+1))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 114, Col: 53}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 117, Col: 50}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\" onchange=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" value=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var16 templ.ComponentScript = updateColorFromHex(i + 1)
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16.Call)
+					var templ_7745c5c3_Var16 string
+					templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(getColor(member.AssignedColors, i))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 118, Col: 53}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" class=\"hex-input\"></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" onchange=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var17 templ.ComponentScript = updateColorFromHex(i + 1)
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17.Call)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" class=\"hex-input\"></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</div><div class=\"form-footer\"><div class=\"notif-status\"><div style=\"margin-right: 20px;\"><span class=\"status-label\">สถานะแจ้งเตือน:</span> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</div><div class=\"form-footer\"><div class=\"notif-status\"><div style=\"margin-right: 20px;\"><span class=\"status-label\">สถานะแจ้งเตือน:</span> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if member.WalletColorsNotifiedAt != nil {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<span class=\"status-badge success\">✅ ส่งแล้ว (")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<span class=\"status-badge success\">✅ ส่งแล้ว (")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var17 string
-					templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(member.WalletColorsNotifiedAt.Format("02/01/06 15:04"))
+					var templ_7745c5c3_Var18 string
+					templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(member.WalletColorsNotifiedAt.Format("02/01/06 15:04"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 128, Col: 95}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 132, Col: 95}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, ")</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, ")</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<span class=\"status-badge pending\">ยังไม่เคยส่ง</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<span class=\"status-badge pending\">ยังไม่เคยส่ง</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</div><!-- Save Status Indicator --><div id=\"save-status\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</div><!-- Save Status Indicator --><div id=\"save-status\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if member.AssignedColors != "" && member.AssignedColors != ",,,," {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<span class=\"status-badge success\">✅ บันทึกแล้ว</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<span class=\"status-badge success\">✅ บันทึกแล้ว</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<span class=\"status-badge error\">⚠️ ยังไม่ได้บันทึกสี</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<span class=\"status-badge error\">⚠️ ยังไม่ได้บันทึกสี</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</div></div><!-- Removed Manual Save Button (Auto-Save Enabled) --><div style=\"font-size: 0.85rem; color: #888; font-style: italic;\">* ระบบบันทึกสีอัตโนมัติเมื่อมีการแก้ไข</div></div></form><!-- Notification Action -->")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</div></div><!-- Removed Manual Save Button (Auto-Save Enabled) --><div style=\"font-size: 0.85rem; color: #888; font-style: italic;\">* ระบบบันทึกสีอัตโนมัติเมื่อมีการแก้ไข</div></div></form><!-- Notification Action -->")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				// CONDITION REMOVED FOR MANUAL PATCH
-				// if member.AssignedColors != "" && member.AssignedColors != ",,,," {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<div class=\"notification-teaser\"><div style=\"flex: 1;\"><h4 style=\"margin: 0 0 5px 0; color: #1e3a8a; font-family: 'Kanit', sans-serif;\">ส่งแจ้งเตือนให้ลูกค้า</h4><p style=\"margin: 0; font-size: 0.9rem; color: #3b82f6;\">ส่งรหัสสีที่บันทึกไว้ไปยังแอปมือถือของลูกค้าโดยตรง</p></div><form action=\"/admin/send-wallet-notification\" method=\"POST\"><input type=\"hidden\" name=\"member_id\" value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
+				if member.AssignedColors != "" && member.AssignedColors != ",,,," {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<div class=\"notification-teaser\"><div style=\"flex: 1;\"><h4 style=\"margin: 0 0 5px 0; color: #1e3a8a; font-family: 'Kanit', sans-serif;\">ส่งแจ้งเตือนให้ลูกค้า</h4><p style=\"margin: 0; font-size: 0.9rem; color: #3b82f6;\">ส่งรหัสสีที่บันทึกไว้ไปยังแอปมือถือของลูกค้าโดยตรง</p></div><form action=\"/admin/send-wallet-notification\" method=\"POST\"><input type=\"hidden\" name=\"member_id\" value=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var19 string
+					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", member.ID))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 164, Col: 83}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\"> <input type=\"hidden\" name=\"username\" value=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var20 string
+					templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(member.Username)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 165, Col: 69}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\"> <button type=\"submit\" class=\"btn-notification\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m22 2-7 20-4-9-9-4Z\"></path><path d=\"M22 2 11 13\"></path></svg> ส่ง Push Notification</button></form></div>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
 				}
-				var templ_7745c5c3_Var18 string
-				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", member.ID))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 160, Col: 83}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\"> <input type=\"hidden\" name=\"username\" value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var19 string
-				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(member.Username)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 161, Col: 69}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\"> <button type=\"submit\" class=\"btn-notification\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m22 2-7 20-4-9-9-4Z\"></path><path d=\"M22 2 11 13\"></path></svg> ส่ง Push Notification</button></form></div>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				// }
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<!-- Recent List --><div style=\"margin-top: 3rem;\"><h3 style=\"font-family: 'Kanit', sans-serif; margin-bottom: 1.5rem; color: #333;\">รายชื่อลูกค้าล่าสุด</h3><div class=\"dashboard-table-container\"><table class=\"dashboard-table\"><thead><tr><th>ID</th><th>Username</th><th>Assigned Colors</th><th>สถานะแจ้งเตือน</th><th style=\"text-align: right;\">Action</th></tr></thead> <tbody>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<!-- Recent List --><div style=\"margin-top: 3rem;\"><h3 style=\"font-family: 'Kanit', sans-serif; margin-bottom: 1.5rem; color: #333;\">รายชื่อลูกค้าล่าสุด</h3><div class=\"dashboard-table-container\"><table class=\"dashboard-table\"><thead><tr><th>ID</th><th>Username</th><th>Assigned Colors</th><th>สถานะแจ้งเตือน</th><th style=\"text-align: right;\">Action</th></tr></thead> <tbody>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, m := range recentAssignments {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<tr><td>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var20 string
-			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", m.ID))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 191, Col: 37}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</td><td style=\"font-weight: 500;\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<tr><td>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var21 string
-			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(m.Username)
+			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", m.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 192, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 195, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</td><td><div style=\"display: flex; gap: 4px;\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</td><td style=\"font-weight: 500;\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var22 string
+			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(m.Username)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 196, Col: 50}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</td><td><div style=\"display: flex; gap: 4px;\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for i := 0; i < 5; i++ {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<div class=\"mini-color-circle\" style=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<div class=\"mini-color-circle\" style=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var22 string
-				templ_7745c5c3_Var22, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + getColor(m.AssignedColors, i))
+				var templ_7745c5c3_Var23 string
+				templ_7745c5c3_Var23, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("background-color: " + getColor(m.AssignedColors, i))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 196, Col: 102}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 200, Col: 102}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "\"></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "\"></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</div></td><td>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</div></td><td>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if m.WalletColorsNotifiedAt != nil {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<span class=\"status-text-success\">ส่งแล้ว</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<span class=\"status-text-success\">ส่งแล้ว</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<span class=\"status-text-muted\">ยังไม่ส่ง</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<span class=\"status-text-muted\">ยังไม่ส่ง</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</td><td style=\"text-align: right;\"><a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</td><td style=\"text-align: right;\"><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var23 templ.SafeURL
-			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/admin/customer-color-report?username=" + m.Username))
+			var templ_7745c5c3_Var24 templ.SafeURL
+			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/admin/customer-color-report?username=" + m.Username))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 208, Col: 87}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 212, Col: 87}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\" class=\"action-link\">แก้ไข/ส่ง</a></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "\" class=\"action-link\">แก้ไข/ส่ง</a></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</tbody></table></div></div></div><style type=\"text/css\">\n\t\t.customer-color-container {\n\t\t\tmax-width: 1000px;\n\t\t\tmargin: 0 auto;\n\t\t\tpadding: 20px;\n\t\t}\n\t\t.admin-section-card {\n\t\t\tbackground: white;\n\t\t\tpadding: 2rem;\n\t\t\tborder-radius: 12px;\n\t\t\tbox-shadow: 0 4px 15px rgba(0,0,0,0.05);\n\t\t\tmargin-bottom: 2rem;\n\t\t}\n\t\t.highlight-border {\n\t\t\tborder-top: 4px solid #007bff;\n\t\t}\n\t\t.btn-secondary {\n\t\t\tpadding: 10px 20px;\n\t\t\tbackground: #f8f9fa;\n\t\t\tborder: 1px solid #ddd;\n\t\t\tborder-radius: 8px;\n\t\t\tcursor: pointer;\n\t\t\tfont-weight: 500;\n\t\t\ttransition: all 0.2s;\n\t\t}\n\t\t.btn-secondary:hover {\n\t\t\tbackground: #e9ecef;\n\t\t}\n\t\t.btn-primary {\n\t\t\tpadding: 12px 30px;\n\t\t\tbackground: #333;\n\t\t\tcolor: white;\n\t\t\tborder: none;\n\t\t\tborder-radius: 8px;\n\t\t\tcursor: pointer;\n\t\t\tfont-weight: 600;\n\t\t\ttransition: all 0.2s;\n\t\t}\n\t\t.btn-primary:hover {\n\t\t\tbackground: #000;\n\t\t\ttransform: translateY(-1px);\n\t\t}\n\t\t.search-results-dropdown {\n\t\t\tposition: absolute;\n\t\t\tz-index: 100;\n\t\t\twidth: 100%;\n\t\t\tmargin-top: 5px;\n\t\t\tbackground: white;\n\t\t\tborder: 1px solid #eee;\n\t\t\tborder-radius: 8px;\n\t\t\tbox-shadow: 0 10px 25px rgba(0,0,0,0.1);\n\t\t\tmax-height: 300px;\n\t\t\toverflow-y: auto;\n\t\t}\n\t\t.color-grid {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(auto-fit, minmax(150px, 1fr));\n\t\t\tgap: 20px;\n\t\t\tmargin-bottom: 2rem;\n\t\t}\n\t\t.color-item {\n\t\t\tdisplay: flex;\n\t\t\tflex-direction: column;\n\t\t\talign-items: center;\n\t\t\tpadding: 15px;\n\t\t\tbackground: #fcfcfc;\n\t\t\tborder: 1px solid #f0f0f0;\n\t\t\tborder-radius: 10px;\n\t\t}\n\t\t.color-item label {\n\t\t\tfont-size: 0.85rem;\n\t\t\tfont-weight: 600;\n\t\t\tcolor: #666;\n\t\t\tmargin-bottom: 10px;\n\t\t}\n\t\t.color-picker-wrapper {\n\t\t\twidth: 60px;\n\t\t\theight: 60px;\n\t\t\tborder-radius: 50%;\n\t\t\toverflow: hidden;\n\t\t\tborder: 3px solid white;\n\t\t\tbox-shadow: 0 0 0 2px #eee;\n\t\t\tmargin-bottom: 10px;\n\t\t}\n\t\t.color-picker-wrapper input[type=\"color\"] {\n\t\t\twidth: 140%;\n\t\t\theight: 140%;\n\t\t\tmargin: -20%;\n\t\t\tcursor: pointer;\n\t\t\tborder: none;\n\t\t}\n\t\t.hex-input {\n\t\t\twidth: 100%;\n\t\t\tpadding: 5px;\n\t\t\ttext-align: center;\n\t\t\tfont-family: monospace;\n\t\t\tborder: 1px solid #eee;\n\t\t\tborder-radius: 4px;\n\t\t\tfont-size: 0.9rem;\n\t\t}\n\t\t.form-footer {\n\t\t\tdisplay: flex;\n\t\t\tjustify-content: space-between;\n\t\t\talign-items: center;\n\t\t\tpadding-top: 2rem;\n\t\t\tborder-top: 1px solid #f0f0f0;\n\t\t}\n\t\t.notif-status {\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tgap: 10px;\n\t\t}\n\t\t.status-label {\n\t\t\tfont-size: 0.9rem;\n\t\t\tcolor: #666;\n\t\t}\n\t\t.status-badge {\n\t\t\tpadding: 4px 12px;\n\t\t\tborder-radius: 20px;\n\t\t\tfont-size: 0.8rem;\n\t\t\tfont-weight: 600;\n\t\t}\n\t\t.status-badge.success { background: #e6f4ea; color: #1e7e34; }\n\t\t.status-badge.pending { background: #f8f9fa; color: #6c757d; }\n\t\t\n\t\t.notification-teaser {\n\t\t\tmargin-top: 2.5rem;\n\t\t\tpadding: 20px;\n\t\t\tbackground: #eff6ff;\n\t\t\tborder-radius: 12px;\n\t\t\tborder: 1px dashed #bfdbfe;\n\t\t\tdisplay: flex;\n\t\t\tjustify-content: space-between;\n\t\t\talign-items: center;\n\t\t\tgap: 20px;\n\t\t}\n\t\t.btn-notification {\n\t\t\tbackground: #2563eb;\n\t\t\tcolor: white;\n\t\t\tborder: none;\n\t\t\tpadding: 12px 25px;\n\t\t\tborder-radius: 8px;\n\t\t\tfont-weight: 700;\n\t\t\tcursor: pointer;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tgap: 10px;\n\t\t\ttransition: all 0.2s;\n\t\t}\n\t\t.btn-notification:hover {\n\t\t\tbackground: #1d4ed8;\n\t\t\ttransform: scale(1.05);\n\t\t}\n\t\t.user-avatar-mini {\n\t\t\twidth: 36px;\n\t\t\theight: 36px;\n\t\t\tbackground: #eee;\n\t\t\tborder-radius: 50%;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t\tfont-weight: bold;\n\t\t\tcolor: #555;\n\t\t}\n\t\t.mini-color-circle {\n\t\t\twidth: 20px;\n\t\t\theight: 20px;\n\t\t\tborder-radius: 50%;\n\t\t\tborder: 1px solid #eee;\n\t\t}\n\t\t.status-text-success { color: #28a745; font-size: 0.85rem; font-weight: 500; }\n\t\t.status-text-muted { color: #999; font-size: 0.85rem; }\n\t\t.action-link {\n\t\t\ttext-decoration: none;\n\t\t\tcolor: #007bff;\n\t\t\tfont-weight: 600;\n\t\t\tfont-size: 0.85rem;\n\t\t}\n\t\t.action-link:hover { text-decoration: underline; }\n\t\t.alert-error {\n\t\t\tbackground: #fff5f5;\n\t\t\tborder-left: 5px solid #feb2b2;\n\t\t\tcolor: #c53030;\n\t\t\tpadding: 15px 20px;\n\t\t\tborder-radius: 8px;\n\t\t}\n\t\t.hidden { display: none; }\n\t\t\n\t\t@keyframes fadeIn {\n\t\t\tfrom { opacity: 0; transform: translateY(10px); }\n\t\t\tto { opacity: 1; transform: translateY(0); }\n\t\t}\n\t\t\n\t\t/* Mobile responsive */\n\t\t@media (max-width: 768px) {\n\t\t\t.form-footer, .notification-teaser {\n\t\t\t\tflex-direction: column;\n\t\t\t\talign-items: stretch;\n\t\t\t\ttext-align: center;\n\t\t\t}\n\t\t\t.notif-status { justify-content: center; margin-bottom: 20px; }\n\t\t\t.btn-notification { justify-content: center; }\n\t\t}\n\t</style>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</tbody></table></div></div></div><style type=\"text/css\">\n\t\t.customer-color-container {\n\t\t\tmax-width: 1000px;\n\t\t\tmargin: 0 auto;\n\t\t\tpadding: 20px;\n\t\t}\n\t\t.admin-section-card {\n\t\t\tbackground: white;\n\t\t\tpadding: 2rem;\n\t\t\tborder-radius: 12px;\n\t\t\tbox-shadow: 0 4px 15px rgba(0,0,0,0.05);\n\t\t\tmargin-bottom: 2rem;\n\t\t}\n\t\t.highlight-border {\n\t\t\tborder-top: 4px solid #007bff;\n\t\t}\n\t\t.btn-secondary {\n\t\t\tpadding: 10px 20px;\n\t\t\tbackground: #f8f9fa;\n\t\t\tborder: 1px solid #ddd;\n\t\t\tborder-radius: 8px;\n\t\t\tcursor: pointer;\n\t\t\tfont-weight: 500;\n\t\t\ttransition: all 0.2s;\n\t\t}\n\t\t.btn-secondary:hover {\n\t\t\tbackground: #e9ecef;\n\t\t}\n\t\t.btn-primary {\n\t\t\tpadding: 12px 30px;\n\t\t\tbackground: #333;\n\t\t\tcolor: white;\n\t\t\tborder: none;\n\t\t\tborder-radius: 8px;\n\t\t\tcursor: pointer;\n\t\t\tfont-weight: 600;\n\t\t\ttransition: all 0.2s;\n\t\t}\n\t\t.btn-primary:hover {\n\t\t\tbackground: #000;\n\t\t\ttransform: translateY(-1px);\n\t\t}\n\t\t.search-results-dropdown {\n\t\t\tposition: absolute;\n\t\t\tz-index: 100;\n\t\t\twidth: 100%;\n\t\t\tmargin-top: 5px;\n\t\t\tbackground: white;\n\t\t\tborder: 1px solid #eee;\n\t\t\tborder-radius: 8px;\n\t\t\tbox-shadow: 0 10px 25px rgba(0,0,0,0.1);\n\t\t\tmax-height: 300px;\n\t\t\toverflow-y: auto;\n\t\t}\n\t\t.color-grid {\n\t\t\tdisplay: grid;\n\t\t\tgrid-template-columns: repeat(auto-fit, minmax(150px, 1fr));\n\t\t\tgap: 20px;\n\t\t\tmargin-bottom: 2rem;\n\t\t}\n\t\t.color-item {\n\t\t\tdisplay: flex;\n\t\t\tflex-direction: column;\n\t\t\talign-items: center;\n\t\t\tpadding: 15px;\n\t\t\tbackground: #fcfcfc;\n\t\t\tborder: 1px solid #f0f0f0;\n\t\t\tborder-radius: 10px;\n\t\t}\n\t\t.color-item label {\n\t\t\tfont-size: 0.85rem;\n\t\t\tfont-weight: 600;\n\t\t\tcolor: #666;\n\t\t\tmargin-bottom: 10px;\n\t\t}\n\t\t.color-picker-wrapper {\n\t\t\twidth: 60px;\n\t\t\theight: 60px;\n\t\t\tborder-radius: 50%;\n\t\t\toverflow: hidden;\n\t\t\tborder: 3px solid white;\n\t\t\tbox-shadow: 0 0 0 2px #eee;\n\t\t\tmargin-bottom: 10px;\n\t\t}\n\t\t.color-picker-wrapper input[type=\"color\"] {\n\t\t\twidth: 140%;\n\t\t\theight: 140%;\n\t\t\tmargin: -20%;\n\t\t\tcursor: pointer;\n\t\t\tborder: none;\n\t\t}\n\t\t.hex-input {\n\t\t\twidth: 100%;\n\t\t\tpadding: 5px;\n\t\t\ttext-align: center;\n\t\t\tfont-family: monospace;\n\t\t\tborder: 1px solid #eee;\n\t\t\tborder-radius: 4px;\n\t\t\tfont-size: 0.9rem;\n\t\t}\n\t\t.form-footer {\n\t\t\tdisplay: flex;\n\t\t\tjustify-content: space-between;\n\t\t\talign-items: center;\n\t\t\tpadding-top: 2rem;\n\t\t\tborder-top: 1px solid #f0f0f0;\n\t\t}\n\t\t.notif-status {\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tgap: 10px;\n\t\t}\n\t\t.status-label {\n\t\t\tfont-size: 0.9rem;\n\t\t\tcolor: #666;\n\t\t}\n\t\t.status-badge {\n\t\t\tpadding: 4px 12px;\n\t\t\tborder-radius: 20px;\n\t\t\tfont-size: 0.8rem;\n\t\t\tfont-weight: 600;\n\t\t}\n\t\t.status-badge.success { background: #e6f4ea; color: #1e7e34; }\n\t\t.status-badge.pending { background: #f8f9fa; color: #6c757d; }\n\t\t\n\t\t.notification-teaser {\n\t\t\tmargin-top: 2.5rem;\n\t\t\tpadding: 20px;\n\t\t\tbackground: #eff6ff;\n\t\t\tborder-radius: 12px;\n\t\t\tborder: 1px dashed #bfdbfe;\n\t\t\tdisplay: flex;\n\t\t\tjustify-content: space-between;\n\t\t\talign-items: center;\n\t\t\tgap: 20px;\n\t\t}\n\t\t.btn-notification {\n\t\t\tbackground: #2563eb;\n\t\t\tcolor: white;\n\t\t\tborder: none;\n\t\t\tpadding: 12px 25px;\n\t\t\tborder-radius: 8px;\n\t\t\tfont-weight: 700;\n\t\t\tcursor: pointer;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tgap: 10px;\n\t\t\ttransition: all 0.2s;\n\t\t}\n\t\t.btn-notification:hover {\n\t\t\tbackground: #1d4ed8;\n\t\t\ttransform: scale(1.05);\n\t\t}\n\t\t.user-avatar-mini {\n\t\t\twidth: 36px;\n\t\t\theight: 36px;\n\t\t\tbackground: #eee;\n\t\t\tborder-radius: 50%;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t\tfont-weight: bold;\n\t\t\tcolor: #555;\n\t\t}\n\t\t.mini-color-circle {\n\t\t\twidth: 20px;\n\t\t\theight: 20px;\n\t\t\tborder-radius: 50%;\n\t\t\tborder: 1px solid #eee;\n\t\t}\n\t\t.status-text-success { color: #28a745; font-size: 0.85rem; font-weight: 500; }\n\t\t.status-text-muted { color: #999; font-size: 0.85rem; }\n\t\t.action-link {\n\t\t\ttext-decoration: none;\n\t\t\tcolor: #007bff;\n\t\t\tfont-weight: 600;\n\t\t\tfont-size: 0.85rem;\n\t\t}\n\t\t.action-link:hover { text-decoration: underline; }\n\t\t.alert-error {\n\t\t\tbackground: #fff5f5;\n\t\t\tborder-left: 5px solid #feb2b2;\n\t\t\tcolor: #c53030;\n\t\t\tpadding: 15px 20px;\n\t\t\tborder-radius: 8px;\n\t\t}\n\t\t.hidden { display: none; }\n\t\t\n\t\t@keyframes fadeIn {\n\t\t\tfrom { opacity: 0; transform: translateY(10px); }\n\t\t\tto { opacity: 1; transform: translateY(0); }\n\t\t}\n\t\t\n\t\t/* Mobile responsive */\n\t\t@media (max-width: 768px) {\n\t\t\t.form-footer, .notification-teaser {\n\t\t\t\tflex-direction: column;\n\t\t\t\talign-items: stretch;\n\t\t\t\ttext-align: center;\n\t\t\t}\n\t\t\t.notif-status { justify-content: center; margin-bottom: 20px; }\n\t\t\t.btn-notification { justify-content: center; }\n\t\t}\n\t</style>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -533,13 +561,13 @@ func SearchUserResults(members []domain.Member) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var24 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var24 == nil {
-			templ_7745c5c3_Var24 = templ.NopComponent
+		templ_7745c5c3_Var25 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var25 == nil {
+			templ_7745c5c3_Var25 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if len(members) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<div style=\"padding: 15px; color: #888; font-style: italic; text-align: center;\">ไม่พบรายชื่อที่ตรงกับการค้นหา</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<div style=\"padding: 15px; color: #888; font-style: italic; text-align: center;\">ไม่พบรายชื่อที่ตรงกับการค้นหา</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -549,74 +577,74 @@ func SearchUserResults(members []domain.Member) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<div class=\"search-result-item\" onclick=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<div class=\"search-result-item\" onclick=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var25 templ.ComponentScript = navigateToCustomer(m.Username)
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25.Call)
+				var templ_7745c5c3_Var26 templ.ComponentScript = navigateToCustomer(m.Username)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var26.Call)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "\"><div class=\"user-avatar-small\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var26 string
-				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(strings.ToUpper(m.Username[:1]))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 444, Col: 68}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</div><div style=\"flex: 1;\"><div style=\"font-weight: 600; color: #333;\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\"><div class=\"user-avatar-small\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var27 string
-				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(m.Username)
+				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(strings.ToUpper(m.Username[:1]))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 446, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 456, Col: 68}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</div><div style=\"font-size: 0.75rem; color: #777;\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</div><div style=\"flex: 1;\"><div style=\"font-weight: 600; color: #333;\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var28 string
-				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(m.Email)
+				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(m.Username)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 447, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 458, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, " • ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</div><div style=\"font-size: 0.75rem; color: #777;\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var29 string
-				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(m.Tel)
+				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(m.Email)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 447, Col: 74}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 459, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</div></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, " • ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var30 string
+				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(m.Tel)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages/admin/customer_color_report.templ`, Line: 459, Col: 74}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</div></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<style type=\"text/css\">\n\t\t.search-result-item {\n\t\t\tpadding: 12px 15px;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tgap: 12px;\n\t\t\tcursor: pointer;\n\t\t\tborder-bottom: 1px solid #f5f5f5;\n\t\t\ttransition: background 0.2s;\n\t\t}\n\t\t.search-result-item:last-child { border-bottom: none; }\n\t\t.search-result-item:hover { background: #f0f7ff; }\n\t\t.user-avatar-small {\n\t\t\twidth: 30px;\n\t\t\theight: 30px;\n\t\t\tbackground: #e0e7ff;\n\t\t\tcolor: #4338ca;\n\t\t\tborder-radius: 50%;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t\tfont-weight: bold;\n\t\t\tfont-size: 0.8rem;\n\t\t}\n\t</style>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<style type=\"text/css\">\n\t\t.search-result-item {\n\t\t\tpadding: 12px 15px;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tgap: 12px;\n\t\t\tcursor: pointer;\n\t\t\tborder-bottom: 1px solid #f5f5f5;\n\t\t\ttransition: background 0.2s;\n\t\t}\n\t\t.search-result-item:last-child { border-bottom: none; }\n\t\t.search-result-item:hover { background: #f0f7ff; }\n\t\t.user-avatar-small {\n\t\t\twidth: 30px;\n\t\t\theight: 30px;\n\t\t\tbackground: #e0e7ff;\n\t\t\tcolor: #4338ca;\n\t\t\tborder-radius: 50%;\n\t\t\tdisplay: flex;\n\t\t\talign-items: center;\n\t\t\tjustify-content: center;\n\t\t\tfont-weight: bold;\n\t\t\tfont-size: 0.8rem;\n\t\t}\n\t</style>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

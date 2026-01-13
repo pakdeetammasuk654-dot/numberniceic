@@ -73,9 +73,10 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
         final double centerY = height / 2;
         final double minDim = math.min(width, height);
         
-        // Outer orbit closer to inner orbit
-        final double innerRadius = minDim * 0.30; 
-        final double outerRadius = minDim * 0.44; 
+        // Use fixed reference size (220) for orbit sizing to allow container expansion without scaling orbits
+        const double refSize = 220.0;
+        final double innerRadius = refSize * 0.35; 
+        final double outerRadius = refSize * 0.48;  
 
         return SizedBox(
           width: width,

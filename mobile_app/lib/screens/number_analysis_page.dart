@@ -220,112 +220,24 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
               child: Column(
                 children: [
 
-                  
-                  // Phone Input (Card Style)
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.grey.shade200, width: 2),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 8)),
-                      ],
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.phone_in_talk_outlined, color: Colors.grey, size: 24),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _phoneController,
-                            focusNode: _phoneFocusNode,
-                            keyboardType: TextInputType.phone,
-                            maxLength: 10,
-                            onChanged: _onPhoneChanged,
-                            style: GoogleFonts.sourceCodePro( 
-                              fontSize: 24, // Slightly reduced to ensure fit
-                              fontWeight: FontWeight.w600, 
-                              letterSpacing: 3, // Slightly reduced spacing
-                              color: const Color(0xFF1F2937)
-                            ),
-                            textAlign: TextAlign.center,
-                            decoration: InputDecoration(
-                              hintText: '08XXXXXXXX',
-                              hintStyle: GoogleFonts.sourceCodePro(color: Colors.grey[300], letterSpacing: 2),
-                              border: InputBorder.none,
-                              counterText: "",
-                              contentPadding: const EdgeInsets.symmetric(vertical: 4),
-                              suffixIcon: _phoneController.text.isNotEmpty 
-                                ? IconButton(
-                                    icon: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[100],
-                                        shape: BoxShape.circle
-                                      ),
-                                      child: const Icon(Icons.close, color: Colors.grey, size: 18)
-                                    ),
-                                    onPressed: () {
-                                       _phoneController.clear();
-                                       _onPhoneChanged('');
-                                    },
-                                  )
-                                : null
-                            ),
-                          ),
-                        ),
-                      ],
+                if (_phoneController.text.isEmpty && !_isLoading && _analysisData == null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: Text(
+                      'ไม่พบเบอร์โทรศัพท์\nกรุณาเลือกเบอร์จากหน้าหลัก',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.kanit(fontSize: 18, color: Colors.grey[400]),
                     ),
                   ),
-                  const SizedBox(height: 12), // Reduced 24->12 (Arrow 2)
-                  
-                  // Status Pill (Rounded Border)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: Colors.grey.shade200),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset:const Offset(0,2))
-                      ]
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Blinking Dot Container (Light Green Bg)
-                        Container(
-                          width: 24, height: 24,
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            shape: BoxShape.circle
-                          ),
-                          child: _BlinkingDot(),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'ระบบวิเคราะห์อัตโนมัติเมื่อครบ 10 หลัก', 
-                          style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[600])
-                        ),
-                      ],
-                    ),
+
+                if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 20),
+                    child: CircularProgressIndicator(),
                   ),
-                ],
-              ),
-            ),
 
-            if (_isLoading)
-               const Padding(
-                 padding: EdgeInsets.only(top: 20),
-                 child: CircularProgressIndicator(),
-               ),
-
-
-
-            if (!_isLoading && _analysisData != null) ...[
-                const SizedBox(height: 8), // Reduced spacing
+                if (!_isLoading && _analysisData != null) ...[
+                  const SizedBox(height: 8),
 
                 // 1. Grade Badge (Moved to top)
                 if (showGoldenBadge && gradeTitle != null) ...[
@@ -353,11 +265,14 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
                 const SizedBox(height: 40),
             ],
 
-            const SharedFooter(),
-          ],
-        ),
+                const SharedFooter(),
+              ],
+            ),
+          ),
+        ],
       ),
-    );
+    ),
+  );
 
     if (widget.isBottomSheet) {
       return Container(

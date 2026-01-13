@@ -65,7 +65,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF1A1A2E), // Dark Navy Theme
       body: Stack(
         alignment: Alignment.center,
         children: [
@@ -84,41 +84,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   ),
                 );
               },
-              child: Container(
-                width: 195,
-                height: 195,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF532E91),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF532E91).withOpacity(0.3),
-                      blurRadius: 35,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: Transform.translate(
-                    offset: const Offset(12, -12), // Visual nudge: Move Right and Up (45 degrees)
-                    child: Transform.scale(
-                      scale: 1.2, // Scale up slightly to allow room for translation without gaps
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        width: 195,
-                        height: 195,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.center,
-                        errorBuilder: (context, error, stackTrace) => const Icon(
-                          Icons.auto_awesome,
-                          size: 100,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
+              child: SizedBox(
+                width: 200,
+                height: 200,
+                child: Image.asset(
+                  'assets/images/logo_gold_name_transparent.png',
+                  width: 200,
+                  height: 200,
+                  fit: BoxFit.contain,
                 ),
               ),
             ),

@@ -6,6 +6,7 @@ import 'package:mobile_app/widgets/lucky_number_skeleton.dart';
 import 'package:mobile_app/widgets/contact_purchase_modal.dart';
 import 'package:mobile_app/services/api_service.dart';
 import 'package:mobile_app/screens/number_analysis_page.dart';
+import 'shimmering_gold_wrapper.dart';
 
 // --- MAIN WIDGET ---
 class CategoryNestedDonut extends StatefulWidget {
@@ -16,6 +17,7 @@ class CategoryNestedDonut extends StatefulWidget {
   final int totalNegativeScore;
   final String? analyzedName;
   final Function(String phoneNumber)? onAddPhoneNumber; // Just for notification
+  final Color? backgroundColor; // Optional background color
 
   const CategoryNestedDonut({
     super.key,
@@ -26,6 +28,7 @@ class CategoryNestedDonut extends StatefulWidget {
     required this.totalNegativeScore,
     this.analyzedName,
     this.onAddPhoneNumber,
+    this.backgroundColor,
   });
 
   @override
@@ -77,6 +80,29 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
          _chartController.forward();
       }
     });
+  }
+
+  @override
+  void didUpdateWidget(CategoryNestedDonut oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Check if data changed significantly (Name changed OR Scores changed)
+    if (widget.analyzedName != oldWidget.analyzedName || 
+        widget.grandTotalScore != oldWidget.grandTotalScore ||
+        widget.categoryBreakdown != oldWidget.categoryBreakdown) {
+      
+      // Clear enhancement state if name changed
+      if (widget.analyzedName != oldWidget.analyzedName) {
+        _enhancedCategories.clear();
+        _addedPhoneNumbersByCategory.clear();
+        _fetchedLuckyNumbers.clear();
+      }
+          
+      // Reset and Re-play animations
+      _scoreController.reset();
+      _chartController.reset();
+      _chartController.forward();
+      _scoreController.forward();
+    }
   }
 
   @override
@@ -206,138 +232,162 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
     if (finalScoreTarget == 0 && activeCategories > 0) finalScoreTarget = 99; 
 
     return Container(
-      color: Colors.white,
+      color: widget.backgroundColor ?? const Color(0xFF1A1A2E),
       child: Column(
         children: [
-        // Chart Section
-        SizedBox(
-          height: 220,
-          child: Center(
+          // Top Section with Brown Gradient and Monogram Pattern
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF3B2F2E), // Deep Chocolate Brown
+                  const Color(0xFF231A1A), // Darker Brown
+                ],
+              ),
+            ),
             child: Stack(
-              alignment: Alignment.center,
               children: [
-                AnimatedBuilder(
-                  animation: _chartAnimation,
-                  builder: (context, child) {
-                    return CustomPaint(
-                      size: const Size(200, 200),
-                      painter: NestedDonutPainter(
-                        data: chartData,
-                        totalPairs: widget.totalPairs,
-                        enhancedCategories: allEnhanced, // Use combined set
-                        progress: _chartAnimation.value,
-                      ),
-                    );
-                  }
+                // Background Pattern (Watermark-like)
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: BackgroundPatternPainter(),
+                  ),
                 ),
-                // Center Text (Golden)
-                Container(
-                   width: 136, height: 136,
-                   decoration: BoxDecoration(
-                     color: Colors.white,
-                     shape: BoxShape.circle,
-                     boxShadow: [
-                       BoxShadow(
-                         color: Colors.black.withOpacity(0.15),
-                         blurRadius: 15,
-                         offset: const Offset(0, 4),
-                       )
-                     ]
-                   ),
-                   child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('คะแนนรวม', style: GoogleFonts.kanit(fontSize: 12, color: Colors.grey[500])),
-                        
-                        // ANIMATED PERCENTAGE
-                        AnimatedBuilder(
-                          animation: _scoreAnimation,
-                          builder: (context, child) {
-                            final currentScore = (_scoreAnimation.value * finalScoreTarget).toInt();
-                            return ShaderMask(
-                              shaderCallback: (bounds) => const LinearGradient(
-                                colors: [Color(0xFFB45309), Color(0xFFFFD700), Color(0xFFF59E0B)],
-                                begin: Alignment.topLeft, end: Alignment.bottomRight
-                              ).createShader(bounds),
-                              child: Text(
-                                '$currentScore%',
-                                style: GoogleFonts.kanit(fontSize: 52, fontWeight: FontWeight.w900, color: Colors.white, height: 1.0)
-                              ),
-                            );
-                          }
+                Column(
+                  children: [
+                    // 1. Analyzed Name Header
+                    _buildAnalyzedNameHeader(),
+
+                    // Chart Section
+                    SizedBox(
+                      height: 220,
+                      child: Center(
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            AnimatedBuilder(
+                              animation: _chartAnimation,
+                              builder: (context, child) {
+                                return CustomPaint(
+                                  size: const Size(200, 200),
+                                  painter: NestedDonutPainter(
+                                    data: chartData,
+                                    totalPairs: widget.totalPairs,
+                                    enhancedCategories: allEnhanced,
+                                    progress: _chartAnimation.value,
+                                  ),
+                                );
+                              }
+                            ),
+                            // Center Text (Golden)
+                            Container(
+                               width: 136, height: 136,
+                               decoration: BoxDecoration(
+                                 color: const Color(0xFF16213E),
+                                 shape: BoxShape.circle,
+                                 border: Border.all(color: Colors.white10, width: 2),
+                                 boxShadow: [
+                                   BoxShadow(
+                                     color: Colors.black.withOpacity(0.3),
+                                     blurRadius: 15,
+                                     offset: const Offset(0, 4),
+                                   )
+                                 ]
+                               ),
+                               child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text('คะแนนรวม', style: GoogleFonts.kanit(fontSize: 12, color: Colors.white54)),
+                                    
+                                    // ANIMATED PERCENTAGE
+                                    AnimatedBuilder(
+                                      animation: _scoreAnimation,
+                                      builder: (context, child) {
+                                        final currentScore = (_scoreAnimation.value * finalScoreTarget).toInt();
+                                        return ShaderMask(
+                                          shaderCallback: (bounds) => const LinearGradient(
+                                            colors: [Color(0xFFB45309), Color(0xFFFFD700), Color(0xFFF59E0B)],
+                                            begin: Alignment.topLeft, end: Alignment.bottomRight
+                                          ).createShader(bounds),
+                                          child: Text(
+                                            '$currentScore%',
+                                            style: GoogleFonts.kanit(fontSize: 36, fontWeight: FontWeight.w900, color: Colors.white, height: 1.0)
+                                          ),
+                                        );
+                                      }
+                                    ),
+                                  ],
+                               ),
+                            ),
+                          ],
                         ),
-                      ],
-                   ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
               ],
             ),
           ),
-        ),
-        
-        const SizedBox(height: 12),
+          const SizedBox(height: 0), 
+          _buildLegendHeader(),
+          const Divider(height: 1, color: Colors.white12),
+          Column(
+            children: chartData.asMap().entries.map((entry) {
+                  int idx = entry.key;
+                  var cat = entry.value;
+                  bool isEnhanced = allEnhanced.contains(cat.name);
+                  
+                  // Percentage Logic
+                  int displayPct = 0;
+                  int activeCount = 0;
+                  for (var c in chartData) { if (c.good > 0) activeCount++; }
 
-        // Legend Header
-        _buildLegendHeader(),
-        const Divider(height: 1),
+                  if (allEnhanced.isEmpty) {
+                     if (cat.good > 0) displayPct = 25;
+                  } else {
+                     double totalUnits = 6.0;
+                     double activeBaseCost = 1.5;
+                     double allocated = activeCount * activeBaseCost;
+                     double remaining = totalUnits - allocated;
+                     int enhancerCount = allEnhanced.length;
+                     double bonus = enhancerCount > 0 ? remaining / enhancerCount : 0.0;
+                     
+                     double weight = 0.0;
+                     if (cat.good > 0) weight += activeBaseCost;
+                     if (isEnhanced) weight += bonus;
+                     if (weight > 0) displayPct = (weight / totalUnits * 100).round();
+                  }
 
-        // Legend List
-        Column(
-          children: chartData.asMap().entries.map((entry) {
-            int idx = entry.key;
-            var cat = entry.value;
-            bool isEnhanced = allEnhanced.contains(cat.name);
-            
-            // Percentage Logic
-            int displayPct = 0;
-            int activeCount = 0;
-            for (var c in chartData) { if (c.good > 0) activeCount++; }
-
-            if (allEnhanced.isEmpty) {
-               if (cat.good > 0) displayPct = 25;
-            } else {
-               double totalUnits = 6.0;
-               double activeBaseCost = 1.5;
-               double allocated = activeCount * activeBaseCost;
-               double remaining = totalUnits - allocated;
-               int enhancerCount = allEnhanced.length;
-               double bonus = enhancerCount > 0 ? remaining / enhancerCount : 0.0;
-               
-               double weight = 0.0;
-               if (cat.good > 0) weight += activeBaseCost;
-               if (isEnhanced) weight += bonus;
-               if (weight > 0) displayPct = (weight / totalUnits * 100).round();
-            }
-
-            return CategoryLegendRow(
-              key: ValueKey(cat.name),
-              cat: cat, 
-              totalPairs: widget.totalPairs,
-              index: idx,
-              onEnhanceChange: (val) => _onEnhanceChange(cat.name, val),
-              textShineController: _textShineController!,
-              isEnhanced: isEnhanced,
-              displayPct: displayPct,
-              addedPhoneNumbers: _addedPhoneNumbersByCategory[cat.name],
-              onRemovePhoneNumber: _handleRemovePhoneNumber,
-            );
-          }).toList(),
-        ),
-
-
-
-      ],
-      ),
+                  return CategoryLegendRow(
+                    key: ValueKey(cat.name),
+                    cat: cat, 
+                    totalPairs: widget.totalPairs,
+                    index: idx,
+                    onEnhanceChange: (val) => _onEnhanceChange(cat.name, val),
+                    textShineController: _textShineController!,
+                    isEnhanced: isEnhanced,
+                    displayPct: displayPct,
+                    addedPhoneNumbers: _addedPhoneNumbersByCategory[cat.name],
+                    onRemovePhoneNumber: _handleRemovePhoneNumber,
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
     );
   }
 
   Widget _buildHintText() {
       return Container(
-        color: Colors.white,
+        color: const Color(0xFF1A1A2E),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Text('💡 แตะไอคอน ', style: GoogleFonts.kanit(fontSize: 10, color: const Color(0xFF64748B), fontStyle: FontStyle.italic)),
+            Text('💡 แตะไอคอน ', style: GoogleFonts.kanit(fontSize: 10, color: Colors.white38, fontStyle: FontStyle.italic)),
             Container(
               width: 14, height: 14,
               margin: const EdgeInsets.symmetric(horizontal: 2),
@@ -348,32 +398,37 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
               ),
               child: const Icon(Icons.autorenew, size: 10, color: Colors.white),
             ),
-            Text(' เพื่อเปลี่ยนเบอร์มงคล', style: GoogleFonts.kanit(fontSize: 10, color: const Color(0xFF64748B), fontStyle: FontStyle.italic)),
+            Text(' เพื่อเปลี่ยนเบอร์มงคล', style: GoogleFonts.kanit(fontSize: 10, color: Colors.white38, fontStyle: FontStyle.italic)),
           ],
         ),
       );
   }
 
   Widget _buildLegendHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-      child: Row(
-        children: [
-          Expanded(flex: 3, child: Text('หมวดหมู่', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF64748B)))),
-          Expanded(flex: 2, child: Center(child: Text('%ดี', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF64748B))))),
-          Expanded(flex: 2, child: Center(child: Text('%ร้าย', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF64748B))))),
-          Expanded(
-            flex: 2, 
-            child: Align(
-              alignment: Alignment.centerRight, 
-              child: Text(
-                'เติมกราฟ', 
-                style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF64748B)),
-                textAlign: TextAlign.right, 
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F172A),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(flex: 3, child: Text('หมวดหมู่', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white54))),
+            Expanded(flex: 2, child: Center(child: Text('%ดี', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white54)))),
+            Expanded(flex: 2, child: Center(child: Text('%ร้าย', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white54)))),
+            Expanded(
+              flex: 2, 
+              child: Align(
+                alignment: Alignment.centerRight, 
+                child: Text(
+                  'เติมกราฟ', 
+                  style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white54),
+                  textAlign: TextAlign.right, 
+                )
               )
-            )
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -385,11 +440,11 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Colors.white, // Clean background
+      color: const Color(0xFF1A1A2E),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('คะแนนรวม', style: GoogleFonts.kanit(fontSize: 16, color: const Color(0xFF64748B), fontWeight: FontWeight.w500)),
+          Text('คะแนนรวม', style: GoogleFonts.kanit(fontSize: 16, color: Colors.white54, fontWeight: FontWeight.w500)),
           const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -428,6 +483,60 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
       );
   }
   
+
+
+  Widget _buildAnalyzedNameHeader() {
+    if (widget.analyzedName == null || widget.analyzedName!.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 20, bottom: 24, left: 20, right: 20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+           Container(
+             padding: const EdgeInsets.all(8),
+             decoration: BoxDecoration(
+               color: const Color(0xFF388E3C), // Green
+               borderRadius: BorderRadius.circular(10),
+               boxShadow: [
+                 BoxShadow(color: Colors.green.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))
+               ]
+             ),
+             child: const Icon(Icons.emoji_events, color: Colors.white, size: 20),
+           ),
+           const SizedBox(width: 12),
+           Expanded(
+             child: Wrap(
+               crossAxisAlignment: WrapCrossAlignment.center,
+               children: [
+                   Text(
+                     'เสริมชื่อดีให้ ',
+                     style: GoogleFonts.kanit(
+                       fontSize: 18,
+                       fontWeight: FontWeight.bold,
+                       color: const Color(0xFFFFD700),
+                     ),
+                   ),
+                   const SizedBox(width: 4),
+                   ShimmeringGoldWrapper(
+                     child: Text(
+                       '"${widget.analyzedName}"',
+                       style: GoogleFonts.kanit(
+                         fontSize: 22,
+                         fontWeight: FontWeight.w900,
+                         color: const Color(0xFFF57F17), // Dark Gold
+                         height: 1.0,
+                       ),
+                     ),
+                   ),
+               ],
+             ),
+           ) 
+        ],
+      ),
+    );
+  }
 
 }
 
@@ -472,7 +581,7 @@ class NestedDonutPainter extends CustomPainter {
 
     // Draw Background Track
     final bgPaint = Paint()
-      ..color = const Color(0xFFF1F5F9)
+      ..color = const Color(0xFF334155)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
     canvas.drawCircle(center, radius - strokeWidth/2, bgPaint);
@@ -602,7 +711,7 @@ class NestedDonutPainter extends CustomPainter {
          style: GoogleFonts.kanit(
            color: Colors.white, 
            fontWeight: FontWeight.bold, 
-           fontSize: 14,
+           fontSize: 11,
            shadows: [const Shadow(blurRadius: 2, color: Colors.black26)],
          ),
        );
@@ -652,12 +761,11 @@ class CategoryLegendRow extends StatelessWidget {
     int badPct = totalPairs > 0 ? ((cat.bad / totalPairs) * 100).ceil() : 0;
 
     return Container(
-      // Zebra striping: even rows get light background
+      // Zebra striping: even rows get slightly different dark background
       decoration: BoxDecoration(
-        color: index % 2 == 0 ? const Color(0xFFF9FAFB) : Colors.white,
-        // No borderRadius for sharp edges
+        color: index % 2 == 0 ? const Color(0xFF1E293B) : const Color(0xFF1A1A2E),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -676,7 +784,7 @@ class CategoryLegendRow extends StatelessWidget {
                     Expanded(
                       child: Text(
                         cat.name, 
-                        style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: showColor ? const Color(0xFF1E293B) : Colors.grey[400]),
+                        style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: showColor ? Colors.white : Colors.white38),
                         overflow: TextOverflow.visible,
                         softWrap: false,
                       ),
@@ -690,7 +798,7 @@ class CategoryLegendRow extends StatelessWidget {
                   alignment: Alignment.center,
                   child: isActive 
                   ? Text('${goodPct > 0 ? goodPct : "-"}%', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: cat.color))
-                  : Text('-', style: GoogleFonts.kanit(fontSize: 16, color: Colors.grey[300])),
+                  : Text('-', style: GoogleFonts.kanit(fontSize: 16, color: Colors.white24)),
                 ),
               ),
               Expanded(
@@ -698,8 +806,8 @@ class CategoryLegendRow extends StatelessWidget {
                 child: Container(
                   alignment: Alignment.center,
                   child: cat.bad > 0
-                  ? Text('${badPct}%', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, color: const Color(0xFF64748B)))
-                  : Text('-', style: GoogleFonts.kanit(fontSize: 16, color: Colors.grey[300])),
+                  ? Text('${badPct}%', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, color: Colors.white54))
+                  : Text('-', style: GoogleFonts.kanit(fontSize: 16, color: Colors.white24)),
                 ),
               ),
               Expanded(
@@ -719,13 +827,16 @@ class CategoryLegendRow extends StatelessWidget {
           if (cat.keywords.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.only(left: 20, right: 8), 
-              child: Text(
-                cat.keywords.join(', '),
-                style: GoogleFonts.kanit(
-                  fontSize: 13, 
-                  color: hasBad ? const Color(0xFF64748B) : (showColor ? Colors.grey[600]! : Colors.grey[400]!),
-                  fontWeight: hasBad ? FontWeight.bold : FontWeight.normal,
-                  fontStyle: hasBad ? FontStyle.italic : FontStyle.normal,
+              child: ShimmeringGoldWrapper(
+                enabled: showColor && !hasBad,
+                child: Text(
+                  cat.keywords.join(', '),
+                  style: GoogleFonts.sarabun(
+                    fontSize: 15, 
+                    color: Colors.white, // Base color for shader
+                    fontWeight: FontWeight.bold,
+                    fontStyle: hasBad ? FontStyle.italic : FontStyle.normal,
+                  ),
                 ),
               ),
             ),
@@ -736,7 +847,7 @@ class CategoryLegendRow extends StatelessWidget {
                 '-',
                 style: GoogleFonts.kanit(
                   fontSize: 13, 
-                  color: hasBad ? const Color(0xFF64748B) : Colors.grey[400],
+                  color: hasBad ? Colors.white38 : Colors.white24,
                   fontWeight: hasBad ? FontWeight.bold : FontWeight.normal,
                   fontStyle: hasBad ? FontStyle.italic : FontStyle.normal,
                 ),
@@ -790,12 +901,14 @@ class CategoryLegendRow extends StatelessWidget {
                       if (keywords.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 6),
-                          child: Text(
-                            keywords.join(', '),
-                            style: GoogleFonts.sarabun(
-                              fontSize: 16,
-                              color: const Color(0xFF334155), // Slicker Dark Blue-Grey
-                              fontWeight: FontWeight.w900,
+                          child: ShimmeringGoldWrapper(
+                            child: Text(
+                              keywords.join(', '),
+                              style: GoogleFonts.sarabun(
+                                fontSize: 16,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
                           ),
                         ),
@@ -1133,7 +1246,14 @@ class _LuckyNumbersBottomSheetState extends State<_LuckyNumbersBottomSheet> {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
-                        color: widget.categoryColor.withOpacity(0.1),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            widget.categoryColor.withOpacity(0.15),
+                            widget.categoryColor.withOpacity(0.05),
+                          ],
+                        ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: widget.categoryColor.withOpacity(0.3),
@@ -1412,3 +1532,83 @@ class _CompactPhoneRowState extends State<_CompactPhoneRow> with SingleTickerPro
     );
   }
 }
+
+class BackgroundPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Luxury Tan/Gold color for the monogram symbols - More visible for chart area
+    final symbolColor = const Color(0xFFA67C52).withOpacity(0.25); 
+    
+    final paint = Paint()
+      ..color = symbolColor
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
+
+    // INCREASED SPACING for a cleaner look
+    const double spacingX = 120.0;
+    const double spacingY = 100.0;
+    
+    for (double y = 0; y < size.height + spacingY; y += spacingY) {
+      final bool isOddRow = (y / spacingY).round() % 2 != 0;
+      final double offsetX = isOddRow ? spacingX / 2 : 0;
+      
+      for (double x = -spacingX; x < size.width + spacingX; x += spacingX) {
+        final double posX = x + offsetX;
+        
+        // Alternate symbols based on grid position
+        int symbolType = (((x / spacingX).floor() + (y / spacingY).floor())) % 3;
+        
+        if (symbolType == 0) {
+          // 1. Stylized "N" Logo (representing NumberNice)
+          textPainter.text = TextSpan(
+            text: 'N',
+            style: GoogleFonts.philosopher( // Using a more serif/luxury font for N
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: symbolColor,
+            ),
+          );
+          textPainter.layout();
+          textPainter.paint(canvas, Offset(posX - textPainter.width / 2, y - textPainter.height / 2));
+        } else if (symbolType == 1) {
+          // 2. Diamond Star
+          _drawDiamondStar(canvas, Offset(posX, y), 14, paint);
+        } else {
+          // 3. Flower/Circle Symbol
+          _drawMonogramCircle(canvas, Offset(posX, y), 12, paint);
+        }
+      }
+    }
+  }
+
+  void _drawDiamondStar(Canvas canvas, Offset center, double radius, Paint paint) {
+    final Path path = Path();
+    path.moveTo(center.dx, center.dy - radius); // Top
+    path.quadraticBezierTo(center.dx + radius * 0.2, center.dy - radius * 0.2, center.dx + radius, center.dy); // To Right
+    path.quadraticBezierTo(center.dx + radius * 0.2, center.dy + radius * 0.2, center.dx, center.dy + radius); // To Bottom
+    path.quadraticBezierTo(center.dx - radius * 0.2, center.dy + radius * 0.2, center.dx - radius, center.dy); // To Left
+    path.quadraticBezierTo(center.dx - radius * 0.2, center.dy - radius * 0.2, center.dx, center.dy - radius); // Back to Top
+    canvas.drawPath(path, paint);
+    canvas.drawCircle(center, 2, paint..style = PaintingStyle.fill);
+    paint.style = PaintingStyle.stroke; // Reset
+  }
+
+  void _drawMonogramCircle(Canvas canvas, Offset center, double radius, Paint paint) {
+    canvas.drawCircle(center, radius, paint);
+    // Tiny flower inside
+    for (int i = 0; i < 4; i++) {
+      double angle = i * math.pi / 2;
+      canvas.drawCircle(
+        Offset(center.dx + (radius * 0.5) * math.cos(angle), center.dy + (radius * 0.5) * math.sin(angle)),
+        radius * 0.3,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+

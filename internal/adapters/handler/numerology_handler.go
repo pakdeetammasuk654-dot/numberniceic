@@ -324,17 +324,21 @@ func (h *NumerologyHandler) AnalyzeAPI(c *fiber.Ctx) error {
 			log.Printf("DEBUG: !isAuspicious mode. Has any Bad Pair Name? %v", hasBad)
 		}
 
-		// 3. Apply Limit based on VIP/Admin status
+		// 3. Apply Limit based on VIP/Admin status or requested limit
+		limit := 3
+		if isVIP || isAdmin {
+			limit = 100
+		}
+		// Allow explicit limit request (max 100)
+		if qLimit := c.Query("limit"); qLimit != "" {
+			if val, err := strconv.Atoi(qLimit); err == nil && val > 0 && val <= 100 {
+				limit = val
+			}
+		}
+
 		finalSimilarNames = tableCandidates
-		if !isVIP && !isAdmin {
-			if len(finalSimilarNames) > 3 {
-				finalSimilarNames = finalSimilarNames[:3]
-			}
-		} else {
-			// VIP/Admin can see up to 100
-			if len(finalSimilarNames) > 100 {
-				finalSimilarNames = finalSimilarNames[:100]
-			}
+		if len(finalSimilarNames) > limit {
+			finalSimilarNames = finalSimilarNames[:limit]
 		}
 
 		// 4. Prepare Simplified Best Names for UI
@@ -1202,8 +1206,8 @@ func (h *NumerologyHandler) Decode(c *fiber.Ctx) error {
 }
 
 func (h *NumerologyHandler) getBestNames(candidates []domain.SimilarNameResult, limit int, allowKlakini bool) ([]domain.SimilarNameResult, []domain.SimilarNameResult, []domain.SimilarNameResult, int) {
-	var top4 []domain.SimilarNameResult
-	var last4 []domain.SimilarNameResult
+	var top10 []domain.SimilarNameResult
+	var last10 []domain.SimilarNameResult
 
 	// 1. Filter for "Strict Best" (IsTopTier - All Green)
 	var bestNames []domain.SimilarNameResult
@@ -1240,9 +1244,9 @@ func (h *NumerologyHandler) getBestNames(candidates []domain.SimilarNameResult, 
 		}
 	}
 
-	// FALLBACK: If we have very few results (e.g. < 4 for Top 4), just take whatever we have from candidates
+	// FALLBACK: If we have very few results (e.g. < 10 for Top 10), just take whatever we have from candidates
 	// This ensures on Localhost/Dev or with bad data we still see SOMETHING.
-	if len(finalList) < 4 {
+	if len(finalList) < 10 {
 		// Find candidates not yet in finalList
 		seen := make(map[int]bool)
 		for _, f := range finalList {
@@ -1261,7 +1265,7 @@ func (h *NumerologyHandler) getBestNames(candidates []domain.SimilarNameResult, 
 		}
 
 		// If still need more and strict klakini was on, retry without strict klakini check (absolute desperation)
-		if len(finalList)+len(fallback) < 4 && !allowKlakini {
+		if len(finalList)+len(fallback) < 10 && !allowKlakini {
 			for _, c := range candidates {
 				if !seen[c.NameID] {
 					// Check if already in fallback (inefficient but safe for small list)
@@ -1279,7 +1283,7 @@ func (h *NumerologyHandler) getBestNames(candidates []domain.SimilarNameResult, 
 			}
 		}
 
-		// Fill up to 4 or limit
+		// Fill up to 10 or limit
 		needed := limit - len(finalList)
 		if needed > 0 {
 			if len(fallback) < needed {
@@ -1294,24 +1298,24 @@ func (h *NumerologyHandler) getBestNames(candidates []domain.SimilarNameResult, 
 		finalList = finalList[:limit]
 	}
 
-	// 5. Derive Top 4 and Last 4
+	// 5. Derive Top 10 and Last 10 (ranks #91-#100)
 	if len(finalList) > 0 {
-		// Get Top 4
-		if len(finalList) >= 4 {
-			top4 = finalList[:4]
+		// Get Top 10
+		if len(finalList) >= 10 {
+			top10 = finalList[:10]
 		} else {
-			top4 = finalList
+			top10 = finalList
 		}
 
-		// Get Last 4 from the end of this ranked set
-		if len(finalList) >= 4 {
-			last4 = finalList[len(finalList)-4:]
+		// Get Last 10 from the end of this ranked set (ranks #91-#100 if 100 results)
+		if len(finalList) >= 10 {
+			last10 = finalList[len(finalList)-10:]
 		} else {
-			last4 = finalList
+			last10 = finalList
 		}
 	}
 
-	return top4, last4, finalList, len(finalList)
+	return top10, last10, finalList, len(finalList)
 }
 
 func (h *NumerologyHandler) filterKlakiniNames(names []domain.SimilarNameResult) []domain.SimilarNameResult {

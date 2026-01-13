@@ -11,6 +11,7 @@ class Top4Section extends StatelessWidget {
   final bool showKlakini;
   final bool isLoading;
   final bool isSwitching;
+  final bool isVip;
   final ValueChanged<bool> onToggleTop4;
   final ValueChanged<bool> onToggleKlakini;
   final Function(String name) onNameSelected;
@@ -22,6 +23,7 @@ class Top4Section extends StatelessWidget {
     required this.showKlakini,
     this.isLoading = false,
     this.isSwitching = false,
+    this.isVip = false,
     required this.onToggleTop4,
     required this.onToggleKlakini,
     required this.onNameSelected,
@@ -29,28 +31,38 @@ class Top4Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+     if (isLoading) {
+       return _buildSkeleton();
+     }
+
      if (isSwitching && data == null) {
        return _buildSkeleton();
      }
      
      if (data == null) return const SizedBox.shrink();
 
-     final top4 = data!.top4;
-     final recommended = data!.recommended;
+     final top10 = data!.top4; // Now contains 10 items from backend
+     final recommended = data!.recommended; // Now contains 10 items (ranks #91-#100)
      final targetNameHtml = data!.targetNameHtml;
      
-     final names = showTop4 ? top4 : (recommended.isNotEmpty ? recommended : top4);
-     final bool isActuallyShowingTop4 = showTop4 || recommended.isEmpty;
+     final names = showTop4 ? top10 : (recommended.isNotEmpty ? recommended : top10);
+     final bool isActuallyShowingTop10 = showTop4 || recommended.isEmpty;
      final String titlePrefix = 'ตั้งชื่อดีให้ ';
      
      if (names.isEmpty) return const SizedBox.shrink();
      
      // Theme Logic
-    final bool isGold = isActuallyShowingTop4;
+    final bool isGold = isActuallyShowingTop10;
     final Color themeColor = isGold ? const Color(0xFFFFD700) : const Color(0xFFC5E1A5);
     final List<Color> gradientColors = isGold 
         ? [Colors.white, const Color(0xFFFFFDE7)]
         : [Colors.white, const Color(0xFFF1F8E9)];
+
+    // Calculate ranks for LAST10 display (#91-#100)
+    int getLastRank(int index) {
+      final total = data!.totalBest;
+      return total - names.length + index + 1;
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
@@ -59,87 +71,126 @@ class Top4Section extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. Header
-          _buildHeader(titlePrefix, targetNameHtml, isActuallyShowingTop4, names.length),
-          const SizedBox(height: 24),
+          _buildHeader(titlePrefix, targetNameHtml, isActuallyShowingTop10, names.length),
+          const SizedBox(height: 12),
           
           // 2. Toggles
           _buildToggles(),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+
+          // 3. Table Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1F2E4D), // Lighter Navy Header
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              border: Border(bottom: BorderSide(color: Colors.white12)),
+            ),
+            child: Row(
+              children: [
+                Expanded(flex: 4, child: Text('ชื่อดี', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70))),
+                Expanded(flex: 4, child: Row(
+                   mainAxisAlignment: MainAxisAlignment.center,
+                   children: [
+                      Text('ศาสตร์', textAlign: TextAlign.center, style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70)),
+                      const SizedBox(width: 16),
+                      Text('เงา', textAlign: TextAlign.center, style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70)),
+                   ],
+                )),
+                SizedBox(
+                   width: 50, 
+                   child: Text('คะแนน', textAlign: TextAlign.right, style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70))
+                ),
+                const SizedBox(width: 12),
+                SizedBox(width: 28),
+              ],
+            ),
+          ),
           
-          // 3. Grid
+          // 4. List (10 items)
           isSwitching
               ? _buildSkeletonGrid()
-              : ConstrainedBox(
-                   constraints: const BoxConstraints(maxHeight: 320),
-                   child: Container(
-                     clipBehavior: Clip.hardEdge,
-                     decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: gradientColors,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: themeColor, width: 2.5),
-                     ),
-                     child: Column(
-                       mainAxisSize: MainAxisSize.min,
-                       children: [
-                          // Top Row (Names 0, 1)
-                          SizedBox(
-                             height: 155,
-                             child: Row(
-                               crossAxisAlignment: CrossAxisAlignment.stretch,
-                               children: [
-                                  Expanded(child: BestNameCard(
-                                    nameAnalysis: names[0],
-                                    rank: isActuallyShowingTop4 ? 1 : (data!.totalBest) - 3,
-                                    isGold: isGold,
-                                    showKlakini: showKlakini,
-                                    onTap: () => onNameSelected(names[0].thName),
-                                  )),
-                                  Container(width: 2, color: themeColor),
-                                  Expanded(child: BestNameCard(
-                                    nameAnalysis: names[1],
-                                    rank: isActuallyShowingTop4 ? 2 : (data!.totalBest) - 2,
-                                    isGold: isGold,
-                                    showKlakini: showKlakini,
-                                    onTap: () => onNameSelected(names[1].thName),
-                                  )),
-                               ],
-                             ),
-                          ),
-                          Container(height: 2, color: themeColor),
-                          // Bottom Row (Names 2, 3)
-                          // Check if names has enough items usually it is fixed 4
-                          if (names.length >= 4)
-                          SizedBox(
-                             height: 155,
-                             child: Row(
-                               crossAxisAlignment: CrossAxisAlignment.stretch,
-                               children: [
-                                  Expanded(child: BestNameCard(
-                                    nameAnalysis: names[2],
-                                    rank: isActuallyShowingTop4 ? 3 : (data!.totalBest) - 1,
-                                    isGold: isGold,
-                                    showKlakini: showKlakini,
-                                    onTap: () => onNameSelected(names[2].thName),
-                                  )),
-                                  Container(width: 2, color: themeColor),
-                                  Expanded(child: BestNameCard(
-                                    nameAnalysis: names[3],
-                                    rank: isActuallyShowingTop4 ? 4 : (data!.totalBest),
-                                    isGold: isGold,
-                                    showKlakini: showKlakini,
-                                    onTap: () => onNameSelected(names[3].thName),
-                                  )),
-                               ],
-                             ),
-                          ),
-                       ],
-                     ),
+              : Container(
+                   clipBehavior: Clip.hardEdge,
+                   decoration: BoxDecoration(
+                      color: const Color(0xFF16213E), // Dark Navy Background
+                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)), // Bottom rounded only
+                      border: Border.all(color: Colors.white12, width: 1.5), // Subtle border
                    ),
+                   child: ListView.separated(
+                     shrinkWrap: true,
+                     physics: const NeverScrollableScrollPhysics(),
+                     padding: EdgeInsets.zero,
+                     itemCount: names.length > 10 ? 10 : names.length,
+                     separatorBuilder: (context, index) => Container(height: 1, color: Colors.white12),
+                     itemBuilder: (context, index) {
+                       final name = names[index];
+                       final rank = isActuallyShowingTop10 ? (index + 1) : getLastRank(index);
+                       
+                       // VIP Locking Logic: Lock first 7 items (Rank 1-7 or Rank 91-97)
+                       if (index < 7 && !isVip) {
+                          return _buildLockedItem(rank);
+                       }
+
+                       return BestNameCard(
+                         nameAnalysis: name,
+                         rank: rank,
+                         isGold: isGold,
+                         showKlakini: showKlakini,
+                         onTap: () => onNameSelected(name.thName),
+                         isCompact: true,
+                       );
+                     },
+                   ),
+                 ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLockedItem(int rank) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+      ),
+      child: Row(
+        children: [
+           // Rank Badge (Greyed out)
+           Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(8),
               ),
+              alignment: Alignment.center,
+              child: Text(
+                '#$rank',
+                style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.grey[600]),
+              ),
+           ),
+           const SizedBox(width: 16),
+           Expanded(
+             child: Row(
+               children: [
+                 Icon(Icons.lock_outline, color: Colors.grey[400], size: 20),
+                 const SizedBox(width: 8),
+                 Text(
+                   'สำหรับ VIP เท่านั้น',
+                   style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey[500]),
+                 ),
+               ],
+             ),
+           ),
+           Container(
+             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+             decoration: BoxDecoration(
+               color: const Color(0xFFFFD700),
+               borderRadius: BorderRadius.circular(20),
+             ),
+             child: Text('VIP', style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black87)),
+           )
         ],
       ),
     );
@@ -233,7 +284,7 @@ class Top4Section extends StatelessWidget {
                     Icon(Icons.star, color: showTop4 ? Colors.orange : Colors.grey[400], size: 20),
                     const SizedBox(width: 6),
                     Text(
-                      'TOP4',
+                      'TOP10',
                       style: GoogleFonts.kanit(
                         fontSize: 16, 
                         fontWeight: FontWeight.w900, 
@@ -304,19 +355,19 @@ class Top4Section extends StatelessWidget {
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(10)),
                 ),
                 const SizedBox(width: 12),
-                Expanded(child: Container(height: 20, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(10)))),
+                Expanded(child: Container(height: 20, decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(10)))),
               ],
             ),
             const SizedBox(height: 20),
             // Toggles
             Row(
               children: [
-                 Container(width: 120, height: 36, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(30))),
+                 Container(width: 120, height: 36, decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(30))),
                  const SizedBox(width: 24),
-                 Container(width: 150, height: 36, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(30))),
+                 Container(width: 150, height: 36, decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(30))),
               ],
             ),
             const SizedBox(height: 24),
@@ -331,9 +382,9 @@ class Top4Section extends StatelessWidget {
       constraints: const BoxConstraints(maxHeight: 310),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFF1E293B),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[200]!, width: 2.5),
+          border: Border.all(color: Colors.white12, width: 2.5),
         ),
         child: Stack(
           children: [
@@ -343,17 +394,17 @@ class Top4Section extends StatelessWidget {
                   child: Row(
                     children: [
                       Expanded(child: _buildSingleSkeletonCard()),
-                      Container(width: 2, color: Colors.grey[200]),
+                      Container(width: 2, color: Colors.white12),
                       Expanded(child: _buildSingleSkeletonCard()),
                     ],
                   ),
                 ),
-                Container(height: 2, color: Colors.grey[200]),
+                Container(height: 2, color: Colors.white12),
                 Expanded(
                   child: Row(
                     children: [
                       Expanded(child: _buildSingleSkeletonCard()),
-                      Container(width: 2, color: Colors.grey[200]),
+                      Container(width: 2, color: Colors.white12),
                       Expanded(child: _buildSingleSkeletonCard()),
                     ],
                   ),
@@ -364,7 +415,7 @@ class Top4Section extends StatelessWidget {
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
+                    color: const Color(0xFF1E293B).withOpacity(0.95),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Center(
@@ -373,12 +424,12 @@ class Top4Section extends StatelessWidget {
                       children: [
                         const SizedBox(
                           width: 40, height: 40,
-                          child: CircularProgressIndicator(strokeWidth: 3, valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFB300))),
+                          child: CircularProgressIndicator(strokeWidth: 3, valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFD700))),
                         ),
                         const SizedBox(height: 16),
-                        Text('กำลังวิเคราะห์ +300,000 รายชื่อ...', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFFF57F17))),
+                        Text('กำลังวิเคราะห์ชื่อ +3 แสนรายชื่อ...', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFFFFD700))),
                         const SizedBox(height: 4),
-                        Text('เพื่อค้นหาชื่อที่ดีที่สุดสำหรับคุณ', style: GoogleFonts.kanit(fontSize: 13, color: Colors.grey[600])),
+                        Text('เพื่อค้นหาชื่อที่ดีที่สุดสำหรับคุณ', style: GoogleFonts.kanit(fontSize: 13, color: Colors.white54)),
                       ],
                     ),
                   ),
@@ -397,22 +448,22 @@ class Top4Section extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(width: 20, height: 20, decoration: BoxDecoration(color: Colors.grey[200], shape: BoxShape.circle)),
+            Container(width: 20, height: 20, decoration: const BoxDecoration(color: Colors.white10, shape: BoxShape.circle)),
             const SizedBox(width: 8),
-            Container(width: 80, height: 20, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(4))),
+            Container(width: 80, height: 20, decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(4))),
           ],
         ),
         const SizedBox(height: 8),
-        Container(width: 120, height: 16, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(4))),
+        Container(width: 120, height: 16, decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(4))),
         const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(width: 32, height: 32, decoration: BoxDecoration(color: Colors.grey[200], shape: BoxShape.circle)),
+            Container(width: 32, height: 32, decoration: const BoxDecoration(color: Colors.white10, shape: BoxShape.circle)),
             const SizedBox(width: 12),
-            Container(width: 1.5, height: 20, color: Colors.grey[200]),
+            Container(width: 1.5, height: 20, color: Colors.white10),
             const SizedBox(width: 12),
-            Container(width: 32, height: 32, decoration: BoxDecoration(color: Colors.grey[200], shape: BoxShape.circle)),
+            Container(width: 32, height: 32, decoration: const BoxDecoration(color: Colors.white10, shape: BoxShape.circle)),
           ],
         ),
       ],

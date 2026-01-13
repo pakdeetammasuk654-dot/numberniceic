@@ -18,6 +18,7 @@ import 'main_tab_page.dart';
 import 'shop_page.dart';
 import 'shipping_address_page.dart';
 import 'notification_list_page.dart';
+import 'number_analysis_page.dart';
 import 'order_history_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/notification_service.dart';
@@ -212,6 +213,10 @@ class _DashboardPageState extends State<DashboardPage> {
     // Reload Dashboard Data
     try {
       final dashboardData = await ApiService.getDashboard(); // Keep original API call
+      
+      // Update Global Auth State (Important for VIP Badge updates)
+      await AuthService.syncAuthData(dashboardData);
+
       if (mounted) {
         setState(() {
           _dashboardFuture = Future.value(dashboardData);
@@ -404,9 +409,11 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Cleaner off-white background
+      backgroundColor: const Color(0xFF1A1A2E), // Dark Navy Background
       body: SafeArea(
         child: RefreshIndicator(
+          color: const Color(0xFFFFD700),
+          backgroundColor: const Color(0xFF16213E),
           onRefresh: () async => _loadDashboard(),
           child: FutureBuilder<Map<String, dynamic>>(
             future: _dashboardFuture,
@@ -414,7 +421,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return _buildSkeleton();
                 } else if (snapshot.hasError) {
-                // ... Error Handling (Same as before)
+                // ... Error Handling
                 if (snapshot.error.toString().contains('Session expired') || 
                     snapshot.error.toString().contains('User no longer exists')) {
                    WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -426,9 +433,9 @@ class _DashboardPageState extends State<DashboardPage> {
                    });
                    return const SizedBox();
                 }
-                return Center(child: Text('Error: ${snapshot.error}', style: GoogleFonts.kanit()));
+                return Center(child: Text('Error: ${snapshot.error}', style: GoogleFonts.kanit(color: Colors.white70)));
               } else if (!snapshot.hasData) {
-                return const Center(child: Text('ไม่มีข้อมูล', style: TextStyle(fontFamily: 'Kanit')));
+                return const Center(child: Text('ไม่มีข้อมูล', style: TextStyle(fontFamily: 'Kanit', color: Colors.white70)));
               }
 
               final data = snapshot.data!;
@@ -526,7 +533,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         const SizedBox(height: 32),
                         
                         // 4. Menu Section (Clean List)
-                        Text('เมนูบัญชีผู้ใช้', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                        Text('เมนูบัญชีผู้ใช้', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                         const SizedBox(height: 12),
                         _buildMenuCard(context, hasAddress, List<String>.from(data['assigned_colors'] ?? [])),
                       ],
@@ -546,10 +553,10 @@ class _DashboardPageState extends State<DashboardPage> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF16213E), // Dark Navy Card
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 24, offset: const Offset(0, 8)),
+          BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 24, offset: const Offset(0, 8)),
         ],
       ),
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
@@ -571,25 +578,25 @@ class _DashboardPageState extends State<DashboardPage> {
                          shape: BoxShape.circle,
                          gradient: const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFFA000)]),
                          boxShadow: [
-                            BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.4), blurRadius: 20, spreadRadius: 2)
+                            BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.2), blurRadius: 20, spreadRadius: 2)
                          ],
                        ),
                      ),
                    Container(
                      decoration: BoxDecoration(
                        shape: BoxShape.circle,
-                       border: Border.all(color: Colors.white, width: 4),
+                       border: Border.all(color: const Color(0xFF1A1A2E), width: 4),
                      ),
                      child: CircleAvatar(
                        radius: 50,
-                       backgroundColor: Colors.grey[100],
+                       backgroundColor: const Color(0xFF0F3460),
                        backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty) 
                           ? NetworkImage(avatarUrl) 
                           : null,
                        child: (avatarUrl == null || avatarUrl.isEmpty)
                           ? Text(
                               username.isNotEmpty ? username[0].toUpperCase() : '?',
-                              style: GoogleFonts.kanit(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.grey[400]),
+                              style: GoogleFonts.kanit(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white54),
                             )
                           : null,
                      ),
@@ -612,7 +619,7 @@ class _DashboardPageState extends State<DashboardPage> {
                // Username
                Text(
                  username, 
-                 style: GoogleFonts.kanit(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87)
+                 style: GoogleFonts.kanit(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)
                ),
                
                // VIP Badge / Email
@@ -637,7 +644,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         ],
                       ),
                     ),
-                   Text(email, style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[500])),
+                   Text(email, style: GoogleFonts.kanit(fontSize: 14, color: Colors.white54)),
                  ],
                ),
             ],
@@ -682,21 +689,22 @@ class _DashboardPageState extends State<DashboardPage> {
                     color: const Color(0xFFFFD700).withOpacity(0.2), 
                     borderRadius: BorderRadius.circular(12)
                   ),
-                  child: const Icon(Icons.bookmark_border_rounded, color: Color(0xFFB78900), size: 20),
+                  child: const Icon(Icons.bookmark_border_rounded, color: Color(0xFFFFD700), size: 20),
                 ),
                 const SizedBox(width: 12),
-                Text('รายชื่อที่บันทึก', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                Text('รายชื่อที่บันทึก', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
               ],
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: const Color(0xFF16213E), // Darker tone
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white12),
               ),
               child: Text(
                 '$count / 12 รายชื่อ',
-                style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[600]),
+                style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70),
               ),
             ),
         ],
@@ -707,10 +715,10 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildMenuCard(BuildContext context, bool hasAddress, List<String> assignedColors) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF16213E), // Dark Navy Card
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -723,7 +731,7 @@ class _DashboardPageState extends State<DashboardPage> {
                iconColor: Colors.deepPurpleAccent,
                onTap: () => WalletColorBottomSheet.show(context, assignedColors),
              ),
-             const Divider(height: 1, indent: 60),
+             const Divider(height: 1, indent: 60, color: Colors.white12),
            ],
            _buildMenuItem(
              context,
@@ -732,7 +740,7 @@ class _DashboardPageState extends State<DashboardPage> {
              iconColor: Colors.blueAccent,
              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const OrderHistoryPage())),
            ),
-           const Divider(height: 1, indent: 60),
+           const Divider(height: 1, indent: 60, color: Colors.white12),
            _buildMenuItem(
              context,
              icon: Icons.location_on_outlined,
@@ -744,12 +752,12 @@ class _DashboardPageState extends State<DashboardPage> {
                  _loadDashboard();
              },
            ),
-           const Divider(height: 1, indent: 60),
+           const Divider(height: 1, indent: 60, color: Colors.white12),
            SwitchListTile(
               value: _isNotificationEnabled,
               onChanged: _toggleNotification,
-              title: Text('แจ้งเตือนวันพระ', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.w500)),
-              subtitle: Text('รับการแจ้งเตือนวันสำคัญทางศาสนา', style: GoogleFonts.kanit(fontSize: 12, color: Colors.grey)),
+              title: Text('แจ้งเตือนวันพระ', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white)),
+              subtitle: Text('รับการแจ้งเตือนวันสำคัญทางศาสนา', style: GoogleFonts.kanit(fontSize: 12, color: Colors.white54)),
               secondary: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -761,7 +769,7 @@ class _DashboardPageState extends State<DashboardPage> {
               activeColor: Colors.amber,
               contentPadding: const EdgeInsets.only(left: 16, right: 8),
            ),
-           const Divider(height: 1, indent: 60),
+           const Divider(height: 1, indent: 60, color: Colors.white12),
            _buildMenuItem(
              context,
              icon: Icons.logout,
@@ -786,14 +794,14 @@ class _DashboardPageState extends State<DashboardPage> {
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.1),
+          color: iconColor.withOpacity(0.15),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: iconColor, size: 22),
       ),
-      title: Text(title, style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.w500)),
+      title: Text(title, style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white)),
       subtitle: subtitle != null ? Text(subtitle, style: GoogleFonts.kanit(fontSize: 12, color: Colors.orange)) : null,
-      trailing: const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+      trailing: const Icon(Icons.chevron_right, color: Colors.white24, size: 20),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
@@ -802,14 +810,19 @@ class _DashboardPageState extends State<DashboardPage> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF16213E), // Dark Navy Background
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFFFD700), width: 1), // Gold border
+        border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.5), width: 1), // Subtle Gold border
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFFD700).withOpacity(0.2), // Soft gold shadow
+            color: Colors.black.withOpacity(0.3), // Dark shadow
             blurRadius: 20,
             offset: const Offset(0, 5),
+          ),
+          BoxShadow(
+            color: const Color(0xFFFFD700).withOpacity(0.05), // Very subtle gold glow
+            blurRadius: 10,
+            spreadRadius: 1,
           ),
         ],
       ),
@@ -826,7 +839,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 height: 150,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFFFD700).withOpacity(0.1), // Gold tint for all
+                  color: const Color(0xFFFFD700).withOpacity(0.05), // Very faint gold circle
                 ),
               ),
             ),
@@ -840,7 +853,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFD700).withOpacity(0.15),
+                          color: Colors.white.withOpacity(0.05),
                           shape: BoxShape.circle,
                           border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3), width: 1.5),
                         ),
@@ -856,7 +869,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               style: GoogleFonts.kanit(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFFB8860B), // Dark Goldenrod text
+                                color: const Color(0xFFFFD700), // Gold Text
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -866,7 +879,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 style: GoogleFonts.kanit(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFFB8860B).withOpacity(0.6),
+                                  color: const Color(0xFFFFD700).withOpacity(0.7),
                                   letterSpacing: 2,
                                 ),
                               ),
@@ -882,7 +895,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       : 'อัปเกรดเป็น VIP เพื่อเข้าถึงข้อมูลเชิงลึกและรายชื่อค้นหาพิเศษกว่า 300,000 รายชื่อ',
                     style: GoogleFonts.kanit(
                       fontSize: 15, 
-                      color: Colors.black87, // Dark text
+                      color: Colors.white.withOpacity(0.9), // White Text
                       height: 1.5,
                     ),
                   ),
@@ -895,27 +908,27 @@ class _DashboardPageState extends State<DashboardPage> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF9E6), // Light gold/cream background for inner section
+                        color: Colors.black.withOpacity(0.2), // Darker inner container
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
+                        border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.2)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.confirmation_number_outlined, color: Color(0xFFB8860B), size: 20),
+                              const Icon(Icons.confirmation_number_outlined, color: Color(0xFFFFD700), size: 20),
                               const SizedBox(width: 8),
                               Text(
                                 'มีรหัสโปรโมชันหรือรหัส VIP?', 
-                                style: GoogleFonts.kanit(fontSize: 15, color: const Color(0xFF8B6914), fontWeight: FontWeight.w600),
+                                style: GoogleFonts.kanit(fontSize: 15, color: const Color(0xFFFFD700), fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
                           const SizedBox(height: 8),
                           Text(
                             'กรอกรหัส VIP ที่ได้จากกิจกรรม หรือท่านจะได้เป็น VIP อัตโนมัติเมื่อซื้อสินค้าร้าน "ร้านมาดี"', 
-                            style: GoogleFonts.kanit(fontSize: 12, color: Colors.black54, height: 1.4),
+                            style: GoogleFonts.kanit(fontSize: 12, color: Colors.white70, height: 1.4),
                           ),
                               const SizedBox(height: 20),
                               Row(
@@ -926,7 +939,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                         borderRadius: BorderRadius.circular(12),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: const Color(0xFFFFD700).withOpacity(0.3),
+                                            color: const Color(0xFFFFD700).withOpacity(0.2),
                                             blurRadius: 12,
                                             offset: const Offset(0, 4),
                                           ),
@@ -957,8 +970,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                     child: OutlinedButton(
                                       onPressed: _goToShop,
                                       style: OutlinedButton.styleFrom(
-                                        foregroundColor: const Color(0xFFB8860B),
-                                        side: const BorderSide(color: Color(0xFFB8860B), width: 1.5),
+                                        foregroundColor: const Color(0xFFFFD700),
+                                        side: const BorderSide(color: Color(0xFFFFD700), width: 1.5),
                                         padding: const EdgeInsets.symmetric(vertical: 14),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
@@ -1118,7 +1131,7 @@ class _DashboardPageState extends State<DashboardPage> {
               text,
               style: GoogleFonts.kanit(
                 fontSize: 14, 
-                color: Colors.black87, // Changed from white for visibility on white background
+                color: Colors.white, // White text for dark theme
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1291,11 +1304,11 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildSavedNamesTable(List<dynamic> savedNames, bool isUserVip) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF16213E), // Dark Navy Card
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: Colors.white12), // Subtle white border
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       clipBehavior: Clip.antiAlias,
@@ -1304,17 +1317,17 @@ class _DashboardPageState extends State<DashboardPage> {
           // Table Header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1F2E4D), // Lighter Navy Header
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              border: Border(bottom: BorderSide(color: Colors.white12)),
             ),
             child: Row(
               children: [
-                Expanded(flex: 3, child: Text('ชื่อ/สกุล', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey))),
-                Expanded(flex: 2, child: Center(child: Text('เลข', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)))),
-                Expanded(flex: 2, child: Center(child: Text('เงา', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)))),
-                Expanded(flex: 1, child: Center(child: Text('คะแนน', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)))),
+                Expanded(flex: 3, child: Text('ชื่อ/สกุล', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70))),
+                Expanded(flex: 2, child: Center(child: Text('เลข', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70)))),
+                Expanded(flex: 2, child: Center(child: Text('เงา', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70)))),
+                Expanded(flex: 1, child: Center(child: Text('คะแนน', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70)))),
                 const SizedBox(width: 24), // Space for >> icon
               ],
             ),
@@ -1371,7 +1384,8 @@ class _DashboardPageState extends State<DashboardPage> {
                        Navigator.push(context, MaterialPageRoute(builder: (context) => const ShopPage()));
                     },
                     onAnalyze: () async {
-                       await Navigator.push(context, MaterialPageRoute(builder: (context) => AnalyzerPage(initialName: name, initialDay: birthDayRaw)));
+                       // Use NumberAnalysisPage for phone numbers
+                       await NumberAnalysisPage.show(context, phoneNumber: name);
                        _loadDashboard();
                     },
                     onClose: () => _confirmDelete(id), // Delete via X button
@@ -1502,10 +1516,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 decoration: BoxDecoration(
                   color: isPerfect 
-                      ? const Color(0xFFFFFBE6) // Very light cream/gold background (lighter than before)
-                      : (isTopTier ? const Color(0xFFFFFDE7) : (index % 2 == 0 ? Colors.white : Colors.grey[50])),
+                      ? const Color(0xFF2C250E) // Dark Gold Tint for Perfect
+                      : (isTopTier ? const Color(0xFF2C250E).withOpacity(0.7) : Colors.transparent),
                   border: Border(
-                    bottom: BorderSide(color: Colors.grey.shade100),
+                    bottom: const BorderSide(color: Colors.white12),
                     left: isPerfect 
                         ? const BorderSide(color: Color(0xFFFFD700), width: 4) // Gold border for perfect
                         : (isTopTier ? const BorderSide(color: Color(0xFFFBC02D), width: 3) : BorderSide.none),
@@ -1528,7 +1542,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   style: GoogleFonts.kanit(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.grey[400],
+                                    color: Colors.white38,
                                   ),
                                 ),
                               ),
@@ -1541,7 +1555,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                         style: GoogleFonts.kanit(
                                           fontSize: 14,
                                           fontWeight: (isTopTier || isPerfect) ? FontWeight.w800 : FontWeight.bold,
-                                          color: (isTopTier || isPerfect) ? const Color(0xFFB8860B) : Colors.black87,
+                                          color: (isTopTier || isPerfect) ? const Color(0xFFFFD700) : Colors.white,
                                         ),
                                       )
                                     : Row(
@@ -1556,7 +1570,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                                   style: GoogleFonts.kanit(
                                                     fontSize: 14,
                                                     fontWeight: (isTopTier || isPerfect) ? FontWeight.w800 : FontWeight.bold,
-                                                    color: isBad ? const Color(0xFFFF4757) : ((isTopTier || isPerfect) ? const Color(0xFFB8860B) : Colors.black87),
+                                                    color: isBad ? const Color(0xFFFF4757) : ((isTopTier || isPerfect) ? const Color(0xFFFFD700) : Colors.white),
                                                   ),
                                                 );
                                               }).toList(),
@@ -1572,11 +1586,11 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                           Row(
                             children: [
-                              Icon(Icons.calendar_today, size: 10, color: Colors.grey[500]),
+                              Icon(Icons.calendar_today, size: 10, color: Colors.white38),
                               const SizedBox(width: 4),
                               Text(
                                 birthDayThai,
-                                style: GoogleFonts.kanit(fontSize: 10, color: Colors.grey[600]),
+                                style: GoogleFonts.kanit(fontSize: 10, color: Colors.white54),
                               ),
                             ],
                           ),
@@ -1618,7 +1632,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             style: GoogleFonts.kanit(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
-                              color: totalScore >= 0 ? Colors.green[700] : Colors.red[700],
+                              color: totalScore >= 0 ? Colors.greenAccent : Colors.redAccent,
                             ),
                           ),
                         ],
@@ -1629,16 +1643,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       margin: const EdgeInsets.only(left: 4),
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.white.withOpacity(0.1), // Transparent white
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF00C853).withOpacity(0.15), width: 1),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF00C853).withOpacity(0.1),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
+                        border: Border.all(color: const Color(0xFF00C853).withOpacity(0.3), width: 1),
                       ),
                       child: const Icon(
                         Icons.keyboard_double_arrow_right_rounded,

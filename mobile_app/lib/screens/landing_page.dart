@@ -144,42 +144,6 @@ class _LandingPageState extends State<LandingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF333333),
-        elevation: 0,
-        scrolledUnderElevation: 2,
-        centerTitle: false, // Align title to the left
-
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            LogoWidget(size: 48),
-            const SizedBox(width: 10),
-            Text(
-              'ชื่อดี.com',
-              style: GoogleFonts.kanit(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                fontSize: 16,
-              ),
-            ),
-            const BuddhistDayBadge(),
-          ],
-        ),
-
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.dialpad, color: Colors.white),
-            onPressed: () {
-               NumberAnalysisPage.show(context);
-            },
-            tooltip: 'วิเคราะห์เบอร์',
-          ),
-          const NotificationBell(iconColor: Colors.white, isWhiteBackground: false),
-          const SizedBox(width: 8),
-        ],
-      ),
-
       body: AdaptiveFooterScrollView(
         onRefresh: _refresh,
         children: [

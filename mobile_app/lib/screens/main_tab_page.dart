@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,6 +7,7 @@ import '../services/api_service.dart';
 import '../widgets/welcome_dialog.dart';
 import 'landing_page.dart';
 import 'analyzer_page.dart';
+import 'unlimited_analyzer_page.dart';
 import 'number_analysis_page.dart';
 import 'login_page.dart';
 import 'dashboard_page.dart';
@@ -15,11 +17,25 @@ import 'article_detail_page.dart';
 import '../widgets/wallet_color_bottom_sheet.dart'; 
 import '../services/notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'naming_page.dart';
+import '../viewmodels/analyzer_view_model.dart';
+import '../widgets/analyzer/shared_search_form.dart';
+import '../widgets/analyzer/shared_sample_names.dart';
+import '../models/sample_name.dart';
 
 class MainTabPage extends StatefulWidget {
   final int initialIndex;
   final bool forceLogout;
-  const MainTabPage({super.key, this.initialIndex = 0, this.forceLogout = false});
+  final String? initialName;
+  final String? initialDay;
+
+  const MainTabPage({
+    super.key, 
+    this.initialIndex = 0, 
+    this.forceLogout = false,
+    this.initialName,
+    this.initialDay,
+  });
 
   @override
   State<MainTabPage> createState() => MainTabPageState();
@@ -29,10 +45,12 @@ class MainTabPage extends StatefulWidget {
   }
 }
 
-class MainTabPageState extends State<MainTabPage> {
+class MainTabPageState extends State<MainTabPage> with TickerProviderStateMixin {
+  late TabController _mainTabController;
   int _currentIndex = 0;
   bool _isLoggedIn = false;
   String? _avatarUrl;
+  bool _isVip = false; // Added VIP state
 
   set currentIndex(int index) {
     if (index == 3) {
@@ -40,120 +58,86 @@ class MainTabPageState extends State<MainTabPage> {
     }
     setState(() {
       _currentIndex = index;
+      _mainTabController.index = index;
     });
   }
 
   int get currentIndex => _currentIndex;
   bool get isLoggedIn => _isLoggedIn;
   String? get avatarUrl => _avatarUrl;
+  bool get isVip => _isVip; // Expose isVip
 
   @override
   void initState() {
     super.initState();
-    // Ensure initialIndex is valid for 4-tab layout (0-3)
     _currentIndex = widget.initialIndex.clamp(0, 3);
+    _mainTabController = TabController(length: 4, vsync: this, initialIndex: _currentIndex);
+    _mainTabController.addListener(() {
+        if (_mainTabController.indexIsChanging) return;
+        if (_mainTabController.index != _currentIndex) {
+            setState(() {
+                _currentIndex = _mainTabController.index;
+            });
+            if (_currentIndex == 3) _checkLoginStatus();
+        }
+    });
     
     if (widget.forceLogout) {
       _isLoggedIn = false;
       _avatarUrl = null;
+      _isVip = false;
     } else {
       _checkLoginStatus();
     }
     
-    // Check for first time launch after UI builds
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkFirstTimeUser();
       _checkPendingPurchaseOnStartup();
-      _validateSession(); // Validate token with server
+      _validateSession();
     });
 
-    // Initialize Notification Service immediately to handle Terminated State taps
     NotificationService().init();
+    _setupNotifications();
+  }
 
-    // Direct check for terminated state notification launch (Robust Fallback)
-    FirebaseMessaging.instance.getInitialMessage().then((message) {
-      if (message != null) {
-        print('🔔 App opened from TERMINATED state via notification: ${message.data}');
-        
-        // Handle wallet_colors type
-        if (message.data['type'] == 'wallet_colors') {
-          final colorsStr = message.data['colors'];
-          if (colorsStr != null && colorsStr.toString().isNotEmpty) {
-             final colors = colorsStr.toString().split(',').where((c) => c.isNotEmpty).toList();
-             if (colors.isNotEmpty) {
-               WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) WalletColorBottomSheet.show(context, colors);
-               });
-             }
-          }
-        } 
-        // Handle article type
-        else if (message.data['type'] == 'article') {
-          final articleSlug = message.data['article_slug'];
-          if (articleSlug != null && articleSlug.isNotEmpty) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ArticleDetailPage(slug: articleSlug),
-                  ),
-                );
-              }
-            });
-          }
-        }
-        else {
-          // For all other notifications, open Notification List as Bottom Sheet
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (context) => const NotificationListPage(isBottomSheet: true),
-              );
-            }
-          });
-        }
-      }
+  @override
+  void dispose() {
+    _mainTabController.dispose();
+    super.dispose();
+  }
+
+  void _setupNotifications() {
+     FirebaseMessaging.instance.getInitialMessage().then((message) {
+      if (message != null) _handleNotificationMessage(message);
     });
 
-    // Listen for Notification Stream globally at MainTab level
     NotificationService().messageStream.listen((message) {
+      _handleNotificationMessage(message);
+    });
+  }
+
+  void _handleNotificationMessage(RemoteMessage message) {
       final isTapped = message.data['tapped'] == 'true';
       final type = message.data['type'];
+      print('🔔 Notification Received: ${message.data}');
 
       if (type == 'wallet_colors') {
         final colorsStr = message.data['colors'];
         if (colorsStr != null && colorsStr.toString().isNotEmpty) {
            final colors = colorsStr.toString().split(',').where((c) => c.isNotEmpty).toList();
            if (colors.isNotEmpty) {
-             // Show BottomSheet globally on top of any tab
              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  WalletColorBottomSheet.show(context, colors);
-                }
+                if (mounted) WalletColorBottomSheet.show(context, colors);
              });
            }
         }
-      } 
-      else if (isTapped) {
-        // Redirection logic for tapped notifications
-        if (type == 'article') {
-          final articleSlug = message.data['article_slug'];
-          if (articleSlug != null && articleSlug.isNotEmpty) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
+      } else if (message.data['article_slug'] != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ArticleDetailPage(slug: articleSlug)),
-                );
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ArticleDetailPage(slug: message.data['article_slug'])));
               }
-            });
-          }
-        } else {
-          // Default: Open Notification List as Bottom Sheet
+          });
+      } else if (isTapped) { // Default fallback
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
               showModalBottomSheet(
@@ -164,25 +148,18 @@ class MainTabPageState extends State<MainTabPage> {
               );
             }
           });
-        }
       }
-    });
   }
 
   Future<void> _checkPendingPurchaseOnStartup() async {
     final pending = await AuthService.getPendingPurchase();
     if (pending != null) {
-      // Switch to Shop tab automatically
-      setState(() {
-        _currentIndex = 2;
-      });
+      setState(() { _currentIndex = 2; });
     }
   }
 
   Future<void> _checkFirstTimeUser() async {
     final prefs = await SharedPreferences.getInstance();
-    
-    // Default Fallback
     int version = 1;
     String title = 'ยินดีต้อนรับ!';
     String body = 'ขอต้อนรับสู่ NumberNiceIC\nแอพพลิเคชันวิเคราะห์ชื่อและเบอร์โทรศัพท์มงคล\nที่จะช่วยเสริมสิริมงคลให้กับชีวิตของคุณ';
@@ -201,22 +178,9 @@ class MainTabPageState extends State<MainTabPage> {
     if (!isActive) return;
 
     final int lastShownVersion = prefs.getInt('welcome_msg_version') ?? 0;
-    final bool hasShownLegacy = prefs.getBool('has_shown_welcome_v1') ?? false;
-
-    // Convert legacy boolean to version 1 if applicable
-    if (lastShownVersion == 0 && hasShownLegacy && version == 1) {
-       await prefs.setInt('welcome_msg_version', 1);
-       return;
-    }
-
     if (version > lastShownVersion) {
       if (!mounted) return;
-      await WelcomeDialog.show(
-        context: context,
-        title: title,
-        body: body,
-        version: version,
-      );
+      await WelcomeDialog.show(context: context, title: title, body: body, version: version);
     }
   }
 
@@ -225,6 +189,7 @@ class MainTabPageState extends State<MainTabPage> {
     if (mounted) {
       setState(() {
         _isLoggedIn = userInfo['username'] != null;
+        _isVip = userInfo['is_vip'] == true || userInfo['tier'] == 'vip'; // Sync VIP status
         _avatarUrl = userInfo['avatar_url'];
       });
     }
@@ -232,31 +197,17 @@ class MainTabPageState extends State<MainTabPage> {
 
   Future<void> _validateSession() async {
     if (_isLoggedIn) {
-       print("🔐 Validating Session with Server...");
        try {
-         // This API call handles 401 by calling AuthService.logout() internally
          await ApiService.getDashboard(); 
-         print("✅ Session Valid");
-         
-         // Force refresh notification token if session is valid
-         // This ensures the backend has the latest FCM token for this user
          final token = await FirebaseMessaging.instance.getToken();
-         if (token != null) {
-            await ApiService.saveDeviceToken(token);
-         }
-
+         if (token != null) await ApiService.saveDeviceToken(token);
        } catch (e) {
-         print("⚠️ Session Validation Failed: $e");
-         // Double check if we are still logged in (ApiService might have logged us out)
          final stillLoggedIn = await AuthService.isLoggedIn();
          if (!stillLoggedIn && mounted) {
-            print("🔄 Detected Logout - Updating UI");
             setState(() {
               _isLoggedIn = false;
               _avatarUrl = null;
             });
-            // Redirect to Home or Refresh
-            // Navigator.of(context).popUntil((route) => route.isFirst);
          }
        }
     }
@@ -268,94 +219,540 @@ class MainTabPageState extends State<MainTabPage> {
     final Widget dashboardPage = _isLoggedIn ? const DashboardPage() : const LoginPage();
     
     final List<Widget> pages = [
-      const LandingPage(),
-      const AnalyzerPage(),
-      const ShopPage(),
-      dashboardPage,
+      HomeTab(initialName: widget.initialName, initialDay: widget.initialDay),      // Tab 0: Home (with Sub-Menu)
+      const LandingPage(),  // Tab 1: Articles
+      const ShopPage(),     // Tab 2: Shop
+      dashboardPage,        // Tab 3: Menu
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFF333333),
+      backgroundColor: const Color(0xFF1A1A2E),
+      extendBody: true,
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1A1A2E),
+        elevation: 0,
+        leadingWidth: 60,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 10, top: 2, bottom: 2),
+          child: Image.asset(
+            'assets/images/logo_gold_name_transparent.png',
+            fit: BoxFit.contain,
+          ),
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('ชื่อดี.com', style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
+            const SizedBox(width: 8),
+            if (_isLoggedIn)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: _isVip ? const Color(0xFFFFD700) : Colors.white24,
+                  borderRadius: BorderRadius.circular(12),
+                  border: _isVip ? null : Border.all(color: Colors.white38),
+                  boxShadow: _isVip ? [
+                     BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.4), blurRadius: 8)
+                  ] : null,
+                ),
+                child: Row(
+                  children: [
+                    if (_isVip) const Icon(Icons.workspace_premium, size: 12, color: Colors.black87),
+                    if (_isVip) const SizedBox(width: 4),
+                    Text(
+                      _isVip ? 'VIP' : 'MEMBER',
+                      style: GoogleFonts.kanit(
+                        fontSize: 10, 
+                        fontWeight: FontWeight.bold, 
+                        color: _isVip ? Colors.black87 : Colors.white70
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+               Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: Text(
+                  'GUEST',
+                  style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white38),
+                ),
+              ),
+          ],
+        ),
+        actions: [
+            IconButton(
+              icon: const Icon(Icons.grid_view_rounded, color: Colors.white70),
+              onPressed: () {
+                NumberAnalysisPage.show(context);
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined, color: Colors.white70),
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => const NotificationListPage(isBottomSheet: true),
+                );
+              },
+            ),
+            const SizedBox(width: 8),
+        ],
+      ),
       body: IndexedStack(
         index: _currentIndex,
         children: pages,
       ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: Colors.white12, width: 0.5)),
+      bottomNavigationBar: _buildGlassBottomBar(),
+    );
+  }
+
+  Widget _buildGlassBottomBar() {
+    return Container(
+      margin: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        bottom: MediaQuery.of(context).padding.bottom + 12,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            height: 72,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.15),
+                  Colors.white.withOpacity(0.05),
+                ],
+              ),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.25),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'หน้าแรก'),
+                _buildNavItem(1, Icons.article_rounded, Icons.article_outlined, 'บทความ'),
+                _buildNavItem(2, Icons.storefront_rounded, Icons.storefront_outlined, 'ร้านค้า'),
+                _buildNavItem(3, Icons.person_rounded, Icons.person_outline_rounded, _isLoggedIn ? 'เมนู' : 'เข้าสู่ระบบ'),
+              ],
+            ),
+          ),
         ),
-        child: BottomNavigationBar(
-          backgroundColor: const Color(0xFF333333),
-          currentIndex: _currentIndex,
-          onTap: (index) async {
-            if (index == 3) {
-              await _checkLoginStatus();
-            }
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white.withOpacity(0.5),
-          type: BottomNavigationBarType.fixed,
-          selectedLabelStyle: GoogleFonts.kanit(fontWeight: FontWeight.bold, fontSize: 13),
-          unselectedLabelStyle: GoogleFonts.kanit(fontSize: 12),
-          elevation: 20,
-          items: [
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'หน้าแรก',
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon, String label) {
+    final bool isActive = _currentIndex == index;
+    
+    // Tab-specific colors
+    final List<Color> activeColors = [
+      const Color(0xFFFFD700), // Gold for Home
+      const Color(0xFF60A5FA), // Blue for Articles
+      const Color(0xFF34D399), // Green for Shop
+      const Color(0xFFF472B6), // Pink for Profile
+    ];
+    
+    final Color accentColor = activeColors[index];
+    
+    return GestureDetector(
+      onTap: () {
+        if (index == 3) _checkLoginStatus();
+        setState(() {
+          _currentIndex = index;
+          _mainTabController.index = index;
+        });
+      },
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.symmetric(
+          horizontal: isActive ? 16 : 12,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: isActive ? accentColor.withOpacity(0.2) : Colors.transparent,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon with glow effect when active
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              child: index == 3 && _isLoggedIn && _avatarUrl != null && _avatarUrl!.isNotEmpty
+                  ? Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isActive ? accentColor : Colors.white38,
+                              width: isActive ? 2.5 : 1.5,
+                            ),
+                            boxShadow: isActive ? [
+                              BoxShadow(
+                                color: accentColor.withOpacity(0.5),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ] : null,
+                          ),
+                          child: ClipOval(
+                            child: Image.network(
+                              _avatarUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Icon(
+                                activeIcon,
+                                size: 18,
+                                color: isActive ? accentColor : Colors.white38,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (_isVip)
+                          Positioned(
+                            top: -6,
+                            right: -8,
+                            child: Container(
+                               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                               decoration: BoxDecoration(
+                                 color: const Color(0xFFFFD700),
+                                 borderRadius: BorderRadius.circular(6),
+                                 border: Border.all(color: Colors.black87, width: 1),
+                                 boxShadow: [BoxShadow(color: Colors.black38, blurRadius: 3, offset: Offset(0, 1))],
+                               ),
+                               child: Text('VIP', style: GoogleFonts.kanit(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.black87, height: 1)),
+                            ),
+                          ),
+                      ],
+                    )
+                  : ShaderMask(
+                      shaderCallback: (bounds) => isActive
+                          ? LinearGradient(
+                              colors: [accentColor, accentColor.withOpacity(0.8)],
+                            ).createShader(bounds)
+                          : const LinearGradient(
+                              colors: [Colors.white38, Colors.white38],
+                            ).createShader(bounds),
+                      child: Icon(
+                        isActive ? activeIcon : inactiveIcon,
+                        size: isActive ? 28 : 24,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.badge_outlined),
-              activeIcon: Icon(Icons.badge),
-              label: 'วิเคราะห์ชื่อ',
-            ),
-             const BottomNavigationBarItem(
-              icon: Icon(Icons.storefront_outlined),
-              activeIcon: Icon(Icons.storefront),
-              label: 'ร้านค้า',
-            ),
-            BottomNavigationBarItem(
-              icon: _buildUserIcon(false),
-              activeIcon: _buildUserIcon(true),
-              label: _isLoggedIn ? 'แดชบอร์ด' : 'เข้าสู่ระบบ',
+            const SizedBox(height: 4),
+            // Label
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 250),
+              style: GoogleFonts.kanit(
+                fontSize: isActive ? 11 : 10,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                color: isActive ? accentColor : Colors.white54,
+              ),
+              child: Text(label),
             ),
           ],
         ),
       ),
-      floatingActionButton: null,
     );
   }
-  Widget _buildUserIcon(bool isActive) {
-    if (!_isLoggedIn || _avatarUrl == null || _avatarUrl!.isEmpty) {
-      return Icon(isActive 
-        ? (_isLoggedIn ? Icons.dashboard : Icons.login)
-        : (_isLoggedIn ? Icons.dashboard_outlined : Icons.login_outlined)
-      );
+
+}
+
+
+
+class HomeTab extends StatefulWidget {
+  final String? initialName;
+  final String? initialDay;
+  const HomeTab({super.key, this.initialName, this.initialDay});
+
+  @override
+  State<HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
+  int _subIdx = 0; // Default to 'ตั้งชื่อดี' (Naming) which is index 0
+  final AnalyzerViewModel _sharedViewModel = AnalyzerViewModel();
+  final TextEditingController _nameController = TextEditingController();
+  late Future<List<SampleName>> _sampleNamesFuture;
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _sampleNamesFuture = ApiService.getSampleNames();
+    
+    // Initialize with passed values
+    if (widget.initialName != null || widget.initialDay != null) {
+       _sharedViewModel.init(widget.initialName, widget.initialDay);
     }
 
-    final size = isActive ? 26.0 : 24.0;
-    final borderWidth = isActive ? 2.0 : 1.0;
-    final borderColor = isActive ? Colors.white : Colors.white.withOpacity(0.5);
+    _sharedViewModel.addListener(_onViewModelUpdate);
+    // Initialize TabController to sync with _subIdx
+    _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+         setState(() {
+           _subIdx = _tabController.index;
+         });
+      }
+    });
 
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: borderColor, width: borderWidth),
-      ),
-      child: ClipOval(
-        child: Image.network(
-          _avatarUrl!,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Icon(isActive ? Icons.dashboard : Icons.dashboard_outlined, size: size * 0.8);
-          },
+    // Show tutorial if name is empty
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_sharedViewModel.currentName.isEmpty) {
+        _sharedViewModel.setShowTutorial(true);
+      }
+    });
+  }
+
+  void _onViewModelUpdate() {
+    if (mounted) {
+       bool needsRebuild = false;
+       // Sync text controller if it differs
+       if (_nameController.text != _sharedViewModel.currentName) {
+         _nameController.text = _sharedViewModel.currentName;
+         if (_nameController.selection.baseOffset == -1 && _nameController.text.isNotEmpty) {
+            _nameController.selection = TextSelection.fromPosition(TextPosition(offset: _nameController.text.length));
+         }
+         needsRebuild = true;
+       }
+       // Always rebuild to reflect other VM changes (loading, etc)
+       setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    _sharedViewModel.removeListener(_onViewModelUpdate);
+    _sharedViewModel.dispose();
+    _nameController.dispose();
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Pages must consume _sharedViewModel efficiently
+    return NestedScrollView(
+        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+          return <Widget>[
+            // 1. Shared Search Form (Scrolls away)
+            SliverToBoxAdapter(
+              child: SharedSearchForm(viewModel: _sharedViewModel, nameController: _nameController),
+            ),
+
+            // 2. Sub Menu Bar + Samples (Combined Sticky Header)
+            SliverOverlapAbsorber(
+              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+              sliver: SliverPersistentHeader(
+                pinned: true,
+                delegate: _StickyTabBarDelegate(
+                  minHeight: 150.0, // 70 (Tabs) + 80 (Samples)
+                  maxHeight: 150.0,
+                  child: Container(
+                    height: 150,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF1A1A2E),
+                    ),
+                    child: Column(
+                      children: [
+                        // Tabs
+                        SizedBox(
+                          height: 70,
+                          child: Row(
+                            children: [
+                              Expanded(child: _buildSubMenuItem(0, Icons.edit_note_rounded, 'ตั้งชื่อดี')),
+                              Expanded(child: _buildSubMenuItem(1, Icons.check_circle_outline_rounded, 'ชื่อดี +10')),
+                              Expanded(child: _buildSubMenuItem(2, Icons.auto_awesome_rounded, 'ชื่อดี +3 แสน')),
+                              Expanded(child: _buildSubMenuItem(3, Icons.trending_up_rounded, 'เสริมชื่อดี')), 
+                            ],
+                          ),
+                        ),
+                        // Samples
+                        Expanded(
+                          child: Container(
+                             color: const Color(0xFF1A1A2E),
+                             child: SharedSampleNames(viewModel: _sharedViewModel, nameController: _nameController, sampleNamesFuture: _sampleNamesFuture)
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ];
+        },
+        body: IndexedStack(
+          index: _subIdx,
+          children: [
+             NamingPage(viewModel: _sharedViewModel),            // 0
+             AnalyzerPage(
+               viewModel: _sharedViewModel,
+               onNavigateToNaming: () {
+                 setState(() { 
+                    _subIdx = 0; 
+                    _tabController.animateTo(0);
+                 });
+               },
+             ),          // 1
+             UnlimitedAnalyzerPage(
+               viewModel: _sharedViewModel,
+               onNavigateToNaming: () {
+                 setState(() { 
+                    _subIdx = 0; 
+                    _tabController.animateTo(0);
+                 });
+               },
+             ), // 2
+             ShopPage(viewModel: _sharedViewModel),              // 3
+          ],
+        ),
+    );
+  }
+
+  Widget _buildSubMenuItem(int index, IconData icon, String label) {
+    final bool isSelected = _subIdx == index;
+    
+    // Define Theme Colors (Gradient Start/End)
+    Color startColor, endColor, shadowColor;
+    
+    switch (index) {
+      case 0: // ตั้งชื่อดี - Dark/Professional -> Changed to Blue-Grey/Space
+        startColor = const Color(0xFF3B82F6); // Blue 500
+        endColor = const Color(0xFF1D4ED8);   // Blue 700
+        shadowColor = const Color(0xFF3B82F6).withOpacity(0.5);
+        break;
+      case 1: // ชื่อ +10 - Teal
+        startColor = const Color(0xFF14B8A6); // Teal 500
+        endColor = const Color(0xFF0F766E);   // Teal 700
+        shadowColor = const Color(0xFF14B8A6).withOpacity(0.5);
+        break;
+      case 2: // ชื่อ +3 แสน - Purple
+        startColor = const Color(0xFFA855F7); // Purple 500
+        endColor = const Color(0xFF7E22CE);   // Purple 700
+        shadowColor = const Color(0xFFA855F7).withOpacity(0.5);
+        break;
+      case 3: // เสริมชื่อดี - Gold/Orange (Store)
+        startColor = const Color(0xFFFFD700); // Gold
+        endColor = const Color(0xFFF59E0B);   // Amber 500
+        shadowColor = const Color(0xFFFFD700).withOpacity(0.5);
+        break;
+      default:
+        startColor = Colors.grey;
+        endColor = Colors.grey;
+        shadowColor = Colors.black12;
+    }
+
+    // Colors
+    final Color iconColor = isSelected ? Colors.white : Colors.white70;
+    final Color textColor = isSelected ? Colors.white : Colors.white70;
+    final Color borderColor = isSelected ? Colors.white.withOpacity(0.5) : Colors.white.withOpacity(0.1);
+
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        setState(() {
+          _subIdx = index;
+          _tabController.animateTo(index);
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        margin: EdgeInsets.symmetric(horizontal: 4, vertical: isSelected ? 4 : 8), // Expand active item slightly
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: isSelected 
+              ? LinearGradient(colors: [startColor, endColor], begin: Alignment.topLeft, end: Alignment.bottomRight)
+              : LinearGradient( // Glassy for inactive
+                  colors: [Colors.white.withOpacity(0.08), Colors.white.withOpacity(0.03)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight
+                ),
+          border: Border.all(color: borderColor, width: isSelected ? 1.5 : 1.0),
+          boxShadow: isSelected ? [
+             BoxShadow(color: shadowColor, blurRadius: 10, offset: const Offset(0, 4), spreadRadius: 1)
+          ] : null,
+        ),
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: iconColor, size: isSelected ? 26 : 22), 
+            const SizedBox(height: 4),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: GoogleFonts.kanit(
+                  fontSize: 12, 
+                  color: textColor,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal
+                ),
+              ),
+            )
+          ],
         ),
       ),
     );
+  }
+}
+
+class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  final double minHeight;
+  final double maxHeight;
+
+  _StickyTabBarDelegate({
+    required this.child,
+    required this.minHeight,
+    required this.maxHeight,
+  });
+
+  @override
+  double get minExtent => minHeight;
+
+  @override
+  double get maxExtent => maxHeight;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return SizedBox.expand(child: child);
+  }
+
+  @override
+  bool shouldRebuild(_StickyTabBarDelegate oldDelegate) {
+    return true;
   }
 }
