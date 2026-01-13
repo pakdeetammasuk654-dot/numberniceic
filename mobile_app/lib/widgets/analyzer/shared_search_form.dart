@@ -44,10 +44,13 @@ class _SharedSearchFormState extends State<SharedSearchForm> {
     return Container(
       color: const Color(0xFF1A1A2E), // Dark navy background
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Day Dropdown (Compact with label)
-          Container(
+          Row(
+            children: [
+              // Day Dropdown (Compact with label)
+              Container(
             height: 50,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
@@ -194,18 +197,14 @@ class _SharedSearchFormState extends State<SharedSearchForm> {
                     ],
                   ),
                 ),
-                
-                // Tutorial Overlay
-                if (widget.viewModel.showTutorial && widget.nameController.text.isEmpty)
-                  Positioned(
-                    bottom: 60,
-                    left: 0,
-                    right: 0,
-                    child: _buildTutorialCallout(),
-                  ),
-              ],
-            ),
+            ],
           ),
+          // Tutorial below the input row
+          if (widget.viewModel.showTutorial && widget.nameController.text.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: _buildTutorialCallout(),
+            ),
         ],
       ),
     );
