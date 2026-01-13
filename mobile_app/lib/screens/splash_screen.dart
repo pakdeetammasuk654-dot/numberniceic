@@ -166,9 +166,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             ),
                             child: Center(
                               child: Text(
-                                'ช',
+                                'ชื่อดี',
                                 style: GoogleFonts.kanit(
-                                  fontSize: 80,
+                                  fontSize: 36,
                                   fontWeight: FontWeight.bold,
                                   color: const Color(0xFF1A1A2E),
                                   shadows: [
