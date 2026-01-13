@@ -12,35 +12,38 @@ class WreathScoreGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine screen width to adjust layout if needed
-    final width = MediaQuery.of(context).size.width;
-    // Aim for 3 columns on typical phones, 2 on very small
-    int crossAxisCount = width > 350 ? 3 : 2;
+    // Layout manually to ensure stability and prevent overlapping
+    final row1 = ["เลขศาสตร์", "พลังเงา", "ผลรวม"];
+    final row2 = ["เลขเรียง", "คู่หลัก", "คู่แฝง"];
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Center(
-        child: Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 16, // Horizontal gap
-          runSpacing: 20, // Vertical gap
-          children: labels.map((label) {
-            return SizedBox(
-               width: (width - 64) / 3, // 3 Columns accounting for padding/spacing roughly
-               child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const VipGradeInfoPage()),
-                  );
-                },
-                child: WreathItem(label: label),
-              ),
-            );
-          }).toList(),
-        ),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Column(
+        children: [
+          _buildRow(context, row1),
+          const SizedBox(height: 24), // Explicit gap between rows
+          _buildRow(context, row2),
+        ],
       ),
+    );
+  }
+
+  Widget _buildRow(BuildContext context, List<String> items) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: items.map((label) => Expanded(
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const VipGradeInfoPage()),
+            );
+          },
+          child: WreathItem(label: label),
+        ),
+      )).toList(),
     );
   }
 }
@@ -52,57 +55,46 @@ class WreathItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 60, 
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-            // Side Wreaths images if you had them, but for now just text and stars as per previous code
-            // Actually previous code didn't have images, just text and stars.
-            // Wait, the web version has images. The mobile version code I viewed only had text and stars.
-            // I should respect the previous design.
-
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-               // Golden Gradient Text
-              ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                  colors: [
-                    Color(0xFFFDE68A), // Light Gold
-                    Color(0xFFD97706), // Amber
-                    Color(0xFF92400E), // Bronze
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ).createShader(bounds),
-                child: Text(
-                  label,
-                  style: GoogleFonts.kanit(
-                    fontSize: 18, 
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white, // Masked
-                    height: 1.0,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.visible,
-                ),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Golden Gradient Text
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              colors: [
+                Color(0xFFFDE68A), // Light Gold
+                Color(0xFFD97706), // Amber
+                Color(0xFF92400E), // Bronze
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ).createShader(bounds),
+            child: Text(
+              label,
+              style: GoogleFonts.kanit(
+                fontSize: 18, 
+                fontWeight: FontWeight.bold,
+                color: Colors.white, // Masked
+                height: 1.0,
               ),
-              
-              const SizedBox(height: 4),
-
-              // Stars
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(5, (index) => 
-                   const Icon(Icons.star, color: Color(0xFFF59E0B), size: 14)
-                ),
-              ),
-            ],
+              textAlign: TextAlign.center,
+            ),
           ),
-        ],
-      ),
+        ),
+        
+        const SizedBox(height: 6),
+
+        // Stars
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(5, (index) => 
+              const Icon(Icons.star, color: Color(0xFFF59E0B), size: 14)
+          ),
+        ),
+      ],
     );
   }
 }
