@@ -347,79 +347,146 @@ class ActionsSection extends StatelessWidget {
 }
 
   Widget _buildLockedSection() {
+    // Show 7 locked items (positions 4-10)
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        // Golden Gradient Line
-        Container(
-          height: 2,
-          width: double.infinity,
+      children: List.generate(7, (index) {
+        final itemNumber = index + 4; // 4, 5, 6, 7, 8, 9, 10
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFFBF953F),
-                Color(0xFFFCF6BA),
-                Color(0xFFB38728),
-                Color(0xFFFBF5B7),
-                Color(0xFFAA771C),
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
+            border: Border(bottom: BorderSide(color: Colors.white12, width: 1.0)),
+            color: Color(0xFF2A2A3E), // Gray locked background
           ),
-        ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          color: const Color(0xFF1A1A2E),
-          child: Column(
+          child: Stack(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.info_outline, color: Color(0xFFFFD700), size: 20),
-                  const SizedBox(width: 8),
-                  Text('แสดงแค่ 3 รายชื่อ ไม่จำกัดเฉพาะ VIP', style: GoogleFonts.kanit(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFFFFD700))),
-                ],
-              ),
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: onShopPressed,
-                child: Container(
-                    height: 48,
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    decoration: BoxDecoration(
-                    color: const Color(0xFFFFD700),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: const [
-                        BoxShadow(
-                        color: Color(0xFFB8860B),
-                        offset: Offset(0, 4),
-                        blurRadius: 0, 
-                        )
-                    ]
+              // Grayed out content
+              Opacity(
+                opacity: 0.3,
+                child: Row(
+                  children: [
+                    // Rank & Name
+                    Expanded(
+                      flex: 3,
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 40,
+                            child: Text(
+                              '#$itemNumber',
+                              style: GoogleFonts.kanit(
+                                fontSize: 12,
+                                color: Colors.white38,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Container(
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: Colors.white24,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                        const Icon(Icons.shopping_bag_outlined, color: Color(0xFF1A1A2E), size: 20),
-                        const SizedBox(width: 8),
-                        Text('ซื้อสินค้าร้านชื่อดี', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A2E))),
-                    ],
+                    // Numerology circle
+                    Expanded(
+                      flex: 2,
+                      child: Center(
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: const BoxDecoration(
+                            color: Colors.white24,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
                     ),
+                    // Shadow circle
+                    Expanded(
+                      flex: 2,
+                      child: Center(
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: const BoxDecoration(
+                            color: Colors.white24,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Score
+                    Expanded(
+                      flex: 2,
+                      child: Center(
+                        child: Container(
+                          width: 40,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: Colors.white24,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Arrow
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Colors.white10,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white12),
+                      ),
+                      child: const Icon(
+                        Icons.lock_outline,
+                        size: 16,
+                        color: Colors.white38,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              // Lock overlay in center
+              if (index == 3) // Show message on middle item (item #7)
+                Positioned.fill(
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A1A2E).withOpacity(0.95),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFFFD700), width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.lock, color: Color(0xFFFFD700), size: 16),
+                          const SizedBox(width: 8),
+                          Text(
+                            'ปลดล็อกด้วย VIP',
+                            style: GoogleFonts.kanit(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFFFFD700),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
-        ),
-        // Bottom Gold Bar
-        Container(
-          height: 8,
-          width: double.infinity,
-          color: const Color(0xFFFFD700),
-        ),
-      ],
+        );
+      }),
     );
   }
 
