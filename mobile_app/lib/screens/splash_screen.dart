@@ -231,11 +231,11 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     
                     // Subtitle
                     Text(
-                      'วิเคราะห์ชื่อและเบอร์มงคล',
+                      'วิเคราะห์ชื่อดี ลิขิตชีวิต',
                       style: GoogleFonts.kanit(
                         fontSize: 16,
                         color: Colors.white70,
-                        letterSpacing: 1.5,
+                        letterSpacing: 0,
                       ),
                     ),
                   ],
