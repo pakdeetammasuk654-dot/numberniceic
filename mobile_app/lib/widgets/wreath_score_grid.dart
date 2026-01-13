@@ -61,29 +61,28 @@ class WreathItem extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Golden Gradient Text
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-              colors: [
-                Color(0xFFFDE68A), // Light Gold
-                Color(0xFFD97706), // Amber
-                Color(0xFF92400E), // Bronze
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ).createShader(bounds),
-            child: Text(
-              label,
-              style: GoogleFonts.kanit(
-                fontSize: 18, 
-                fontWeight: FontWeight.bold,
-                color: Colors.white, // Masked
-                height: 1.0,
-              ),
-              textAlign: TextAlign.center,
+        // Golden Gradient Text
+        ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [
+              Color(0xFFFDE68A), // Light Gold
+              Color(0xFFD97706), // Amber
+              Color(0xFF92400E), // Bronze
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ).createShader(bounds),
+          child: Text(
+            label,
+            style: GoogleFonts.kanit(
+              fontSize: 16, // Reduced slightly to ensure fit
+              fontWeight: FontWeight.bold,
+              color: Colors.white, // Masked
+              height: 1.0,
             ),
+            textAlign: TextAlign.center,
+            maxLines: 1, // Ensure single line
+            overflow: TextOverflow.ellipsis, // Safe overflow handling
           ),
         ),
         
