@@ -238,7 +238,7 @@ class _SharedSearchFormState extends State<SharedSearchForm> {
                const Icon(Icons.touch_app, color: Colors.black87, size: 20),
                const SizedBox(width: 8),
                Text(
-                'เริ่มกรอกชื่อที่นี่เพื่อวิเคราะห์',
+                'เลือกวันเกิด + กรอกชื่อ เพื่อทำการวิเคราะห์',
                 style: GoogleFonts.kanit(
                   color: Colors.black87,
                   fontSize: 14,
