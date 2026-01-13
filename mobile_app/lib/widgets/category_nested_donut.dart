@@ -235,17 +235,10 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
       color: widget.backgroundColor ?? const Color(0xFF1A1A2E),
       child: Column(
         children: [
-          // Top Section with Brown Gradient and Monogram Pattern
+          // Top Section with Watermark Pattern (No Brown Background)
           Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF3B2F2E), // Deep Chocolate Brown
-                  const Color(0xFF231A1A), // Darker Brown
-                ],
-              ),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1A1A2E), // Match main background
             ),
             child: Stack(
               children: [
