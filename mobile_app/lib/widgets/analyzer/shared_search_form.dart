@@ -177,7 +177,7 @@ class SharedSearchForm extends StatelessWidget {
                 // Tutorial Overlay
                 if (viewModel.showTutorial && nameController.text.isEmpty)
                   Positioned(
-                    top: 60,
+                    bottom: 60,
                     left: 0,
                     right: 0,
                     child: _buildTutorialCallout(),
@@ -195,20 +195,6 @@ class SharedSearchForm extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Up Arrow
-        TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: 10.0),
-          duration: const Duration(milliseconds: 600),
-          builder: (context, value, child) {
-            return Transform.translate(
-              offset: Offset(0, -value),
-              child: CustomPaint(
-                size: const Size(20, 10),
-                painter: _TrianglePainter(color: const Color(0xFFFFD700)),
-              ),
-            );
-          },
-        ),
         // Bubble
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -238,6 +224,23 @@ class SharedSearchForm extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        // Down Arrow
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 10.0),
+          duration: const Duration(milliseconds: 600),
+          builder: (context, value, child) {
+            return Transform.translate(
+              offset: Offset(0, value),
+              child: Transform.rotate(
+                angle: 3.14159, // 180 degrees
+                child: CustomPaint(
+                  size: const Size(20, 10),
+                  painter: _TrianglePainter(color: const Color(0xFFFFD700)),
+                ),
+              ),
+            );
+          },
         ),
       ],
     );
