@@ -51,24 +51,24 @@ class _SharedSearchFormState extends State<SharedSearchForm> {
             children: [
               // Day Dropdown (Compact with label)
               Container(
-            height: 50,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF2E3B55), Color(0xFF16213E)],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF64B5F6).withOpacity(0.3), width: 1.0),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
+                height: 50,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF2E3B55), Color(0xFF16213E)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF64B5F6).withOpacity(0.3), width: 1.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: widget.viewModel.selectedDay,
@@ -197,6 +197,9 @@ class _SharedSearchFormState extends State<SharedSearchForm> {
                     ],
                   ),
                 ),
+              ],
+            ),
+          ),
             ],
           ),
           // Tutorial below the input row
