@@ -33,6 +33,7 @@ import '../widgets/notification_bell.dart'; // NEW Reusable Bell
 import '../services/local_notification_storage.dart';
 import '../models/user_notification.dart';
 import 'package:shimmer/shimmer.dart';
+import '../widgets/shimmering_gold_wrapper.dart'; // Import global wrapper
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -47,6 +48,53 @@ class _DashboardPageState extends State<DashboardPage> {
   late Future<Map<String, dynamic>> _userInfoFuture;
   int _unreadCount = 0;
   bool _isNotificationEnabled = false;
+  // Toggle for filtering Saved Names (Default: false = Hide Kalakini names)
+  bool _showKalakini = false;
+
+  // Helper to check if a name has Kalakini (Bad Characters)
+  bool _isNameClean(dynamic item) {
+    try {
+      final name = item['name'] ?? item['Name'] ?? '';
+      
+      // 1. Check direct list from Backend
+      final kChars = (item['klakini_chars'] ?? item['KlakiniChars']);
+      print('🔍 Checking name: $name');
+      print('   klakini_chars: $kChars (type: ${kChars.runtimeType})');
+      
+      if (kChars is List && kChars.isNotEmpty) {
+        print('   ❌ DIRTY (klakini_chars not empty)');
+        return false; // Dirty
+      }
+
+      // 2. HTML parsing
+      final displayNameHtml = (item['display_name_html'] ?? item['DisplayNameHTML']);
+      print('   displayNameHtml: ${displayNameHtml is List ? "List(${(displayNameHtml as List).length})" : displayNameHtml.runtimeType}');
+      
+      if (displayNameHtml is! List || displayNameHtml.isEmpty) {
+        print('   ✅ CLEAN (no HTML data)');
+        return true;
+      }
+
+      for (var charData in displayNameHtml) {
+         if (charData is! Map) continue;
+         
+         final char = charData['char'] ?? charData['Char'] ?? '';
+         final isBad = charData['is_bad'] == true || 
+                       charData['IsBad'] == true || 
+                       charData['is_klakini'] == true;
+         
+         if (isBad) {
+           print('   ❌ DIRTY (found bad char: "$char", is_bad: ${charData['is_bad']})');
+           return false; // Found Kalakini -> Dirty
+         }
+      }
+      print('   ✅ CLEAN (no bad chars found)');
+      return true; // No Kalakini -> Clean
+    } catch (e) {
+      print('❗ Filter Error: $e');
+      return true;
+    }
+  }
 
   @override
   void initState() {
@@ -444,6 +492,22 @@ class _DashboardPageState extends State<DashboardPage> {
               final statusInt = statusVal is int ? statusVal : (statusVal is num ? statusVal.toInt() : 0);
               final isAdmin = statusInt == 9;
               final savedNames = (data['saved_names'] ?? data['SavedNames']) as List<dynamic>? ?? [];
+
+              print('📊 Total savedNames from API: ${savedNames.length}');
+              if (savedNames.isNotEmpty) {
+                print('   First 5 names: ${savedNames.take(5).map((e) => e['name'] ?? e['Name']).toList()}');
+              }
+
+              // Filter Logic: Hide Kalakini (White Names) if toggle is OFF
+              final visibleSavedNames = savedNames.where((item) {
+                   if (_showKalakini) return true; // Show All
+                   return _isNameClean(item); // Show Valid Only
+              }).toList();
+              
+              print('📊 After filtering: ${visibleSavedNames.length} visible (showKalakini: $_showKalakini)');
+              if (visibleSavedNames.isNotEmpty) {
+                print('   Visible names: ${visibleSavedNames.map((e) => e['name'] ?? e['Name']).toList()}');
+              }
               
               final username = data['username'] ?? data['Username'] ?? 'User';
               final email = data['email'] ?? data['Email'] ?? '';
@@ -523,12 +587,14 @@ class _DashboardPageState extends State<DashboardPage> {
                         const SizedBox(height: 24),
                         
                         // 3. Saved Names Section
-                        _buildSavedNamesHeader(savedNames.length),
+                        _buildSavedNamesHeader(visibleSavedNames.length, _showKalakini, (val) {
+                           setState(() => _showKalakini = val);
+                        }),
                         const SizedBox(height: 12),
-                        if (savedNames.isEmpty)
+                        if (visibleSavedNames.isEmpty)
                           _buildEmptyState()
                         else
-                          _buildSavedNamesTable(savedNames, isVip),
+                          _buildSavedNamesTable(visibleSavedNames, isVip),
                           
                         const SizedBox(height: 32),
                         
@@ -677,7 +743,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // --- Modified Saved Names Header ---
-  Widget _buildSavedNamesHeader(int count) {
+  Widget _buildSavedNamesHeader(int count, bool showKalakini, ValueChanged<bool> onToggle) {
      return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -695,17 +761,40 @@ class _DashboardPageState extends State<DashboardPage> {
                 Text('รายชื่อที่บันทึก', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
               ],
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF16213E), // Darker tone
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white12),
-              ),
-              child: Text(
-                '$count / 12 รายชื่อ',
-                style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70),
-              ),
+            
+            // Toggle & Count
+            Row(
+              children: [
+                 Row(
+                   children: [
+                     Text('แสดงกาลกิณี', style: GoogleFonts.kanit(fontSize: 12, color: Colors.white54)),
+                     Transform.scale(
+                       scale: 0.8,
+                       child: Switch(
+                         value: showKalakini,
+                         onChanged: onToggle,
+                         activeColor: const Color(0xFFFFD700),
+                         activeTrackColor: const Color(0xFFFFD700).withOpacity(0.3),
+                         inactiveThumbColor: Colors.grey,
+                         inactiveTrackColor: Colors.grey.withOpacity(0.3),
+                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                       ),
+                     ),
+                   ],
+                 ),
+                 Container(
+                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                   decoration: BoxDecoration(
+                     color: const Color(0xFF16213E), // Darker tone
+                     borderRadius: BorderRadius.circular(20),
+                     border: Border.all(color: Colors.white12),
+                   ),
+                   child: Text(
+                     '$count รายชื่อ',
+                     style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70),
+                   ),
+                 ),
+              ],
             ),
         ],
      );
@@ -1398,43 +1487,54 @@ class _DashboardPageState extends State<DashboardPage> {
             final hasShaPairs = shaPairs.length >= 1; // At least 1 pair
             
             // Check if all pairs are good (not bad)
-            bool allSatGood = true;
-            for (var p in satPairs.take(2)) {
-              if (p['is_bad'] == true || p['IsBad'] == true) {
-                allSatGood = false;
-                break;
-              }
-            }
+            // Pair Bad Check Helper (Matches _buildMiniPairCircle logic)
+            // ----------------------------------------------------
+            // REVISED PERFECT LOGIC (Strict User Request)
+            // ----------------------------------------------------
+            // Logic: Shimmer ONLY if Numerology (Sat) and Shadow (Sha) pairs are strictly Good (D10, D8, D5).
+            // Do NOT use Score/Point.
             
-            bool allShaGood = true;
-            for (var p in shaPairs.take(2)) {
-              if (p['is_bad'] == true || p['IsBad'] == true) {
-                allShaGood = false;
-                break;
-              }
-            }
-            
-            // Check if name has any bad characters (kalakini)
+            // 2. Check for Kalakini (Bad Characters) - Strictly visible letters only
             bool hasKalakini = false;
+            final RegExp strictLetterRegex = RegExp(r'[ก-๙a-zA-Z]');
+            
             for (var charData in displayNameHtml) {
-              if (charData['is_bad'] == true || charData['IsBad'] == true) {
+              final isBad = charData['is_bad'] == true || charData['IsBad'] == true;
+              final char = (charData['char'] ?? charData['Char'] ?? '').toString();
+              
+              if (isBad && strictLetterRegex.hasMatch(char)) {
                 hasKalakini = true;
                 break;
               }
             }
             
-            final isPerfect = hasSatPairs && hasShaPairs && allSatGood && allShaGood && !hasKalakini; // All green pairs + no kalakini characters
-            
-            // Debug log - show details for first item only
-            if (index == 0) {
-              print('🔍 DEBUG First saved name: $name');
-              print('   hasSatPairs: $hasSatPairs (${satPairs.length} pairs)');
-              print('   hasShaPairs: $hasShaPairs (${shaPairs.length} pairs)');
-              print('   allSatGood: $allSatGood');
-              print('   allShaGood: $allShaGood');
-              print('   isPerfect: $isPerfect');
-              print('   isTopTier: $isTopTier');
+            // 3. Pair Type Check (Allow All 'D' Types - Good Pairs)
+            // While user mentioned D10/D8/D5, some Green pairs (like 15) might be D9 or others.
+            // Relaxing to startsWith('D') ensures all visually 'Green' pairs trigger shimmer.
+            bool isTopTierPair(dynamic p) {
+               final type = (p['type'] ?? p['Type'] ?? '').toString().toUpperCase();
+               return type.startsWith('D');
             }
+
+            bool allSatTopTier = satPairs.isNotEmpty; 
+            for (var p in satPairs) {
+              if (!isTopTierPair(p)) {
+                allSatTopTier = false;
+                break;
+              }
+            }
+            
+            bool allShaTopTier = shaPairs.isNotEmpty;
+            for (var p in shaPairs) {
+               if (!isTopTierPair(p)) {
+                allShaTopTier = false;
+                break;
+              }
+            }
+            
+            // Final Decision: Must be clean (No Kalakini) AND All Pairs must be Top Tier (D10, D8, D5)
+            final isPerfect = !hasKalakini && allSatTopTier && allShaTopTier;
+            
             
             // Debug second item to find kalakini field
             if (index == 1 && name == 'ภูดิท') {
@@ -1547,7 +1647,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 ),
                               ),
                               Expanded(
-                                child: _ShimmeringGoldWrapper(
+                                child: ShimmeringGoldWrapper(
                                   enabled: isPerfect,
                                   child: displayNameHtml.isEmpty
                                     ? Text(
@@ -1832,62 +1932,4 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 }
 
-// Shimmering Gold Animation for Perfect Names (copied from analyzer_page.dart)
-class _ShimmeringGoldWrapper extends StatefulWidget {
-  final Widget child;
-  final bool enabled;
-
-  const _ShimmeringGoldWrapper({required this.child, this.enabled = true});
-
-  @override
-  State<_ShimmeringGoldWrapper> createState() => _ShimmeringGoldWrapperState();
-}
-
-class _ShimmeringGoldWrapperState extends State<_ShimmeringGoldWrapper> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-       vsync: this, 
-       duration: const Duration(milliseconds: 3000)
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!widget.enabled) return widget.child;
-
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return ShaderMask(
-          blendMode: BlendMode.srcIn,
-          shaderCallback: (bounds) {
-            return LinearGradient(
-              colors: const [
-                Color(0xFF8B6914), // Darker Gold
-                Color(0xFFFFD700), // Gold
-                Color(0xFFFFF8DC), // Cornsilk
-                Color(0xFFFFD700), // Gold
-                Color(0xFF8B6914),
-              ],
-              stops: const [0.0, 0.4, 0.5, 0.6, 1.0],
-              begin: Alignment(-3.0 + (4.0 * _controller.value), -0.5),
-              end: Alignment(-1.0 + (4.0 * _controller.value), 0.5),
-              tileMode: TileMode.clamp,
-            ).createShader(bounds);
-          },
-          child: widget.child,
-        );
-      },
-    );
-  }
-}
+// End of DashboardPage

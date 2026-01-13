@@ -12,47 +12,34 @@ class WreathScoreGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Layout manually to ensure stability and prevent overlapping
+    // Layout manually to ensure stability
     final row1 = ["เลขศาสตร์", "พลังเงา", "ผลรวม"];
     final row2 = ["เลขเรียง", "คู่หลัก", "คู่แฝง"];
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Table(
-        defaultColumnWidth: const FlexColumnWidth(),
-        defaultVerticalAlignment: TableCellVerticalAlignment.top,
-        children: [
-          // Row 1
-          TableRow(
-            children: row1.map((label) => _buildCell(context, label)).toList(),
-          ),
-          // Spacer Row
-          const TableRow(
-            children: [
-              SizedBox(height: 24),
-              SizedBox(height: 24),
-              SizedBox(height: 24),
-            ]
-          ),
-          // Row 2
-          TableRow(
-            children: row2.map((label) => _buildCell(context, label)).toList(),
-          ),
-        ],
-      ),
+    return Column(
+      children: [
+        _buildRow(context, row1),
+        const SizedBox(height: 24), 
+        _buildRow(context, row2),
+      ],
     );
   }
 
-  Widget _buildCell(BuildContext context, String label) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const VipGradeInfoPage()),
-        );
-      },
-      child: WreathItem(label: label),
+  Widget _buildRow(BuildContext context, List<String> items) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: items.map((label) => Expanded(
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const VipGradeInfoPage()),
+            );
+          },
+          child: WreathItem(label: label),
+        ),
+      )).toList(),
     );
   }
 }

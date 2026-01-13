@@ -40,6 +40,8 @@ class _NamingPageState extends State<NamingPage> with TickerProviderStateMixin {
   late AnimationController _rotationController;
   late AnimationController _rotationControllerOuter;
   Set<int> _badNumbers = {};
+  int _updateCount = 0; 
+  AnalysisResult? _lastResult; // Track last result to prevent redundant anims
 
   @override
   void initState() {
@@ -89,7 +91,16 @@ class _NamingPageState extends State<NamingPage> with TickerProviderStateMixin {
   }
   
   void _onViewModelUpdate() {
-     if (mounted) setState(() {});
+     if (!mounted) return;
+     
+     // Only trigger animation if the Result Object changes (New Data Arrived)
+     if (_viewModel.analysisResult != _lastResult) {
+        _lastResult = _viewModel.analysisResult;
+        _updateCount++;
+     }
+     
+     setState(() {});
+
      if (_nameController.text != _viewModel.currentName) {
        _nameController.text = _viewModel.currentName;
        _nameController.selection = TextSelection.fromPosition(TextPosition(offset: _nameController.text.length));
@@ -378,58 +389,51 @@ class _NamingPageState extends State<NamingPage> with TickerProviderStateMixin {
                  ),
                ),
 
-            if (result != null && !_viewModel.isSolarLoading)
+               if (result != null && !_viewModel.isSolarLoading && solar != null)
                SliverToBoxAdapter(
-                 child: AnimatedSwitcher(
-                   duration: const Duration(milliseconds: 800),
-                   child: Builder(
-                     key: ValueKey(solar?.cleanedName),
-                     builder: (context) {
-                       if (solar == null) return const SizedBox.shrink();
-
-                       return Stack(
-                         clipBehavior: Clip.none,
-                         children: [
-                           // Main Content Column
-                           Column(
-                             children: [
-                               // 1. Text Info (Name & Pills)
-                               Padding(
-                                 padding: const EdgeInsets.only(top: 290), // Increased from 205 to 290 to clear simpler header
-                                 child: Column(
-                                    children: [
-                                       Builder(
-                                         builder: (context) {
-                                           final bool isPerfect = (solar.numNegativeScore == 0 && solar.shaNegativeScore == 0 && solar.klakiniChars.isEmpty);
-                                           return ShimmeringGoldWrapper(
-                                             enabled: isPerfect,
-                                             child: Wrap(
-                                               alignment: WrapAlignment.center,
-                                               children: solar.sunDisplayNameHtml.map((dc) => Text(
-                                                   dc.char,
-                                                   style: GoogleFonts.kanit(
-                                                     fontSize: 48, 
-                                                     fontWeight: FontWeight.bold, 
-                                                     color: dc.isBad ? const Color(0xFFFF6B6B) : (isPerfect ? const Color(0xFFFFD700) : Colors.white), 
-                                                     height: 1.0
-                                                   ),
-                                               )).toList(),
+                 child: Stack(
+                   clipBehavior: Clip.none,
+                   children: [
+                     // Main Content Column
+                     Column(
+                       children: [
+                         // 1. Text Info (Name & Pills)
+                         Padding(
+                           padding: const EdgeInsets.only(top: 290), 
+                           child: Column(
+                              children: [
+                                 Builder(
+                                   builder: (context) {
+                                     final bool isPerfect = (solar.numNegativeScore == 0 && solar.shaNegativeScore == 0 && solar.klakiniChars.isEmpty);
+                                     return ShimmeringGoldWrapper(
+                                       enabled: isPerfect,
+                                       child: Wrap(
+                                         alignment: WrapAlignment.center,
+                                         children: solar.sunDisplayNameHtml.map((dc) => Text(
+                                             dc.char,
+                                             style: GoogleFonts.kanit(
+                                               fontSize: 48, 
+                                               fontWeight: FontWeight.bold, 
+                                               color: dc.isBad ? const Color(0xFFFF6B6B) : (isPerfect ? const Color(0xFFFFD700) : Colors.white), 
+                                               height: 1.0
                                              ),
-                                           );
-                                         },
+                                         )).toList(),
                                        ),
-                                       const SizedBox(height: 8),
-                                       Row(
-                                         mainAxisAlignment: MainAxisAlignment.center,
-                                         children: [
-                                           _buildPill(Icons.calendar_today_outlined, _viewModel.days.firstWhere((d) => solar.inputDayRaw.contains(d.value), orElse: () => _viewModel.days[0]).label, const Color(0x1AFFFFFF), const Color(0xFFFFFFFF)),
-                                           const SizedBox(width: 12),
-                                           if (solar.klakiniChars.isNotEmpty)
-                                             _buildPill(Icons.warning_amber_rounded, solar.klakiniChars.join(' '), const Color(0x33FF6B6B), const Color(0xFFFF6B6B))
-                                           else
-                                             _buildPill(null, 'ไม่มีกาลกิณี', const Color(0x3334D399), const Color(0xFF34D399)),
-                                         ],
-                                       ),
+                                     );
+                                   },
+                                 ),
+                                 const SizedBox(height: 8),
+                                 Row(
+                                   mainAxisAlignment: MainAxisAlignment.center,
+                                   children: [
+                                     _buildPill(Icons.calendar_today_outlined, _viewModel.days.firstWhere((d) => solar.inputDayRaw.contains(d.value), orElse: () => _viewModel.days[0]).label, const Color(0x1AFFFFFF), const Color(0xFFFFFFFF)),
+                                     const SizedBox(width: 12),
+                                     if (solar.klakiniChars.isNotEmpty)
+                                       _buildPill(Icons.warning_amber_rounded, solar.klakiniChars.join(' '), const Color(0x33FF6B6B), const Color(0xFFFF6B6B))
+                                     else
+                                       _buildPill(null, 'ไม่มีกาลกิณี', const Color(0x3334D399), const Color(0xFF34D399)),
+                                   ],
+                                 ),
                                        const SizedBox(height: 12),
                                        RichText(
                                          text: TextSpan(
@@ -518,11 +522,8 @@ class _NamingPageState extends State<NamingPage> with TickerProviderStateMixin {
                              ),
                            ),
                          ],
-                       );
-                     },
-                   ),
+                       ),
                  ),
-               ),
               
               // Footer
               const SliverFillRemaining(

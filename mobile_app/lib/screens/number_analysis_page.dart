@@ -34,6 +34,7 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
   final FocusNode _phoneFocusNode = FocusNode();
   bool _isLoading = false;
   Map<String, dynamic>? _analysisData;
+  int _analyzeCount = 0; // For forcing animation transition
 
   late AnimationController _innerOrbitController;
   late AnimationController _outerOrbitController;
@@ -43,9 +44,19 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
   void initState() {
     super.initState();
     
+    String startNumber = '0936544442'; // Default requested by user
+    
     if (widget.initialPhoneNumber != null) {
-      _phoneController.text = widget.initialPhoneNumber!;
-      _analyzeNumber(widget.initialPhoneNumber!);
+      startNumber = widget.initialPhoneNumber!;
+    }
+    
+    _phoneController.text = startNumber;
+    
+    // Auto-analyze default or initial number
+    if (startNumber.isNotEmpty) {
+       WidgetsBinding.instance.addPostFrameCallback((_) {
+          _analyzeNumber(startNumber);
+       });
     }
 
     // Inner Orbit: 20s
@@ -71,7 +82,8 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is String && args.length == 10 && _phoneController.text.isEmpty) {
+    // Allow override if empty OR if it holds the default value
+    if (args is String && args.length == 10 && (_phoneController.text.isEmpty || _phoneController.text == '0936544442')) {
       _phoneController.text = args;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _analyzeNumber(args);
@@ -116,6 +128,7 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
       final data = await ApiService.analyzeRawNumber(number);
       setState(() {
         _analysisData = data;
+        _analyzeCount++; // Force animation update
       });
     } catch (e) {
       print('Analysis Error: $e');
@@ -215,62 +228,176 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
             // White Header Section (Clean & Minimalist like Web)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(24, 32, 24, 8), // Reduced top 40->32, bottom 20->8
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 0), // Fix: Remove top padding (16->0) to touch edge
               color: Colors.transparent, // Transparent to show scaffold bg
               child: Column(
                 children: [
+                  
+                  // Beautiful Input Form (Added as requested)
+                  Container(
+                      margin: const EdgeInsets.symmetric(vertical: 24), 
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        gradient: const LinearGradient(
+                           colors: [Color(0xFFFFD700), Color(0xFFFF8F00)], // Gold Gradient Border
+                           begin: Alignment.topLeft, end: Alignment.bottomRight
+                        ), 
+                        boxShadow: [
+                           BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))
+                        ]
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(27),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.dialpad, color: Color(0xFFFFB300)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _phoneController,
+                                focusNode: _phoneFocusNode,
+                                keyboardType: TextInputType.phone,
+                                maxLength: 10,
+                                style: GoogleFonts.kanit(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF333333), height: 1.2),
+                                decoration: InputDecoration(
+                                  hintText: 'กรอกเบอร์มือถือ',
+                                  hintStyle: GoogleFonts.kanit(color: Colors.grey[300], fontSize: 20),
+                                  border: InputBorder.none,
+                                  counterText: "",
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                onChanged: (val) {
+                                   setState(() {}); // Rebuild to show/hide Update Clear Button
+                                   if (val.length == 10) {
+                                      _analyzeNumber(val);
+                                      FocusScope.of(context).unfocus();
+                                   }
+                                },
+                                onSubmitted: (val) => _analyzeNumber(val),
+                              ),
+                            ),
+                            
+                            // Clear Button (Show only when not empty)
+                            if (_phoneController.text.isNotEmpty)
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _phoneController.clear();
+                                    _analysisData = null; // Optional: Reset analysis when cleared?
+                                  });
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.only(right: 8),
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade200,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.close, size: 16, color: Colors.grey),
+                                ),
+                              ),
 
-                if (_phoneController.text.isEmpty && !_isLoading && _analysisData == null)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 40),
-                    child: Text(
-                      'ไม่พบเบอร์โทรศัพท์\nกรุณาเลือกเบอร์จากหน้าหลัก',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.kanit(fontSize: 18, color: Colors.grey[400]),
+                            if (_isLoading)
+                               const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Color(0xFFFFB300))))
+                            else
+                               InkWell(
+                                  onTap: () {
+                                     if (_phoneController.text.isNotEmpty) _analyzeNumber(_phoneController.text);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: const BoxDecoration(color: Color(0xFFFFF8E1), shape: BoxShape.circle),
+                                    child: const Icon(Icons.search_rounded, color: Color(0xFFFFB300)),
+                                  ),
+                               )
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
 
-                if (_isLoading)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 20),
-                    child: CircularProgressIndicator(),
-                  ),
+                // Animated Content Switching (Fade In/Out with Stack)
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 1000), // 1 Second Duration
+                  switchInCurve: Curves.easeOutBack, // Bouncy/Smooth in
+                  switchOutCurve: Curves.easeInBack,
+                  // IMPORTANT: Stack children to allow true Cross-Fade
+                  layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+                    return Stack(
+                      alignment: Alignment.topCenter,
+                      children: <Widget>[
+                        ...previousChildren,
+                        if (currentChild != null) currentChild,
+                      ],
+                    );
+                  },
+                  // Scale + Fade Transition
+                  transitionBuilder: (Widget child, Animation<double> animation) {
+                     return FadeTransition(
+                        opacity: animation,
+                        child: ScaleTransition(
+                           scale: Tween<double>(begin: 0.95, end: 1.0).animate(animation), // Subtle Pop
+                           child: child,
+                        ),
+                     );
+                  },
+                  child: _isLoading 
+                    ? Container(
+                        key: const ValueKey('loading'),
+                        margin: const EdgeInsets.only(top: 40),
+                        child: const CircularProgressIndicator(color: Color(0xFFFFD700)),
+                      )
+                    : (_analysisData == null && _phoneController.text.isEmpty)
+                        ? Padding(
+                            key: const ValueKey('empty'),
+                            padding: const EdgeInsets.symmetric(vertical: 40),
+                            child: Text(
+                              'ไม่พบเบอร์โทรศัพท์\nกรุณาเลือกเบอร์จากหน้าหลัก',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.kanit(fontSize: 18, color: Colors.grey[400]),
+                            ),
+                          )
+                        : _analysisData != null 
+                            ? Column(
+                                // Use _analyzeCount to FORCE animation on every new result
+                                key: ValueKey('data_$_analyzeCount'), 
+                                children: [
+                                  const SizedBox(height: 8),
+                                  
+                                  SolarSystemWidget(
+                                    sumPair: _analysisData!['sum_meaning'],
+                                    mainPairs: _analysisData!['main_pairs'] as List?,
+                                    hiddenPairs: _analysisData!['hidden_pairs'] as List?,
+                                  ),
 
-                if (!_isLoading && _analysisData != null) ...[
-                  const SizedBox(height: 8),
+                                  const SizedBox(height: 8), 
 
-                // 1. Grade Badge (Moved to top)
-                if (showGoldenBadge && gradeTitle != null) ...[
-                  _buildGradeBadge(_phoneController.text, gradeTitle!),
-                  const SizedBox(height: 32),
-                ],
-                
-                // Wreath Score Grid (Flower bouquet)
-                Container(
-                  margin: const EdgeInsets.only(top: 24),
-                  height: 180, // Fix: Explicit height to break layout loop from parent
-                  child: const WreathScoreGrid(),
+                                  if (showGoldenBadge && gradeTitle != null) ...[
+                                    _buildGradeBadge(_phoneController.text, gradeTitle!),
+                                    const SizedBox(height: 16),
+                                  ],
+                                  
+                                  const SizedBox(height: 8),
+                                ],
+                              )
+                            : const SizedBox(key: ValueKey('blank')),
                 ),
-                
-                const SizedBox(height: 32),
-
-                // Solar System Visualization
-                SolarSystemWidget(
-                  sumPair: _analysisData!['sum_meaning'],
-                  mainPairs: _analysisData!['main_pairs'] as List?,
-                  hiddenPairs: _analysisData!['hidden_pairs'] as List?,
-                ),
-
-                const SizedBox(height: 32),
-                
-                // 3. Meaning Analysis Section
-                _buildMeaningSection(_analysisData!),
-                
-                const SizedBox(height: 40),
-            ],
+                // Add spacer to push footer down if content is short (since we used Stack alignment)
+                // Removed fixed spacer to fix large gap
               ],
             ),
           ),
+          
+          // 3. Meaning Analysis Section (Full Width)
+          if (!_isLoading && _analysisData != null)
+             _buildMeaningSection(_analysisData!),
+
+          const SizedBox(height: 40),
           
           // MOVED: Footer is now outside the padded container to span full width
           const SharedFooter(),
@@ -339,7 +466,7 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
         ),
 
         // Reduced spacing to keep it tight
-        const SizedBox(height: 12), 
+        const SizedBox(height: 0), // Reduced 12 -> 0 to bring Title closer to Number
 
         // 2. Title (PERFECT) + Stars
         GestureDetector(
@@ -397,7 +524,7 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
           ),
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 8), // Reduced 16 -> 8
 
         // 3. Buy Button (Moved to new line for better layout)
         ElevatedButton(
@@ -578,14 +705,20 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
   Widget _buildMeaningSection(Map<String, dynamic> data) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      // Remove margin to span full width
+      margin: EdgeInsets.zero, 
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        // Remove border radius to align edges
+        borderRadius: BorderRadius.zero, 
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4)), // Shadow pointing up slightly
         ],
-        border: Border.all(color: Colors.grey.shade100),
+        // Only keep top/bottom borders if needed, or remove completely
+        border: const Border(
+          top: BorderSide(color: Color(0xFFEEEEEE)),
+          bottom: BorderSide(color: Color(0xFFEEEEEE)),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

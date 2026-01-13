@@ -19,7 +19,23 @@ class _ShimmeringGoldWrapperState extends State<ShimmeringGoldWrapper> with Sing
     _controller = AnimationController(
        vsync: this, 
        duration: const Duration(milliseconds: 3000) 
-    )..repeat();
+    );
+    
+    if (widget.enabled) {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(ShimmeringGoldWrapper oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.enabled != oldWidget.enabled) {
+      if (widget.enabled) {
+        _controller.repeat();
+      } else {
+        _controller.stop();
+      }
+    }
   }
 
   @override
@@ -35,24 +51,26 @@ class _ShimmeringGoldWrapperState extends State<ShimmeringGoldWrapper> with Sing
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        return ShaderMask(
-          blendMode: BlendMode.srcIn,
-          shaderCallback: (bounds) {
-            return LinearGradient(
-              colors: const [
-                Color(0xFF8B6914), // Darker Gold for contrast
-                Color(0xFFFFD700), // Gold
-                Color(0xFFFFF8DC), // Cornsilk (White-ish Gold)
-                Color(0xFFFFD700), // Gold
-                Color(0xFF8B6914),
-              ],
-              stops: const [0.0, 0.4, 0.5, 0.6, 1.0],
-              begin: Alignment(-3.0 + (4.0 * _controller.value), -0.5),
-              end: Alignment(-1.0 + (4.0 * _controller.value), 0.5),
-              tileMode: TileMode.clamp,
-            ).createShader(bounds);
-          },
-          child: widget.child,
+        return RepaintBoundary(
+          child: ShaderMask(
+            blendMode: BlendMode.srcIn,
+            shaderCallback: (bounds) {
+              return LinearGradient(
+                colors: const [
+                  Color(0xFFFFC107), // Amber 500 (Pure Gold Base)
+                  Color(0xFFFFD700), // Gold
+                  Color(0xFFFFFFFF), // White Highlight
+                  Color(0xFFFFD700), // Gold
+                  Color(0xFFFFC107), // Amber 500
+                ],
+                stops: const [0.0, 0.4, 0.5, 0.6, 1.0],
+                begin: Alignment(-3.0 + (4.0 * _controller.value), -0.5),
+                end: Alignment(-1.0 + (4.0 * _controller.value), 0.5),
+                tileMode: TileMode.clamp,
+              ).createShader(bounds);
+            },
+            child: widget.child,
+          ),
         );
       },
     );

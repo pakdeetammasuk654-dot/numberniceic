@@ -46,10 +46,39 @@ class Top4Section extends StatelessWidget {
      final targetNameHtml = data!.targetNameHtml;
      
      final names = showTop4 ? top10 : (recommended.isNotEmpty ? recommended : top10);
+     
+     // Filter Logic: Hide Kalakini names if toggle is OFF
+     final visibleNames = names.where((name) {
+       if (showKlakini) return true; // Show all if toggle is ON
+       
+       print('🔍 [Top4] Checking: ${name.thName}');
+       
+       // Check if name has any bad characters
+       final displayHtml = name.displayNameHtml;
+       print('   displayNameHtml: ${displayHtml?.length ?? 0} chars');
+       
+       if (displayHtml == null || displayHtml.isEmpty) {
+         print('   ✅ CLEAN (no HTML)');
+         return true;
+       }
+       
+       for (var charData in displayHtml) {
+         print('   char: "${charData.char}", isBad: ${charData.isBad}');
+         if (charData.isBad == true) {
+           print('   ❌ DIRTY (has bad char)');
+           return false; // Hide names with bad characters
+         }
+       }
+       print('   ✅ CLEAN');
+       return true; // Show clean names
+     }).toList();
+     
+     print('📊 [Top4] Total: ${names.length}, Visible: ${visibleNames.length} (showKlakini: $showKlakini)');
+     
      final bool isActuallyShowingTop10 = showTop4 || recommended.isEmpty;
      final String titlePrefix = 'ตั้งชื่อดีให้ ';
      
-     if (names.isEmpty) return const SizedBox.shrink();
+     if (visibleNames.isEmpty) return const SizedBox.shrink();
      
      // Theme Logic
     final bool isGold = isActuallyShowingTop10;
@@ -71,7 +100,7 @@ class Top4Section extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. Header
-          _buildHeader(titlePrefix, targetNameHtml, isActuallyShowingTop10, names.length),
+          _buildHeader(titlePrefix, targetNameHtml, isActuallyShowingTop10, visibleNames.length),
           const SizedBox(height: 12),
           
           // 2. Toggles
@@ -121,10 +150,10 @@ class Top4Section extends StatelessWidget {
                      shrinkWrap: true,
                      physics: const NeverScrollableScrollPhysics(),
                      padding: EdgeInsets.zero,
-                     itemCount: names.length > 10 ? 10 : names.length,
+                     itemCount: visibleNames.length > 10 ? 10 : visibleNames.length,
                      separatorBuilder: (context, index) => Container(height: 1, color: Colors.white12),
                      itemBuilder: (context, index) {
-                       final name = names[index];
+                       final name = visibleNames[index];
                        final rank = isActuallyShowingTop10 ? (index + 1) : getLastRank(index);
                        
                        // VIP Locking Logic: Lock first 7 items (Rank 1-7 or Rank 91-97)

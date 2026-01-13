@@ -620,8 +620,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
         body: IndexedStack(
           index: _subIdx,
           children: [
-             NamingPage(viewModel: _sharedViewModel),            // 0
-             AnalyzerPage(
+             TickerMode(enabled: _subIdx == 0, child: NamingPage(viewModel: _sharedViewModel)),            // 0
+             TickerMode(enabled: _subIdx == 1, child: AnalyzerPage(
                viewModel: _sharedViewModel,
                onNavigateToNaming: () {
                  setState(() { 
@@ -629,8 +629,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                     _tabController.animateTo(0);
                  });
                },
-             ),          // 1
-             UnlimitedAnalyzerPage(
+             )),          // 1
+             TickerMode(enabled: _subIdx == 2, child: UnlimitedAnalyzerPage(
                viewModel: _sharedViewModel,
                onNavigateToNaming: () {
                  setState(() { 
@@ -638,8 +638,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                     _tabController.animateTo(0);
                  });
                },
-             ), // 2
-             ShopPage(viewModel: _sharedViewModel),              // 3
+             )), // 2
+             TickerMode(enabled: _subIdx == 3, child: ShopPage(viewModel: _sharedViewModel)),              // 3
           ],
         ),
     );

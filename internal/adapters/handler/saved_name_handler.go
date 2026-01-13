@@ -109,8 +109,22 @@ func (h *SavedNameHandler) prepareDisplayNames(savedNames []domain.SavedName) []
 		satPairs := h.getPairsWithColors(sn.SatSum)
 		shaPairs := h.getPairsWithColors(sn.ShaSum)
 
-		// Calculate IsTopTier
-		isTopTier := h.isAllPairsTopTier(satPairs) && h.isAllPairsTopTier(shaPairs)
+		// Calculate IsTopTier (Backend Logic Update to match Frontend)
+		isStrictTopTier := h.isAllPairsTopTier(satPairs) && h.isAllPairsTopTier(shaPairs)
+		isHighScore := sn.TotalScore >= 50
+
+		// Check for REAL Kalakini (ignoring invisible chars/spaces)
+		hasRealKalakini := false
+		for _, r := range sn.Name {
+			if h.klakiniCache.IsKlakini(sn.BirthDay, r) {
+				if !unicode.IsSpace(r) && !unicode.IsControl(r) {
+					hasRealKalakini = true
+					break
+				}
+			}
+		}
+
+		isTopTier := !hasRealKalakini && (isStrictTopTier || isHighScore)
 
 		// Create DisplayNameHTML
 		var displayChars []domain.DisplayChar
@@ -204,10 +218,12 @@ func (h *SavedNameHandler) getPairsWithColors(sum int) []domain.PairInfo {
 	for _, p := range pairs {
 		meaning, ok := h.numberPairCache.GetMeaning(p)
 		color := "#ccc" // Default color
+		pairType := ""
 		if ok {
 			color = meaning.Color
+			pairType = meaning.PairType
 		}
-		pairInfos = append(pairInfos, domain.PairInfo{Number: p, Color: color})
+		pairInfos = append(pairInfos, domain.PairInfo{Number: p, Color: color, Type: pairType})
 	}
 	return pairInfos
 }

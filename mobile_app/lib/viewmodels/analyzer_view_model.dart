@@ -13,7 +13,7 @@ class AnalyzerViewModel extends ChangeNotifier {
   bool _isAuspicious = false;
   bool _showKlakini = true;
   bool _showTop4 = false;
-  bool _showKlakiniTop4 = true;
+  bool _showKlakiniTop4 = false;
   bool _isTop4Switching = false;
   bool _isLoading = false;
   

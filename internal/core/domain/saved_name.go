@@ -27,6 +27,7 @@ type SavedNameDisplay struct {
 }
 
 type PairInfo struct {
-	Number string
-	Color  string
+	Number string `json:"number"`
+	Color  string `json:"color"`
+	Type   string `json:"type"`
 }

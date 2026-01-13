@@ -18,6 +18,7 @@ class CategoryNestedDonut extends StatefulWidget {
   final String? analyzedName;
   final Function(String phoneNumber)? onAddPhoneNumber; // Just for notification
   final Color? backgroundColor; // Optional background color
+  final bool isPerfect; // Control Shimmer Logic
 
   const CategoryNestedDonut({
     super.key,
@@ -29,6 +30,7 @@ class CategoryNestedDonut extends StatefulWidget {
     this.analyzedName,
     this.onAddPhoneNumber,
     this.backgroundColor,
+    this.isPerfect = false,
   });
 
   @override
@@ -66,20 +68,37 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
     );
     _scoreAnimation = CurvedAnimation(parent: _scoreController, curve: Curves.easeOutExpo);
     
-    // Chart Animation (Fan Opening Effect)
+    // Chart Animation (Fan Opening Effect with Bounce)
     _chartController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1500),
     );
-    _chartAnimation = CurvedAnimation(parent: _chartController, curve: Curves.easeOutQuint);
+    // Use elasticOut for "Boing!" effect
+    _chartAnimation = CurvedAnimation(parent: _chartController, curve: Curves.elasticOut);
 
     // Safety Delay Start
-    Future.delayed(const Duration(milliseconds: 300), () {
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) {
          _scoreController.forward();
          _chartController.forward();
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Detect visibility change (e.g. switching Tabs in TabBarView)
+    if (TickerMode.of(context)) {
+      // Small delay to ensure layout is ready or simply to create a 'fresh' feel
+      // Force replay animation when tab becomes visible
+      _scoreController.forward(from: 0.0);
+      _chartController.forward(from: 0.0);
+    } else {
+      // Pause/Reset if tab is switched away to save resources
+      _scoreController.stop();
+      _chartController.stop();
+    }
   }
 
   @override
@@ -97,11 +116,15 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
         _fetchedLuckyNumbers.clear();
       }
           
-      // Reset and Re-play animations
+      // Reset animations
       _scoreController.reset();
       _chartController.reset();
-      _chartController.forward();
-      _scoreController.forward();
+      
+      // Play ONLY if visible. If not visible, didChangeDependencies will handle it when user returns.
+      if (TickerMode.of(context)) {
+        _chartController.forward();
+        _scoreController.forward();
+      }
     }
   }
 
@@ -258,19 +281,26 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            AnimatedBuilder(
-                              animation: _chartAnimation,
-                              builder: (context, child) {
-                                return CustomPaint(
-                                  size: const Size(200, 200),
-                                  painter: NestedDonutPainter(
-                                    data: chartData,
-                                    totalPairs: widget.totalPairs,
-                                    enhancedCategories: allEnhanced,
-                                    progress: _chartAnimation.value,
-                                  ),
-                                );
-                              }
+                            GestureDetector(
+                              onTap: () {
+                                // Allow user to replay animation on tap!
+                                _scoreController.forward(from: 0.0);
+                                _chartController.forward(from: 0.0);
+                              },
+                              child: AnimatedBuilder(
+                                animation: _chartAnimation,
+                                builder: (context, child) {
+                                  return CustomPaint(
+                                    size: const Size(200, 200),
+                                    painter: NestedDonutPainter(
+                                      data: chartData,
+                                      totalPairs: widget.totalPairs,
+                                      enhancedCategories: allEnhanced,
+                                      progress: _chartAnimation.value,
+                                    ),
+                                  );
+                                }
+                              ),
                             ),
                             // Center Text (Golden)
                             Container(
@@ -511,13 +541,13 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
                    ),
                    const SizedBox(width: 4),
                    ShimmeringGoldWrapper(
+                     enabled: widget.isPerfect,
                      child: Text(
                        '"${widget.analyzedName}"',
                        style: GoogleFonts.kanit(
                          fontSize: 22,
                          fontWeight: FontWeight.w900,
-                         color: const Color(0xFFF57F17), // Dark Gold
-                         height: 1.0,
+                         color: const Color(0xFFFFC107), // Match new Gradient Base
                        ),
                      ),
                    ),
