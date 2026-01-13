@@ -171,6 +171,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                                   fontSize: 36,
                                   fontWeight: FontWeight.bold,
                                   color: const Color(0xFF1A1A2E),
+                                  letterSpacing: 0,
                                   shadows: [
                                     Shadow(
                                       color: Colors.black.withOpacity(0.3),
@@ -219,7 +220,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                               fontSize: 56,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
-                              letterSpacing: 4,
+                              letterSpacing: 0,
                             ),
                           ),
                         );
