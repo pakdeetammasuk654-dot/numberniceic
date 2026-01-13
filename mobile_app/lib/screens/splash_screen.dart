@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:math' as math;
+import 'package:google_fonts/google_fonts.dart';
 import 'main_tab_page.dart';
 import '../services/auth_service.dart';
 
@@ -10,39 +12,63 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late AnimationController _scaleController;
+  late AnimationController _rotationController;
+  late AnimationController _shimmerController;
+  
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  late Animation<double> _rotationAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    
+    // Fade animation
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
+    );
+
+    // Scale animation
+    _scaleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    // Rotation animation for coin
+    _rotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    );
+    _rotationAnimation = Tween<double>(begin: 0.0, end: 2 * math.pi).animate(
+      CurvedAnimation(parent: _rotationController, curve: Curves.easeInOut),
     );
 
-    _controller.forward();
+    // Shimmer animation for text
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat();
+
+    // Start animations
+    _fadeController.forward();
+    _scaleController.forward();
+    _rotationController.forward();
 
     _navigateToHome();
   }
 
   Future<void> _navigateToHome() async {
-    // Wait for animation and a minimum delay to show the logo
-    await Future.wait([
-      Future.delayed(const Duration(seconds: 3)),
-      // You can also add more initialization logic here if needed
-    ]);
-
+    await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
@@ -58,61 +84,234 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   void dispose() {
-    _controller.dispose();
+    _fadeController.dispose();
+    _scaleController.dispose();
+    _rotationController.dispose();
+    _shimmerController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E), // Dark Navy Theme
-      body: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Perfectly centered logo container
-          Align(
-            alignment: Alignment.center, // Reset to absolute center
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: _fadeAnimation.value,
-                  child: Transform.scale(
-                    scale: _scaleAnimation.value,
-                    alignment: Alignment.center,
-                    child: child,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF1A1A2E), // Dark Navy
+              Color(0xFF16213E), // Deeper Navy
+              Color(0xFF0F3460), // Rich Blue
+              Color(0xFF1A1A2E), // Back to Dark Navy
+            ],
+            stops: [0.0, 0.3, 0.7, 1.0],
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Animated background particles
+            ...List.generate(20, (index) => _buildFloatingParticle(index)),
+            
+            // Main content
+            Center(
+              child: AnimatedBuilder(
+                animation: Listenable.merge([_fadeController, _scaleController]),
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _fadeAnimation.value,
+                    child: Transform.scale(
+                      scale: _scaleAnimation.value,
+                      child: child,
+                    ),
+                  );
+                },
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Gold Coin with rotation
+                    AnimatedBuilder(
+                      animation: _rotationController,
+                      builder: (context, child) {
+                        return Transform(
+                          alignment: Alignment.center,
+                          transform: Matrix4.identity()
+                            ..setEntry(3, 2, 0.001)
+                            ..rotateY(_rotationAnimation.value),
+                          child: Container(
+                            width: 140,
+                            height: 140,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const RadialGradient(
+                                colors: [
+                                  Color(0xFFFFD700), // Gold
+                                  Color(0xFFFFA500), // Orange Gold
+                                  Color(0xFFB8860B), // Dark Gold
+                                ],
+                                stops: [0.3, 0.7, 1.0],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFFFD700).withOpacity(0.6),
+                                  blurRadius: 40,
+                                  spreadRadius: 10,
+                                ),
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                'ช',
+                                style: GoogleFonts.kanit(
+                                  fontSize: 80,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1A1A2E),
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withOpacity(0.3),
+                                      offset: const Offset(2, 2),
+                                      blurRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    
+                    const SizedBox(height: 40),
+                    
+                    // "ชื่อดี" text with shimmer
+                    AnimatedBuilder(
+                      animation: _shimmerController,
+                      builder: (context, child) {
+                        return ShaderMask(
+                          shaderCallback: (bounds) {
+                            return LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: const [
+                                Color(0xFFFFD700),
+                                Color(0xFFFFFFFF),
+                                Color(0xFFFFD700),
+                                Color(0xFFFFFFFF),
+                                Color(0xFFFFD700),
+                              ],
+                              stops: [
+                                0.0,
+                                _shimmerController.value - 0.3,
+                                _shimmerController.value,
+                                _shimmerController.value + 0.3,
+                                1.0,
+                              ].map((e) => e.clamp(0.0, 1.0)).toList(),
+                            ).createShader(bounds);
+                          },
+                          child: Text(
+                            'ชื่อดี',
+                            style: GoogleFonts.kanit(
+                              fontSize: 56,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 4,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    
+                    const SizedBox(height: 12),
+                    
+                    // Subtitle
+                    Text(
+                      'วิเคราะห์ชื่อและเบอร์มงคล',
+                      style: GoogleFonts.kanit(
+                        fontSize: 16,
+                        color: Colors.white70,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Loading indicator at bottom
+            Positioned(
+              bottom: 60,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          const Color(0xFFFFD700).withOpacity(0.8),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'กำลังโหลด...',
+                      style: GoogleFonts.kanit(
+                        fontSize: 14,
+                        color: Colors.white60,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFloatingParticle(int index) {
+    final random = math.Random(index);
+    final size = 2.0 + random.nextDouble() * 4;
+    final duration = 3000 + random.nextInt(4000);
+    final left = random.nextDouble() * MediaQuery.of(context).size.width;
+    final top = random.nextDouble() * MediaQuery.of(context).size.height;
+    
+    return Positioned(
+      left: left,
+      top: top,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: Duration(milliseconds: duration),
+        repeat: true,
+        builder: (context, value, child) {
+          return Opacity(
+            opacity: (math.sin(value * 2 * math.pi) + 1) / 2,
+            child: Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFFFD700).withOpacity(0.3),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFFD700).withOpacity(0.2),
+                    blurRadius: 4,
+                    spreadRadius: 1,
                   ),
-                );
-              },
-              child: SizedBox(
-                width: 200,
-                height: 200,
-                child: Image.asset(
-                  'assets/images/logo_gold_name_transparent.png',
-                  width: 200,
-                  height: 200,
-                  fit: BoxFit.contain,
-                ),
+                ],
               ),
             ),
-          ),
-          // Progress indicator at the bottom
-          Positioned(
-            bottom: 50,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: SizedBox(
-                width: 30,
-                height: 30,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.teal.shade200),
-                ),
-              ),
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

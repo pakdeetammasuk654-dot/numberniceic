@@ -536,17 +536,18 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
   void _onViewModelUpdate() {
     if (mounted) {
-       bool needsRebuild = false;
        // Sync text controller if it differs
        if (_nameController.text != _sharedViewModel.currentName) {
          _nameController.text = _sharedViewModel.currentName;
          if (_nameController.selection.baseOffset == -1 && _nameController.text.isNotEmpty) {
             _nameController.selection = TextSelection.fromPosition(TextPosition(offset: _nameController.text.length));
          }
-         needsRebuild = true;
        }
        // Always rebuild to reflect other VM changes (loading, etc)
-       setState(() {});
+       // Use addPostFrameCallback to avoid setState during build
+       WidgetsBinding.instance.addPostFrameCallback((_) {
+         if (mounted) setState(() {});
+       });
     }
   }
 

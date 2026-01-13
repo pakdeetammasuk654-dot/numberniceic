@@ -188,6 +188,8 @@ class SharedSearchForm extends StatelessWidget {
         ],
       ),
     );
+  }
+
   Widget _buildTutorialCallout() {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -244,6 +246,7 @@ class SharedSearchForm extends StatelessWidget {
 
 class _TrianglePainter extends CustomPainter {
   final Color color;
+  
   _TrianglePainter({required this.color});
 
   @override
