@@ -528,8 +528,12 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
     // Show tutorial if name is empty
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('🎯 Tutorial Check: currentName="${_sharedViewModel.currentName}", isEmpty=${_sharedViewModel.currentName.isEmpty}');
       if (_sharedViewModel.currentName.isEmpty) {
+        print('✅ Setting showTutorial = true');
         _sharedViewModel.setShowTutorial(true);
+      } else {
+        print('❌ Name not empty, tutorial will not show');
       }
     });
   }
