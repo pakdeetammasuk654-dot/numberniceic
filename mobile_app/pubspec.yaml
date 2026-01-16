@@ -1,7 +1,7 @@
 name: mobile_app
 description: "A new Flutter project for NumberNiceIC."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+4
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -44,8 +44,13 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/logo_gold_name.png"
+  image_path: "assets/images/chuedee-logo2.png"
   min_sdk_android: 21 # android min sdk value
+  web:
+    generate: true
+    image_path: "assets/images/chuedee-logo2.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
 
 flutter:
   uses-material-design: true

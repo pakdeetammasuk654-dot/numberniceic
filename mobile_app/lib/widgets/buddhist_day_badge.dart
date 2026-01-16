@@ -44,18 +44,22 @@ class BuddhistDayBadge extends StatelessWidget {
           }
         }
 
-        if (isToday) {
+          if (isToday) {
           return _buildIconBadge(
-            icon: Icons.self_improvement, // Meditation/Buddha icon
-            color: const Color(0xFFFFD700),
+            icon: Icons.self_improvement, 
+            imagePath: 'assets/images/buddha.png',
+            color: const Color(0xFFD97706), // Amber-600
             message: 'วันนี้วันพระ',
+            showText: true,
           );
         } else if (isTomorrow) {
-          // Keep the minimal style for tomorrow warning
+          final isDark = Theme.of(context).brightness == Brightness.dark;
           return _buildIconBadge(
-            icon: Icons.spa_outlined,
-            color: const Color(0xFFE2E8F0), 
+            icon: Icons.self_improvement,
+            imagePath: 'assets/images/buddha.png',
+            color: isDark ? Colors.white70 : Colors.black87, // Subtle color
             message: 'พรุ่งนี้วันพระ',
+            showText: true,
           );
         }
 
@@ -68,23 +72,40 @@ class BuddhistDayBadge extends StatelessWidget {
     required IconData icon,
     required Color color,
     required String message,
+    String? imagePath,
+    bool showText = false,
   }) {
     return Tooltip(
       message: message,
       triggerMode: TooltipTriggerMode.tap,
       child: Container(
-        margin: const EdgeInsets.only(left: 8),
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.15),
-          shape: BoxShape.circle,
-          border: Border.all(color: color, width: 1.5),
-        ),
-        child: Image.asset(
-          'assets/images/buddha.png',
-          width: 20,
-          height: 20,
-          // color: color, // Removed color tint to show original image
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (showText) ...[
+              Text(
+                message,
+                style: GoogleFonts.kanit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: color,
+                ),
+              ),
+              const SizedBox(width: 4),
+            ],
+            imagePath != null ? Image.asset(
+              imagePath,
+              width: 24,
+              height: 24,
+              color: color, // Apply color filter
+            ) : Icon(
+              icon,
+              color: color,
+              size: 18, 
+            ),
+          ],
         ),
       ),
     );

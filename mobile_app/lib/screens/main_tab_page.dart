@@ -25,6 +25,7 @@ import '../models/sample_name.dart';
 import '../widgets/theme_toggle_button.dart';
 import '../widgets/notification_bell.dart';
 import '../widgets/buddhist_day_badge.dart';
+import '../widgets/background_pattern_painter.dart';
 
 class MainTabPage extends StatefulWidget {
   final int initialIndex;
@@ -239,63 +240,26 @@ class MainTabPageState extends State<MainTabPage> with TickerProviderStateMixin 
         leading: Padding(
           padding: const EdgeInsets.only(left: 10, top: 2, bottom: 2),
           child: Image.asset(
-            'assets/images/logo_gold_name_transparent.png',
+            'assets/images/chuedee-logo2.png',
             fit: BoxFit.contain,
           ),
         ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('ชื่อดี.com', style: GoogleFonts.kanit(
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF1E293B), 
-              fontWeight: FontWeight.bold, 
-              fontSize: 22
-            )),
-            const SizedBox(width: 8),
-            if (_isLoggedIn)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: _isVip ? const Color(0xFFFFD700) : Colors.white24,
-                  borderRadius: BorderRadius.circular(12),
-                  border: _isVip ? null : Border.all(color: Colors.white38),
-                  boxShadow: _isVip ? [
-                     BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.4), blurRadius: 8)
-                  ] : null,
-                ),
-                child: Row(
-                  children: [
-                    if (_isVip) const Icon(Icons.workspace_premium, size: 12, color: Colors.black87),
-                    if (_isVip) const SizedBox(width: 4),
-                    Text(
-                      _isVip ? 'VIP' : 'MEMBER',
-                      style: GoogleFonts.kanit(
-                        fontSize: 10, 
-                        fontWeight: FontWeight.bold, 
-                        color: _isVip ? Colors.black87 : Colors.white70
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.black12,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.black12),
-                ),
-                child: Text(
-                  'GUEST',
-                  style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white38 : Colors.black38),
-                ),
-              ),
-              // Buddhist Day Badge (will only show if today/tomorrow is Buddhist Day)
-              const BuddhistDayBadge(),
-           ],
+            Flexible(
+              child: Text('ชื่อดี.com', 
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.kanit(
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF1E293B), 
+                  fontWeight: FontWeight.bold, 
+                  fontSize: 22
+              )),
+            ),
+            ],
         ),
         actions: [
+            const BuddhistDayBadge(),
             IconButton(
               icon: Icon(Icons.grid_view_rounded, color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : const Color(0xFF64748B)),
               onPressed: () {
@@ -364,7 +328,7 @@ class MainTabPageState extends State<MainTabPage> with TickerProviderStateMixin 
               children: [
                 _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'หน้าแรก'),
                 _buildNavItem(1, Icons.article_rounded, Icons.article_outlined, 'บทความ'),
-                _buildNavItem(2, Icons.storefront_rounded, Icons.storefront_outlined, 'ร้านค้า'),
+                _buildNavItem(2, Icons.storefront_rounded, Icons.storefront_outlined, 'ร้านชื่อดี'),
                 _buildNavItem(3, Icons.person_rounded, Icons.person_outline_rounded, _isLoggedIn ? 'เมนู' : 'เข้าสู่ระบบ'),
               ],
             ),
@@ -616,7 +580,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                       children: [
                         // Tabs
                         SizedBox(
-                          height: 70,
+                          height: 70, // 70
                           child: Row(
                             children: [
                               Expanded(child: _buildSubMenuItem(0, Icons.edit_note_rounded, 'ตั้งชื่อดี')),
@@ -627,9 +591,12 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                         ),
                         // Samples
                         Expanded(
-                          child: Container(
-                             color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1A1A2E) : Colors.white,
-                             child: SharedSampleNames(viewModel: _sharedViewModel, nameController: _nameController, sampleNamesFuture: _sampleNamesFuture)
+                          child: CustomPaint(
+                             painter: BackgroundPatternPainter(opacity: 0.15),
+                             child: Container(
+                                color: Colors.transparent,
+                                child: SharedSampleNames(viewModel: _sharedViewModel, nameController: _nameController, sampleNamesFuture: _sampleNamesFuture)
+                             ),
                           ),
                         ),
                       ],

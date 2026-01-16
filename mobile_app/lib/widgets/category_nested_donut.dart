@@ -624,12 +624,7 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
       color: widget.backgroundColor ?? Colors.transparent,
       child: Stack(
         children: [
-          // Background Pattern (Watermark-like) covering everything
-          Positioned.fill(
-            child: CustomPaint(
-              painter: BackgroundPatternPainter(),
-            ),
-          ),
+          // Background Pattern removed to prevent overlap and improve performance
           
           Column(
             children: [

@@ -154,7 +154,14 @@ class _LoginPageState extends State<LoginPage> {
                           color: const Color(0xFF667EEA).withOpacity(0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.account_circle_outlined, color: Colors.white, size: 60),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/images/chuedee-logo2.png',
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 20),
                       Text(

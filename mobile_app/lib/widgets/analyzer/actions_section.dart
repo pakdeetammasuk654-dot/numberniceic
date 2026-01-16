@@ -190,12 +190,7 @@ class _ActionsSectionState extends State<ActionsSection> {
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
               border: Border.all(color: isDark ? Colors.white12 : Colors.grey[300]!, width: 1.5),
            ),
-           child: CustomPaint(
-             painter: BackgroundPatternPainter(
-               color: isDark ? Colors.white : const Color(0xFF94A3B8),
-               opacity: isDark ? 0.05 : 0.1,
-             ),
-             child: Column(
+           child: Column(
                children: [
                  if (widget.isLoading)
                    ...List.generate(3, (index) => _buildSkeletonRow()),
@@ -241,13 +236,9 @@ class _ActionsSectionState extends State<ActionsSection> {
                    ),
                    
                  if (!widget.isVip && !widget.isLoading && _currentPage == 0)
-                   ...List.generate(97, (index) {
-                     final itemNumber = index + 4;
-                     return _buildLockedItem(itemNumber);
-                   }),
+                   _buildLockedSummary(),
                ],
              ),
-           ),
         ),
 
         if (!widget.isLoading && totalPages > 1)
@@ -365,6 +356,57 @@ class _ActionsSectionState extends State<ActionsSection> {
           return _buildLockedItem(itemNumber);
         }),
       ),
+    );
+  }
+
+  Widget _buildLockedSummary() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+       width: double.infinity,
+       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+       decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0F172A) : Colors.white,
+          border: Border(bottom: BorderSide(color: isDark ? Colors.white12 : Colors.grey[300]!)),
+       ),
+       child: Column(
+          children: [
+             Container(
+               padding: const EdgeInsets.all(16),
+               decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100], 
+                  shape: BoxShape.circle
+               ),
+               child: Icon(Icons.lock_rounded, size: 32, color: Colors.grey[400]),
+             ),
+             const SizedBox(height: 16),
+             Text(
+               "รายชื่อเพิ่มเติมสำหรับ VIP",
+               style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : Colors.grey[800]),
+             ),
+             const SizedBox(height: 8),
+             Text(
+               "ยังมีผลการวิเคราะห์ชื่อดีอีกไม่จำกัด\nซื้อสินค้าเพื่อรับสิทธิ์ VIP",
+               textAlign: TextAlign.center,
+               style: GoogleFonts.kanit(fontSize: 14, color: isDark ? Colors.white38 : Colors.grey[500]),
+             ),
+             const SizedBox(height: 20),
+             SizedBox(
+               width: 200,
+               child: ElevatedButton.icon(
+                 onPressed: widget.onShopPressed,
+                 icon: const Icon(Icons.storefront_rounded, color: Colors.black),
+                 label: Text("ร้านชื่อดี", style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold)),
+                 style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFD700),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    elevation: 0,
+                 ),
+               ),
+             )
+          ],
+       ),
     );
   }
 

@@ -138,51 +138,31 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                           transform: Matrix4.identity()
                             ..setEntry(3, 2, 0.001)
                             ..rotateY(_rotationAnimation.value),
-                          child: Container(
-                            width: 140,
-                            height: 140,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: const RadialGradient(
-                                colors: [
-                                  Color(0xFFFFD700), // Gold
-                                  Color(0xFFFFA500), // Orange Gold
-                                  Color(0xFFB8860B), // Dark Gold
+                            child: Container(
+                              width: 140,
+                              height: 140,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFFFD700).withOpacity(0.6),
+                                    blurRadius: 40,
+                                    spreadRadius: 10,
+                                  ),
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.3),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  ),
                                 ],
-                                stops: [0.3, 0.7, 1.0],
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFFFFD700).withOpacity(0.6),
-                                  blurRadius: 40,
-                                  spreadRadius: 10,
-                                ),
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Text(
-                                'ชื่อดี',
-                                style: GoogleFonts.kanit(
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF1A1A2E),
-                                  letterSpacing: 0,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black.withOpacity(0.3),
-                                      offset: const Offset(2, 2),
-                                      blurRadius: 4,
-                                    ),
-                                  ],
+                              child: ClipOval(
+                                child: Image.asset(
+                                  'assets/images/chuedee-logo2.png',
+                                  fit: BoxFit.contain,
                                 ),
                               ),
                             ),
-                          ),
                         );
                       },
                     ),

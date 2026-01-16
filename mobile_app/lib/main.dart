@@ -68,7 +68,6 @@ void main() async {
   // Lock Orientation
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
   ]);
   
   // Initialize Date Formatting

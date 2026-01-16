@@ -15,7 +15,10 @@ class WelcomeDialog {
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Dialog(
+          backgroundColor: isDark ? const Color(0xFF2D2D2D) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -73,7 +76,8 @@ class WelcomeDialog {
             ],
           ),
         ),
-      ),
+      );
+      },
     );
   }
 }

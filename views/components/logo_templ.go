@@ -42,7 +42,7 @@ func LogoSVG(size string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><img src=\"/images/logo_gold_name_v2.png\" alt=\"Logo\" style=\"width: 100%; height: 100%; object-fit: contain;\"></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><img src=\"/images/chuedee-logo2.png\" alt=\"Logo\" style=\"width: 100%; height: 100%; object-fit: contain;\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

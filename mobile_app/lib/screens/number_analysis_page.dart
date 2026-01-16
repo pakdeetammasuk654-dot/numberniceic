@@ -44,7 +44,7 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
   void initState() {
     super.initState();
     
-    String startNumber = '0936544442'; // Default requested by user
+    String startNumber = ''; 
     
     if (widget.initialPhoneNumber != null) {
       startNumber = widget.initialPhoneNumber!;
@@ -82,8 +82,8 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
-    // Allow override if empty OR if it holds the default value
-    if (args is String && args.length == 10 && (_phoneController.text.isEmpty || _phoneController.text == '0936544442')) {
+    // Allow override if empty
+    if (args is String && args.length == 10 && _phoneController.text.isEmpty) {
       _phoneController.text = args;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _analyzeNumber(args);
@@ -233,47 +233,40 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
               child: Column(
                 children: [
                   
-                  // Beautiful Input Form (Added as requested)
+                  // Modern Clean Input Form
                   Container(
-                      margin: const EdgeInsets.symmetric(vertical: 24), 
-                      padding: const EdgeInsets.all(3),
+                      margin: const EdgeInsets.symmetric(vertical: 24, horizontal: 8), 
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
-                        gradient: const LinearGradient(
-                           colors: [Color(0xFFFFD700), Color(0xFFFF8F00)], // Gold Gradient Border
-                           begin: Alignment.topLeft, end: Alignment.bottomRight
-                        ), 
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
                         boxShadow: [
-                           BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))
+                           BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 4)),
+                           BoxShadow(color: const Color(0xFF4F46E5).withOpacity(0.05), blurRadius: 30, offset: const Offset(0, 10))
                         ]
                       ),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(27),
-                        ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                         child: Row(
                           children: [
-                            const Icon(Icons.dialpad, color: Color(0xFFFFB300)),
-                            const SizedBox(width: 12),
+                            const Icon(Icons.phone_iphone, color: Color(0xFF9CA3AF), size: 24),
+                            const SizedBox(width: 16),
                             Expanded(
                               child: TextField(
                                 controller: _phoneController,
                                 focusNode: _phoneFocusNode,
                                 keyboardType: TextInputType.phone,
                                 maxLength: 10,
-                                style: GoogleFonts.kanit(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF333333), height: 1.2),
+                                textAlign: TextAlign.center, // Center for focus
+                                style: GoogleFonts.kanit(fontSize: 24, fontWeight: FontWeight.bold, color: const Color(0xFF1F2937), letterSpacing: 1.5),
                                 decoration: InputDecoration(
-                                  hintText: 'กรอกเบอร์มือถือ',
-                                  hintStyle: GoogleFonts.kanit(color: Colors.grey[300], fontSize: 20),
+                                  hintText: '0xx-xxx-xxxx',
+                                  hintStyle: GoogleFonts.kanit(color: Colors.grey[300], fontSize: 24),
                                   border: InputBorder.none,
                                   counterText: "",
                                   isDense: true,
-                                  contentPadding: EdgeInsets.zero,
                                 ),
                                 onChanged: (val) {
-                                   setState(() {}); // Rebuild to show/hide Update Clear Button
+                                   setState(() {}); 
                                    if (val.length == 10) {
                                       _analyzeNumber(val);
                                       FocusScope.of(context).unfocus();
@@ -283,50 +276,33 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
                               ),
                             ),
                             
-                            // Clear Button (Show only when not empty)
                             if (_phoneController.text.isNotEmpty)
                               GestureDetector(
                                 onTap: () {
                                   setState(() {
                                     _phoneController.clear();
-                                    _analysisData = null; // Optional: Reset analysis when cleared?
+                                    _analysisData = null;
                                   });
                                 },
                                 child: Container(
-                                  margin: const EdgeInsets.only(right: 8),
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade200,
-                                    shape: BoxShape.circle,
-                                  ),
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(color: Colors.grey[100], shape: BoxShape.circle),
                                   child: const Icon(Icons.close, size: 16, color: Colors.grey),
                                 ),
                               ),
 
                             if (_isLoading)
-                               const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Color(0xFFFFB300))))
-                            else
-                               InkWell(
-                                  onTap: () {
-                                     if (_phoneController.text.isNotEmpty) _analyzeNumber(_phoneController.text);
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: const BoxDecoration(color: Color(0xFFFFF8E1), shape: BoxShape.circle),
-                                    child: const Icon(Icons.search_rounded, color: Color(0xFFFFB300)),
-                                  ),
-                               )
+                               Container(margin: const EdgeInsets.only(left: 12), width: 20, height: 20, child: const CircularProgressIndicator(strokeWidth: 2))
                           ],
                         ),
                       ),
                     ),
 
-                // Animated Content Switching (Fade In/Out with Stack)
+                // Animated Content Switching
                 AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 1000), // 1 Second Duration
-                  switchInCurve: Curves.easeOutBack, // Bouncy/Smooth in
-                  switchOutCurve: Curves.easeInBack,
-                  // IMPORTANT: Stack children to allow true Cross-Fade
+                  duration: const Duration(milliseconds: 600),
+                  switchInCurve: Curves.easeOutQuart,
+                  switchOutCurve: Curves.easeInQuart,
                   layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
                     return Stack(
                       alignment: Alignment.topCenter,
@@ -336,32 +312,23 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
                       ],
                     );
                   },
-                  // Scale + Fade Transition
                   transitionBuilder: (Widget child, Animation<double> animation) {
-                     return FadeTransition(
-                        opacity: animation,
-                        child: ScaleTransition(
-                           scale: Tween<double>(begin: 0.95, end: 1.0).animate(animation), // Subtle Pop
-                           child: child,
-                        ),
-                     );
+                     return FadeTransition(opacity: animation, child: child);
                   },
                   child: _isLoading 
                     ? Container(
                         key: const ValueKey('loading'),
-                        margin: const EdgeInsets.only(top: 40),
-                        child: const CircularProgressIndicator(color: Color(0xFFFFD700)),
+                        margin: const EdgeInsets.only(top: 60),
+                        child: Column(
+                          children: [
+                             const CircularProgressIndicator(color: Color(0xFF4F46E5)),
+                             const SizedBox(height: 16),
+                             Text('กำลังวิเคราะห์พลังตัวเลข...', style: GoogleFonts.kanit(color: Colors.grey[600]))
+                          ],
+                        ),
                       )
                     : (_analysisData == null && _phoneController.text.isEmpty)
-                        ? Padding(
-                            key: const ValueKey('empty'),
-                            padding: const EdgeInsets.symmetric(vertical: 40),
-                            child: Text(
-                              'ไม่พบเบอร์โทรศัพท์\nกรุณาเลือกเบอร์จากหน้าหลัก',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.kanit(fontSize: 18, color: Colors.grey[400]),
-                            ),
-                          )
+                        ? _buildAnalysisExplanation() // New Explanation Widget
                         : _analysisData != null 
                             ? Column(
                                 // Use _analyzeCount to FORCE animation on every new result
@@ -781,6 +748,174 @@ class _NumberAnalysisPageState extends State<NumberAnalysisPage> with TickerProv
         ],
       ),
     );
+  }
+  Widget _buildAnalysisExplanation() {
+    return Container(
+      key: const ValueKey('explanation_v3'),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+         children: [
+            Text(
+              "หลักการวิเคราะห์และน้ำหนักตัวเลข",
+              style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1F2937)),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "การพยากรณ์จะให้น้ำหนักตามตำแหน่ง\nและผลรวมของเบอร์โทรศัพท์",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.kanit(fontSize: 14, color: Colors.grey[500]),
+            ),
+            const SizedBox(height: 24),
+            
+            // Visual Diagram (Updated: Removed 0XX)
+            Container(
+              height: 150,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                 mainAxisAlignment: MainAxisAlignment.center,
+                 crossAxisAlignment: CrossAxisAlignment.end,
+                 children: [
+                    // Front (XXX)
+                    Expanded(
+                       flex: 2,
+                       child: _buildWeightBar(
+                         label: "XXX",
+                         percent: "20%",
+                         desc: "บุคลิก",
+                         color: const Color(0xFF60A5FA), // Blue
+                         textColor: const Color(0xFF2563EB),
+                         heightFactor: 0.4,
+                       ),
+                    ),
+                    const SizedBox(width: 4),
+                    // Back (XXXX)
+                    Expanded(
+                       flex: 5,
+                       child: _buildWeightBar(
+                         label: "XXXX",
+                         percent: "50%",
+                         desc: "หัวใจหลัก",
+                         color: const Color(0xFFF59E0B), // Gold
+                         textColor: const Color(0xFFD97706),
+                         heightFactor: 0.8,
+                         isHighlight: true,
+                       ),
+                    ),
+                    const SizedBox(width: 4),
+                    // SUM
+                    Expanded(
+                       flex: 3,
+                       child: _buildWeightBar(
+                         label: "SUM",
+                         percent: "30%",
+                         desc: "ผลรวม",
+                         color: const Color(0xFF7E22CE), // Purple
+                         textColor: const Color(0xFF6B21A8),
+                         heightFactor: 0.6,
+                         isHighlight: true,
+                       ),
+                    ),
+                 ],
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Text Detail
+            Container(
+               padding: const EdgeInsets.all(16),
+               decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey[200]!),
+                  boxShadow: [
+                     BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))
+                  ]
+               ),
+               child: Column(
+                  children: [
+                     _buildDetailRow(
+                        color: const Color(0xFF60A5FA), 
+                        title: "3 ตัวกลาง (XXX)", 
+                        detail: "ส่งผลถึงภาพลักษณ์ภายนอก บุคลิกส่วนตัว"
+                     ),
+                     const SizedBox(height: 12),
+                     _buildDetailRow(
+                        color: const Color(0xFFF59E0B), 
+                        title: "4 ตัวท้าย (XXXX)", 
+                        detail: "สำคัญที่สุด! ควบคุมชะตาชีวิต การเงิน ความรัก",
+                        isHighlight: true
+                     ),
+                     const SizedBox(height: 12),
+                     _buildDetailRow(
+                        color: const Color(0xFF7E22CE), 
+                        title: "ผลรวม (SUM)", 
+                        detail: "บทสรุปภาพรวมความสำเร็จของชีวิต",
+                        isHighlight: true
+                     ),
+                  ],
+               ),
+            ),
+            const SizedBox(height: 40),
+         ],
+      ),
+    );
+  }
+
+  Widget _buildWeightBar({
+    required String label, 
+    required String percent, 
+    required String desc, 
+    required Color color, 
+    required Color textColor,
+    required double heightFactor,
+    bool isHighlight = false,
+  }) {
+     return Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+           Text(percent, style: GoogleFonts.kanit(fontSize: isHighlight ? 20 : 16, fontWeight: FontWeight.bold, color: textColor)),
+           const SizedBox(height: 4),
+           Container(
+              height: 60 * heightFactor,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                 color: color.withOpacity(0.2),
+                 borderRadius: BorderRadius.circular(8),
+                 border: Border.all(color: color, width: isHighlight ? 2 : 1),
+              ),
+              alignment: Alignment.center,
+              child: Text(label, style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: textColor)),
+           ),
+           const SizedBox(height: 8),
+           Text(desc, style: GoogleFonts.kanit(fontSize: 12, color: Colors.grey[600]), textAlign: TextAlign.center, maxLines: 1),
+        ],
+     );
+  }
+
+  Widget _buildDetailRow({required Color color, required String title, required String detail, bool isHighlight = false}) {
+     return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+           Container(
+              margin: const EdgeInsets.only(top: 4),
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+           ),
+           const SizedBox(width: 12),
+           Expanded(
+              child: Column(
+                 crossAxisAlignment: CrossAxisAlignment.start,
+                 children: [
+                    Text(title, style: GoogleFonts.kanit(fontSize: 15, fontWeight: FontWeight.bold, color: isHighlight ? const Color(0xFFD97706) : const Color(0xFF374151))),
+                    const SizedBox(height: 2),
+                    Text(detail, style: GoogleFonts.kanit(fontSize: 13, color: Colors.grey[600], height: 1.4)),
+                 ],
+              ),
+           )
+        ],
+     );
   }
 }
 

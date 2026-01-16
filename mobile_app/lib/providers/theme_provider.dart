@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 class ThemeProvider extends ChangeNotifier {
   static const String _themeKey = 'theme_mode';
-  ThemeMode _themeMode = ThemeMode.dark; // Default เป็น dark
+  ThemeMode _themeMode = ThemeMode.light; // Default เป็น light
 
   ThemeProvider() {
     _loadThemeMode();
@@ -16,7 +16,7 @@ class ThemeProvider extends ChangeNotifier {
   // โหลด theme mode จาก SharedPreferences
   Future<void> _loadThemeMode() async {
     final prefs = await SharedPreferences.getInstance();
-    final isDark = prefs.getBool(_themeKey) ?? true; // Default เป็น dark
+    final isDark = prefs.getBool(_themeKey) ?? false; // Default เป็น light
     _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
     notifyListeners();
   }

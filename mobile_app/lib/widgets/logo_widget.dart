@@ -15,7 +15,7 @@ class LogoWidget extends StatelessWidget {
       width: size,
       height: size,
       child: Image.asset(
-        'assets/images/logo_gold_name_transparent.png',
+        'assets/images/chuedee-logo2.png',
         fit: BoxFit.contain,
       ),
     );

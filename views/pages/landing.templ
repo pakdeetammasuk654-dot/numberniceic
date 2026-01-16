@@ -83,6 +83,46 @@ templ Landing(pinnedArticles []domain.Article) {
 		</div>
 	}
 
+
+	
+	<!-- App Promo Section -->
+	<div class="app-promo-section">
+		<div class="app-promo-container">
+			<div class="app-promo-content">
+				<h2 class="app-promo-title">โหลดแอป "ชื่อดี" ฟรี!</h2>
+				<p class="app-promo-subtitle">วิเคราะห์ชื่อมงคล ค้นหาความหมาย<br/>และกราฟชีวิตของคุณได้ทุกที่ทุกเวลาบนมือถือ</p>
+				<div class="app-store-buttons">
+					<a href="https://play.google.com/store/apps/details?id=com.taya.numberniceic" target="_blank" class="store-button google-play">
+						<svg viewBox="0 0 512 512" width="24" height="24" style="margin-right: 12px; flex-shrink: 0;"><path fill="#ffffff" d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1zM47 0C34 6.8 25.3 19.2 25.3 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256L47 0zm425.2 225.6l-58.9-34.1-37.2 37.2 37.2 37.2 58.9-34.1c32.6-18.8 32.6-49.5 0-68.3zM104.6 499l220.8-220.8-60.1-60.1L104.6 499z"/></svg>
+						<div style="display: flex; flex-direction: column; align-items: flex-start;">
+							<span style="font-size: 0.7em; line-height: 1;">GET IT ON</span>
+							<span style="font-size: 1.1em; font-weight: bold; line-height: 1.1;">Google Play</span>
+						</div>
+					</a>
+				</div>
+                <div style="margin-top: 1.5rem; color: #666; font-size: 0.9rem;">
+                    <span style="display: inline-flex; align-items: center; gap: 5px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle" style="color: green;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        ใช้งานง่าย
+                    </span>
+                    <span style="margin: 0 10px;">|</span>
+                    <span style="display: inline-flex; align-items: center; gap: 5px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-shield" style="color: green;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        ปลอดภัย
+                    </span>
+                </div>
+			</div>
+			<div class="app-promo-visuals">
+                <img src="/images/promo/promo_main.png" alt="Chue Dee Banner" class="promo-banner" />
+                <div class="promo-screenshots">
+				    <img src="/images/promo/promo_1.png" alt="App Home" />
+				    <img src="/images/promo/promo_2.png" alt="Analysis" />
+				    <img src="/images/promo/promo_3.png" alt="Charts" />
+                </div>
+			</div>
+		</div>
+	</div>
+
 	<!-- Modern Social Proof: Trust Stats -->
 	<div class="trust-stats-section">
 		<div class="trust-stats-container">
@@ -482,5 +522,96 @@ templ Landing(pinnedArticles []domain.Article) {
                 padding: 1rem;
             }
         }
+        /* App Promo Section */
+        .app-promo-section {
+            background: linear-gradient(135deg, #fffbec 0%, #fff 100%);
+            padding: 3rem 1.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        .app-promo-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 3rem;
+            flex-direction: column; 
+        }
+        @media(min-width: 900px) {
+            .app-promo-container {
+                flex-direction: row;
+                text-align: left;
+                align-items: flex-start;
+            }
+            .app-promo-content {
+                flex: 0 0 40%;
+                padding-top: 2rem;
+            }
+             .app-promo-visuals {
+                flex: 0 0 55%;
+                position: relative;
+            }
+        }
+        .app-promo-title {
+            font-family: 'Kanit', sans-serif;
+            font-size: 2rem;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+        .app-promo-subtitle {
+            font-family: 'Kanit', sans-serif;
+            font-size: 1.1rem;
+            color: #4a5568;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        .store-button {
+            display: inline-flex;
+            align-items: center;
+            background: #000;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-family: 'Kanit', sans-serif;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #000;
+        }
+        .store-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: #2d3748;
+        }
+        
+        .app-promo-visuals {
+             display: flex;
+             flex-direction: column;
+             gap: 15px;
+        }
+        .promo-banner {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .promo-screenshots {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        .promo-screenshots img {
+             width: 100%;
+             height: auto;
+             border-radius: 8px;
+             box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+             transition: transform 0.3s;
+             border: 1px solid #edf2f7;
+        }
+        .promo-screenshots img:hover {
+            transform: translateY(-5px);
+        }
+
     </style>
 }

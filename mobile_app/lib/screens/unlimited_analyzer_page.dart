@@ -109,15 +109,14 @@ class _UnlimitedAnalyzerPageState extends State<UnlimitedAnalyzerPage> {
       // But didChangeDependencies is safer for context-based check
     }
   }
-  void _handleShopNavigation() async {
-    final isLoggedIn = await AuthService.isLoggedIn();
+  void _handleShopNavigation() {
     if (mounted) {
-      if (!isLoggedIn) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginPage()),
-        );
+      // Switch to Shop Tab (Index 2)
+      final mainTab = MainTabPage.of(context);
+      if (mainTab != null) {
+        mainTab.currentIndex = 2;
       } else {
+        // Fallback
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ShopPage()),
