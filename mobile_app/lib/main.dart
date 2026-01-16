@@ -5,12 +5,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'viewmodels/analyzer_view_model.dart';
+import 'providers/theme_provider.dart';
 import 'screens/splash_screen.dart';
 import 'services/auth_service.dart';
 import 'services/api_service.dart';
 import 'services/notification_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'utils/social_auth_config.dart';
 
 // Background Handler must be top-level
 @pragma('vm:entry-point')
@@ -56,6 +58,13 @@ void main() async {
      print("❌ Firebase Init Error: $e");
   }
 
+  // Initialize LINE SDK (Prevents crash on logout)
+  try {
+    await SocialAuthConfig.initializeLineSDK();
+  } catch (e) {
+    print("❌ LINE SDK Init Error: $e");
+  }
+
   // Lock Orientation
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -69,6 +78,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AnalyzerViewModel()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: const MainApp(),
     ),
@@ -80,19 +90,18 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'NumberNiceIC Mobile',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: false,
-        // Apply Kanit font globally
-        textTheme: GoogleFonts.kanitTextTheme(
-          Theme.of(context).textTheme,
-        ),
-      ),
-      // Set Splash Screen as the initial home
-      home: const SplashScreen(),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'NumberNiceIC Mobile',
+          theme: ThemeProvider.lightTheme,
+          darkTheme: ThemeProvider.darkTheme,
+          themeMode: themeProvider.themeMode,
+          // Set Splash Screen as the initial home
+          home: const SplashScreen(),
+        );
+      },
     );
   }
 }

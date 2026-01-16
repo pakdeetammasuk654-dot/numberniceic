@@ -333,10 +333,12 @@ func (h *MemberHandler) getPairsWithColors(sum int) []domain.PairInfo {
 	for _, p := range pairs {
 		meaning, ok := h.numberPairCache.GetMeaning(p)
 		color := "#ccc" // Default color
+		pairType := ""  // Default type
 		if ok {
 			color = meaning.Color
+			pairType = meaning.PairType
 		}
-		pairInfos = append(pairInfos, domain.PairInfo{Number: p, Color: color})
+		pairInfos = append(pairInfos, domain.PairInfo{Number: p, Color: color, Type: pairType})
 	}
 	return pairInfos
 }

@@ -34,6 +34,9 @@ import '../services/local_notification_storage.dart';
 import '../models/user_notification.dart';
 import 'package:shimmer/shimmer.dart';
 import '../widgets/shimmering_gold_wrapper.dart'; // Import global wrapper
+import '../widgets/theme_toggle_button.dart'; // Import theme toggle
+import '../widgets/daily_miracle_card.dart'; // Import Daily Miracle Card
+import '../services/miracle_service.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -53,7 +56,7 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     // Initialize dashboard future - this will be used by FutureBuilder
     _dashboardFuture = _initializeDashboard();
-    _isBuddhistDayFuture = ApiService.isBuddhistDayToday();
+    _isBuddhistDayFuture = NotificationService().checkIsBuddhistDayToday();
     _userInfoFuture = AuthService.getUserInfo();
     _checkNotification();
     _loadNotificationSetting(); // Load setting
@@ -93,8 +96,38 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _initializeNotifications() async {
-    // Auto-enable notifications on first launch
     await _autoEnableNotificationsOnFirstLaunch();
+    final prefs = await SharedPreferences.getInstance();
+    
+    // 1. Buddhist Days
+    final isBuddhistEnabled = prefs.getBool('buddhist_notification_enabled') ?? false;
+    if (isBuddhistEnabled) {
+      NotificationService().scheduleBuddhistDayNotifications().catchError((e) {
+        print("⚠️ Failed to re-schedule Buddhist notifications: $e");
+      });
+    }
+
+    // 2. Daily Miracle (Default True if birthday set)
+    await _scheduleMiracleNotifications();
+  }
+
+  Future<void> _scheduleMiracleNotifications() async {
+     try {
+       final birthDay = await MiracleService().getUserBirthDay();
+       if (birthDay != null) {
+          // Check preference (Default true)
+          // final prefs = await SharedPreferences.getInstance();
+          // final isEnabled = prefs.getBool('miracle_notification_enabled') ?? true;
+          // For now, always enable if birthday is set (MVP)
+          
+          await MiracleService().init();
+          final notifs = MiracleService().generateWeeklyNotifications(birthDay);
+          await NotificationService().scheduleMiracleNotifications(notifs);
+          print("✅ Daily Miracle notifications scheduled.");
+       }
+     } catch (e) {
+       print("⚠️ Failed to schedule miracle notifications: $e");
+     }
   }
 
   Future<void> _autoEnableNotificationsOnFirstLaunch() async {
@@ -163,8 +196,8 @@ class _DashboardPageState extends State<DashboardPage> {
           return;
         }
 
-        final days = await ApiService.getBuddhistDays();
-        await NotificationService().scheduleBuddhistDayNotifications(days);
+        // Use Local Asset Data
+        await NotificationService().scheduleBuddhistDayNotifications();
         
         if (mounted) CustomToast.show(context, 'เปิดการแจ้งเตือนวันพระเรียบร้อยแล้ว');
       } else {
@@ -409,7 +442,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E), // Dark Navy Background
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
           color: const Color(0xFFFFD700),
@@ -461,9 +494,10 @@ class _DashboardPageState extends State<DashboardPage> {
                   FutureBuilder<bool>(
                     future: _isBuddhistDayFuture,
                     builder: (context, snapshot) {
+                      // Force show for testing: true || ...
                       if (snapshot.hasData && snapshot.data == true) {
                         return Container(
-                          margin: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                          margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
@@ -484,7 +518,11 @@ class _DashboardPageState extends State<DashboardPage> {
                                   color: Colors.white.withOpacity(0.3),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.wb_sunny_rounded, color: Colors.white, size: 24),
+                                child: Image.asset(
+                                  'assets/images/buddha.png',
+                                  width: 24,
+                                  height: 24,
+                                ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -511,31 +549,43 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
 
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 0), // Changed to 0 to let card handle margins if needed, or keep 20 and adjust card
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const SizedBox(height: 24),
-                        
-                        // 2. VIP Privilege Card
-                        _buildPrivilegeCard(isVip),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // 3. Saved Names Section
-                        _buildSavedNamesHeader(savedNames.length),
                         const SizedBox(height: 12),
-                        if (savedNames.isEmpty)
-                          _buildEmptyState()
-                        else
-                          _buildSavedNamesTable(savedNames, isVip),
-                          
-                        const SizedBox(height: 32),
+                        // NEW: Daily Miracle Card (Personalized) - Moved to Top
+                        const DailyMiracleCard(),
                         
-                        // 4. Menu Section (Clean List)
-                        Text('เมนูบัญชีผู้ใช้', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                         const SizedBox(height: 12),
-                        _buildMenuCard(context, hasAddress, List<String>.from(data['assigned_colors'] ?? [])),
+                        
+                        Padding(
+                           padding: const EdgeInsets.symmetric(horizontal: 20),
+                           child: Column(
+                             crossAxisAlignment: CrossAxisAlignment.stretch,
+                             children: [
+                                // 3. Saved Names Section (Moved Up)
+                                _buildSavedNamesHeader(savedNames.length),
+                                const SizedBox(height: 12),
+                                if (savedNames.isEmpty)
+                                  _buildEmptyState()
+                                else
+                                  _buildSavedNamesTable(savedNames, isVip),
+                                  
+                                const SizedBox(height: 20),
+
+                                // 2. VIP Privilege Card
+                                _buildPrivilegeCard(isVip),
+                                
+                                const SizedBox(height: 32),
+                                
+                                // 4. Menu Section (Clean List)
+                                Text('เมนูบัญชีผู้ใช้', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF1E293B))),
+                                const SizedBox(height: 12),
+                                _buildMenuCard(context, hasAddress, List<String>.from(data['assigned_colors'] ?? [])),
+                             ],
+                           ),
+                        ),
                       ],
                     ),
                   ),
@@ -550,13 +600,19 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildPremiumHeader(BuildContext context, String username, String email, String? avatarUrl, bool isVip, bool isAdmin, bool hasAddress) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF16213E), // Dark Navy Card
+        color: isDark ? const Color(0xFF16213E) : Colors.white, // Dark Navy or White
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 24, offset: const Offset(0, 8)),
+          BoxShadow(
+            color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.05),
+            blurRadius: 24, 
+            offset: const Offset(0, 8)
+          ),
         ],
       ),
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
@@ -585,18 +641,21 @@ class _DashboardPageState extends State<DashboardPage> {
                    Container(
                      decoration: BoxDecoration(
                        shape: BoxShape.circle,
-                       border: Border.all(color: const Color(0xFF1A1A2E), width: 4),
+                       border: Border.all(
+                         color: isDark ? const Color(0xFF1A1A2E) : Colors.white, 
+                         width: 4
+                       ),
                      ),
                      child: CircleAvatar(
                        radius: 50,
-                       backgroundColor: const Color(0xFF0F3460),
+                       backgroundColor: isDark ? const Color(0xFF0F3460) : const Color(0xFFE2E8F0),
                        backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty) 
                           ? NetworkImage(avatarUrl) 
                           : null,
                        child: (avatarUrl == null || avatarUrl.isEmpty)
                           ? Text(
                               username.isNotEmpty ? username[0].toUpperCase() : '?',
-                              style: GoogleFonts.kanit(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white54),
+                              style: GoogleFonts.kanit(fontSize: 40, fontWeight: FontWeight.bold, color: isDark ? Colors.white54 : const Color(0xFF94A3B8)),
                             )
                           : null,
                      ),
@@ -619,7 +678,11 @@ class _DashboardPageState extends State<DashboardPage> {
                // Username
                Text(
                  username, 
-                 style: GoogleFonts.kanit(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)
+                 style: GoogleFonts.kanit(
+                   fontSize: 24, 
+                   fontWeight: FontWeight.bold, 
+                   color: isDark ? Colors.white : const Color(0xFF1E293B) // Dark Slate for Light Mode
+                 )
                ),
                
                // VIP Badge / Email
@@ -644,32 +707,16 @@ class _DashboardPageState extends State<DashboardPage> {
                         ],
                       ),
                     ),
-                   Text(email, style: GoogleFonts.kanit(fontSize: 14, color: Colors.white54)),
+                   Text(
+                     email, 
+                     style: GoogleFonts.kanit(
+                       fontSize: 14, 
+                       color: isDark ? Colors.white54 : const Color(0xFF64748B) // Slate 500
+                     )
+                   ),
                  ],
                ),
             ],
-          ),
-
-          // Top Buttons (Notification + Logout) - Moved to be LAST child for highest Z-Index
-          Positioned(
-            top: 0,
-            right: 0,
-            child: Row(
-              children: [
-                // Notification Bell
-                const NotificationBell(),
-                const SizedBox(width: 4),
-                // Subtle Logout Icon
-                IconButton(
-                  onPressed: _confirmLogout,
-                  icon: Icon(Icons.logout_rounded, color: Colors.grey[400], size: 20),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  splashRadius: 20,
-                  tooltip: 'ออกจากระบบ',
-                ),
-              ],
-            ),
           ),
         ], 
       ), 
@@ -679,36 +726,23 @@ class _DashboardPageState extends State<DashboardPage> {
   // --- Saved Names Header (Simplified - No Toggle) ---
   Widget _buildSavedNamesHeader(int count) {
      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFD700).withOpacity(0.2), 
-                    borderRadius: BorderRadius.circular(12)
-                  ),
-                  child: const Icon(Icons.bookmark_border_rounded, color: Color(0xFFFFD700), size: 20),
-                ),
-                const SizedBox(width: 12),
-                Text('รายชื่อที่บันทึก', style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-              ],
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFD700).withOpacity(0.2), 
+              borderRadius: BorderRadius.circular(12)
             ),
-            
-            // Count Badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF16213E),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white12),
-              ),
-              child: Text(
-                '$count รายชื่อ',
-                style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70),
-              ),
+            child: const Icon(Icons.bookmark_border_rounded, color: Color(0xFFFFD700), size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'รายชื่อที่บันทึกจากการวิเคราะห์', 
+              style: GoogleFonts.kanit(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF1E293B)),
+              overflow: TextOverflow.ellipsis,
             ),
+          ),
         ],
      );
   }
@@ -716,12 +750,19 @@ class _DashboardPageState extends State<DashboardPage> {
 
   // --- New Menu Card Widget ---
   Widget _buildMenuCard(BuildContext context, bool hasAddress, List<String> assignedColors) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF16213E), // Dark Navy Card
+        color: isDark ? const Color(0xFF16213E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: isDark ? null : Border.all(color: const Color(0xFFE2E8F0), width: 1),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4)
+          ),
         ],
       ),
       child: Column(
@@ -743,7 +784,7 @@ class _DashboardPageState extends State<DashboardPage> {
              iconColor: Colors.blueAccent,
              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const OrderHistoryPage())),
            ),
-           const Divider(height: 1, indent: 60, color: Colors.white12),
+           Divider(height: 1, indent: 60, color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
            _buildMenuItem(
              context,
              icon: Icons.location_on_outlined,
@@ -755,12 +796,12 @@ class _DashboardPageState extends State<DashboardPage> {
                  _loadDashboard();
              },
            ),
-           const Divider(height: 1, indent: 60, color: Colors.white12),
+           Divider(height: 1, indent: 60, color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
            SwitchListTile(
               value: _isNotificationEnabled,
               onChanged: _toggleNotification,
-              title: Text('แจ้งเตือนวันพระ', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white)),
-              subtitle: Text('รับการแจ้งเตือนวันสำคัญทางศาสนา', style: GoogleFonts.kanit(fontSize: 12, color: Colors.white54)),
+              title: Text('แจ้งเตือนวันพระ', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.w500, color: isDark ? Colors.white : const Color(0xFF1E293B))),
+              subtitle: Text('รับการแจ้งเตือนวันสำคัญทางศาสนา', style: GoogleFonts.kanit(fontSize: 12, color: isDark ? Colors.white54 : const Color(0xFF64748B))),
               secondary: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -772,7 +813,10 @@ class _DashboardPageState extends State<DashboardPage> {
               activeColor: Colors.amber,
               contentPadding: const EdgeInsets.only(left: 16, right: 8),
            ),
-           const Divider(height: 1, indent: 60, color: Colors.white12),
+           Divider(height: 1, indent: 60, color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+           // Theme Toggle Switch
+           const ThemeToggleSwitch(),
+           Divider(height: 1, indent: 60, color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
            _buildMenuItem(
              context,
              icon: Icons.logout,
@@ -792,6 +836,8 @@ class _DashboardPageState extends State<DashboardPage> {
     String? subtitle,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return ListTile(
       onTap: onTap,
       leading: Container(
@@ -802,31 +848,44 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         child: Icon(icon, color: iconColor, size: 22),
       ),
-      title: Text(title, style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white)),
+      title: Text(title, style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.w500, color: isDark ? Colors.white : const Color(0xFF1E293B))),
       subtitle: subtitle != null ? Text(subtitle, style: GoogleFonts.kanit(fontSize: 12, color: Colors.orange)) : null,
-      trailing: const Icon(Icons.chevron_right, color: Colors.white24, size: 20),
+      trailing: Icon(Icons.chevron_right, color: isDark ? Colors.white24 : const Color(0xFFCBD5E1), size: 20),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 
   Widget _buildPrivilegeCard(bool isVip) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Theme Colors
+    final bgColor = isDark ? const Color(0xFF16213E) : Colors.white;
+    final borderColor = isDark ? const Color(0xFFFFD700).withOpacity(0.5) : const Color(0xFFFFD700);
+    final titleColor = isDark ? const Color(0xFFFFD700) : const Color(0xFFB45309); // Dark Gold for Light Mode
+    final bodyColor = isDark ? Colors.white.withOpacity(0.9) : const Color(0xFF475569);
+    final iconBgColor = isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFFFD700).withOpacity(0.1);
+    final promoBoxColor = isDark ? Colors.black.withOpacity(0.2) : const Color(0xFFFFFBEB); // Amber 50
+    final promoTitleColor = isDark ? const Color(0xFFFFD700) : const Color(0xFFB45309);
+    final promoDescColor = isDark ? Colors.white70 : const Color(0xFF64748B);
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF16213E), // Dark Navy Background
+        color: bgColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.5), width: 1), // Subtle Gold border
+        border: Border.all(color: borderColor, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3), // Dark shadow
+            color: isDark ? Colors.black.withOpacity(0.3) : const Color(0xFFB45309).withOpacity(0.08),
             blurRadius: 20,
             offset: const Offset(0, 5),
           ),
-          BoxShadow(
-            color: const Color(0xFFFFD700).withOpacity(0.05), // Very subtle gold glow
-            blurRadius: 10,
-            spreadRadius: 1,
-          ),
+          if (!isDark)
+             BoxShadow(
+              color: const Color(0xFFFFD700).withOpacity(0.2),
+              blurRadius: 10,
+              spreadRadius: 0,
+            ),
         ],
       ),
       child: ClipRRect(
@@ -842,7 +901,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 height: 150,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFFFD700).withOpacity(0.05), // Very faint gold circle
+                  color: const Color(0xFFFFD700).withOpacity(isDark ? 0.05 : 0.1),
                 ),
               ),
             ),
@@ -856,9 +915,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
+                          color: iconBgColor,
                           shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3), width: 1.5),
+                          border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.5), width: 1.5),
                         ),
                         child: const Icon(Icons.auto_awesome, color: Color(0xFFFFD700), size: 22),
                       ),
@@ -872,7 +931,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               style: GoogleFonts.kanit(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFFFFD700), // Gold Text
+                                color: titleColor,
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -882,7 +941,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 style: GoogleFonts.kanit(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFFFFD700).withOpacity(0.7),
+                                  color: titleColor.withOpacity(isDark ? 0.7 : 0.8),
                                   letterSpacing: 2,
                                 ),
                               ),
@@ -898,40 +957,40 @@ class _DashboardPageState extends State<DashboardPage> {
                       : 'อัปเกรดเป็น VIP เพื่อเข้าถึงข้อมูลเชิงลึกและรายชื่อค้นหาพิเศษกว่า 300,000 รายชื่อ',
                     style: GoogleFonts.kanit(
                       fontSize: 15, 
-                      color: Colors.white.withOpacity(0.9), // White Text
+                      color: bodyColor,
                       height: 1.5,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  _buildPrivilegeItem('วิเคราะห์ความหมายคู่เลขไม่จำกัด'),
-                  _buildPrivilegeItem('เข้าถึงฐานข้อมูล 300,000+ ชื่อ'),
-                  _buildPrivilegeItem('วิเคราะห์ตามตำราโบราณครบทุกชั้น'),
+                  _buildPrivilegeItem('ถอดทุกพยัญชนะและสระเพื่อความแม่นยำสูงสุด'),
+                  _buildPrivilegeItem('เชื่อมโยงทำนายผลจากพื้นดวงโดยไม่จำกัดความสามารถ'),
+                  _buildPrivilegeItem('วิเคราะห์ดวงตรงตำราทำนายดวงชะตาโดยมีระบบแจ้งเตือน'),
                   if (!isVip) ...[
                     const SizedBox(height: 30),
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.2), // Darker inner container
+                        color: promoBoxColor,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.2)),
+                        border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.4)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.confirmation_number_outlined, color: Color(0xFFFFD700), size: 20),
+                              Icon(Icons.confirmation_number_outlined, color: promoTitleColor, size: 20),
                               const SizedBox(width: 8),
                               Text(
                                 'มีรหัสโปรโมชันหรือรหัส VIP?', 
-                                style: GoogleFonts.kanit(fontSize: 15, color: const Color(0xFFFFD700), fontWeight: FontWeight.w600),
+                                style: GoogleFonts.kanit(fontSize: 15, color: promoTitleColor, fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'กรอกรหัส VIP ที่ได้จากกิจกรรม หรือท่านจะได้เป็น VIP อัตโนมัติเมื่อซื้อสินค้าร้าน "ร้านมาดี"', 
-                            style: GoogleFonts.kanit(fontSize: 12, color: Colors.white70, height: 1.4),
+                            'กรอกรหัส VIP ที่ได้จากกิจกรรม หรือท่านจะได้เป็น VIP อัตโนมัติเมื่อซื้อสินค้าร้าน "ร้านชื่อดี"', 
+                            style: GoogleFonts.kanit(fontSize: 12, color: promoDescColor, height: 1.4),
                           ),
                               const SizedBox(height: 20),
                               Row(
@@ -973,8 +1032,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                     child: OutlinedButton(
                                       onPressed: _goToShop,
                                       style: OutlinedButton.styleFrom(
-                                        foregroundColor: const Color(0xFFFFD700),
-                                        side: const BorderSide(color: Color(0xFFFFD700), width: 1.5),
+                                        foregroundColor: titleColor, // Gold/DarkGold
+                                        side: BorderSide(color: titleColor, width: 1.5),
                                         padding: const EdgeInsets.symmetric(vertical: 14),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
@@ -983,7 +1042,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                         children: [
                                           const Icon(Icons.shopping_bag_outlined, size: 18),
                                           const SizedBox(width: 8),
-                                          Text('ร้านมาดี', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, fontSize: 14)),
+                                          Text('ร้านชื่อดี', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, fontSize: 14)),
                                         ],
                                       ),
                                     ),
@@ -1134,7 +1193,9 @@ class _DashboardPageState extends State<DashboardPage> {
               text,
               style: GoogleFonts.kanit(
                 fontSize: 14, 
-                color: Colors.white, // White text for dark theme
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.white 
+                    : const Color(0xFF334155), // Slate 700 for Light Mode
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1305,13 +1366,19 @@ class _DashboardPageState extends State<DashboardPage> {
 
 
   Widget _buildSavedNamesTable(List<dynamic> savedNames, bool isUserVip) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF16213E), // Dark Navy Card
+        color: isDark ? const Color(0xFF16213E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white12), // Subtle white border
+        border: Border.all(color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4)
+          ),
         ],
       ),
       clipBehavior: Clip.antiAlias,
@@ -1320,23 +1387,23 @@ class _DashboardPageState extends State<DashboardPage> {
           // Table Header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFF1F2E4D), // Lighter Navy Header
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-              border: Border(bottom: BorderSide(color: Colors.white12)),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1F2E4D) : const Color(0xFFF1F5F9),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              border: Border(bottom: BorderSide(color: isDark ? Colors.white12 : const Color(0xFFE2E8F0))),
             ),
             child: Row(
               children: [
-                Expanded(flex: 3, child: Text('ชื่อ/สกุล', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70))),
-                Expanded(flex: 2, child: Center(child: Text('เลข', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70)))),
-                Expanded(flex: 2, child: Center(child: Text('เงา', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70)))),
-                Expanded(flex: 1, child: Center(child: Text('คะแนน', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70)))),
+                Expanded(flex: 3, child: Text('ชื่อ/สกุล', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : const Color(0xFF64748B)))),
+                Expanded(flex: 2, child: Center(child: Text('เลข', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : const Color(0xFF64748B))))),
+                Expanded(flex: 2, child: Center(child: Text('เงา', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : const Color(0xFF64748B))))),
+                Expanded(flex: 1, child: Center(child: Text('คะแนน', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : const Color(0xFF64748B))))),
                 const SizedBox(width: 24), // Space for >> icon
               ],
             ),
           ),
           // Table Body
-          ...savedNames.asMap().entries.map((entry) {
+          ...savedNames.asMap().entries.map<Widget>((entry) {
             final index = entry.key;
             final nameData = entry.value;
             final isLast = index == savedNames.length - 1;
@@ -1350,6 +1417,12 @@ class _DashboardPageState extends State<DashboardPage> {
             final satPairs = (nameData['sat_pairs'] ?? nameData['SatPairs'] ?? []) as List<dynamic>;
             final shaPairs = (nameData['sha_pairs'] ?? nameData['ShaPairs'] ?? []) as List<dynamic>;
             final id = nameData['id'] ?? nameData['ID'] ?? 0;
+            
+            // Debug ปัญญา to see full data
+            if (name == 'ปัญญา') {
+              print('🔍 DEBUG ปัญญา - FULL nameData:');
+              print('   $nameData');
+            }
             
             // ----------------------------------------------------
             // Check if this saved item is a PHONE NUMBER (for Gold Card display)
@@ -1456,8 +1529,19 @@ class _DashboardPageState extends State<DashboardPage> {
               print('   Full data: $nameData');
             }
             
+            
+            // Debug ALL names
+            print('🔍 Name #${index + 1}: $name');
+            print('   satPairs: $satPairs');
+            print('   shaPairs: $shaPairs');
+            print('   hasKalakini: $hasKalakini');
+            print('   allSatTopTier: $allSatTopTier (${satPairs.length} pairs)');
+            print('   allShaTopTier: $allShaTopTier (${shaPairs.length} pairs)');
+            print('   isPerfect: $isPerfect');
+            print('   isTopTier (has star): $isTopTier');
+            
             if (isPerfect) {
-              print('✨ PERFECT NAME FOUND: $name (Has star: $isTopTier, Will apply gold shimmer animation)');
+              print('✨ PERFECT NAME FOUND: $name (Will apply gold shimmer animation)');
             }
 
             final rowWidget = Dismissible(
@@ -1530,10 +1614,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 decoration: BoxDecoration(
                   color: isPerfect 
-                      ? const Color(0xFF2C250E) // Dark Gold Tint for Perfect
-                      : (isTopTier ? const Color(0xFF2C250E).withOpacity(0.7) : Colors.transparent),
+                      ? (isDark ? const Color(0xFF2C250E) : const Color(0xFFFFFBEB)) // Dark: Dark Gold, Light: Amber 50
+                      : (isTopTier ? (isDark ? const Color(0xFF2C250E).withOpacity(0.7) : const Color(0xFFFEF3C7)) : Colors.transparent), // Dark: Semi-transparent gold, Light: Amber 100
                   border: Border(
-                    bottom: const BorderSide(color: Colors.white12),
+                    bottom: BorderSide(color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
                     left: isPerfect 
                         ? const BorderSide(color: Color(0xFFFFD700), width: 4) // Gold border for perfect
                         : (isTopTier ? const BorderSide(color: Color(0xFFFBC02D), width: 3) : BorderSide.none),
@@ -1556,7 +1640,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   style: GoogleFonts.kanit(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white38,
+                                    color: isDark ? Colors.white38 : const Color(0xFF475569), // Slate 600 - เข้มขึ้น
                                   ),
                                 ),
                               ),
@@ -1569,7 +1653,9 @@ class _DashboardPageState extends State<DashboardPage> {
                                         style: GoogleFonts.kanit(
                                           fontSize: 14,
                                           fontWeight: (isTopTier || isPerfect) ? FontWeight.w800 : FontWeight.bold,
-                                          color: (isTopTier || isPerfect) ? const Color(0xFFFFD700) : Colors.white,
+                                          color: (isTopTier || isPerfect) 
+                                              ? (isDark ? const Color(0xFFFFD700) : const Color(0xFFD97706)) // Dark: ทองสว่าง, Light: ทองเข้ม (Amber 700)
+                                              : (isDark ? Colors.white : const Color(0xFF1E293B)),
                                         ),
                                       )
                                     : Row(
@@ -1584,7 +1670,11 @@ class _DashboardPageState extends State<DashboardPage> {
                                                   style: GoogleFonts.kanit(
                                                     fontSize: 14,
                                                     fontWeight: (isTopTier || isPerfect) ? FontWeight.w800 : FontWeight.bold,
-                                                    color: isBad ? const Color(0xFFFF4757) : ((isTopTier || isPerfect) ? const Color(0xFFFFD700) : Colors.white),
+                                                    color: isBad 
+                                                        ? const Color(0xFFFF4757) 
+                                                        : ((isTopTier || isPerfect) 
+                                                            ? (isDark ? const Color(0xFFFFD700) : const Color(0xFFD97706)) // Dark: ทองสว่าง, Light: ทองเข้ม (Amber 700)
+                                                            : (isDark ? Colors.white : const Color(0xFF1E293B))),
                                                   ),
                                                 );
                                               }).toList(),
@@ -1600,11 +1690,11 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                           Row(
                             children: [
-                              Icon(Icons.calendar_today, size: 10, color: Colors.white38),
+                              Icon(Icons.calendar_today, size: 10, color: isDark ? Colors.white38 : const Color(0xFF64748B)), // Slate 500 - เข้มขึ้น
                               const SizedBox(width: 4),
                               Text(
                                 birthDayThai,
-                                style: GoogleFonts.kanit(fontSize: 10, color: Colors.white54),
+                                style: GoogleFonts.kanit(fontSize: 10, color: isDark ? Colors.white54 : const Color(0xFF475569)), // Slate 600 - เข้มขึ้น
                               ),
                             ],
                           ),
@@ -1646,7 +1736,9 @@ class _DashboardPageState extends State<DashboardPage> {
                             style: GoogleFonts.kanit(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
-                              color: totalScore >= 0 ? Colors.greenAccent : Colors.redAccent,
+                              color: totalScore >= 0 
+                                  ? const Color(0xFF059669)  // Green 600 - เขียวเข้ม ชัดเจน
+                                  : const Color(0xFFDC2626), // Red 600 - แดงเข้ม ชัดเจน
                             ),
                           ),
                         ],
@@ -1657,13 +1749,16 @@ class _DashboardPageState extends State<DashboardPage> {
                       margin: const EdgeInsets.only(left: 4),
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1), // Transparent white
+                        color: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFF0D9488).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF00C853).withOpacity(0.3), width: 1),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF00C853).withOpacity(0.3) : const Color(0xFF0D9488).withOpacity(0.3),
+                          width: 1
+                        ),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.keyboard_double_arrow_right_rounded,
-                        color: Color(0xFF00C853),
+                        color: isDark ? const Color(0xFF00C853) : const Color(0xFF0D9488),
                         size: 18,
                       ),
                     ),
@@ -1770,9 +1865,9 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
       child: Column(
         children: [
-          const Icon(Icons.bookmark_outline, size: 48, color: Colors.grey),
+          Icon(Icons.bookmark_outline, size: 48, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey : const Color(0xFF64748B)),
           const SizedBox(height: 12),
-          Text('ยังไม่มีรายชื่อที่บันทึก', style: GoogleFonts.kanit(color: Colors.grey)),
+          Text('ยังไม่มีรายชื่อที่บันทึก', style: GoogleFonts.kanit(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey : const Color(0xFF475569))),
           const SizedBox(height: 20),
           // Debug FCM Token
           ValueListenableBuilder<String>(

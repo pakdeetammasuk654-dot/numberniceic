@@ -47,7 +47,9 @@
         
 
     
-        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="high_importance_channel" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_lotus_notification" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@android:color/white" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="numbernice_channel_v1" />
         <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"/>
         <meta-data android:name="com.facebook.sdk.ClientToken" android:value="@string/facebook_client_token"/>
         

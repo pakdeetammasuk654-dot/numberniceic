@@ -199,6 +199,10 @@ func (s *MemberService) CreateBroadcastNotificationWithData(title, message strin
 }
 
 func (s *MemberService) SendWalletColorNotification(memberID int) error {
+	return s.SendWalletColorNotificationCustom(memberID, "สีกระเป๋ามงคลของคุณมาแล้ว! ✨", "คุณนินได้ทำการวิเคราะห์สีกระเป๋ามงคลให้คุณเรียบร้อยแล้ว สามารถตรวจสอบรายละเอียดได้ที่หน้าโปรไฟล์ของคุณ")
+}
+
+func (s *MemberService) SendWalletColorNotificationCustom(memberID int, title, message string) error {
 	member, err := s.repo.GetByID(memberID)
 	if err != nil {
 		return err
@@ -207,21 +211,8 @@ func (s *MemberService) SendWalletColorNotification(memberID int) error {
 		return errors.New("ยังไม่ได้กำหนดสีกระเป๋าให้ลูกค้ารายนี้")
 	}
 
-	// Check if notification was sent recently (within 5 seconds for testing) to prevent duplicates
-	// if member.WalletColorsNotifiedAt != nil {
-	// 	timeSinceLastNotification := time.Since(*member.WalletColorsNotifiedAt)
-	// 	if timeSinceLastNotification < 5*time.Second {
-	// 		log.Printf("⚠️ Duplicate notification prevented for user %d (last sent: %v ago)", memberID, timeSinceLastNotification)
-	// 		return errors.New("เพิ่งส่งการแจ้งเตือนไปแล้ว กรุณารอสักครู่")
-	// 	}
-	// }
+	log.Printf("DEBUG: SendWalletColorNotification Custom: %s - %s", title, message)
 
-	title := "สีกระเป๋ามงคลของคุณมาแล้ว! ✨"
-
-	message := "คุณนินได้ทำการวิเคราะห์สีกระเป๋ามงคลให้คุณเรียบร้อยแล้ว สามารถตรวจสอบรายละเอียดได้ที่หน้าโปรไฟล์ของคุณ"
-	log.Printf("DEBUG: SendWalletColorNotification Message: %s", message)
-
-	// CreateUserNotification handles local DB save and Firebase Push
 	data := map[string]string{
 		"type":   "wallet_colors",
 		"colors": member.AssignedColors,
@@ -231,8 +222,33 @@ func (s *MemberService) SendWalletColorNotification(memberID int) error {
 		return err
 	}
 
-	// Update notified timestamp in member table
 	return s.repo.UpdateWalletColorsNotifiedAt(member.ID)
+}
+
+func (s *MemberService) SendAllWalletColorNotifications(title, message string) (int, int) {
+	members, err := s.repo.GetMembersWithAssignedColors()
+	if err != nil {
+		log.Printf("ERROR fetching members for wallet broadcast: %v", err)
+		return 0, 0
+	}
+
+	success := 0
+	fail := 0
+	for _, m := range members {
+		// Basic check for empty colors
+		if m.AssignedColors == "" || m.AssignedColors == ",,,," {
+			continue
+		}
+
+		err := s.SendWalletColorNotificationCustom(m.ID, title, message)
+		if err != nil {
+			log.Printf("ERROR sending wallet noti to user %d: %v", m.ID, err)
+			fail++
+		} else {
+			success++
+		}
+	}
+	return success, fail
 }
 
 func (s *MemberService) GetAllMembers() ([]domain.Member, error) {

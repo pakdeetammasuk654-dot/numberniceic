@@ -260,7 +260,7 @@ class ApiService {
       'disable_klakini': disableKlakini.toString(),
       'disable_klakini_top4': disableKlakiniTop4.toString(),
       'section': section,
-      'limit': '100', // Request 100 items explicitly
+      'limit': '1000', // Request 1000 items explicitly to support pagination
     };
     
     final url = Uri.parse('$baseUrl/api/analyze').replace(queryParameters: queryParams);
@@ -841,4 +841,59 @@ class ApiService {
       return false;
     }
   }
+  static Stream<dynamic> analyzeNameStream(
+    String name,
+    String day, {
+    bool auspicious = false,
+    bool disableKlakini = false,
+    bool disableKlakiniTop4 = false,
+    String section = 'all',
+  }) async* {
+    final queryParams = {
+      'name': name,
+      'day': day,
+      'auspicious': auspicious.toString(),
+      'disable_klakini': disableKlakini.toString(),
+      'disable_klakini_top4': disableKlakiniTop4.toString(),
+      'section': section,
+      'limit': '1000',
+    };
+    
+    final url = Uri.parse('$baseUrl/api/analyze/stream').replace(queryParameters: queryParams);
+    debugPrint('🚀 API REQUEST STREAM: GET $url (Section: $section)');
+
+    try {
+      final token = await AuthService.getToken();
+      final request = http.Request('GET', url);
+      request.headers['Content-Type'] = 'application/json';
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      
+      final client = http.Client();
+      final response = await client.send(request);
+      
+      if (response.statusCode != 200) {
+         yield {'type': 'error', 'message': 'Stream failed: ${response.statusCode}'};
+         return;
+      }
+      
+      await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
+        if (line.startsWith('data: ')) {
+           final jsonStr = line.substring(6);
+           try {
+              final data = jsonDecode(jsonStr);
+              yield data;
+           } catch (e) {
+              debugPrint('Error parsing stream json: $e');
+           }
+        }
+      }
+      client.close();
+    } catch (e) {
+      debugPrint('Stream Connection Error: $e');
+      yield {'type': 'error', 'message': e.toString()};
+    }
+  }
+
 }

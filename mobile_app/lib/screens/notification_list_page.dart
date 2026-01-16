@@ -16,6 +16,9 @@ import 'article_detail_page.dart';
 
 import 'dart:async';
 import '../services/notification_service.dart';
+import '../widgets/background_pattern_painter.dart';
+import '../services/miracle_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationListPage extends StatefulWidget {
   final bool isBottomSheet;
@@ -33,6 +36,9 @@ class _NotificationListPageState extends State<NotificationListPage> {
   
   // Track all IDs for each unique notification key (title_message)
   final Map<String, List<int>> _notifIdGroups = {};
+
+  String? _usernameForMiracle;
+  String? _birthDayNameForMiracle;
 
   @override
   void initState() {
@@ -111,13 +117,14 @@ class _NotificationListPageState extends State<NotificationListPage> {
         ApiService.getUserNotifications(),
         LocalNotificationStorage.getAll(),
         LocalNotificationStorage.getHiddenServerIds(),
+        MiracleService().init(), // Initialize miracle data
       ]);
       
       final serverNotifs = results[0] as List<UserNotification>;
       final localNotifs = results[1] as List<UserNotification>;
       final hiddenIds = (results[2] as List<int>).toSet();
       
-      _updateUI(
+      await _updateUI(
         serverNotifs: serverNotifs, 
         localNotifs: localNotifs, 
         hiddenIds: hiddenIds
@@ -133,52 +140,253 @@ class _NotificationListPageState extends State<NotificationListPage> {
     }
   }
 
-  void _updateUI({
+  Widget _buildMiniActivityIcon(String imagePath, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFA67C52).withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFA67C52).withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(imagePath, width: 24, height: 24, fit: BoxFit.contain),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: GoogleFonts.kanit(
+              fontSize: 13, 
+              fontWeight: FontWeight.w600, 
+              color: const Color(0xFFA67C52),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationSenderHeader() {
+    String? display = _usernameForMiracle;
+    if (display == null || display.trim().isEmpty) {
+      // If no name, but it's a miracle, we could show a generic one or stay hidden.
+      // The user wants to see the name, so let's try to be as helpful as possible.
+      return const SizedBox(); 
+    }
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.auto_awesome, size: 14, color: Colors.white),
+          const SizedBox(width: 8),
+          Text(
+            "ส่งดวงให้คุณ $display",
+            style: GoogleFonts.kanit(
+              fontSize: 13, 
+              fontWeight: FontWeight.bold, 
+              color: Colors.white,
+              letterSpacing: 0.5
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBirthDayTag() {
+    if (_birthDayNameForMiracle == null) return const SizedBox.shrink();
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Text(
+        "คนเกิด$_birthDayNameForMiracle",
+        style: GoogleFonts.kanit(
+          fontSize: 11, 
+          fontWeight: FontWeight.w500, 
+          color: const Color(0xFF64748B)
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationContent(UserNotification notif) {
+    final message = notif.message;
+    final type = notif.data?['type'];
+    
+    // Check if it's a daily miracle or contains auspicious day keywords
+    if (type != 'daily_miracle' && !message.contains('ฤกษ์ดี')) {
+      return Text(
+        message,
+        style: GoogleFonts.kanit(fontSize: 16, height: 1.5, color: const Color(0xFF334155)),
+      );
+    }
+
+    // Detect activities and build icons
+    List<Widget> icons = [];
+    if (message.contains('ตัดผม')) {
+      icons.add(_buildMiniActivityIcon('assets/images/hair_cut.png', 'ตัดผม'));
+    }
+    if (message.contains('สระผม')) {
+      icons.add(_buildMiniActivityIcon('assets/images/hair_washing.png', 'สระผม'));
+    }
+    if (message.contains('ตัดเล็บ')) {
+      icons.add(_buildMiniActivityIcon('assets/images/nail.png', 'ตัดเล็บ'));
+    }
+    if (message.contains('ผ้าใหม่')) {
+      icons.add(_buildMiniActivityIcon('assets/images/clothes.png', 'นุ่งผ้าใหม่'));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildNotificationSenderHeader(),
+        if (icons.isNotEmpty) ...[
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: icons,
+          ),
+          const SizedBox(height: 20),
+        ],
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE2E8F0).withOpacity(0.5)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                message,
+                style: GoogleFonts.kanit(fontSize: 16, height: 1.6, color: const Color(0xFF1E293B)),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  _buildBirthDayTag(),
+                  const Spacer(),
+                  Icon(Icons.access_time_rounded, size: 12, color: Colors.grey[400]),
+                  const SizedBox(width: 4),
+                  Text(
+                    "ได้รับเมื่อ ${DateFormat('HH:mm').format(notif.createdAt)} น.",
+                    style: GoogleFonts.kanit(
+                      fontSize: 11, 
+                      color: const Color(0xFF94A3B8),
+                      fontWeight: FontWeight.w400
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _updateUI({
     required List<UserNotification> serverNotifs, 
     required List<UserNotification> localNotifs, 
     required Set<int> hiddenIds,
-  }) {
-      _notifIdGroups.clear();
-      final List<UserNotification> combined = [];
-      
-      // 1. Add Filtered Server Notifications (Master List)
-      final filteredServer = serverNotifs.where((n) => !hiddenIds.contains(n.id)).toList();
-      for (var n in filteredServer) {
-          combined.add(n);
-          // Group key for merging: Content + Hour
-          final groupKey = "${n.title}_${n.message}_${n.createdAt.year}${n.createdAt.month}${n.createdAt.day}${n.createdAt.hour}";
-          _notifIdGroups.putIfAbsent(groupKey, () => []).add(n.id);
-      }
-      
-      // 2. Add Local Notifications if they are unique
-      for (var n in localNotifs) {
-          final groupKey = "${n.title}_${n.message}_${n.createdAt.year}${n.createdAt.month}${n.createdAt.day}${n.createdAt.hour}";
-          
-          bool hasMatchingServer = filteredServer.any((sn) => 
-            sn.title == n.title && 
-            sn.message == n.message &&
-            sn.createdAt.difference(n.createdAt).inHours.abs() < 1
-          );
-          
-          if (!hasMatchingServer) {
-            combined.add(n);
-            _notifIdGroups.putIfAbsent(groupKey, () => []).add(n.id);
-          } else {
-            // It matches a server entry, associate the local ID with the server entry's group
-            _notifIdGroups.putIfAbsent(groupKey, () => []).add(n.id);
-          }
-      }
-      
-      combined.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }) async {
+    final userInfo = await AuthService.getUserInfo();
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Try to find any name field available
+    final username = userInfo['username'] ?? userInfo['display_name'] ?? prefs.getString('username') ?? prefs.getString('display_name') ?? '';
+    
+    final miracleBirthDay = await MiracleService().getUserBirthDay();
+    String? birthDayName;
+    if (miracleBirthDay != null) {
+      await MiracleService().init(); // Double check init
+      birthDayName = MiracleService().getThaiDayName(miracleBirthDay);
+    }
 
-      if (mounted) {
-        setState(() {
-          _notifications = combined;
-          _isLoading = false;
-          _error = null;
-        });
-        print("✅ [NotificationListPage] UI Sync'd: ${combined.length} unique items shown.");
-      }
+    print("👤 [NotificationListPage] PERSONALIZING: Name='$username', BirthDay='$birthDayName' (Key: $miracleBirthDay)");
+
+    print("👤 [NotificationListPage] Personalizing: Name=$username, BirthDay=$birthDayName");
+
+    if (!mounted) return;
+
+    _notifIdGroups.clear();
+    final List<UserNotification> combined = [];
+      
+    // 1. Add Filtered Server Notifications (Master List)
+    final filteredServer = serverNotifs.where((n) => !hiddenIds.contains(n.id)).toList();
+    for (var n in filteredServer) {
+        combined.add(n);
+        // Group key for merging: Content + Hour
+        final groupKey = "${n.title}_${n.message}_${n.createdAt.year}${n.createdAt.month}${n.createdAt.day}${n.createdAt.hour}";
+        _notifIdGroups.putIfAbsent(groupKey, () => []).add(n.id);
+    }
+      
+    print("📦 [NotificationListPage] Processing ${localNotifs.length} local notifications...");
+    // 2. Add Local Notifications if they are unique
+    for (var n in localNotifs) {
+        final groupKey = "${n.title}_${n.message}_${n.createdAt.year}${n.createdAt.month}${n.createdAt.day}${n.createdAt.hour}";
+        
+        bool hasMatchingServer = serverNotifs.any((sn) => 
+          sn.title == n.title && 
+          sn.message == n.message &&
+          sn.createdAt.difference(n.createdAt).inHours.abs() < 1
+        );
+        
+        if (!hasMatchingServer) {
+          combined.add(n);
+          _notifIdGroups.putIfAbsent(groupKey, () => []).add(n.id);
+          print("➕ [NotificationListPage] Added local unique: ${n.title}");
+        } else {
+          // It matches a server entry, associate the local ID with the server entry's group
+          _notifIdGroups.putIfAbsent(groupKey, () => []).add(n.id);
+          print("🔗 [NotificationListPage] Local matched server: ${n.title}");
+        }
+    }
+      
+    combined.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    if (mounted) {
+      setState(() {
+        _notifications = combined;
+        _usernameForMiracle = username;
+        _birthDayNameForMiracle = birthDayName;
+        _isLoading = false;
+        _error = null;
+      });
+      print("✅ [NotificationListPage] UI Sync'd: ${combined.length} unique items shown for $_usernameForMiracle.");
+    }
   }
 
   void _deleteNotification(int id) async {
@@ -481,8 +689,9 @@ class _NotificationListPageState extends State<NotificationListPage> {
     );
   }
 
+
   void _showNotificationDetail(UserNotification notif) async {
-    // Mark as read immediately
+    // 1. Mark as read immediately
     if (!notif.isRead) {
       final key = "${notif.title}_${notif.message}";
       final ids = _notifIdGroups[key] ?? [notif.id];
@@ -502,153 +711,182 @@ class _NotificationListPageState extends State<NotificationListPage> {
       }
     }
 
+    // 2. Refresh personalized info JUST before showing detail
+    final userInfo = await AuthService.getUserInfo();
+    final prefs = await SharedPreferences.getInstance();
+    final username = userInfo['username'] ?? userInfo['display_name'] ?? prefs.getString('username') ?? prefs.getString('display_name') ?? '';
+    final miracleBirthDay = await MiracleService().getUserBirthDay();
+    String? birthDayName;
+    if (miracleBirthDay != null) {
+      await MiracleService().init();
+      birthDayName = MiracleService().getThaiDayName(miracleBirthDay);
+    }
+    
+    if (mounted) {
+      setState(() {
+        _usernameForMiracle = username;
+        _birthDayNameForMiracle = birthDayName;
+      });
+    }
+
     if (!mounted) return;
 
     showDialog(
       context: context,
       builder: (context) => Dialog(
+        backgroundColor: const Color(0xFFF8FAFC),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                notif.title,
-                style: GoogleFonts.kanit(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _formatThaiDate(notif.createdAt),
-                style: GoogleFonts.kanit(fontSize: 12, color: Colors.grey),
-              ),
-              const Divider(height: 24),
-              SingleChildScrollView(
-                 child: Text(
-                    notif.message,
-                    style: GoogleFonts.kanit(fontSize: 16, height: 1.5),
-                 ),
-              ),
-              const SizedBox(height: 24),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (notif.data?['type'] == 'payment_success' || notif.title.contains('ที่อยู่') || notif.message.contains('ที่อยู่'))
-                      _build3DButton(
-                        label: 'จัดการที่อยู่',
-                        icon: Icons.local_shipping_outlined,
-                        color: Colors.blue[600]!,
-                        shadowColor: Colors.blue[900]!,
-                        onPressed: () {
-                          Navigator.pop(context);
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => const ShippingAddressPage()));
-                        },
-                      ),
-                    if (notif.title.contains('วันพระ'))
-                      _build3DButton(
-                        label: 'อ่านบทความ',
-                        icon: Icons.menu_book_rounded,
-                        color: Colors.orange[600]!,
-                        shadowColor: Colors.orange[900]!,
-                        onPressed: () {
-                          Navigator.pop(context);
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => const ArticlesPage()));
-                        },
-                      ),
-                    if (notif.data?['type'] == 'article' && notif.data?['article_slug'] != null)
-                      _build3DButton(
-                        label: 'อ่านฉบับเต็ม',
-                        icon: Icons.article_rounded,
-                        color: Colors.teal[600]!,
-                        shadowColor: Colors.teal[900]!,
-                        onPressed: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ArticleDetailPage(slug: notif.data!['article_slug']!),
-                            ),
-                          );
-                        },
-                      ),
-                    if (notif.data?['type'] == 'wallet_colors' && notif.data?['colors'] != null)
-                      _build3DButton(
-                        label: 'ดูสีกระเป๋า',
-                        icon: Icons.account_balance_wallet_rounded,
-                        color: Colors.amber[700]!,
-                        shadowColor: Colors.amber[900]!,
-                        onPressed: () {
-                          Navigator.pop(context);
-                          try {
-                            // Data format example: "['#FF0000', '#00FF00']" or "#FF0000,#00FF00"
-                            // Backend sends simple comma separated usually if map map[string]string
-                            String raw = notif.data!['colors']!;
-                            List<String> colors = [];
-                            if (raw.startsWith('[')) {
-                               // Simple trim if JSON-like string
-                               colors = raw.replaceAll('[', '').replaceAll(']', '').replaceAll('"', '').replaceAll("'", "").split(',');
-                            } else {
-                               colors = raw.split(',');
-                            }
-                            colors = colors.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-                            
-                            WalletColorBottomSheet.show(context, colors);
-                          } catch (e) {
-                             print('Error parsing wallet colors: $e');
-                          }
-                        },
-                      ),
-                    
-                    // Fallback for notifications from DB (History) where data is missing
-                    if (notif.data?['type'] != 'wallet_colors' && notif.title.contains('สีกระเป๋า'))
-                      FutureBuilder<Map<String, dynamic>>(
-                        future: AuthService.getUserInfo(), // Fetch colors from profile
-                        builder: (context, snapshot) {
-                           if (!snapshot.hasData) return const SizedBox.shrink();
-                           
-                           final raw = snapshot.data!['assigned_colors'];
-                           if (raw == null) return const SizedBox.shrink();
-                           
-                           List<String> colors = [];
-                           if (raw is List) {
-                             colors = raw.map((e) => e.toString()).toList();
-                           } else if (raw is String && raw.isNotEmpty) {
-                             colors = raw.split(',');
-                           }
-                           
-                           colors = colors.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-                           
-                           if (colors.isEmpty) return const SizedBox.shrink();
-                           
-                           return Padding(
-                             padding: const EdgeInsets.only(right: 12),
-                             child: _build3DButton(
-                              label: 'ดูสีกระเป๋า',
-                              icon: Icons.account_balance_wallet_rounded,
-                              color: Colors.amber[700]!,
-                              shadowColor: Colors.amber[900]!,
-                              onPressed: () {
-                                Navigator.pop(context);
-                                WalletColorBottomSheet.show(context, colors);
-                              },
-                             ),
-                           );
-                        }
-                      ),
-                    const SizedBox(width: 12),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
-                      child: Text('ปิด', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.w500)),
-                    ),
-                  ],
+        clipBehavior: Clip.antiAlias, // Critical for rounded background
+        child: Stack(
+          children: [
+            // Background Watermark Pattern
+            Positioned.fill(
+              child: CustomPaint(
+                painter: BackgroundPatternPainter(
+                  opacity: 0.18, // Slightly darker per user request
                 ),
               ),
-            ],
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    notif.title,
+                    style: GoogleFonts.kanit(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _formatThaiDate(notif.createdAt),
+                    style: GoogleFonts.kanit(fontSize: 12, color: Colors.grey),
+                  ),
+                  const Divider(height: 24),
+                  SingleChildScrollView(
+                     child: _buildNotificationContent(notif),
+                  ),
+                  const SizedBox(height: 24),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (notif.data?['type'] == 'payment_success' || notif.title.contains('ที่อยู่') || notif.message.contains('ที่อยู่'))
+                          _build3DButton(
+                            label: 'จัดการที่อยู่',
+                            icon: Icons.local_shipping_outlined,
+                            color: Colors.blue[600]!,
+                            shadowColor: Colors.blue[900]!,
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => const ShippingAddressPage()));
+                            },
+                          ),
+                        if (notif.title.contains('วันพระ'))
+                          _build3DButton(
+                            label: 'อ่านบทความ',
+                            icon: Icons.menu_book_rounded,
+                            color: Colors.orange[600]!,
+                            shadowColor: Colors.orange[900]!,
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => const ArticlesPage()));
+                            },
+                          ),
+                        if (notif.data?['type'] == 'article' && notif.data?['article_slug'] != null)
+                          _build3DButton(
+                            label: 'อ่านฉบับเต็ม',
+                            icon: Icons.article_rounded,
+                            color: Colors.teal[600]!,
+                            shadowColor: Colors.teal[900]!,
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ArticleDetailPage(slug: notif.data!['article_slug']!),
+                                ),
+                              );
+                            },
+                          ),
+                        if (notif.data?['type'] == 'wallet_colors' && notif.data?['colors'] != null)
+                          _build3DButton(
+                            label: 'ดูสีกระเป๋า',
+                            icon: Icons.account_balance_wallet_rounded,
+                            color: Colors.amber[700]!,
+                            shadowColor: Colors.amber[900]!,
+                            onPressed: () {
+                              Navigator.pop(context);
+                              try {
+                                // Data format example: "['#FF0000', '#00FF00']" or "#FF0000,#00FF00"
+                                // Backend sends simple comma separated usually if map map[string]string
+                                String raw = notif.data!['colors']!;
+                                List<String> colors = [];
+                                if (raw.startsWith('[')) {
+                                   // Simple trim if JSON-like string
+                                   colors = raw.replaceAll('[', '').replaceAll(']', '').replaceAll('"', '').replaceAll("'", "").split(',');
+                                } else {
+                                   colors = raw.split(',');
+                                }
+                                colors = colors.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                                
+                                WalletColorBottomSheet.show(context, colors);
+                              } catch (e) {
+                                 print('Error parsing wallet colors: $e');
+                              }
+                            },
+                          ),
+                        
+                        // Fallback for notifications from DB (History) where data is missing
+                        if (notif.data?['type'] != 'wallet_colors' && notif.title.contains('สีกระเป๋า'))
+                          FutureBuilder<Map<String, dynamic>>(
+                            future: AuthService.getUserInfo(), // Fetch colors from profile
+                            builder: (context, snapshot) {
+                               if (!snapshot.hasData) return const SizedBox.shrink();
+                               
+                               final raw = snapshot.data!['assigned_colors'];
+                               if (raw == null) return const SizedBox.shrink();
+                               
+                               List<String> colors = [];
+                               if (raw is List) {
+                                 colors = raw.map((e) => e.toString()).toList();
+                               } else if (raw is String && raw.isNotEmpty) {
+                                 colors = raw.split(',');
+                               }
+                               
+                               colors = colors.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                               
+                               if (colors.isEmpty) return const SizedBox.shrink();
+                               
+                               return Padding(
+                                 padding: const EdgeInsets.only(right: 12),
+                                 child: _build3DButton(
+                                  label: 'ดูสีกระเป๋า',
+                                  icon: Icons.account_balance_wallet_rounded,
+                                  color: Colors.amber[700]!,
+                                  shadowColor: Colors.amber[900]!,
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    WalletColorBottomSheet.show(context, colors);
+                                  },
+                                 ),
+                               );
+                            }
+                          ),
+                        const SizedBox(width: 12),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
+                          child: Text('ปิด', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.w500)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

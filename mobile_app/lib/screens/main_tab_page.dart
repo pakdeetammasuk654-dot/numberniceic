@@ -22,6 +22,9 @@ import '../viewmodels/analyzer_view_model.dart';
 import '../widgets/analyzer/shared_search_form.dart';
 import '../widgets/analyzer/shared_sample_names.dart';
 import '../models/sample_name.dart';
+import '../widgets/theme_toggle_button.dart';
+import '../widgets/notification_bell.dart';
+import '../widgets/buddhist_day_badge.dart';
 
 class MainTabPage extends StatefulWidget {
   final int initialIndex;
@@ -226,10 +229,11 @@ class MainTabPageState extends State<MainTabPage> with TickerProviderStateMixin 
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
-      extendBody: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      extendBody: false, // Changed from true
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A2E),
+        // ... (App Bar content remains same, just ensuring context)
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leadingWidth: 60,
         leading: Padding(
@@ -242,7 +246,11 @@ class MainTabPageState extends State<MainTabPage> with TickerProviderStateMixin 
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('ชื่อดี.com', style: GoogleFonts.kanit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
+            Text('ชื่อดี.com', style: GoogleFonts.kanit(
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF1E293B), 
+              fontWeight: FontWeight.bold, 
+              fontSize: 22
+            )),
             const SizedBox(width: 8),
             if (_isLoggedIn)
               Container(
@@ -274,76 +282,78 @@ class MainTabPageState extends State<MainTabPage> with TickerProviderStateMixin 
                Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.white10,
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.black12,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white12),
+                  border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.black12),
                 ),
                 child: Text(
                   'GUEST',
-                  style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white38),
+                  style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white38 : Colors.black38),
                 ),
               ),
-          ],
+              // Buddhist Day Badge (will only show if today/tomorrow is Buddhist Day)
+              const BuddhistDayBadge(),
+           ],
         ),
         actions: [
             IconButton(
-              icon: const Icon(Icons.grid_view_rounded, color: Colors.white70),
+              icon: Icon(Icons.grid_view_rounded, color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : const Color(0xFF64748B)),
               onPressed: () {
                 NumberAnalysisPage.show(context);
               },
             ),
-            IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: Colors.white70),
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (context) => const NotificationListPage(isBottomSheet: true),
-                );
-              },
-            ),
+            // Notification Bell with badge count
+            NotificationBell(iconColor: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : const Color(0xFF64748B)),
             const SizedBox(width: 8),
         ],
       ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: pages,
+      body: Column(
+        children: [
+          _buildGlassTopBar(),
+          Expanded(
+            child: IndexedStack(
+              index: _currentIndex,
+              children: pages,
+            ),
+          ),
+        ],
       ),
-      bottomNavigationBar: _buildGlassBottomBar(),
+      // bottomNavigationBar: _buildGlassBottomBar(), // Removed
     );
   }
 
-  Widget _buildGlassBottomBar() {
+  Widget _buildGlassTopBar() {
     return Container(
-      margin: EdgeInsets.only(
+      margin: const EdgeInsets.only(
         left: 16,
         right: 16,
-        bottom: MediaQuery.of(context).padding.bottom + 12,
+        top: 2,
+        bottom: 6,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            height: 72,
+            height: 60,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(28),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.15),
-                  Colors.white.withOpacity(0.05),
-                ],
+                colors: Theme.of(context).brightness == Brightness.dark 
+                  ? [Colors.white.withOpacity(0.15), Colors.white.withOpacity(0.05)]
+                  : [Colors.white.withOpacity(0.95), Colors.white.withOpacity(0.9)],
               ),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: Theme.of(context).brightness == Brightness.dark 
+                  ? Colors.white.withOpacity(0.2)
+                  : Colors.white,
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.25),
+                  color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.25 : 0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -367,13 +377,22 @@ class MainTabPageState extends State<MainTabPage> with TickerProviderStateMixin 
   Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon, String label) {
     final bool isActive = _currentIndex == index;
     
-    // Tab-specific colors
-    final List<Color> activeColors = [
-      const Color(0xFFFFD700), // Gold for Home
-      const Color(0xFF60A5FA), // Blue for Articles
-      const Color(0xFF34D399), // Green for Shop
-      const Color(0xFFF472B6), // Pink for Profile
-    ];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Tab-specific colors (Light mode uses darker shades for contrast)
+    final List<Color> activeColors = isDark 
+      ? [
+          const Color(0xFFFFD700), // Gold
+          const Color(0xFF60A5FA), // Blue
+          const Color(0xFF34D399), // Green
+          const Color(0xFFF472B6), // Pink
+        ]
+      : [
+          const Color(0xFFD97706), // Amber 600 (Darker Gold)
+          const Color(0xFF2563EB), // Blue 600
+          const Color(0xFF059669), // Emerald 600
+          const Color(0xFFDB2777), // Pink 600
+        ];
     
     final Color accentColor = activeColors[index];
     
@@ -391,7 +410,7 @@ class MainTabPageState extends State<MainTabPage> with TickerProviderStateMixin 
         curve: Curves.easeOutCubic,
         padding: EdgeInsets.symmetric(
           horizontal: isActive ? 16 : 12,
-          vertical: 8,
+          vertical: 2,
         ),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
@@ -458,24 +477,29 @@ class MainTabPageState extends State<MainTabPage> with TickerProviderStateMixin 
                           ? LinearGradient(
                               colors: [accentColor, accentColor.withOpacity(0.8)],
                             ).createShader(bounds)
-                          : const LinearGradient(
-                              colors: [Colors.white38, Colors.white38],
+                          : LinearGradient(
+                              colors: Theme.of(context).brightness == Brightness.dark
+                                  ? [Colors.white38, Colors.white38]
+                                  : [const Color(0xFF94A3B8), const Color(0xFF94A3B8)], // Slate 400
                             ).createShader(bounds),
                       child: Icon(
                         isActive ? activeIcon : inactiveIcon,
-                        size: isActive ? 28 : 24,
+                        size: isActive ? 22 : 18,
                         color: Colors.white,
                       ),
                     ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             // Label
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 250),
               style: GoogleFonts.kanit(
                 fontSize: isActive ? 11 : 10,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                color: isActive ? accentColor : Colors.white54,
+                height: 1.1,
+                color: isActive 
+                    ? accentColor 
+                    : (Theme.of(context).brightness == Brightness.dark ? Colors.white54 : const Color(0xFF64748B)),
               ),
               child: Text(label),
             ),
@@ -517,7 +541,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
     _sharedViewModel.addListener(_onViewModelUpdate);
     // Initialize TabController to sync with _subIdx
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
          setState(() {
@@ -585,8 +609,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                   maxHeight: 150.0,
                   child: Container(
                     height: 150,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF1A1A2E),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1A1A2E) : Colors.white,
                     ),
                     child: Column(
                       children: [
@@ -596,16 +620,15 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                           child: Row(
                             children: [
                               Expanded(child: _buildSubMenuItem(0, Icons.edit_note_rounded, 'ตั้งชื่อดี')),
-                              Expanded(child: _buildSubMenuItem(1, Icons.check_circle_outline_rounded, 'ชื่อดี +10')),
-                              Expanded(child: _buildSubMenuItem(2, Icons.auto_awesome_rounded, 'ชื่อดี +3 แสน')),
-                              Expanded(child: _buildSubMenuItem(3, Icons.trending_up_rounded, 'เสริมชื่อดี')), 
+                              Expanded(child: _buildSubMenuItem(1, Icons.auto_awesome_rounded, 'วิเคราะห์ชื่อดี')),
+                              Expanded(child: _buildSubMenuItem(2, Icons.trending_up_rounded, 'เสริมชื่อดี')), 
                             ],
                           ),
                         ),
                         // Samples
                         Expanded(
                           child: Container(
-                             color: const Color(0xFF1A1A2E),
+                             color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1A1A2E) : Colors.white,
                              child: SharedSampleNames(viewModel: _sharedViewModel, nameController: _nameController, sampleNamesFuture: _sampleNamesFuture)
                           ),
                         ),
@@ -621,7 +644,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
           index: _subIdx,
           children: [
              TickerMode(enabled: _subIdx == 0, child: NamingPage(viewModel: _sharedViewModel)),            // 0
-             TickerMode(enabled: _subIdx == 1, child: AnalyzerPage(
+             TickerMode(enabled: _subIdx == 1, child: UnlimitedAnalyzerPage(
+               key: const ValueKey('unlimited_reload_v1'),
                viewModel: _sharedViewModel,
                onNavigateToNaming: () {
                  setState(() { 
@@ -629,47 +653,34 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                     _tabController.animateTo(0);
                  });
                },
-             )),          // 1
-             TickerMode(enabled: _subIdx == 2, child: UnlimitedAnalyzerPage(
-               viewModel: _sharedViewModel,
-               onNavigateToNaming: () {
-                 setState(() { 
-                    _subIdx = 0; 
-                    _tabController.animateTo(0);
-                 });
-               },
-             )), // 2
-             TickerMode(enabled: _subIdx == 3, child: ShopPage(viewModel: _sharedViewModel)),              // 3
+             )), // 1
+             TickerMode(enabled: _subIdx == 2, child: ShopPage(viewModel: _sharedViewModel)),              // 2
           ],
         ),
     );
   }
 
   Widget _buildSubMenuItem(int index, IconData icon, String label) {
-    final bool isSelected = _subIdx == index;
+    final isSelected = _subIdx == index;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     // Define Theme Colors (Gradient Start/End)
     Color startColor, endColor, shadowColor;
     
     switch (index) {
-      case 0: // ตั้งชื่อดี - Dark/Professional -> Changed to Blue-Grey/Space
-        startColor = const Color(0xFF3B82F6); // Blue 500
-        endColor = const Color(0xFF1D4ED8);   // Blue 700
+      case 0: // ตั้งชื่อดี
+        startColor = const Color(0xFF3B82F6); 
+        endColor = const Color(0xFF1D4ED8); 
         shadowColor = const Color(0xFF3B82F6).withOpacity(0.5);
         break;
-      case 1: // ชื่อ +10 - Teal
-        startColor = const Color(0xFF14B8A6); // Teal 500
-        endColor = const Color(0xFF0F766E);   // Teal 700
-        shadowColor = const Color(0xFF14B8A6).withOpacity(0.5);
-        break;
-      case 2: // ชื่อ +3 แสน - Purple
-        startColor = const Color(0xFFA855F7); // Purple 500
-        endColor = const Color(0xFF7E22CE);   // Purple 700
+      case 1: // ชื่อ +3 แสน (was 2)
+        startColor = const Color(0xFFA855F7); 
+        endColor = const Color(0xFF7E22CE);  
         shadowColor = const Color(0xFFA855F7).withOpacity(0.5);
         break;
-      case 3: // เสริมชื่อดี - Gold/Orange (Store)
-        startColor = const Color(0xFFFFD700); // Gold
-        endColor = const Color(0xFFF59E0B);   // Amber 500
+      case 2: // เสริมชื่อดี (was 3)
+        startColor = const Color(0xFFFFD700); 
+        endColor = const Color(0xFFF59E0B);  
         shadowColor = const Color(0xFFFFD700).withOpacity(0.5);
         break;
       default:
@@ -679,9 +690,35 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     }
 
     // Colors
-    final Color iconColor = isSelected ? Colors.white : Colors.white70;
-    final Color textColor = isSelected ? Colors.white : Colors.white70;
-    final Color borderColor = isSelected ? Colors.white.withOpacity(0.5) : Colors.white.withOpacity(0.1);
+    final Color iconColor = isSelected 
+        ? Colors.white 
+        : (isDark ? Colors.white70 : const Color(0xFF64748B));
+    final Color textColor = isSelected 
+        ? Colors.white 
+        : (isDark ? Colors.white70 : const Color(0xFF475569));
+    final Color borderColor = isSelected 
+        ? Colors.white.withOpacity(0.5) 
+        : (isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFE2E8F0));
+    
+    // Inactive Gradient/Color
+    final inactiveDecoration = isDark
+        ? BoxDecoration( // Dark Mode Inactive
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              colors: [Colors.white.withOpacity(0.08), Colors.white.withOpacity(0.03)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight
+            ),
+            border: Border.all(color: borderColor, width: 1.0),
+          )
+        : BoxDecoration( // Light Mode Inactive
+            borderRadius: BorderRadius.circular(16),
+            color: Colors.white,
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))
+            ]
+          );
 
     return GestureDetector(
       onTap: () {
@@ -696,20 +733,16 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
         curve: Curves.easeInOut,
         margin: EdgeInsets.symmetric(horizontal: 4, vertical: isSelected ? 4 : 8), // Expand active item slightly
         padding: const EdgeInsets.symmetric(horizontal: 4),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: isSelected 
-              ? LinearGradient(colors: [startColor, endColor], begin: Alignment.topLeft, end: Alignment.bottomRight)
-              : LinearGradient( // Glassy for inactive
-                  colors: [Colors.white.withOpacity(0.08), Colors.white.withOpacity(0.03)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight
-                ),
-          border: Border.all(color: borderColor, width: isSelected ? 1.5 : 1.0),
-          boxShadow: isSelected ? [
-             BoxShadow(color: shadowColor, blurRadius: 10, offset: const Offset(0, 4), spreadRadius: 1)
-          ] : null,
-        ),
+        decoration: isSelected 
+            ? BoxDecoration( // Active
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(colors: [startColor, endColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                border: Border.all(color: borderColor, width: 1.5),
+                boxShadow: [
+                   BoxShadow(color: shadowColor, blurRadius: 10, offset: const Offset(0, 4), spreadRadius: 1)
+                ]
+              )
+            : inactiveDecoration,
         alignment: Alignment.center,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

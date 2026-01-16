@@ -5,7 +5,7 @@ import '../models/user_notification.dart';
 class LocalNotificationStorage {
   static const String _key = 'local_user_notifications';
 
-  static Future<void> save(String title, String message, {Map<String, dynamic>? data}) async {
+  static Future<void> save(String title, String message, {Map<String, dynamic>? data, DateTime? createdAt}) async {
     final prefs = await SharedPreferences.getInstance();
     // Reload list to get latest state
     await prefs.reload(); 
@@ -16,7 +16,7 @@ class LocalNotificationStorage {
       'title': title,
       'message': message,
       'is_read': false,
-      'created_at': DateTime.now().toIso8601String(),
+      'created_at': (createdAt ?? DateTime.now()).toIso8601String(),
       'data': data,
     };
     
@@ -58,11 +58,11 @@ class LocalNotificationStorage {
     return all.where((n) => !n.isRead).length;
   }
 
-  static Future<void> saveUnique(String title, String message, {Map<String, dynamic>? data}) async {
+  static Future<void> saveUnique(String title, String message, {Map<String, dynamic>? data, DateTime? createdAt}) async {
     final all = await getAll();
     final exists = all.any((n) => n.title == title && n.message == message && !n.isRead);
     if (!exists) {
-      await save(title, message, data: data);
+      await save(title, message, data: data, createdAt: createdAt);
     }
   }
 

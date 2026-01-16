@@ -51,24 +51,33 @@ class _ShimmeringGoldWrapperState extends State<ShimmeringGoldWrapper> with Sing
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        return RepaintBoundary(
-          child: ShaderMask(
-            blendMode: BlendMode.srcIn,
-            shaderCallback: (bounds) {
-              return LinearGradient(
-                colors: const [
-                  Color(0xFFFFC107), // Amber 500 (Pure Gold Base)
-                  Color(0xFFFFD700), // Gold
-                  Color(0xFFFFFFFF), // White Highlight
-                  Color(0xFFFFD700), // Gold
-                  Color(0xFFFFC107), // Amber 500
-                ],
-                stops: const [0.0, 0.4, 0.5, 0.6, 1.0],
-                begin: Alignment(-3.0 + (4.0 * _controller.value), -0.5),
-                end: Alignment(-1.0 + (4.0 * _controller.value), 0.5),
-                tileMode: TileMode.clamp,
-              ).createShader(bounds);
-            },
+        return ShaderMask(
+          blendMode: BlendMode.srcIn,
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              colors: Theme.of(context).brightness == Brightness.dark
+                ? const [
+                    Color(0xFFFFC107), // Amber 500 (Pure Gold Base)
+                    Color(0xFFFFD700), // Gold
+                    Color(0xFFFFFAD8), // Very Light Gold (instead of pure white)
+                    Color(0xFFFFD700), // Gold
+                    Color(0xFFFFC107), // Amber 500
+                  ]
+                : const [
+                    Color(0xFFA07000), // Darker Gold (High Contrast)
+                    Color(0xFFD4AF37), // Metallic Gold
+                    Color(0xFFFFFAD8), // Very Light Gold
+                    Color(0xFFD4AF37), // Metallic Gold
+                    Color(0xFFA07000), // Darker Gold
+                  ],
+              stops: const [0.0, 0.4, 0.5, 0.6, 1.0],
+              begin: Alignment(-3.0 + (4.0 * _controller.value), 0.0),
+              end: Alignment(-1.0 + (4.0 * _controller.value), 0.0),
+              tileMode: TileMode.clamp,
+            ).createShader(bounds);
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0), // Force room for descenders
             child: widget.child,
           ),
         );

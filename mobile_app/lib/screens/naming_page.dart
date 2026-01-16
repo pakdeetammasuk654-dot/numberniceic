@@ -12,7 +12,9 @@ import '../widgets/adaptive_footer_scroll_view.dart';
 import '../widgets/solar_system_analysis_card.dart';
 import '../widgets/auto_scrolling_avatar_list.dart';
 import '../widgets/shimmering_gold_wrapper.dart';
-import '../widgets/shared_footer.dart'; // Added import
+import '../widgets/shared_footer.dart'; 
+import '../widgets/pattern_background.dart';
+import '../widgets/daily_miracle_card.dart';
 
 import 'login_page.dart';
 import 'numerology_detail_page.dart';
@@ -240,7 +242,7 @@ class _NamingPageState extends State<NamingPage> with TickerProviderStateMixin {
             style: GoogleFonts.kanit(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: Colors.white70,
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : const Color(0xFF64748B),
             ),
             textAlign: TextAlign.center,
           ),
@@ -250,9 +252,9 @@ class _NamingPageState extends State<NamingPage> with TickerProviderStateMixin {
             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
           ),
           const SizedBox(height: 60),
-          Container(width: 120, height: 40, decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(8))),
+          Container(width: 120, height: 40, decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.grey.withOpacity(0.1), borderRadius: BorderRadius.circular(8))),
           const SizedBox(height: 20),
-          Container(height: 400, decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(24))),
+          Container(height: 400, decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.grey.withOpacity(0.05), borderRadius: BorderRadius.circular(24))),
         ],
       ),
     );
@@ -345,25 +347,18 @@ class _NamingPageState extends State<NamingPage> with TickerProviderStateMixin {
     final solar = result?.solarSystem;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1A2E),
-              Color(0xFF16213E),
-              Color(0xFF1A1A2E),
-            ],
-            stops: [0.0, 0.5, 1.0],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Stack(
+        children: [
+          PatternBackground(
+             isDark: Theme.of(context).brightness == Brightness.dark,
           ),
-        ),
-        child: CustomScrollView(
+          CustomScrollView(
           physics: const BouncingScrollPhysics(),
           controller: _scrollController,
           slivers: [
-            SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+            if (context.findAncestorWidgetOfExactType<NestedScrollView>() != null)
+              SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
             
             // 0. Loading State
             if (_viewModel.isSolarLoading)
@@ -371,25 +366,29 @@ class _NamingPageState extends State<NamingPage> with TickerProviderStateMixin {
 
             // 1. Content State
             // Empty State
-            if (result == null && !_viewModel.isSolarLoading)
+             if ((result == null || _nameController.text.isEmpty) && !_viewModel.isSolarLoading)
                SliverToBoxAdapter(
-                 child: Container(
-                    height: 400,
-                    alignment: Alignment.center,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                         Icon(Icons.check_circle_outline_rounded, size: 64, color: Colors.white24),
-                         const SizedBox(height: 24),
-                         Text('วิเคราะห์ชื่อตามตำรา', style: GoogleFonts.kanit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white70)),
-                         const SizedBox(height: 8),
-                         Text('เลขศาสตร์ พลังเงา', textAlign: TextAlign.center, style: GoogleFonts.kanit(fontSize: 16, color: Colors.white38)),
-                      ],
-                    ),
+                 child: Column(
+                   children: [
+                     const SizedBox(height: 40),
+                     Text(
+                       'วิเคราะห์ชื่อตามตำรา เลขศาสตร์ พลังเงา',
+                       textAlign: TextAlign.center,
+                       style: GoogleFonts.kanit(
+                         color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : const Color(0xFF1E293B), 
+                         fontSize: 18, 
+                         fontWeight: FontWeight.bold
+                       ),
+                     ),
+                     const SizedBox(height: 8),
+                     const DailyMiracleCard(),
+                     const SizedBox(height: 40),
+                     // Icon(Icons.check_circle_outline_rounded, size: 64, color: Theme.of(context).brightness == Brightness.dark ? Colors.white24 : Colors.grey[300]),
+                   ],
                  ),
                ),
 
-               if (result != null && !_viewModel.isSolarLoading && solar != null)
+               if (result != null && !_viewModel.isSolarLoading && solar != null && _nameController.text.isNotEmpty)
                SliverToBoxAdapter(
                  child: Stack(
                    clipBehavior: Clip.none,
@@ -407,26 +406,29 @@ class _NamingPageState extends State<NamingPage> with TickerProviderStateMixin {
                                      final bool isPerfect = (solar.numNegativeScore == 0 && solar.shaNegativeScore == 0 && solar.klakiniChars.isEmpty);
                                      return ShimmeringGoldWrapper(
                                        enabled: isPerfect,
-                                       child: Wrap(
-                                         alignment: WrapAlignment.center,
+                                       child: Padding(
+                                         padding: const EdgeInsets.symmetric(vertical: 8.0), // Padding to prevent shader clipping
+                                         child: Wrap(
+                                          alignment: WrapAlignment.center,
                                          children: solar.sunDisplayNameHtml.map((dc) => Text(
                                              dc.char,
                                              style: GoogleFonts.kanit(
                                                fontSize: 48, 
                                                fontWeight: FontWeight.bold, 
-                                               color: dc.isBad ? const Color(0xFFFF6B6B) : (isPerfect ? const Color(0xFFFFD700) : Colors.white), 
-                                               height: 1.0
+                                               color: dc.isBad ? const Color(0xFFFF6B6B) : (isPerfect ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFFFFD700) : const Color(0xFFA07000)) : (Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF111827))), 
+                                               height: 1.2, // Increased line height to accommodate vowels
                                              ),
                                          )).toList(),
                                        ),
-                                     );
+                                     ),
+                                   );
                                    },
                                  ),
                                  const SizedBox(height: 8),
                                  Row(
                                    mainAxisAlignment: MainAxisAlignment.center,
                                    children: [
-                                     _buildPill(Icons.calendar_today_outlined, _viewModel.days.firstWhere((d) => solar.inputDayRaw.contains(d.value), orElse: () => _viewModel.days[0]).label, const Color(0x1AFFFFFF), const Color(0xFFFFFFFF)),
+                                     _buildPill(Icons.calendar_today_outlined, _viewModel.days.firstWhere((d) => solar.inputDayRaw.contains(d.value), orElse: () => _viewModel.days[0]).label, Theme.of(context).brightness == Brightness.dark ? const Color(0x1AFFFFFF) : const Color(0xFFE2E8F0), Theme.of(context).brightness == Brightness.dark ? const Color(0xFFFFFFFF) : const Color(0xFF1E293B)),
                                      const SizedBox(width: 12),
                                      if (solar.klakiniChars.isNotEmpty)
                                        _buildPill(Icons.warning_amber_rounded, solar.klakiniChars.join(' '), const Color(0x33FF6B6B), const Color(0xFFFF6B6B))
@@ -437,7 +439,7 @@ class _NamingPageState extends State<NamingPage> with TickerProviderStateMixin {
                                        const SizedBox(height: 12),
                                        RichText(
                                          text: TextSpan(
-                                           style: GoogleFonts.kanit(fontSize: 14, color: const Color(0x99FFFFFF), fontWeight: FontWeight.w500),
+                                           style: GoogleFonts.kanit(fontSize: 14, color: Theme.of(context).brightness == Brightness.dark ? const Color(0x99FFFFFF) : const Color(0xFF64748B), fontWeight: FontWeight.w500),
                                            children: [
                                              const TextSpan(text: 'พยัญชนะหรือสระ'),
                                              TextSpan(text: 'สีแดง', style: GoogleFonts.kanit(color: const Color(0xFFFF6B6B), fontWeight: FontWeight.bold)), 
@@ -471,7 +473,7 @@ class _NamingPageState extends State<NamingPage> with TickerProviderStateMixin {
                                crossAxisAlignment: CrossAxisAlignment.start,
                                mainAxisSize: MainAxisSize.min,
                                children: [
-                                 Text('คะแนนรวม', style: GoogleFonts.kanit(fontSize: 14, color: const Color(0x99FFFFFF), fontWeight: FontWeight.bold)),
+                                 Text('คะแนนรวม', style: GoogleFonts.kanit(fontSize: 14, color: Theme.of(context).brightness == Brightness.dark ? const Color(0x99FFFFFF) : const Color(0xFF64748B), fontWeight: FontWeight.bold)),
                                  const SizedBox(height: 0), 
                                  FittedBox(
                                    fit: BoxFit.scaleDown,
@@ -535,6 +537,7 @@ class _NamingPageState extends State<NamingPage> with TickerProviderStateMixin {
               ),
           ],
         ),
+        ],
       ),
     );
   }

@@ -162,6 +162,7 @@ class _AutoScrollingAvatarListState extends State<AutoScrollingAvatarList> with 
             physics: const BouncingScrollPhysics(),
             itemCount: widget.samples.length * 1000, 
             itemBuilder: (context, index) {
+              final isDark = Theme.of(context).brightness == Brightness.dark;
               final realIndex = index % widget.samples.length;
               final sample = widget.samples[realIndex];
               final currentClean = widget.currentName.replaceAll(RegExp(r'[\s\u200B]+'), '').toLowerCase();
@@ -219,7 +220,9 @@ class _AutoScrollingAvatarListState extends State<AutoScrollingAvatarList> with 
                          decoration: BoxDecoration(
                            shape: BoxShape.circle,
                            border: Border.all(
-                            color: isActive ? const Color(0xFFFFD700) : Colors.white24,
+                            color: isActive 
+                              ? (isDark ? const Color(0xFFFFD700) : const Color(0xFFD97706)) 
+                              : (isDark ? Colors.white24 : const Color(0xFFCBD5E1)), // Slate 300
                             width: 2,
                           ),
                           boxShadow: [
@@ -253,7 +256,9 @@ class _AutoScrollingAvatarListState extends State<AutoScrollingAvatarList> with 
                         style: GoogleFonts.kanit(
                           fontSize: 12, // Slightly larger
                           fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                          color: isActive ? const Color(0xFFFFD700) : Colors.white70,
+                          color: isActive 
+                            ? (isDark ? const Color(0xFFFFD700) : const Color(0xFFD97706)) // Gold / Amber 600
+                            : (isDark ? Colors.white70 : const Color(0xFF475569)), // Slate 600
                         ),
                       ),
                     ],

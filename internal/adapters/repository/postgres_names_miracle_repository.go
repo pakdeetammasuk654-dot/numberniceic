@@ -123,16 +123,22 @@ func (r *PostgresNamesMiracleRepository) GetBestSimilarNames(name, day string, l
 }
 
 // GetAuspiciousNames fetches names for the auspicious search, which has different filtering rules.
-func (r *PostgresNamesMiracleRepository) GetAuspiciousNames(name, preferredConsonant, day string, limit, offset int, allowKlakini bool) ([]domain.SimilarNameResult, error) {
+func (r *PostgresNamesMiracleRepository) GetAuspiciousNames(name, preferredConsonant, day string, limit, offset int, allowKlakini, findGoodOnly bool) ([]domain.SimilarNameResult, error) {
 	klakiniColumn, err := getKlakiniColumn(day)
 	if err != nil {
 		return nil, err
 	}
 
-	// Build the WHERE clause for Klakini dynamically
-	klakiniWhereClause := ""
+	// Build the WHERE clause
+	filters := []string{"1=1"}
 	if !allowKlakini {
-		klakiniWhereClause = fmt.Sprintf("AND %s = false", klakiniColumn)
+		filters = append(filters, fmt.Sprintf("%s = false", klakiniColumn))
+	}
+
+	if findGoodOnly {
+		// Only Good Pairs: t_sat and t_sha must NOT contain R10, R7, R5
+		filters = append(filters, "NOT (t_sat && ARRAY['R10', 'R7', 'R5']::text[])")
+		filters = append(filters, "NOT (t_sha && ARRAY['R10', 'R7', 'R5']::text[])")
 	}
 
 	orderBy := "ORDER BY sim DESC"
@@ -169,8 +175,6 @@ func (r *PostgresNamesMiracleRepository) GetAuspiciousNames(name, preferredConso
 	limitIdx := paramCount + 1
 	offsetIdx := paramCount + 2
 
-	// This query is for finding candidates for auspicious names. It does NOT filter by similarity > 0.1
-	// to ensure we can search the whole table if needed.
 	query := fmt.Sprintf(`
         WITH filtered_names AS (
             SELECT 
@@ -179,7 +183,7 @@ func (r *PostgresNamesMiracleRepository) GetAuspiciousNames(name, preferredConso
                 satnum,
                 shanum
             FROM names_miracle
-            WHERE 1=1 %s
+            WHERE %s
         ),
         ranked_names AS (
             SELECT
@@ -192,11 +196,11 @@ func (r *PostgresNamesMiracleRepository) GetAuspiciousNames(name, preferredConso
             thname,
             satnum,
             shanum,
-            sim -- Return the similarity score
+            sim
         FROM ranked_names
         %s
         LIMIT $%d OFFSET $%d;
-    `, klakiniWhereClause, orderBy, limitIdx, offsetIdx)
+    `, strings.Join(filters, " AND "), orderBy, limitIdx, offsetIdx)
 
 	return r.executeNameQuery(query, args...)
 }

@@ -1,6 +1,9 @@
 package service
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"log"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
 	"sort"
@@ -9,18 +12,40 @@ import (
 )
 
 type PhoneNumberService struct {
-	repo      ports.PhoneNumberRepository
-	pairRepo  ports.NumberPairRepository
-	pairCache map[string]domain.NumberPairMeaning
+	repo        ports.PhoneNumberRepository
+	pairRepo    ports.NumberPairRepository
+	pairCache   map[string]domain.NumberPairMeaning
+	aspectCache map[string]map[string]AspectData // pair -> category -> data
+}
+
+type AspectData struct {
+	Percentage int
+	Insight    string
+}
+
+// JSON Structure for numbers.json
+type NumbersJSON struct {
+	Numbers map[string]NumberDetail `json:"numbers"`
+}
+
+type NumberDetail struct {
+	Aspects map[string]AspectDetail `json:"aspects"`
+}
+
+type AspectDetail struct {
+	Percentage int    `json:"percentage"`
+	Insight    string `json:"insight"`
 }
 
 func NewPhoneNumberService(repo ports.PhoneNumberRepository, pairRepo ports.NumberPairRepository) *PhoneNumberService {
 	s := &PhoneNumberService{
-		repo:      repo,
-		pairRepo:  pairRepo,
-		pairCache: make(map[string]domain.NumberPairMeaning),
+		repo:        repo,
+		pairRepo:    pairRepo,
+		pairCache:   make(map[string]domain.NumberPairMeaning),
+		aspectCache: make(map[string]map[string]AspectData),
 	}
 	s.ReloadCache()
+	s.LoadAspectsFromJSON("numbers.json") // Load from root
 	return s
 }
 
@@ -31,6 +56,36 @@ func (s *PhoneNumberService) ReloadCache() {
 			s.pairCache[p.PairNumber] = p
 		}
 	}
+}
+
+func (s *PhoneNumberService) LoadAspectsFromJSON(filePath string) {
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		// Fallback for different execution contexts or Docker paths
+		data, err = ioutil.ReadFile("assets/numbers.json")
+		if err != nil {
+			log.Printf("Warning: Could not load numbers.json for aspects: %v", err)
+			return
+		}
+	}
+
+	var parsed NumbersJSON
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		log.Printf("Error parsing numbers.json: %v", err)
+		return
+	}
+
+	for pair, detail := range parsed.Numbers {
+		aspects := make(map[string]AspectData)
+		for key, aspect := range detail.Aspects {
+			aspects[key] = AspectData{
+				Percentage: aspect.Percentage,
+				Insight:    aspect.Insight,
+			}
+		}
+		s.aspectCache[pair] = aspects
+	}
+	log.Printf("Loaded aspects using Struct for %d pairs", len(s.aspectCache))
 }
 
 func (s *PhoneNumberService) GetSellNumbersPaged(page, pageSize int) (domain.PagedPhoneNumberAnalysis, error) {
@@ -137,6 +192,80 @@ func (s *PhoneNumberService) GetSellNumbers() ([]domain.PhoneNumberAnalysis, err
 	return results, nil
 }
 
+// Map Thai category names to English keys used in numbers.json
+func mapCategoryToKey(category string) string {
+	switch category {
+	case "การงาน":
+		return "career"
+	case "การเงิน":
+		return "finance"
+	case "ความรัก":
+		return "love"
+	case "สุขภาพ":
+		return "health"
+	default:
+		return strings.ToLower(category)
+	}
+}
+
+func (s *PhoneNumberService) CalculateWeightedCategoryScore(numberStr string, category string) float64 {
+	key := mapCategoryToKey(category)
+
+	// Analyze pairs
+	mainPairs, hiddenPairs, sumMeaning := s.AnalyzeRawNumber(numberStr)
+
+	// Weights Configuration
+	// Phone A: 05, 05, 10, 15, 20
+	mainWeights := []float64{0.05, 0.05, 0.10, 0.15, 0.20}
+	// Phone B: 03, 05, 05, 12
+	hiddenWeights := []float64{0.03, 0.05, 0.05, 0.12}
+	sumWeight := 0.20
+
+	totalScore := 0.0
+
+	getPercent := func(pair string) float64 {
+		// Check if pair is Bad (R-type)
+		if meaning, ok := s.pairCache[pair]; ok {
+			if strings.HasPrefix(meaning.PairType, "R") {
+				return -50.0 // Heavy penalty for bad pairs in a lucky number
+			}
+			// Only count positive score if it's a D-type or Neutral with good aspect
+			if !strings.HasPrefix(meaning.PairType, "D") && meaning.PairPoint < 0 {
+				return 0.0 // Don't allow negative impact pairs to contribute positive score
+			}
+		}
+
+		if aspects, ok := s.aspectCache[pair]; ok {
+			if val, ok := aspects[key]; ok {
+				return float64(val.Percentage)
+			}
+		}
+		return 0.0
+	}
+
+	// Calculate Main Pairs (Phone A)
+	for i, p := range mainPairs {
+		if i < len(mainWeights) {
+			pct := getPercent(p.Pair)
+			totalScore += pct * mainWeights[i]
+		}
+	}
+
+	// Calculate Hidden Pairs (Phone B)
+	for i, p := range hiddenPairs {
+		if i < len(hiddenWeights) {
+			pct := getPercent(p.Pair)
+			totalScore += pct * hiddenWeights[i]
+		}
+	}
+
+	// Calculate Sum
+	sumPct := getPercent(sumMeaning.Pair)
+	totalScore += sumPct * sumWeight
+
+	return totalScore
+}
+
 func (s *PhoneNumberService) GetLuckyNumberByCategory(category string, index int) (string, string, []string, error) {
 	numbers, err := s.repo.GetAll()
 	if err != nil {
@@ -144,23 +273,87 @@ func (s *PhoneNumberService) GetLuckyNumberByCategory(category string, index int
 	}
 
 	category = strings.TrimSpace(category)
-	var matchingNumbers []struct {
+	categoryKey := mapCategoryToKey(category)
+
+	type scoredNumber struct {
 		num      domain.PhoneNumberSell
 		keywords []string
+		wtScore  float64
 	}
 
-	// Filter numbers by category meaning of their sum
+	var matchingNumbers []scoredNumber
+
+	// Calculate weighted score for ALL numbers for this specific category
 	for _, num := range numbers {
-		sumKey := strings.TrimSpace(num.PNumberSum)
-		meaning, ok := s.pairCache[sumKey]
-		if ok {
-			meaningCat := strings.TrimSpace(meaning.Category)
-			if meaningCat == category {
-				matchingNumbers = append(matchingNumbers, struct {
-					num      domain.PhoneNumberSell
-					keywords []string
-				}{num, meaning.Keywords})
+		// 1. HARD FILTER: A "Lucky Number" must NOT contain any R-type (Bad) pairs
+		// This prevents %ร้าย from appearing in the chart.
+		cleaned := strings.ReplaceAll(num.PNumberNum, "-", "")
+		hasBadPair := false
+		for i := 0; i < len(cleaned)-1; i++ {
+			p := cleaned[i : i+2]
+			if meaning, ok := s.pairCache[p]; ok {
+				if strings.HasPrefix(meaning.PairType, "R") {
+					hasBadPair = true
+					break
+				}
 			}
+		}
+		// Also check sum
+		if meaning, ok := s.pairCache[num.PNumberSum]; ok {
+			if strings.HasPrefix(meaning.PairType, "R") {
+				hasBadPair = true
+			}
+		}
+
+		if hasBadPair {
+			continue // Skip numbers with any bad pairs for enhancement
+		}
+
+		wtScore := s.CalculateWeightedCategoryScore(num.PNumberNum, category)
+
+		sumKey := strings.TrimSpace(num.PNumberSum)
+
+		// Priority: Aspect Insight > Sum Meaning Keywords
+		var finalKeywords []string
+		var insightText string
+
+		// Try to get Insight from Aspect Cache (numbers.json)
+		if aspects, ok := s.aspectCache[sumKey]; ok {
+			if data, ok := aspects[categoryKey]; ok {
+				if data.Insight != "" {
+					insightText = data.Insight
+					// Use the insight as the keyword/description
+					finalKeywords = []string{data.Insight}
+				}
+			}
+		}
+
+		// Filter out numbers with Negative Insights for the requested category
+		if insightText != "" {
+			negativeKeywords := []string{"ระวัง", "อุบัติเหตุ", "ร้าย", "ไม่ดี", "เสีย", "แย่", "ปัญหาสุขภาพ", "โรค"}
+			isNegative := false
+			for _, neg := range negativeKeywords {
+				if strings.Contains(insightText, neg) {
+					isNegative = true
+					break
+				}
+			}
+			if isNegative {
+				continue // Skip this number
+			}
+		}
+
+		// Fallback to generic keywords if no insight found
+		if len(finalKeywords) == 0 {
+			if meaning, ok := s.pairCache[sumKey]; ok {
+				if len(meaning.Keywords) > 0 {
+					finalKeywords = meaning.Keywords
+				}
+			}
+		}
+
+		if wtScore > 5.0 { // Minimum score threshold for "Good" numbers
+			matchingNumbers = append(matchingNumbers, scoredNumber{num, finalKeywords, wtScore})
 		}
 	}
 
@@ -168,8 +361,11 @@ func (s *PhoneNumberService) GetLuckyNumberByCategory(category string, index int
 		return "", "", nil, nil
 	}
 
-	// Sort matching numbers by price descending
+	// Sort by Weighted Score DESC, then Price DESC
 	sort.Slice(matchingNumbers, func(i, j int) bool {
+		if matchingNumbers[i].wtScore != matchingNumbers[j].wtScore {
+			return matchingNumbers[i].wtScore > matchingNumbers[j].wtScore
+		}
 		return matchingNumbers[i].num.PNumberPrice > matchingNumbers[j].num.PNumberPrice
 	})
 

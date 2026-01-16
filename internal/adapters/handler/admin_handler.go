@@ -1122,6 +1122,7 @@ func (h *AdminHandler) ShowCustomerColorReportPage(c *fiber.Ctx) error {
 	}
 
 	recentAssignments, _ := h.service.GetMembersWithAssignedColors()
+	allMembers, _ := h.service.GetAllUsers()
 
 	getLocStr := func(key string) string {
 		v := c.Locals(key)
@@ -1144,7 +1145,7 @@ func (h *AdminHandler) ShowCustomerColorReportPage(c *fiber.Ctx) error {
 		getLocStr("toast_success"),
 		getLocStr("toast_error"),
 		func() string { s, _ := c.Locals("AvatarURL").(string); return s }(),
-		admin.CustomerColorReport(member, username, recentAssignments),
+		admin.CustomerColorReport(member, username, recentAssignments, allMembers),
 	))
 }
 
@@ -1672,4 +1673,67 @@ func (h *AdminHandler) HandleSendNotification(c *fiber.Ctx) error {
 		}
 		return c.Redirect("/admin/send-notification?success=ส่งการแจ้งเตือนเรียบร้อยแล้ว")
 	}
+}
+
+func (h *AdminHandler) ShowSendWalletNotificationPage(c *fiber.Ctx) error {
+	members, err := h.service.GetMembersWithAssignedColors()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error loading members")
+	}
+
+	success := c.Query("success")
+	errorMsg := c.Query("error")
+	userID, _ := strconv.Atoi(c.Query("user_id"))
+
+	formData := admin.NotificationFormData{
+		UserID:    userID,
+		Title:     "สีกระเป๋ามงคลของคุณมาแล้ว! ✨",
+		Message:   "คุณนินได้ทำการวิเคราะห์สีกระเป๋ามงคลให้คุณเรียบร้อยแล้ว สามารถตรวจสอบรายละเอียดได้ที่หน้าโปรไฟล์ของคุณ",
+		Broadcast: userID == 0, // Default to broadcast only if no user selected
+	}
+
+	avatarURL, _ := c.Locals("AvatarURL").(string)
+	return templ_render.Render(c, layout.Main(
+		layout.SEOProps{
+			Title:  "ส่งแจ้งเตือนสีกระเป๋า",
+			OGType: "website",
+		},
+		c.Locals("IsLoggedIn").(bool),
+		c.Locals("IsAdmin").(bool),
+		c.Locals("IsVIP").(bool),
+		true,
+		"admin",
+		success,
+		errorMsg,
+		avatarURL,
+		admin.SendWalletNotificationForm(members, success, errorMsg, formData),
+	))
+}
+
+func (h *AdminHandler) SendWalletNotificationFromForm(c *fiber.Ctx) error {
+	broadcast := c.FormValue("broadcast") == "true"
+	userID, _ := strconv.Atoi(c.FormValue("user_id"))
+	title := c.FormValue("title")
+	message := c.FormValue("message")
+
+	sess, _ := h.store.Get(c)
+
+	if broadcast {
+		success, fail := h.memberService.SendAllWalletColorNotifications(title, message)
+		sess.Set("toast_success", fmt.Sprintf("ส่งแจ้งเตือนสำเร็จ %d ราย, ผิดพลาด %d ราย", success, fail))
+	} else {
+		if userID == 0 {
+			msg := "กรุณาเลือกผู้ใช้งานที่ต้องการส่ง"
+			return c.Redirect("/admin/send-wallet-notification?error=" + msg)
+		}
+		err := h.memberService.SendWalletColorNotificationCustom(userID, title, message)
+		if err != nil {
+			sess.Set("toast_error", "ส่งไม่สำเร็จ: "+err.Error())
+		} else {
+			sess.Set("toast_success", "ส่งแจ้งเตือนสีกระเป๋าเรียบร้อยแล้ว")
+		}
+	}
+
+	sess.Save()
+	return c.Redirect("/admin/send-wallet-notification")
 }

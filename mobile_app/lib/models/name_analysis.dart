@@ -11,6 +11,7 @@ class NameAnalysis {
   final List<Map<String, dynamic>> tSha;
   final String meaning;
   final bool isTopTier;
+  final bool hasBadPair;
 
   NameAnalysis({
     required this.thName,
@@ -23,6 +24,7 @@ class NameAnalysis {
     required this.tSha,
     required this.meaning,
     required this.isTopTier,
+    required this.hasBadPair,
   });
 
   factory NameAnalysis.fromJson(Map<String, dynamic> json) {
@@ -39,6 +41,7 @@ class NameAnalysis {
       tSha: List<Map<String, dynamic>>.from(json['t_sha'] ?? []),
       meaning: json['meaning'] ?? '',
       isTopTier: json['is_top_tier'] == true,
+      hasBadPair: json['has_bad_pair'] == true,
     );
   }
 
@@ -54,6 +57,7 @@ class NameAnalysis {
       't_sha': tSha,
       'meaning': meaning,
       'is_top_tier': isTopTier,
+      'has_bad_pair': hasBadPair,
     };
   }
   int get totalNumerology => satNum.fold(0, (sum, item) {

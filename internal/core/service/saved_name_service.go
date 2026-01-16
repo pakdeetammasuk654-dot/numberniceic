@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"numberniceic/internal/core/domain"
 	"numberniceic/internal/core/ports"
 )
@@ -14,6 +15,15 @@ func NewSavedNameService(repo ports.SavedNameRepository) *SavedNameService {
 }
 
 func (s *SavedNameService) SaveName(userID int, name, birthDay string, totalScore, satSum, shaSum int) error {
+	// Check limit
+	existingNames, err := s.repo.GetByUserID(userID)
+	if err != nil {
+		return err
+	}
+	if len(existingNames) >= 12 {
+		return errors.New("คุณสามารถบันทึกได้สูงสุด 12 รายชื่อ")
+	}
+
 	savedName := &domain.SavedName{
 		UserID:     userID,
 		Name:       name,

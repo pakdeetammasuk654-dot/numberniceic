@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'article_detail_page.dart';
 import 'articles_page.dart';
 import 'dashboard_page.dart';
+import '../services/notification_service.dart';
 import 'analyzer_page.dart';
 import 'shipping_address_page.dart';
 import 'notification_list_page.dart';
@@ -43,7 +44,7 @@ class _LandingPageState extends State<LandingPage> {
   void initState() {
     super.initState();
     _articlesFuture = ApiService.getArticles();
-    _isBuddhistDayFuture = ApiService.isBuddhistDayToday();
+    _isBuddhistDayFuture = NotificationService().checkIsBuddhistDayToday();
     _userInfoFuture = AuthService.getUserInfo();
     // Check notification on init (deferred)
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkNotification());

@@ -25,6 +25,7 @@ import '../widgets/category_nested_donut.dart';
 import '../viewmodels/analyzer_view_model.dart';
 import '../widgets/auto_scrolling_avatar_list.dart';
 import '../models/sample_name.dart';
+import '../widgets/pattern_background.dart';
 
 class ShopPage extends StatefulWidget {
   final AnalyzerViewModel? viewModel;
@@ -361,22 +362,11 @@ class _ShopPageState extends State<ShopPage> {
     final solar = widget.viewModel?.analysisResult?.solarSystem;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF1A1A2E),
-                  Color(0xFF16213E),
-                  Color(0xFF1A1A2E),
-                ],
-                stops: [0.0, 0.5, 1.0],
-              ),
-            ),
+          PatternBackground(
+            isDark: Theme.of(context).brightness == Brightness.dark,
           ),
           NotificationListener<ScrollNotification>(
             onNotification: (notification) {
@@ -408,11 +398,11 @@ class _ShopPageState extends State<ShopPage> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                               const Icon(Icons.trending_up_rounded, size: 64, color: Colors.white24),
+                               Icon(Icons.trending_up_rounded, size: 64, color: Theme.of(context).brightness == Brightness.dark ? Colors.white24 : Colors.grey[300]),
                                const SizedBox(height: 24),
-                               Text('วิเคราะห์ชื่อตามตำรา', style: GoogleFonts.kanit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white70)),
+                               Text('วิเคราะห์ชื่อตามตำรา', style: GoogleFonts.kanit(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : const Color(0xFF1E293B))),
                                const SizedBox(height: 8),
-                               Text('เลขศาสตร์ พลังเงา', textAlign: TextAlign.center, style: GoogleFonts.kanit(fontSize: 16, color: Colors.white38)),
+                               Text('เลขศาสตร์ พลังเงา', textAlign: TextAlign.center, style: GoogleFonts.kanit(fontSize: 16, color: Theme.of(context).brightness == Brightness.dark ? Colors.white38 : const Color(0xFF64748B))),
                             ],
                           ),
                        ),
@@ -428,14 +418,28 @@ class _ShopPageState extends State<ShopPage> {
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.only(top: 20, bottom: 24),
-                        child: CategoryNestedDonut(
-                          categoryBreakdown: solar.categoryBreakdown, 
-                          totalPairs: solar.totalPairs, 
-                          grandTotalScore: solar.grandTotalScore.toInt(), 
-                          totalPositiveScore: solar.totalPositiveScore, 
-                          totalNegativeScore: solar.totalNegativeScore,
-                          analyzedName: solar.cleanedName,
-                          onAddPhoneNumber: (_) => _scrollToTop(),
+                        child: Builder(
+                          builder: (context) {
+                            final hasKlakini = solar.sunDisplayNameHtml.any((c) => c.isBad);
+                            // Definition of "Perfect" (Gold Shimmer): Positive Score, No Bad Pairs (Negative Score = 0), and No Klakini
+                            final isPerfect = solar.grandTotalScore >= 0 && 
+                                              solar.numNegativeScore == 0 && 
+                                              solar.shaNegativeScore == 0 && 
+                                              !hasKlakini;
+                            
+                            return CategoryNestedDonut(
+                              categoryBreakdown: solar.categoryBreakdown, 
+                              totalPairs: solar.totalPairs, 
+                              grandTotalScore: solar.grandTotalScore.toInt(), 
+                              totalPositiveScore: solar.totalPositiveScore, 
+                              totalNegativeScore: solar.totalNegativeScore,
+                              analyzedName: solar.cleanedName,
+                              nameHtml: solar.sunDisplayNameHtml, // Pass NameCharacter list
+                              allUniquePairs: solar.allUniquePairs, // NEW: Pass all unique pairs for percentage calculation
+                              isPerfect: isPerfect, // Pass Perfect Logic
+                              onAddPhoneNumber: (_) => _scrollToTop(),
+                            );
+                          }
                         ),
                       ),
                     ),

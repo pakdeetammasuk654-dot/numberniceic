@@ -23,7 +23,7 @@ class SharedSampleNames extends StatelessWidget {
         if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox.shrink();
         
         return Container(
-          color: const Color(0xFF1A1A2E),
+          color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1A1A2E) : Colors.white,
           padding: EdgeInsets.zero,
           child: SizedBox(
             height: 80,

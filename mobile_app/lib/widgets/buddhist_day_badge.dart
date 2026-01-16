@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../services/api_service.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart'; // For rootBundle
 
 class BuddhistDayBadge extends StatelessWidget {
   const BuddhistDayBadge({super.key});
 
+  Future<List<dynamic>> _loadBuddhistDays() async {
+    try {
+      final String jsonString = await rootBundle.loadString('assets/buddhist_days.json');
+      return json.decode(jsonString) as List<dynamic>;
+    } catch (e) {
+      print("Error loading buddhist days badge: $e");
+      return [];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<dynamic>>(
-      future: ApiService.getBuddhistDays(),
+      future: _loadBuddhistDays(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const SizedBox.shrink();
 
@@ -21,29 +32,30 @@ class BuddhistDayBadge extends StatelessWidget {
         bool isTomorrow = false;
 
         for (var day in snapshot.data!) {
-          final dayDate = day['date'].toString().split('T')[0];
-          if (dayDate == todayStr) {
+          String dateStr = day['date'].toString();
+          if (dateStr.length > 10) dateStr = dateStr.substring(0, 10);
+          
+          if (dateStr == todayStr) {
             isToday = true;
             break;
           }
-          if (dayDate == tomorrowStr) {
+          if (dateStr == tomorrowStr) {
             isTomorrow = true;
           }
         }
 
         if (isToday) {
-          return _buildBadge(
-            text: 'วันนี้วันพระ',
-            bgColor: const Color(0xFFFFD700).withOpacity(0.2),
-            borderColor: const Color(0xFFFFD700),
-            textColor: const Color(0xFFFFD700),
+          return _buildIconBadge(
+            icon: Icons.self_improvement, // Meditation/Buddha icon
+            color: const Color(0xFFFFD700),
+            message: 'วันนี้วันพระ',
           );
         } else if (isTomorrow) {
-          return _buildBadge(
-            text: 'พรุ่งนี้วันพระ',
-            bgColor: Colors.white.withOpacity(0.15),
-            borderColor: Colors.white.withOpacity(0.3),
-            textColor: const Color(0xFFE2E8F0),
+          // Keep the minimal style for tomorrow warning
+          return _buildIconBadge(
+            icon: Icons.spa_outlined,
+            color: const Color(0xFFE2E8F0), 
+            message: 'พรุ่งนี้วันพระ',
           );
         }
 
@@ -52,29 +64,27 @@ class BuddhistDayBadge extends StatelessWidget {
     );
   }
 
-  Widget _buildBadge({
-    required String text,
-    required Color bgColor,
-    required Color borderColor,
-    required Color textColor,
+  Widget _buildIconBadge({
+    required IconData icon,
+    required Color color,
+    required String message,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(left: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: borderColor,
-          width: 1,
+    return Tooltip(
+      message: message,
+      triggerMode: TooltipTriggerMode.tap,
+      child: Container(
+        margin: const EdgeInsets.only(left: 8),
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.15),
+          shape: BoxShape.circle,
+          border: Border.all(color: color, width: 1.5),
         ),
-      ),
-      child: Text(
-        text,
-        style: GoogleFonts.kanit(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          color: textColor,
+        child: Image.asset(
+          'assets/images/buddha.png',
+          width: 20,
+          height: 20,
+          // color: color, // Removed color tint to show original image
         ),
       ),
     );

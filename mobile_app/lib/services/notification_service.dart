@@ -10,6 +10,7 @@ import 'dart:async'; // For StreamController
 import 'dart:convert'; // For JSON decoding
 import 'api_service.dart';
 import 'local_notification_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -244,27 +245,45 @@ class NotificationService {
         android: AndroidNotificationDetails(
           'numbernice_channel_v1',
           'NumberNiceIC Notifications',
-          channelDescription: 'แจ้งเตือนข่าวสารและสีกระเป๋า',
+          channelDescription: 'แจ้งเตือนมงคลและสีกระเป๋า',
           importance: Importance.max,
           priority: Priority.high,
           icon: 'notification_icon',
-          color: const Color(0xFFFFEB3B),
+          largeIcon: const DrawableResourceAndroidBitmap('notification_icon'),
+          color: const Color(0xFF4CAF50), // Clover Green
+          ledColor: const Color(0xFF4CAF50),
+          ledOnMs: 1000,
+          ledOffMs: 500,
+          enableLights: true,
         ),
-        iOS: const DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true, 
+          presentBadge: true, 
+          presentSound: true,
+        ),
       ),
       payload: data != null ? jsonEncode(data) : null,
     );
   }
 
-  Future<void> scheduleBuddhistDayNotifications(List<dynamic> days) async {
-    await cancelAll();
+  Future<void> scheduleBuddhistDayNotifications() async {
+    // Cancel previous Buddhist range (1000-1200)
+    for (int i = 1000; i <= 1200; i++) {
+      try { await flutterLocalNotificationsPlugin.cancel(i); } catch (_) {}
+    }
+    
+    final prefs = await SharedPreferences.getInstance();
 
     List<dynamic> buddhistDays = [];
+    
+    // Always use Local Asset
     try {
       final String jsonString = await rootBundle.loadString('assets/buddhist_days.json');
       buddhistDays = json.decode(jsonString) as List<dynamic>;
+      print("🔔 Loaded ${buddhistDays.length} days from local asset.");
     } catch (e) {
-      buddhistDays = days;
+      print("❌ Error loading local buddhist days: $e");
+      return;
     }
 
     int id = 1000;
@@ -277,15 +296,23 @@ class NotificationService {
 
     for (var day in upcomingDays) {
       try {
-        DateTime date = DateTime.parse(day['date']);
-        final scheduledDate = DateTime(date.year, date.month, date.day, 0, 0, 0);
+        // Fix: Use substring to get YYYY-MM-DD
+        String dateStr = day['date'].toString();
+        if (dateStr.length > 10) dateStr = dateStr.substring(0, 10);
+        
+        final scheduledDate = DateTime.parse(dateStr); // Local 00:00
         
         String title = day['title'] ?? "วันนี้วันพระ";
         String message = day['message'] ?? "อย่าลืมทำบุญและรักษาศีลเพื่อความเป็นสิริมงคล";
 
         if (scheduledDate.isBefore(now)) {
            if (scheduledDate.year == now.year && scheduledDate.month == now.month && scheduledDate.day == now.day) {
-               await _showImmediate(id++, title, message, data: {'type': 'buddhist_day'});
+               String key = 'buddhist_immediate_${scheduledDate.year}_${scheduledDate.month}_${scheduledDate.day}';
+               bool alreadyShown = prefs.getBool(key) ?? false;
+               if (!alreadyShown) {
+                   await _showImmediate(id++, title, message, data: {'type': 'buddhist_day'});
+                   await prefs.setBool(key, true);
+               }
            }
            continue; 
         }
@@ -303,6 +330,49 @@ class NotificationService {
     }
   }
 
+  Future<void> scheduleMiracleNotifications(List<Map<String, dynamic>> notifs) async {
+      // Cancel previous Miracle range (2000-2100)
+      for (int i=2000; i<=2100; i++) {
+        try { await flutterLocalNotificationsPlugin.cancel(i); } catch (_) {}
+      }
+
+      print("🔔 [NotificationService] Processing ${notifs.length} Miracle notifications...");
+      final now = DateTime.now();
+      for (var n in notifs) {
+         try {
+             final scheduledDate = n['date'] as DateTime;
+             
+             // 1. Record in history if it's today (regardless of scheduled time)
+             if (scheduledDate.year == now.year && scheduledDate.month == now.month && scheduledDate.day == now.day) {
+                print("✨ Found TODAY's miracle. Saving to local history...");
+                await LocalNotificationStorage.saveUnique(
+                  n['title'] as String, 
+                  n['body'] as String, 
+                  data: {'type': n['type']},
+                  createdAt: scheduledDate,
+                );
+                // Trigger UI update
+                ApiService.dashboardRefreshSignal.value++;
+             }
+
+             // 2. Only schedule if it's in the future
+             if (scheduledDate.isAfter(now)) {
+                await _scheduleOne(
+                    n['id'] as int, 
+                    n['title'] as String, 
+                    n['body'] as String, 
+                    scheduledDate, 
+                    data: {'type': n['type']}
+                );
+             } else {
+                print("⏭️ Skipping schedule for past date: $scheduledDate");
+             }
+         } catch(e) {
+             print("❌ Failed to process miracle item: $e");
+         }
+      }
+  }
+
   Future<void> _scheduleOne(int id, String title, String body, DateTime scheduledDate, {Map<String, String>? data}) async {
       await flutterLocalNotificationsPlugin.zonedSchedule(
         id, title, body, tz.TZDateTime.from(scheduledDate, tz.local),
@@ -311,9 +381,10 @@ class NotificationService {
             'numbernice_channel_v1', 'NumberNiceIC Notifications',
             importance: Importance.max, priority: Priority.high,
             icon: 'notification_icon',
-            color: const Color(0xFFFFEB3B),
+            largeIcon: const DrawableResourceAndroidBitmap('notification_icon'),
+            color: const Color(0xFF4CAF50),
           ),
-          iOS: const DarwinNotificationDetails(),
+          iOS: const DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
@@ -329,8 +400,10 @@ class NotificationService {
           'numbernice_channel_v1', 'NumberNiceIC Notifications',
           importance: Importance.max, priority: Priority.high,
           icon: 'notification_icon',
-          color: const Color(0xFFFFEB3B),
+          largeIcon: const DrawableResourceAndroidBitmap('notification_icon'),
+          color: const Color(0xFF4CAF50),
         ),
+        iOS: const DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
       ),
       payload: data != null ? jsonEncode(data) : null,
     );
@@ -340,5 +413,23 @@ class NotificationService {
 
   Future<void> cancelAll() async {
     await flutterLocalNotificationsPlugin.cancelAll();
+  }
+  Future<bool> checkIsBuddhistDayToday() async {
+    try {
+      final String jsonString = await rootBundle.loadString('assets/buddhist_days.json');
+      List<dynamic> buddhistDays = json.decode(jsonString) as List<dynamic>;
+      
+      final now = DateTime.now();
+      final todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+      
+      for (var day in buddhistDays) {
+         String dateStr = day['date'].toString();
+         if (dateStr.length > 10) dateStr = dateStr.substring(0, 10);
+         if (dateStr == todayStr) return true;
+      }
+    } catch (e) {
+      print("Check Buddhist Day Error: $e");
+    }
+    return false;
   }
 }

@@ -149,14 +149,14 @@ class SolarSystemAnalysisCard extends StatelessWidget {
                     children: [
                       const TextSpan(
                         text: '" ',
-                        style: TextStyle(color: Color(0xFF1E293B), fontSize: 22, fontWeight: FontWeight.w600),
+                        style: TextStyle(color: Color(0xFF1E293B), fontSize: 22, fontWeight: FontWeight.normal),
                       ),
                       if (sunDisplayName != null)
                         ...(sunDisplayName).map((dc) => TextSpan(
                            text: dc['char'],
                            style: GoogleFonts.kanit(
                              fontSize: 22,
-                             fontWeight: FontWeight.w600,
+                             fontWeight: FontWeight.normal,
                              color: (showKlakini && dc['is_bad'] == true) ? const Color(0xFFEF4444) : const Color(0xFF1E293B), // Use Black if hidden (will be gold by wrapper)
                              height: 1.3,
                            ),
@@ -164,13 +164,13 @@ class SolarSystemAnalysisCard extends StatelessWidget {
                       if (sunDisplayName == null)
                          TextSpan(
                            text: cleanedName,
-                           style: GoogleFonts.kanit(fontSize: 22, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
+                           style: GoogleFonts.kanit(fontSize: 22, fontWeight: FontWeight.normal, color: const Color(0xFF1E293B)),
                          ),
                       TextSpan(
                         text: displayResultTitle, // Updated Logic
                         style: GoogleFonts.kanit(
                           fontSize: 22,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.normal,
                           color: const Color(0xFF1E293B), // Always black for result title
                           height: 1.3,
                         ),

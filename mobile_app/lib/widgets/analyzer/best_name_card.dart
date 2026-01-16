@@ -8,51 +8,58 @@ class BestNameCard extends StatelessWidget {
   final NameAnalysis nameAnalysis;
   final int rank;
   final bool isGold;
-  final bool showKlakini;
   final VoidCallback onTap;
   final bool isCompact;
+  final bool forceTransparentBg;
 
   const BestNameCard({
     Key? key,
     required this.nameAnalysis,
     required this.rank,
     this.isGold = true,
-    required this.showKlakini,
     required this.onTap,
     this.isCompact = false,
+    this.forceTransparentBg = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     if (isCompact) {
-      return _buildCompactCard();
+      return _buildCompactCard(context);
     }
-    return _buildFullCard();
+    return _buildFullCard(context);
   }
 
-  Widget _buildCompactCard() {
+  Widget _buildCompactCard(BuildContext context) {
     final displayName = nameAnalysis.displayNameHtml;
     final similarity = nameAnalysis.similarity * 100;
     final totalScore = nameAnalysis.totalScore;
 
     // Background Logic (similar to Dashboard)
-    final bool isTop = nameAnalysis.isTopTier;
-    final Color bgColor = isTop 
+    // Use isGold (passed param) strictly
+    final bool isTop = isGold;
+    
+    // Debug: Print isGold value for all ranks
+    print('🎨 [BestNameCard #$rank] ${nameAnalysis.thName}: isGold=$isGold, isTop=$isTop');
+    
+    final Color bgColor = (isTop && !forceTransparentBg) 
         ? const Color(0xFF2C250E) // Dark Gold Tint
         : Colors.transparent;
         
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
           color: bgColor,
-          border: Border(bottom: BorderSide(color: Colors.white12)),
+          border: Border(bottom: BorderSide(color: isDark ? Colors.white10 : Colors.grey[200]!)),
         ),
         child: Row(
           children: [
             // Rank Badge
-            if (rank <= 3) 
+            if (rank <= 3 && isGold)  
               Container(
                 margin: const EdgeInsets.only(right: 12),
                 child: Column(
@@ -72,18 +79,34 @@ class BestNameCard extends StatelessWidget {
                  alignment: Alignment.center,
                  child: Text(
                     '#$rank',
-                    style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white38),
+                    style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.white38 : Colors.grey[600]),
                  )
                ),
 
-            // Name
             Expanded(
               flex: 4,
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Flexible(child: _buildNameText(displayName)),
-                  if (nameAnalysis.isTopTier) const SizedBox(width: 4),
-                  if (nameAnalysis.isTopTier) const Text(' ⭐', style: TextStyle(fontSize: 10)),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(child: _buildNameText(context, displayName)),
+                      // Star only for TOP 10 Premium names
+                      if (nameAnalysis.isTopTier && rank <= 10) const SizedBox(width: 4),
+                      if (nameAnalysis.isTopTier && rank <= 10) const Text(' ⭐', style: TextStyle(fontSize: 10)),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'คล้าย ${similarity.toStringAsFixed(0)}%',
+                    style: GoogleFonts.kanit(
+                      fontSize: 9, 
+                      color: isDark ? Colors.white38 : Colors.grey[600],
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -123,7 +146,7 @@ class BestNameCard extends StatelessWidget {
                     style: GoogleFonts.kanit(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: totalScore >= 0 ? Colors.greenAccent : Colors.redAccent,
+                      color: totalScore >= 0 ? const Color(0xFF10B981) : Colors.redAccent,
                     ),
               ),
             ),
@@ -135,14 +158,14 @@ class BestNameCard extends StatelessWidget {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.white12),
+                border: Border.all(color: isDark ? Colors.white12 : Colors.grey[300]!),
               ),
               child: Icon(
                 Icons.keyboard_double_arrow_right_rounded,
                 size: 16,
-                color: Colors.white70,
+                color: isDark ? Colors.white38 : Colors.grey[500],
               ),
             ),
           ],
@@ -151,10 +174,11 @@ class BestNameCard extends StatelessWidget {
     );
   }
 
-  Widget _buildFullCard() {
+  Widget _buildFullCard(BuildContext context) {
     final displayName = nameAnalysis.displayNameHtml;
     final similarity = nameAnalysis.similarity * 100;
     final totalScore = nameAnalysis.totalScore;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Theme Colors
     final Color badgeBg = isGold ? const Color(0xFFFFD700) : const Color(0xFF66BB6A);
@@ -214,9 +238,9 @@ class BestNameCard extends StatelessWidget {
                    Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (nameAnalysis.isTopTier) _buildPremiumStar(18),
-                        if (nameAnalysis.isTopTier) const SizedBox(width: 6),
-                        Expanded(child: _buildNameText(displayName)),
+                        if (isGold) _buildPremiumStar(18),
+                        if (isGold) const SizedBox(width: 6),
+                        Expanded(child: _buildNameText(context, displayName)),
                       ],
                    ),
                    const SizedBox(height: 6),
@@ -260,10 +284,9 @@ class BestNameCard extends StatelessWidget {
     );
   }
 
-  Widget _buildNameText(List<dynamic> displayName) {
+  Widget _buildNameText(BuildContext context, List<dynamic> displayName) {
      // Check if valid to shimmer/gold
-     bool anyBad = displayName.any((dc) => dc.isBad);
-     bool enableShimmer = !anyBad || !showKlakini;
+     bool enableShimmer = isGold;
 
      return FittedBox(
        fit: BoxFit.scaleDown,
@@ -277,11 +300,10 @@ class BestNameCard extends StatelessWidget {
                   text: dc.char,
                   style: GoogleFonts.kanit(
                     fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    // If shimmer is enabled, this color doesn't matter much as shader overrides,
-                    // but for fallback or if disabled (due to bad char):
-                    color: dc.isBad ? const Color(0xFFFF4757) : const Color(0xFFC59D00),
-                    shadows: nameAnalysis.isTopTier ? [
+                    fontWeight: FontWeight.w500,
+                    // Black/Grey if not gold/bad
+                    color: dc.isBad ? const Color(0xFFFF4757) : (isGold ? const Color(0xFFC59D00) : (Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black87)),
+                    shadows: isGold ? [
                        Shadow(
                          color: const Color(0xFFC59D00).withOpacity(0.2),
                          offset: const Offset(0, 1),

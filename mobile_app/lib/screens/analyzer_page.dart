@@ -8,7 +8,7 @@ import '../utils/custom_toast.dart';
 import '../models/analysis_result.dart';
 import '../models/solar_system_data.dart';
 import '../viewmodels/analyzer_view_model.dart';
-import '../widgets/analyzer/top_4_section.dart';
+import '../widgets/analyzer/top_10_section.dart';
 import '../widgets/shared_footer.dart';
 import '../widgets/adaptive_footer_scroll_view.dart';
 import '../widgets/solar_system_analysis_card.dart';
@@ -27,6 +27,8 @@ import 'number_analysis_page.dart';
 import 'shipping_address_page.dart';
 import 'notification_list_page.dart';
 import 'main_tab_page.dart';
+import '../widgets/pattern_background.dart';
+import '../widgets/daily_miracle_card.dart';
 
 class AnalyzerPage extends StatefulWidget {
   final String? initialName;
@@ -355,32 +357,21 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
     final result = _viewModel.analysisResult;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: DefaultTabController(
         length: 2,
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF1A1A2E),
-                Color(0xFF16213E),
-                Color(0xFF1A1A2E),
-              ],
-              stops: [0.0, 0.5, 1.0],
-            ),
-          ),
+        child: PatternBackground(
+          isDark: Theme.of(context).brightness == Brightness.dark,
           child: Column(
             children: [
               // Sticky Tab Bar
               Container(
-                 color: const Color(0xFF16213E),
+                 color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF16213E) : Colors.white,
                  child: Column(
                    children: [
                       TabBar(
-                        labelColor: const Color(0xFFFFD700),
-                        unselectedLabelColor: Colors.white54,
+                        labelColor: const Color(0xFFFFD700), // Gold works for both
+                        unselectedLabelColor: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : const Color(0xFF64748B),
                         indicatorColor: const Color(0xFFFFD700),
                         indicatorWeight: 3,
                         labelStyle: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold),
@@ -390,7 +381,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
                           Tab(text: "เครื่องมือ"),
                         ],
                       ),
-                      Container(height: 1, color: Colors.white12),
+                      Container(height: 1, color: Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.grey[300]),
                    ],
                  ),
               ),
@@ -419,6 +410,7 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
               ),
             ],
           ),
+
         ),
       ),
       floatingActionButton: _showScrollToTop ? FloatingActionButton(
@@ -441,7 +433,8 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
        return CustomScrollView(
          physics: const BouncingScrollPhysics(),
          slivers: [
-           SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+           if (context.findAncestorWidgetOfExactType<NestedScrollView>() != null)
+             SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
            SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.only(top: 20), child: _buildSolarSystemSkeleton())),
          ],
        );
@@ -452,32 +445,26 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
       return CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                   Container(
-                     padding: const EdgeInsets.all(20),
-                     decoration: const BoxDecoration(color: Color(0xFF16213E), shape: BoxShape.circle),
-                     child: const Icon(Icons.touch_app_rounded, size: 64, color: Colors.white24),
-                   ),
-                   const SizedBox(height: 24),
-                   Text(
-                    'วิเคราะห์ชื่อตามตำรา',
-                    style: GoogleFonts.kanit(color: Colors.white70, fontSize: 20, fontWeight: FontWeight.bold),
-                   ),
-                   const SizedBox(height: 8),
-                   Text(
-                    'เลขศาสตร์ พลังเงา',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.kanit(color: Colors.white38, fontSize: 16),
-                   ),
-                   const SizedBox(height: 100), 
-                ],
-              ),
+          if (context.findAncestorWidgetOfExactType<NestedScrollView>() != null)
+            SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                Text(
+                  'วิเคราะห์ชื่อตามตำรา เลขศาสตร์ พลังเงา',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.kanit(
+                    color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : const Color(0xFF1E293B), 
+                    fontSize: 18, 
+                    fontWeight: FontWeight.bold
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const DailyMiracleCard(),
+                const SizedBox(height: 40),
+                // Icon(Icons.touch_app_rounded, size: 48, color: Theme.of(context).brightness == Brightness.dark ? Colors.white24 : Colors.grey[300]),
+              ],
             ),
           ),
         ],
@@ -489,7 +476,8 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
       physics: const ClampingScrollPhysics(),
       // padding: const EdgeInsets.only(top: 20, bottom: 100), // Slivers don't take padding broadly like this usually, use SliverPadding
       slivers: [
-        SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+        if (context.findAncestorWidgetOfExactType<NestedScrollView>() != null)
+          SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
         SliverPadding(
           padding: const EdgeInsets.only(top: 0, bottom: 20),
           sliver: SliverToBoxAdapter(
@@ -497,15 +485,14 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
               offset: const Offset(0, -20),
               child: Column(
               children: [
-                 Top4Section(
+                 Top10Section(
                    data: result.bestNames,
-                   showTop4: _viewModel.showTop4,
-                   showKlakini: _viewModel.showKlakiniTop4,
+                   showTop10: _viewModel.showTop10,
+                   showGoodOnly: _viewModel.isAuspicious,
                    isVip: MainTabPage.of(context)?.isVip ?? result.isVip,
                    isLoading: _viewModel.isNamesLoading,
-                   isSwitching: _viewModel.isTop4Switching,
-                   onToggleTop4: _viewModel.toggleShowTop4,
-                   onToggleKlakini: _viewModel.toggleShowKlakiniTop4,
+                   isSwitching: _viewModel.isTop10Switching,
+                   onToggleTop10: _viewModel.toggleShowTop10,
                    onNameSelected: (name) {
                       _viewModel.setName(name);
                       _nameController.text = name;
@@ -535,7 +522,8 @@ class _AnalyzerPageState extends State<AnalyzerPage> with TickerProviderStateMix
     return CustomScrollView(
       physics: const ClampingScrollPhysics(),
       slivers: [
-        SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+        if (context.findAncestorWidgetOfExactType<NestedScrollView>() != null) 
+          SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
         SliverPadding(
           padding: const EdgeInsets.all(16),
           sliver: SliverToBoxAdapter(

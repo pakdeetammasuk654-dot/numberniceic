@@ -5,8 +5,21 @@ import 'package:mobile_app/widgets/lucky_number_card.dart';
 import 'package:mobile_app/widgets/lucky_number_skeleton.dart';
 import 'package:mobile_app/widgets/contact_purchase_modal.dart';
 import 'package:mobile_app/services/api_service.dart';
+import 'package:mobile_app/services/numbers_json_service.dart';
 import 'package:mobile_app/screens/number_analysis_page.dart';
+import 'package:mobile_app/models/name_character.dart'; // Add this import
 import 'shimmering_gold_wrapper.dart';
+import 'background_pattern_painter.dart';
+import 'package:mobile_app/widgets/pct_item.dart';
+
+class WeightedPair {
+  final String pair;
+  final double weight;
+  WeightedPair(this.pair, this.weight);
+  
+  @override
+  String toString() => '$pair($weight)';
+}
 
 // --- MAIN WIDGET ---
 class CategoryNestedDonut extends StatefulWidget {
@@ -16,6 +29,8 @@ class CategoryNestedDonut extends StatefulWidget {
   final int totalPositiveScore;
   final int totalNegativeScore;
   final String? analyzedName;
+  final List<NameCharacter>? nameHtml; // New parameter
+  final List<dynamic>? allUniquePairs; // NEW: All unique pairs from name analysis
   final Function(String phoneNumber)? onAddPhoneNumber; // Just for notification
   final Color? backgroundColor; // Optional background color
   final bool isPerfect; // Control Shimmer Logic
@@ -28,6 +43,8 @@ class CategoryNestedDonut extends StatefulWidget {
     required this.totalPositiveScore,
     required this.totalNegativeScore,
     this.analyzedName,
+    this.nameHtml, // New parameter
+    this.allUniquePairs, // NEW
     this.onAddPhoneNumber,
     this.backgroundColor,
     this.isPerfect = false,
@@ -45,6 +62,16 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
   // Store added phone numbers grouped by category
   final Map<String, List<Map<String, dynamic>>> _addedPhoneNumbersByCategory = {};
   
+  // NEW: Store pair numbers from added phone numbers for averaging
+  final List<String> _addedPhonePairNumbers = [];
+  
+  // NEW: Store summaries from pairs
+  List<String> _pairSummaries = [];
+  
+  // NumbersJsonService for calculating percentages from numbers.json
+  final NumbersJsonService _numbersService = NumbersJsonService();
+  bool _numbersLoaded = false; // Track if numbers.json is loaded
+  
   AnimationController? _textShineController;
   late AnimationController _scoreController;
   late Animation<double> _scoreAnimation;
@@ -53,9 +80,14 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
   late AnimationController _chartController;
   late Animation<double> _chartAnimation;
 
+
   @override
   void initState() {
     super.initState();
+    
+    // Load numbers.json data and rebuild when done
+    _loadNumbersData();
+    
     _textShineController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 4500),
@@ -83,6 +115,15 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
          _chartController.forward();
       }
     });
+  }
+  
+  Future<void> _loadNumbersData() async {
+    await _numbersService.loadData();
+    if (mounted) {
+      setState(() {
+        _numbersLoaded = true;
+      });
+    }
   }
 
   @override
@@ -172,6 +213,25 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
         'sum': sum,
         'keywords': keywords,
       }];
+      
+      // Extract pair numbers from the phone number and add to the list for averaging
+      final phonePairs = _extractPhonePairNumbers(phoneNumber);
+      
+      // Clear previous phone pairs for this category and add new ones
+      // (For now, we accumulate all phone pairs)
+      _addedPhonePairNumbers.clear();
+      
+      // Add pairs from all added phone numbers
+      for (var catPhones in _addedPhoneNumbersByCategory.values) {
+        for (var phoneData in catPhones) {
+          final pairs = _extractPhonePairNumbers(phoneData['number'] ?? '');
+          _addedPhonePairNumbers.addAll(pairs);
+        }
+      }
+      
+      print('📊 Added phone number $phoneNumber to $category');
+      print('   Phone pairs: $phonePairs');
+      print('   Total added pairs: $_addedPhonePairNumbers');
     });
     
     // Animate chart change
@@ -194,12 +254,216 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
           _addedPhoneNumbersByCategory.remove(category);
         }
         
+        // Recalculate phone pair numbers from remaining phones
+        _addedPhonePairNumbers.clear();
+        for (var catPhones in _addedPhoneNumbersByCategory.values) {
+          for (var phoneData in catPhones) {
+            final pairs = _extractPhonePairNumbers(phoneData['number'] ?? '');
+            _addedPhonePairNumbers.addAll(pairs);
+          }
+        }
+        
         print('🔴 Removed phone number at index $index from category $category');
       }
     });
 
     // Animate chart change
     _chartController.forward(from: 0.0);
+  }
+  
+  /// Extract pair numbers from allUniquePairs
+  /// Each pair in allUniquePairs is like {"pair_number": "12", "meaning": {...}}
+  List<String> _extractPairNumbers(List<dynamic>? pairs) {
+    if (pairs == null || pairs.isEmpty) return [];
+    
+    final List<String> pairNumbers = [];
+    for (var pair in pairs) {
+      String? pairNum;
+      if (pair is Map) {
+        // Handle {"pair_number": "12", ...} from API
+        pairNum = pair['pair_number']?.toString() ?? pair['pair']?.toString();
+      } else if (pair is String) {
+        pairNum = pair;
+      } else if (pair is num) {
+        pairNum = pair.toString();
+      }
+      
+      if (pairNum != null && pairNum.isNotEmpty) {
+        // Ensure 2-digit format (e.g., "1" -> "01", "12" -> "12")
+        if (pairNum.length == 1) {
+          pairNum = '0$pairNum';
+        }
+        // Only take last 2 digits if longer
+        if (pairNum.length > 2) {
+          pairNum = pairNum.substring(pairNum.length - 2);
+        }
+        pairNumbers.add(pairNum);
+      }
+    }
+    return pairNumbers;
+  }
+  
+  /// Calculate average percentages from a list of pair numbers using numbers.json
+  Map<String, double> _calculateAveragePercentages(List<String> pairNumbers) {
+    if (pairNumbers.isEmpty) {
+      return {'สุขภาพ': 25.0, 'การงาน': 25.0, 'การเงิน': 25.0, 'ความรัก': 25.0};
+    }
+    
+    double totalHealth = 0, totalCareer = 0, totalFinance = 0, totalLove = 0;
+    int count = 0;
+    
+    for (var pairNum in pairNumbers) {
+      final aspects = _numbersService.getAspectPercentages(pairNum);
+      totalHealth += aspects['health'] ?? 25;
+      totalCareer += aspects['career'] ?? 25;
+      totalFinance += aspects['finance'] ?? 25;
+      totalLove += aspects['love'] ?? 25;
+      count++;
+    }
+    
+    if (count == 0) {
+      return {'สุขภาพ': 25.0, 'การงาน': 25.0, 'การเงิน': 25.0, 'ความรัก': 25.0};
+    }
+    
+    return {
+      'สุขภาพ': totalHealth / count,
+      'การงาน': totalCareer / count,
+      'การเงิน': totalFinance / count,
+      'ความรัก': totalLove / count,
+    };
+  }
+  
+  /// Calculate good (D) and bad (R) percentages separately
+  /// Returns a map with 'good' and 'bad' percentages for each category
+  /// Calculate comprehensive weighted stats for all pairs (Good + Bad combined)
+  /// Returns:
+  /// - 'good': Map<String, double> (Percentage of Good weight for each category relative to TOTAL weight of all pairs)
+  /// - 'bad': Map<String, double> (Percentage of Bad weight for each category relative to TOTAL weight of all pairs)
+  /// - 'total': Map<String, double> (Total percentage for each category, sums to 100% across all categories)
+  // Calculate weighted stats based on pair weights AND aspect scores
+  // Returns: { 'good': Map<String, double>, 'bad': Map<String, double>, 'total': Map<String, double> }
+  Map<String, Map<String, double>> _calculateWeightedStats(List<WeightedPair> weightedPairs) {
+    // Initialize accumulators
+    final Map<String, double> goodWeights = {'สุขภาพ': 0.0, 'การงาน': 0.0, 'การเงิน': 0.0, 'ความรัก': 0.0};
+    final Map<String, double> badWeights = {'สุขภาพ': 0.0, 'การงาน': 0.0, 'การเงิน': 0.0, 'ความรัก': 0.0};
+    double grandTotalWeight = 0.0;
+
+    if (weightedPairs.isEmpty) {
+        // Fallback equal distribution
+        return {
+           'good': {'สุขภาพ': 6.25, 'การงาน': 6.25, 'การเงิน': 6.25, 'ความรัก': 6.25},
+           'bad': {'สุขภาพ': 18.75, 'การงาน': 18.75, 'การเงิน': 18.75, 'ความรัก': 18.75},
+           'total': {'สุขภาพ': 25.0, 'การงาน': 25.0, 'การเงิน': 25.0, 'ความรัก': 25.0} // 25% each
+        };
+    }
+
+    for (var wp in weightedPairs) {
+       final p = wp.pair;
+       final pairWeight = wp.weight;
+       if (pairWeight <= 0) continue; // Skip if weight is 0
+
+       final isGood = _numbersService.isGoodPair(p); // Good (D-type)
+       final isBad = _numbersService.isBadPair(p);   // Bad (R-type)
+       final aspects = _numbersService.getAspectPercentages(p); 
+       
+       // Process each aspect only if it has a clear Polar nature (Good or Bad)
+       // Neutral pairs are ignored to prevent diluting the Good/Bad score incorrectly
+       if (isGood || isBad) {
+         aspects.forEach((key, val) {
+             final thaiKey = NumbersJsonService.keyToThai(key); // Ensure Thai key
+             final weight = val.toDouble() * pairWeight; // Apply Position Weight
+             
+             if (isGood) {
+                goodWeights[thaiKey] = (goodWeights[thaiKey] ?? 0) + weight;
+             } else {
+                badWeights[thaiKey] = (badWeights[thaiKey] ?? 0) + weight;
+             }
+             grandTotalWeight += weight;
+         });
+       }
+    }
+    
+    if (grandTotalWeight == 0) grandTotalWeight = 1; // Prevent div by zero
+
+    // Normalize to Percentages (Total of ALL categories = 100%)
+    final Map<String, double> goodPcts = {};
+    final Map<String, double> badPcts = {};
+    final Map<String, double> totalPcts = {}; // Chart size depends on this
+
+    final categories = ['สุขภาพ', 'การงาน', 'การเงิน', 'ความรัก'];
+    for (var cat in categories) {
+       goodPcts[cat] = (goodWeights[cat] ?? 0) / grandTotalWeight * 100;
+       badPcts[cat] = (badWeights[cat] ?? 0) / grandTotalWeight * 100;
+       totalPcts[cat] = goodPcts[cat]! + badPcts[cat]!;
+    }
+    
+    return {'good': goodPcts, 'bad': badPcts, 'total': totalPcts};
+  }
+  
+  /// Collect summaries from pair numbers
+  List<String> _collectSummaries(List<String> pairNumbers) {
+    final List<String> summaries = [];
+    for (var pairNum in pairNumbers) {
+      final summary = _numbersService.getSummary(pairNum);
+      if (summary != null && summary.isNotEmpty) {
+        summaries.add(summary);
+      }
+    }
+    return summaries;
+  }
+  
+  /// Collect insights for a specific category from pair numbers
+  /// Returns unique insights for the given category (e.g., 'health', 'career', 'finance', 'love')
+  List<String> _collectCategoryInsights(List<String> pairNumbers, String categoryKey) {
+    final Set<String> insightSet = {};
+    for (var pairNum in pairNumbers) {
+      final insight = _numbersService.getAspectInsight(pairNum, categoryKey);
+      if (insight != null && insight.isNotEmpty) {
+        insightSet.add(insight);
+      }
+    }
+    return insightSet.take(3).toList(); // Top 3 unique insights
+  }
+  
+  /// Extract pair numbers from a phone number string and assign weights based on position
+  /// Standard formatting: 0XX-ABC-DEFG
+  /// Pairs: (0X, XX), XA, AB, BC, CD, DE, EF, FG
+  /// Usually analysis focuses on last 7 digits (ABC-DEFG) => Pairs: AB, BC, CD, DE, EF, FG (6 pairs)
+  /// Weights are applied to these 6 pairs.
+  List<WeightedPair> _extractPhonePairNumbersWithType(String phoneNumber) {
+    final digits = phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length < 9) return [];
+    
+    // Prediction Weights logic for 10-digit number (0XX-ABC-DEFG)
+    // Last 7 digits are significant (ABC-DEFG) -> Indices relative to length.
+    // Length is L.
+    // Pairs inside ABC-DEFG (Last 6 pairs): Weight 1.0 (100%)
+    // Pairs prefix (0XX...): Weight 0.1 (10%) - Just background influence
+    
+    final List<WeightedPair> pairs = [];
+    final int l = digits.length;
+    // We want last 7 digits: indices [L-7, L-6, ... L-1]
+    // The pairs start from index of first digit.
+    // 7 digits = 6 pairs.
+    // Start index for prediction = (L - 7).
+    final int predictionStartIndex = l - 7;
+    
+    for (int i = 0; i < digits.length - 1; i++) {
+       String pair = digits.substring(i, i + 2);
+       double weight = 0.1; // Default low weight for prefix
+       
+       if (i >= predictionStartIndex) {
+         weight = 1.0; // High weight for predictive pairs 
+       }
+       
+       pairs.add(WeightedPair(pair, weight));
+    }
+    return pairs;
+  }
+  
+  // Helper to extraction plain strings for insights
+  List<String> _extractPhonePairNumbers(String phoneNumber) {
+     return _extractPhonePairNumbersWithType(phoneNumber).map((e) => e.pair).toList();
   }
   
   Color _getCategoryColor(String category) {
@@ -240,36 +504,139 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
       ));
     }
     
-    // Final Score Logic
-    int activeCategories = 0;
-    for (var cat in chartData) {
-      if (cat.good > 0) activeCategories++;
-    }
-    
     // Combine manual enhanced categories and categories with added phone numbers
     final allEnhanced = Set<String>.from(_enhancedCategories)
       ..addAll(_addedPhoneNumbersByCategory.keys);
-      
-    bool isEnhancedAny = allEnhanced.isNotEmpty;
-    double finalScoreTarget = isEnhancedAny ? 100.0 : (activeCategories * 25.0);
-    if (finalScoreTarget == 0 && activeCategories > 0) finalScoreTarget = 99; 
+    
+    // ============================================================
+    // NEW LOGIC: Calculate percentages from numbers.json using averaging
+    // ============================================================
+    
+    // Step 1: Extract pair numbers from name analysis (Weight 1.0)
+    final namePairs = _extractPairNumbers(widget.allUniquePairs);
+    final List<WeightedPair> nameWeightedPairs = namePairs.map((p) => WeightedPair(p, 1.0)).toList();
+    
+    // Step 2: Extract pairs from all added phone numbers with Position Weights
+    final List<WeightedPair> phoneWeightedPairs = [];
+    _addedPhoneNumbersByCategory.forEach((cat, phoneList) {
+       for (var phoneData in phoneList) {
+          String phone = phoneData['number'] ?? '';
+          phoneWeightedPairs.addAll(_extractPhonePairNumbersWithType(phone));
+       }
+    });
+
+    // Combine all weighted pairs
+    final List<WeightedPair> allWeightedPairs = [...nameWeightedPairs, ...phoneWeightedPairs];
+    
+    // For insights/summaries, use plain pair strings
+    final List<String> allPairStrings = allWeightedPairs.map((e) => e.pair).toList();
+    
+    // Step 3: Calculate Weighted Stats (Good + Bad combined sums to 100%)
+    final weightedStats = _calculateWeightedStats(allWeightedPairs);
+    
+    final Map<String, double> goodPercentages = weightedStats['good']!;
+    final Map<String, double> badPercentages = weightedStats['bad']!;
+    final Map<String, double> totalPercentages = weightedStats['total']!;
+    
+    // Use total percentages for chart segment sizes
+    final Map<String, double> chartPercentages = Map.from(totalPercentages);
+    
+    // Determine colors for each segment
+    // If Bad > Good for a category, use Black color scheme. Else use Category color.
+    final Map<String, bool> isCategoryBad = {};
+    for (var cat in categories) {
+       // A category is considered "Bad" for the chart color if its Bad component is larger than Good
+       // OR if it's pure bad. 
+       // User requirement: "Vikram" (1 Good, 1 Bad) -> Split 100%. 
+       // "Sek Loso" (Pure Bad) -> Black tube.
+       // Logic: If bad component > good component, render as Bad (Black).
+       isCategoryBad[cat] = (badPercentages[cat] ?? 0) > (goodPercentages[cat] ?? 0);
+    }
+    
+    // Calculate display percentages for Table with Normalization (Largest Remainder Method)
+    // To ensure Total Good + Total Bad across all categories sums to exactly 100%
+    final Map<String, int> goodDisplayPcts = {};
+    final Map<String, int> badDisplayPcts = {};
+    
+    // 1. Collect all values
+    // Using PctItem class from external file
+    
+    List<PctItem> allItems = [];
+    for (var cat in categories) {
+      allItems.add(PctItem(cat, true, goodPercentages[cat] ?? 0));
+      allItems.add(PctItem(cat, false, badPercentages[cat] ?? 0));
+    }
+    
+    // 2. Calculate current sum
+    int currentSum = allItems.fold(0, (sum, item) => sum + item.floorVal);
+    int diff = 100 - currentSum;
+    
+    // 3. Sort by remainder descending
+    allItems.sort((a, b) => b.remainder.compareTo(a.remainder));
+    
+    // 4. Distribute difference
+    for (int i = 0; i < diff; i++) {
+      if (i < allItems.length) {
+         allItems[i].floorVal += 1;
+      }
+    }
+    
+    // 5. Populate result maps
+    for (var item in allItems) {
+      if (item.isGood) goodDisplayPcts[item.cat] = item.floorVal;
+      else badDisplayPcts[item.cat] = item.floorVal;
+    }
+    
+    // NO NEED TO RECALCULATE CHART PERCENTAGES
+    // We pass good/bad percentages separately to the painter to draw split segments.
+    // Normalized integer values (goodDisplayPcts/badDisplayPcts) ensure exactly 100% total.
+
+    // Step 6: Collect summaries for display
+    _pairSummaries = _collectSummaries(allPairStrings.take(5).toList()); // Top 5 summaries
+    
+    // Step 7: Collect insights for each category from numbers.json
+    final Map<String, List<String>> categoryInsights = {
+      'สุขภาพ': _collectCategoryInsights(allPairStrings, 'health'),
+      'การงาน': _collectCategoryInsights(allPairStrings, 'career'),
+      'การเงิน': _collectCategoryInsights(allPairStrings, 'finance'),
+      'ความรัก': _collectCategoryInsights(allPairStrings, 'love'),
+    };
+    
+    // Prepare display percentages for labels
+    double sumGood = goodPercentages.values.fold(0, (a, b) => a + b);
+    Map<String, double>? displayLabelsMap;
+    if (sumGood <= 0) {
+      displayLabelsMap = {
+        'สุขภาพ': 0.0,
+        'การงาน': 0.0,
+        'การเงิน': 0.0,
+        'ความรัก': 0.0,
+      };
+    }
+
+    // Calculate final score
+    double finalScoreTarget = widget.grandTotalScore.abs().toDouble(); 
+    // Just use the absolute score as target, max 100 usually managed by backend or capped here
+    if (finalScoreTarget > 100) finalScoreTarget = 100;
+    if (finalScoreTarget == 0) finalScoreTarget = 100; 
 
     return Container(
       color: widget.backgroundColor ?? Colors.transparent,
-      child: Column(
+      child: Stack(
         children: [
-          // Top Section with Watermark Pattern (No Brown Background)
-          Container(
-            color: Colors.transparent,
-            child: Stack(
-              children: [
-                // Background Pattern (Watermark-like)
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: BackgroundPatternPainter(),
-                  ),
-                ),
-                Column(
+          // Background Pattern (Watermark-like) covering everything
+          Positioned.fill(
+            child: CustomPaint(
+              painter: BackgroundPatternPainter(),
+            ),
+          ),
+          
+          Column(
+            children: [
+              // Chart Section (Transparent, on top of watermark)
+              Container(
+                color: Colors.transparent,
+                child: Column(
                   children: [
                     // 1. Analyzed Name Header
                     _buildAnalyzedNameHeader(),
@@ -283,7 +650,6 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
                           children: [
                             GestureDetector(
                               onTap: () {
-                                // Allow user to replay animation on tap!
                                 _scoreController.forward(from: 0.0);
                                 _chartController.forward(from: 0.0);
                               },
@@ -297,49 +663,76 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
                                       totalPairs: widget.totalPairs,
                                       enhancedCategories: allEnhanced,
                                       progress: _chartAnimation.value,
+                                      goodPercentages: goodDisplayPcts.map((k, v) => MapEntry(k, v.toDouble())), 
+                                      badPercentages: badDisplayPcts.map((k, v) => MapEntry(k, v.toDouble())),
                                     ),
                                   );
                                 }
                               ),
                             ),
                             // Center Text (Golden)
+                            // Center Text (Golden)
                             Container(
                                width: 136, height: 136,
                                decoration: BoxDecoration(
-                                 color: const Color(0xFF16213E),
+                                 gradient: const RadialGradient(
+                                   colors: [
+                                     Color(0xFFF3E5D8), // Brighter center
+                                     Color(0xFFE5D5C5), // Classic Light Canvas Tan
+                                   ],
+                                 ),
                                  shape: BoxShape.circle,
-                                 border: Border.all(color: Colors.white10, width: 2),
+                                 border: Border.all(color: const Color(0xFFD7BCA3), width: 2),
                                  boxShadow: [
                                    BoxShadow(
-                                     color: Colors.black.withOpacity(0.3),
-                                     blurRadius: 15,
+                                     color: Colors.black.withOpacity(0.15),
+                                     blurRadius: 10,
                                      offset: const Offset(0, 4),
                                    )
                                  ]
                                ),
-                               child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text('คะแนนรวม', style: GoogleFonts.kanit(fontSize: 12, color: Colors.white54)),
-                                    
-                                    // ANIMATED PERCENTAGE
-                                    AnimatedBuilder(
-                                      animation: _scoreAnimation,
-                                      builder: (context, child) {
-                                        final currentScore = (_scoreAnimation.value * finalScoreTarget).toInt();
-                                        return ShaderMask(
-                                          shaderCallback: (bounds) => const LinearGradient(
-                                            colors: [Color(0xFFB45309), Color(0xFFFFD700), Color(0xFFF59E0B)],
-                                            begin: Alignment.topLeft, end: Alignment.bottomRight
-                                          ).createShader(bounds),
-                                          child: Text(
-                                            '$currentScore%',
-                                            style: GoogleFonts.kanit(fontSize: 36, fontWeight: FontWeight.w900, color: Colors.white, height: 1.0)
-                                          ),
-                                        );
-                                      }
-                                    ),
-                                  ],
+                               child: ClipOval(
+                                 child: Stack(
+                                   children: [
+                                     // LV Pattern Watermark
+                                     Positioned.fill(
+                                       child: CustomPaint(
+                                         painter: BackgroundPatternPainter(
+                                           color: const Color(0xFF5D4037), // Rich Chocolate Brown pattern
+                                           opacity: 0.35, // Stronger visibility like the actual LV pattern
+                                         ),
+                                       ),
+                                     ),
+                                     
+                                     // Text Content
+                                     Center(
+                                       child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                             // Name in Center
+                                             Padding(
+                                               padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                               child: widget.isPerfect 
+                                               ? ShimmeringGoldWrapper(
+                                                   child: RichText(
+                                                     textAlign: TextAlign.center,
+                                                     text: TextSpan(
+                                                       children: _buildNameTextSpans(fontSize: 28, defaultColor: const Color(0xFF4E342E)),
+                                                     ),
+                                                   ),
+                                                 )
+                                               : RichText(
+                                                   textAlign: TextAlign.center,
+                                                   text: TextSpan(
+                                                     children: _buildNameTextSpans(fontSize: 28, defaultColor: const Color(0xFF4E342E)),
+                                                   ),
+                                                 ),
+                                             ),
+                                          ],
+                                       ),
+                                     ),
+                                   ],
+                                 ),
                                ),
                             ),
                           ],
@@ -349,66 +742,66 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
                     const SizedBox(height: 20),
                   ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 0), 
-          _buildLegendHeader(),
-          const Divider(height: 1, color: Colors.white12),
-          Column(
-            children: chartData.asMap().entries.map((entry) {
-                  int idx = entry.key;
-                  var cat = entry.value;
-                  bool isEnhanced = allEnhanced.contains(cat.name);
-                  
-                  // Percentage Logic
-                  int displayPct = 0;
-                  int activeCount = 0;
-                  for (var c in chartData) { if (c.good > 0) activeCount++; }
+              ),
+              const SizedBox(height: 0), 
+              _buildLegendHeader(),
+              Divider(height: 1, color: Colors.grey[200]),
+              Column(
+                children: [
+                  ...chartData.asMap().entries.map((entry) {
+                      int idx = entry.key;
+                      var cat = entry.value;
+                      bool isEnhanced = allEnhanced.contains(cat.name);
+                      
+                      int displayPct = goodDisplayPcts[cat.name] ?? 0;
+                      int badPct = badDisplayPcts[cat.name] ?? 0;
+                      
+                      int potentialBoost = 0;
+                      if (!isEnhanced && cat.good == 0) {
+                        potentialBoost = 15; 
+                      }
 
-                  if (allEnhanced.isEmpty) {
-                     if (cat.good > 0) displayPct = 25;
-                  } else {
-                     double totalUnits = 6.0;
-                     double activeBaseCost = 1.5;
-                     double allocated = activeCount * activeBaseCost;
-                     double remaining = totalUnits - allocated;
-                     int enhancerCount = allEnhanced.length;
-                     double bonus = enhancerCount > 0 ? remaining / enhancerCount : 0.0;
-                     
-                     double weight = 0.0;
-                     if (cat.good > 0) weight += activeBaseCost;
-                     if (isEnhanced) weight += bonus;
-                     if (weight > 0) displayPct = (weight / totalUnits * 100).round();
-                  }
+                      final rawInsights = categoryInsights[cat.name] ?? [];
+                      final addedPhones = _addedPhoneNumbersByCategory[cat.name] ?? [];
+                      final addedKeywords = addedPhones.expand((p) => List<String>.from(p['keywords'] ?? [])).toSet();
+                      final filteredInsights = rawInsights.where((ins) => !addedKeywords.contains(ins)).toList();
 
-                  return CategoryLegendRow(
-                    key: ValueKey(cat.name),
-                    cat: cat, 
-                    totalPairs: widget.totalPairs,
-                    index: idx,
-                    onEnhanceChange: (val) => _onEnhanceChange(cat.name, val),
-                    textShineController: _textShineController!,
-                    isEnhanced: isEnhanced,
-                    displayPct: displayPct,
-                    addedPhoneNumbers: _addedPhoneNumbersByCategory[cat.name],
-                    onRemovePhoneNumber: _handleRemovePhoneNumber,
-                  );
-                }).toList(),
+                      return CategoryLegendRow(
+                        key: ValueKey(cat.name),
+                        cat: cat, 
+                        totalPairs: widget.totalPairs,
+                        index: idx,
+                        onEnhanceChange: (val) => _onEnhanceChange(cat.name, val),
+                        textShineController: _textShineController!,
+                        isEnhanced: isEnhanced,
+                        displayPct: displayPct,
+                        badPct: badPct, 
+                        potentialBoost: potentialBoost,
+                        categoryInsights: filteredInsights,
+                        addedPhoneNumbers: _addedPhoneNumbersByCategory[cat.name],
+                        onRemovePhoneNumber: _handleRemovePhoneNumber,
+                        isDominantlyBad: isCategoryBad[cat.name] ?? false, // NEW
+                      );
+                    }),
+                    Divider(height: 1, color: Colors.grey[200]),
+                    _buildTotalPercentageRow(goodDisplayPcts, badDisplayPcts),
+                ],
               ),
             ],
           ),
+        ],
+      ),
     );
   }
 
   Widget _buildHintText() {
       return Container(
-        color: const Color(0xFF1A1A2E),
+        color: const Color(0xFFF1F5F9), // Slate 100 for hint bg
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Text('💡 แตะไอคอน ', style: GoogleFonts.kanit(fontSize: 10, color: Colors.white38, fontStyle: FontStyle.italic)),
+            Text('💡 แตะไอคอน ', style: GoogleFonts.kanit(fontSize: 10, color: Colors.grey[600], fontStyle: FontStyle.italic)),
             Container(
               width: 14, height: 14,
               margin: const EdgeInsets.symmetric(horizontal: 2),
@@ -419,31 +812,33 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
               ),
               child: const Icon(Icons.autorenew, size: 10, color: Colors.white),
             ),
-            Text(' เพื่อเปลี่ยนเบอร์มงคล', style: GoogleFonts.kanit(fontSize: 10, color: Colors.white38, fontStyle: FontStyle.italic)),
+            Text(' เพื่อเปลี่ยนเบอร์มงคล', style: GoogleFonts.kanit(fontSize: 10, color: Colors.grey[600], fontStyle: FontStyle.italic)),
           ],
         ),
       );
   }
 
   Widget _buildLegendHeader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        border: Border(bottom: BorderSide(color: isDark ? Colors.white12 : Colors.grey[200]!)),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            Expanded(flex: 3, child: Text('หมวดหมู่', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white54))),
-            Expanded(flex: 2, child: Center(child: Text('%ดี', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white54)))),
-            Expanded(flex: 2, child: Center(child: Text('%ร้าย', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white54)))),
+            Expanded(flex: 3, child: Text('หมวดหมู่', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: isDark ? Colors.white60 : const Color(0xFF64748B)))),
+            Expanded(flex: 2, child: Center(child: Text('%ดี', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: isDark ? Colors.white60 : const Color(0xFF64748B))))),
+            Expanded(flex: 2, child: Center(child: Text('%ร้าย', style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: isDark ? Colors.white60 : const Color(0xFF64748B))))),
             Expanded(
               flex: 2, 
               child: Align(
                 alignment: Alignment.centerRight, 
                 child: Text(
                   'เติมกราฟ', 
-                  style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white54),
+                  style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.bold, color: isDark ? Colors.white60 : const Color(0xFF64748B)),
                   textAlign: TextAlign.right, 
                 )
               )
@@ -454,6 +849,43 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
     );
   }
   
+
+
+  Widget _buildTotalPercentageRow(Map<String, int> goodPcts, Map<String, int> badPcts) {
+    int totalGood = goodPcts.values.fold(0, (sum, val) => sum + val);
+    int totalBad = badPcts.values.fold(0, (sum, val) => sum + val);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black.withOpacity(0.25) : Colors.white.withOpacity(0.6),
+        border: Border(bottom: BorderSide(color: isDark ? Colors.white12 : Colors.grey[200]!)),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Text('รวม', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF1E293B))),
+          ),
+          Expanded(
+            flex: 2,
+            child: Center(
+              child: Text('$totalGood%', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? const Color(0xFF34D399) : const Color(0xFF10B981))), // Brighter Green for Dark
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Center(
+              child: Text('$totalBad%', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white38 : const Color(0xFF202020))), // Light gray for Dark
+            ),
+          ),
+          const Expanded(flex: 2, child: SizedBox.shrink()), // Empty for button column
+        ],
+      ),
+    );
+  }
+
   Widget _buildTotalScoreRow(List<CategoryData> chartData) {
      final score = widget.grandTotalScore;
      final isPositive = score >= 0;
@@ -461,11 +893,11 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: const Color(0xFF1A1A2E),
+      color: Colors.transparent, // Transparent to show watermark
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('คะแนนรวม', style: GoogleFonts.kanit(fontSize: 16, color: Colors.white54, fontWeight: FontWeight.w500)),
+          Text('คะแนนรวม', style: GoogleFonts.kanit(fontSize: 16, color: const Color(0xFF64748B), fontWeight: FontWeight.w500)),
           const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -515,7 +947,7 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-           Container(
+            Container(
              padding: const EdgeInsets.all(8),
              decoration: BoxDecoration(
                color: const Color(0xFF388E3C), // Green
@@ -536,19 +968,22 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
                      style: GoogleFonts.kanit(
                        fontSize: 18,
                        fontWeight: FontWeight.bold,
-                       color: const Color(0xFFFFD700),
+                       color: const Color(0xFF1E293B), // Navy/Black
                      ),
                    ),
                    const SizedBox(width: 4),
+                   
+                   // Name Display Logic
                    ShimmeringGoldWrapper(
-                     enabled: widget.isPerfect,
-                     child: Text(
-                       '"${widget.analyzedName}"',
-                       style: GoogleFonts.kanit(
-                         fontSize: 22,
-                         fontWeight: FontWeight.w900,
-                         color: const Color(0xFFFFC107), // Match new Gradient Base
-                       ),
+                     enabled: widget.isPerfect, // Only shimmer if perfect
+                     child: RichText(
+                        text: TextSpan(
+                          children: [
+                            _buildQuoteSpan(),
+                            ..._buildNameTextSpans(),
+                            _buildQuoteSpan(),
+                          ]
+                        ),
                      ),
                    ),
                ],
@@ -557,6 +992,61 @@ class _CategoryNestedDonutState extends State<CategoryNestedDonut> with TickerPr
         ],
       ),
     );
+  }
+
+  TextSpan _buildQuoteSpan() {
+    return TextSpan(
+      text: '"',
+      style: GoogleFonts.kanit(
+        fontSize: 22, 
+        fontWeight: FontWeight.w900,
+        color: const Color(0xFF1E293B), // Quote always black (unless shimmered)
+        height: 1.5,
+        shadows: widget.isPerfect ? [
+            const Shadow(offset: Offset(0, 1.5), blurRadius: 3, color: Color(0x8A000000))
+        ] : null,
+      ),
+    );
+  }
+
+  List<InlineSpan> _buildNameTextSpans({double fontSize = 22, Color defaultColor = const Color(0xFF1E293B)}) {
+    // 1. If we have detailed character data (nameHtml)
+    if (widget.nameHtml != null && widget.nameHtml!.isNotEmpty) {
+      return widget.nameHtml!.map((char) {
+        // Condition: If NOT perfect and IS bad -> Red. Else -> Default Color.
+        // (If isPerfect, the Wrapper will override color to Gold)
+        final bool isRed = !widget.isPerfect && char.isBad;
+        
+        return TextSpan(
+          text: char.char,
+          style: GoogleFonts.kanit(
+            fontSize: fontSize,
+            fontWeight: FontWeight.w400,
+            color: isRed ? const Color(0xFFEF4444) : defaultColor,
+            height: 1.5, // Ensure vowel coverage
+            shadows: widget.isPerfect ? [
+               const Shadow(offset: Offset(0, 1.5), blurRadius: 3, color: Color(0x8A000000))
+            ] : null,
+          ),
+        );
+      }).toList();
+    }
+
+    // 2. Fallback: Use string only (All Default Color)
+    return [
+      TextSpan(
+        text: widget.analyzedName,
+        style: GoogleFonts.kanit(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w400,
+          color: defaultColor,
+          height: 1.5,
+          shadows: widget.isPerfect ? [
+             const Shadow(offset: Offset(0, 1.5), blurRadius: 3, color: Color(0x8A000000))
+          ] : null,
+        ),
+      )
+    ];
   }
 
 }
@@ -586,12 +1076,16 @@ class NestedDonutPainter extends CustomPainter {
   final int totalPairs;
   final Set<String> enhancedCategories;
   final double progress; // 0.0 to 1.0
+  final Map<String, double> goodPercentages; 
+  final Map<String, double> badPercentages;
 
   NestedDonutPainter({
     required this.data,
     required this.totalPairs,
     required this.enhancedCategories,
     required this.progress,
+    required this.goodPercentages,
+    required this.badPercentages,
   });
 
   @override
@@ -602,7 +1096,7 @@ class NestedDonutPainter extends CustomPainter {
 
     // Draw Background Track
     final bgPaint = Paint()
-      ..color = const Color(0xFF334155)
+      ..color = Colors.grey[200]! // Light track
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
     canvas.drawCircle(center, radius - strokeWidth/2, bgPaint);
@@ -614,74 +1108,92 @@ class NestedDonutPainter extends CustomPainter {
     }
 
     final quadrants = ['สุขภาพ', 'การงาน', 'การเงิน', 'ความรัก'];
-
-    // MODE 1: Standard
-    if (enhancedCategories.isEmpty) {
-       for (int i = 0; i < 4; i++) {
-         final catName = quadrants[i];
-         final catData = getData(catName);
-
-         if (catData != null && catData.good > 0) {
-            final startAngle = -math.pi / 2 + (i * math.pi / 2);
-            double sweepAngle = math.pi / 2;
-            
-            // Animation Wipe Effect
-            sweepAngle = sweepAngle * progress;
-
-            _drawSegment(canvas, rect, startAngle, sweepAngle, catData.color, strokeWidth, center, radius, "25%");
-         }
-       }
-       return;
-    }
-
-    // MODE 2: Dynamic
-    double totalUnits = 6.0;
-    double activeBaseCost = 1.5;
-    
-    int activeCount = 0;
-    for (var name in quadrants) {
-      final d = getData(name);
-      if (d != null && d.good > 0) activeCount++;
-    }
-    
-    double allocated = activeCount * activeBaseCost;
-    double remaining = totalUnits - allocated;
-    
-    int enhancerCount = enhancedCategories.length;
-    double bonusPerEnhancer = enhancerCount > 0 ? remaining / enhancerCount : 0.0;
     
     double currentStartAngle = -math.pi / 2;
 
+    // Loop 1: Draw GOOD segments (Colored) based on goodPercentages
     for (var name in quadrants) {
       final catData = getData(name);
+      final pct = goodPercentages[name] ?? 0;
       
-      double weight = 0.0;
-      if (catData != null && catData.good > 0) weight += activeBaseCost;
-      if (enhancedCategories.contains(name)) weight += bonusPerEnhancer;
+      if (pct > 0) {
+        double sweepAngle = (pct / 100) * (2 * math.pi);
+        double drawSweep = sweepAngle * progress;
 
-      if (weight > 0) {
-        double sweepAngle = (weight / totalUnits) * (2 * math.pi);
-        
-        // Animation Wipe Effect
-        double drawSweep = sweepAngle * progress; // Grow sweep
-        
         Color color = catData?.color ?? Colors.grey;
-        int pct = (weight / totalUnits * 100).round();
+        int displayVal = pct.round();
         
-        _drawSegment(canvas, rect, currentStartAngle, drawSweep, color, strokeWidth, center, radius, "$pct%");
+        // Draw Good Segment (Not Bad) - Always draw gap between good segments
+        _drawSegment(canvas, rect, currentStartAngle, drawSweep, color, strokeWidth, center, radius, "$displayVal%", false, drawGap: true);
         
-        // IMPORTANT: Increment by full sweepAngle (structure) or drawSweep? 
-        // If increment by drawSweep, it creates "Fan Opening" effect (segments stick together).
-        // If increment by full sweepAngle, segments appear in place and just grow.
-        // "Fan Opening" (drawSweep) is cooler ("วิ่งปืดๆ").
         currentStartAngle += drawSweep;
       }
     }
+
+    // Loop 2: Draw BAD segments (Black) based on badPercentages
+    final badQuads = quadrants.where((q) => (badPercentages[q] ?? 0) > 0).toList();
+    double totalBadPct = badPercentages.values.fold(0, (a, b) => a + b);
+    double badStartAngle = currentStartAngle;
+
+    for (int i = 0; i < badQuads.length; i++) {
+      final name = badQuads[i];
+      final pct = badPercentages[name] ?? 0;
+      final isLastBad = i == badQuads.length - 1;
+      
+      if (pct > 0) {
+        double sweepAngle = (pct / 100) * (2 * math.pi);
+        double drawSweep = sweepAngle * progress;
+
+        // Force Black Color for Bad Segment
+        Color color = const Color(0xFF202020); 
+        
+        // Draw Bad Segment (Is Bad = true for gradient)
+        // Pass empty label because we will draw the combined percentage after
+        _drawSegment(canvas, rect, currentStartAngle, drawSweep, color, strokeWidth, center, radius, "", true, drawGap: isLastBad);
+        
+        currentStartAngle += drawSweep;
+      }
+    }
+
+    // Draw single combined label for all black segments
+    if (totalBadPct > 0 && progress > 0.5) {
+       double totalBadSweep = (totalBadPct / 100) * (2 * math.pi) * progress;
+       _drawLabel(canvas, center, radius, strokeWidth, badStartAngle, totalBadSweep, "${totalBadPct.round()}%");
+    }
   }
 
-  void _drawSegment(Canvas canvas, Rect rect, double start, double sweep, Color categoryColor, double strokeWidth, Offset center, double radius, String label) {
+  void _drawLabel(Canvas canvas, Offset center, double radius, double strokeWidth, double start, double sweep, String label) {
+       if (sweep < 0.1) return;
+       
+       final labelAngle = start + sweep / 2;
+       final labelRadius = radius - strokeWidth / 2;
+       final dx = center.dx + labelRadius * math.cos(labelAngle);
+       final dy = center.dy + labelRadius * math.sin(labelAngle);
+
+       final textSpan = TextSpan(
+         text: label,
+         style: GoogleFonts.kanit(
+           color: Colors.white, 
+           fontWeight: FontWeight.bold, 
+           fontSize: 11,
+           shadows: [const Shadow(blurRadius: 2, color: Colors.black26)],
+         ),
+       );
+       final textPainter = TextPainter(
+         text: textSpan,
+         textDirection: TextDirection.ltr,
+       );
+       textPainter.layout();
+       textPainter.paint(canvas, Offset(dx - textPainter.width / 2, dy - textPainter.height / 2));
+  }
+
+  void _drawSegment(Canvas canvas, Rect rect, double start, double sweep, Color categoryColor, double strokeWidth, Offset center, double radius, String label, bool isBad, {bool drawGap = true}) {
        List<Color> gradientColors;
-       if (categoryColor.value == 0xFF42A5F5) { // Blue
+       
+       if (isBad) {
+          // Bad/Black gradients
+          gradientColors = [const Color(0xFF424242), const Color(0xFF1E1E1E)]; 
+       } else if (categoryColor.value == 0xFF42A5F5) { // Blue
           gradientColors = [const Color(0xFF90CAF9), const Color(0xFF42A5F5)];
        } else if (categoryColor.value == 0xFFFFA726) { // Orange
           gradientColors = [const Color(0xFFFFCC80), const Color(0xFFFFA726)];
@@ -707,7 +1219,7 @@ class NestedDonutPainter extends CustomPainter {
       canvas.drawArc(rect, start, sweep, false, paint);
       
       // Gap
-      if (sweep > 0.1) {
+      if (drawGap && sweep > 0.1) {
          final gapPaint = Paint()
            ..color = Colors.white
            ..style = PaintingStyle.stroke
@@ -718,30 +1230,9 @@ class NestedDonutPainter extends CustomPainter {
       }
       
       // TEXT LABEL
-       if (sweep < 0.1) return;
-       // Only draw text if progress is near completion, otherwise it flies around weirdly
-       if (sweep < 0.2) return; 
-
-       final labelAngle = start + sweep / 2;
-       final labelRadius = radius - strokeWidth / 2;
-       final dx = center.dx + labelRadius * math.cos(labelAngle);
-       final dy = center.dy + labelRadius * math.sin(labelAngle);
- 
-       final textSpan = TextSpan(
-         text: label,
-         style: GoogleFonts.kanit(
-           color: Colors.white, 
-           fontWeight: FontWeight.bold, 
-           fontSize: 11,
-           shadows: [const Shadow(blurRadius: 2, color: Colors.black26)],
-         ),
-       );
-       final textPainter = TextPainter(
-         text: textSpan,
-         textDirection: TextDirection.ltr,
-       );
-       textPainter.layout();
-       textPainter.paint(canvas, Offset(dx - textPainter.width / 2, dy - textPainter.height / 2));
+       if (label.isNotEmpty) {
+          _drawLabel(canvas, center, radius, strokeWidth, start, sweep, label);
+       }
   }
 
   @override
@@ -757,8 +1248,12 @@ class CategoryLegendRow extends StatelessWidget {
   final AnimationController textShineController;
   final bool isEnhanced;
   final int displayPct;
+  final int badPct; // NEW: Bad percentage from R-type pairs
+  final int potentialBoost; // NEW: Show potential boost when enhancing
+  final List<String> categoryInsights; // NEW: Insights from numbers.json
   final List<Map<String, dynamic>>? addedPhoneNumbers;
-  final Function(String category, int index)? onRemovePhoneNumber; // NEW
+  final Function(String category, int index)? onRemovePhoneNumber;
+  final bool isDominantlyBad; // NEW
 
   const CategoryLegendRow({
     super.key,
@@ -769,22 +1264,36 @@ class CategoryLegendRow extends StatelessWidget {
     required this.textShineController,
     required this.isEnhanced,
     required this.displayPct,
+    this.badPct = 0,
+    this.potentialBoost = 0,
+    this.categoryInsights = const [],
     this.addedPhoneNumbers,
-    this.onRemovePhoneNumber, // NEW
+    this.onRemovePhoneNumber,
+    this.isDominantlyBad = false, // NEW
   });
 
   @override
   Widget build(BuildContext context) {
-    bool isActive = cat.good > 0 || isEnhanced; 
-    bool hasBad = cat.bad > 0;
-    bool showColor = isActive || hasBad; 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // NEW: Always show percentage since we now calculate from numbers.json
+    // isActive is true if displayPct > 0 (from numbers.json average)
+    bool isActive = displayPct > 0 || cat.good > 0 || isEnhanced; 
+    bool hasBad = badPct > 0; // Use badPct field from R-type pairs
+    bool showColor = isActive || hasBad || displayPct > 0; 
     int goodPct = displayPct;
-    int badPct = totalPairs > 0 ? ((cat.bad / totalPairs) * 100).ceil() : 0;
+    
+    // Determine representative color (match chart)
+    Color dotColor = isDominantlyBad ? (isDark ? Colors.white38 : const Color(0xFF202020)) : cat.color;
+    if (!showColor) dotColor = isDark ? Colors.white10 : Colors.grey[300]!;
 
     return Container(
       // Zebra striping: even rows get slightly different dark background
       decoration: BoxDecoration(
-        color: index % 2 == 0 ? const Color(0xFF1E293B) : const Color(0xFF1A1A2E),
+        color: index % 2 == 0 
+            ? (isDark ? Colors.black.withOpacity(0.2) : Colors.white.withOpacity(0.6)) 
+            : Colors.transparent,
+        border: Border(bottom: BorderSide(color: isDark ? Colors.white12 : Colors.grey[200]!)),
       ),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       child: Column(
@@ -799,13 +1308,19 @@ class CategoryLegendRow extends StatelessWidget {
                   children: [
                     Container(
                       width: 12, height: 12,
-                      decoration: BoxDecoration(color: showColor ? cat.color : Colors.grey[300], shape: BoxShape.circle),
+                      decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         cat.name, 
-                        style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: showColor ? Colors.white : Colors.white38),
+                        style: GoogleFonts.kanit(
+                          fontSize: 16, 
+                          fontWeight: FontWeight.bold, 
+                          color: showColor 
+                              ? (isDark ? Colors.white.withOpacity(0.9) : const Color(0xFF1E293B)) 
+                              : (isDark ? Colors.white24 : Colors.grey[400])
+                        ),
                         overflow: TextOverflow.visible,
                         softWrap: false,
                       ),
@@ -817,18 +1332,20 @@ class CategoryLegendRow extends StatelessWidget {
                 flex: 2,
                 child: Container(
                   alignment: Alignment.center,
-                  child: isActive 
-                  ? Text('${goodPct > 0 ? goodPct : "-"}%', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: cat.color))
-                  : Text('-', style: GoogleFonts.kanit(fontSize: 16, color: Colors.white24)),
+                  // Good percentage from D-type pairs
+                  child: goodPct > 0 
+                  ? Text('$goodPct%', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? cat.color.withOpacity(0.9) : cat.color))
+                  : Text('-', style: GoogleFonts.kanit(fontSize: 16, color: isDark ? Colors.white10 : Colors.grey[300])),
                 ),
               ),
               Expanded(
                 flex: 2,
                 child: Container(
                   alignment: Alignment.center,
-                  child: cat.bad > 0
-                  ? Text('${badPct}%', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, color: Colors.white54))
-                  : Text('-', style: GoogleFonts.kanit(fontSize: 16, color: Colors.white24)),
+                  // Bad percentage from R-type pairs - shown in dark/gray color
+                  child: badPct > 0
+                  ? Text('$badPct%', style: GoogleFonts.kanit(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white38 : const Color(0xFF202020)))
+                  : Text('-', style: GoogleFonts.kanit(fontSize: 16, color: isDark ? Colors.white10 : Colors.grey[300])),
                 ),
               ),
               Expanded(
@@ -845,7 +1362,33 @@ class CategoryLegendRow extends StatelessWidget {
               ),
             ],
           ),
-          if (cat.keywords.isNotEmpty) ...[
+          // Show insights from numbers.json first, fallback to old keywords
+          if (categoryInsights.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 20, right: 8), 
+                child: ShimmeringGoldWrapper(
+                  enabled: showColor && !hasBad,
+                  child: Text(
+                    categoryInsights.join(', '),
+                    style: GoogleFonts.sarabun(
+                      fontSize: 16, 
+                      color: isDark 
+                          ? (showColor && !hasBad ? const Color(0xFFFBBF24) : Colors.white70)
+                          : (showColor && !hasBad ? const Color(0xFFD97706) : const Color(0xFF334155)), 
+                      fontWeight: FontWeight.bold,
+                      height: 1.8,
+                      fontStyle: FontStyle.normal,
+                    ),
+                    strutStyle: StrutStyle(
+                      fontFamily: 'Sarabun',
+                      fontSize: 16,
+                      height: 1.8,
+                      forceStrutHeight: true,
+                    ),
+                  ),
+                ),
+            ),
+          ] else if (cat.keywords.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.only(left: 20, right: 8), 
               child: ShimmeringGoldWrapper(
@@ -854,9 +1397,16 @@ class CategoryLegendRow extends StatelessWidget {
                   cat.keywords.join(', '),
                   style: GoogleFonts.sarabun(
                     fontSize: 15, 
-                    color: Colors.white, // Base color for shader
+                    color: const Color(0xFFFFD700), // Base color for shader (Gold)
                     fontWeight: FontWeight.bold,
-                    fontStyle: hasBad ? FontStyle.italic : FontStyle.normal,
+                    height: 1.8,
+                    fontStyle: FontStyle.normal,
+                  ),
+                  strutStyle: StrutStyle(
+                    fontFamily: 'Sarabun',
+                    fontSize: 15,
+                    height: 1.8,
+                    forceStrutHeight: true,
                   ),
                 ),
               ),
@@ -869,8 +1419,8 @@ class CategoryLegendRow extends StatelessWidget {
                 style: GoogleFonts.kanit(
                   fontSize: 13, 
                   color: hasBad ? Colors.white38 : Colors.white24,
-                  fontWeight: hasBad ? FontWeight.bold : FontWeight.normal,
-                  fontStyle: hasBad ? FontStyle.italic : FontStyle.normal,
+                  fontWeight: FontWeight.bold,
+                  fontStyle: FontStyle.normal,
                 ),
               ),
             ),
@@ -922,13 +1472,23 @@ class CategoryLegendRow extends StatelessWidget {
                       if (keywords.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 6),
-                          child: ShimmeringGoldWrapper(
-                            child: Text(
-                              keywords.join(', '),
-                              style: GoogleFonts.sarabun(
-                                fontSize: 16,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 4), // Extra room for Thai descenders inside shimmer bounds
+                            child: ShimmeringGoldWrapper(
+                              child: Text(
+                                keywords.join(', '),
+                                style: GoogleFonts.sarabun(
+                                  fontSize: 18,
+                                  color: const Color(0xFFFFD700), // Base color for shader (Gold)
+                                  fontWeight: FontWeight.w900,
+                                  height: 2.0,
+                                ),
+                                strutStyle: StrutStyle(
+                                  fontFamily: 'Sarabun',
+                                  fontSize: 18,
+                                  height: 2.0,
+                                  forceStrutHeight: true,
+                                ),
                               ),
                             ),
                           ),
@@ -962,19 +1522,19 @@ class CategoryLegendRow extends StatelessWidget {
                                     children: [
                                       Text(
                                         phoneNumber,
-                                        style: GoogleFonts.kanit(
+                                        style: GoogleFonts.sarabun(
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.white, // Color is overridden by ShaderMask
+                                          color: const Color(0xFFFFD700), // Overridden but gold helps anti-aliasing
                                         ),
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
                                         '($sum)',
-                                        style: GoogleFonts.kanit(
+                                        style: GoogleFonts.sarabun(
                                           fontSize: 18,
                                           fontWeight: FontWeight.w900,
-                                          color: Colors.white,
+                                          color: const Color(0xFFFFD700),
                                         ),
                                       ),
                                     ],
@@ -1554,82 +2114,5 @@ class _CompactPhoneRowState extends State<_CompactPhoneRow> with SingleTickerPro
   }
 }
 
-class BackgroundPatternPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Luxury Tan/Gold color for the monogram symbols - More visible for chart area
-    final symbolColor = const Color(0xFFA67C52).withOpacity(0.25); 
-    
-    final paint = Paint()
-      ..color = symbolColor
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
 
-    final textPainter = TextPainter(textDirection: TextDirection.ltr);
-
-    // INCREASED SPACING for a cleaner look
-    const double spacingX = 120.0;
-    const double spacingY = 100.0;
-    
-    for (double y = 0; y < size.height + spacingY; y += spacingY) {
-      final bool isOddRow = (y / spacingY).round() % 2 != 0;
-      final double offsetX = isOddRow ? spacingX / 2 : 0;
-      
-      for (double x = -spacingX; x < size.width + spacingX; x += spacingX) {
-        final double posX = x + offsetX;
-        
-        // Alternate symbols based on grid position
-        int symbolType = (((x / spacingX).floor() + (y / spacingY).floor())) % 3;
-        
-        if (symbolType == 0) {
-          // 1. Stylized "N" Logo (representing NumberNice)
-          textPainter.text = TextSpan(
-            text: 'N',
-            style: GoogleFonts.philosopher( // Using a more serif/luxury font for N
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: symbolColor,
-            ),
-          );
-          textPainter.layout();
-          textPainter.paint(canvas, Offset(posX - textPainter.width / 2, y - textPainter.height / 2));
-        } else if (symbolType == 1) {
-          // 2. Diamond Star
-          _drawDiamondStar(canvas, Offset(posX, y), 14, paint);
-        } else {
-          // 3. Flower/Circle Symbol
-          _drawMonogramCircle(canvas, Offset(posX, y), 12, paint);
-        }
-      }
-    }
-  }
-
-  void _drawDiamondStar(Canvas canvas, Offset center, double radius, Paint paint) {
-    final Path path = Path();
-    path.moveTo(center.dx, center.dy - radius); // Top
-    path.quadraticBezierTo(center.dx + radius * 0.2, center.dy - radius * 0.2, center.dx + radius, center.dy); // To Right
-    path.quadraticBezierTo(center.dx + radius * 0.2, center.dy + radius * 0.2, center.dx, center.dy + radius); // To Bottom
-    path.quadraticBezierTo(center.dx - radius * 0.2, center.dy + radius * 0.2, center.dx - radius, center.dy); // To Left
-    path.quadraticBezierTo(center.dx - radius * 0.2, center.dy - radius * 0.2, center.dx, center.dy - radius); // Back to Top
-    canvas.drawPath(path, paint);
-    canvas.drawCircle(center, 2, paint..style = PaintingStyle.fill);
-    paint.style = PaintingStyle.stroke; // Reset
-  }
-
-  void _drawMonogramCircle(Canvas canvas, Offset center, double radius, Paint paint) {
-    canvas.drawCircle(center, radius, paint);
-    // Tiny flower inside
-    for (int i = 0; i < 4; i++) {
-      double angle = i * math.pi / 2;
-      canvas.drawCircle(
-        Offset(center.dx + (radius * 0.5) * math.cos(angle), center.dy + (radius * 0.5) * math.sin(angle)),
-        radius * 0.3,
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
-}
 

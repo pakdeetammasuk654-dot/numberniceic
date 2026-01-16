@@ -97,21 +97,86 @@ templ ArticleForm(isEdit bool, a *domain.Article) {
 		</div>
 	</div>
 	<!-- Dependencies -->
-	<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" crossorigin="anonymous"></script>
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 	<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet"/>
 	<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
 	<script type="text/javascript">
-        let imagePickerCallback = null;
-
-        function closeImagePicker() {
-            document.getElementById('image-picker-modal').style.display = 'none';
-            imagePickerCallback = null;
+        // Helper to wait for jQuery and Summernote
+        function waitForSummernote(callback) {
+            if (window.jQuery && window.jQuery.fn && window.jQuery.fn.summernote) {
+                callback();
+            } else {
+                setTimeout(function() { waitForSummernote(callback); }, 100);
+            }
         }
 
-        function loadImagesAndShowModal(callback) {
+        // Main Init Function
+        const initSummernoteLogic = function() {
+            waitForSummernote(function() {
+                const contentEl = document.getElementById('content');
+                if (!contentEl) return;
+                
+                // Avoid double init
+                if (window.jQuery('#content').next().hasClass('note-editor')) {
+                    return;
+                }
+
+                // Custom button for Summernote
+                const LibraryButton = function (context) {
+                    const ui = $.summernote.ui;
+                    const button = ui.button({
+                        contents: '<i class="note-icon-picture"/> Library',
+                        tooltip: 'เลือกรูปภาพจากคลัง',
+                        click: function () {
+                            if (typeof loadImagesAndShowModal === 'function') {
+                                loadImagesAndShowModal((url) => {
+                                    context.invoke('editor.insertImage', url);
+                                });
+                            }
+                        }
+                    });
+                    return button.render();
+                }
+
+                window.jQuery('#content').summernote({
+                    placeholder: 'เขียนเนื้อหาบทความที่นี่...',
+                    tabsize: 2,
+                    height: 500,
+                    toolbar: [
+                        ['style', ['style']],
+                        ['font', ['bold', 'underline', 'clear']],
+                        ['color', ['color']],
+                        ['para', ['ul', 'ol', 'paragraph']],
+                        ['table', ['table']],
+                        ['insert', ['link', 'library', 'video']],
+                        ['view', ['fullscreen', 'codeview', 'help']]
+                    ],
+                    buttons: {
+                        library: LibraryButton
+                    },
+                    styleTags: [
+                        'p',
+                        { title: 'Blockquote', tag: 'blockquote', className: 'blockquote', value: 'blockquote' },
+                        'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
+                    ],
+                    fontNames: ['Sarabun', 'Arial', 'Arial Black', 'Comic Sans MS', 'Courier New'],
+                    addDefaultFonts: false
+                });
+            });
+        };
+
+        // Helper functions
+        window.closeImagePicker = function() {
+            const el = document.getElementById('image-picker-modal');
+            if(el) el.style.display = 'none';
+        }
+
+        let imagePickerCallback = null;
+        window.loadImagesAndShowModal = function(callback) {
             imagePickerCallback = callback;
             const modal = document.getElementById('image-picker-modal');
             const grid = document.getElementById('image-picker-grid');
+            if(!modal || !grid) return;
 
             fetch('/admin/api/images')
                 .then(response => response.json())
@@ -136,61 +201,38 @@ templ ArticleForm(isEdit bool, a *domain.Article) {
                             if (imagePickerCallback) {
                                 imagePickerCallback(`/uploads/${imageName}`);
                             }
-                            closeImagePicker();
+                            window.closeImagePicker();
                         };
                         grid.appendChild(imgContainer);
                     });
                     modal.style.display = 'flex';
-                });
+                })
+                .catch(err => console.error('Error loading images:', err));
         }
 
-        function openImagePickerForCover() {
-            loadImagesAndShowModal((url) => {
-                document.getElementById('image_url').value = url;
+        window.openImagePickerForCover = function() {
+            window.loadImagesAndShowModal((url) => {
+                const el = document.getElementById('image_url');
+                if(el) el.value = url;
             });
         }
 
-        $(document).ready(function() {
-            // Custom button for Summernote
-            const LibraryButton = function (context) {
-                const ui = $.summernote.ui;
-                const button = ui.button({
-                    contents: '<i class="note-icon-picture"/> Library',
-                    tooltip: 'เลือกรูปภาพจากคลัง',
-                    click: function () {
-                        loadImagesAndShowModal((url) => {
-                            context.invoke('editor.insertImage', url);
-                        });
-                    }
-                });
-                return button.render();
-            }
+        // Manage Event Listeners and Initialization
+        if (window.summernoteInitHandler) {
+            document.body.removeEventListener('htmx:afterSettle', window.summernoteInitHandler);
+        }
+        window.summernoteInitHandler = initSummernoteLogic;
+        
+        // Add robust listener
+        document.body.addEventListener('htmx:afterSettle', window.summernoteInitHandler);
 
-            $('#content').summernote({
-                placeholder: 'เขียนเนื้อหาบทความที่นี่...',
-                tabsize: 2,
-                height: 500,
-                toolbar: [
-                    ['style', ['style']],
-                    ['font', ['bold', 'underline', 'clear']],
-                    ['color', ['color']],
-                    ['para', ['ul', 'ol', 'paragraph']],
-                    ['table', ['table']],
-                    ['insert', ['link', 'library', 'video']],
-                    ['view', ['fullscreen', 'codeview', 'help']]
-                ],
-                buttons: {
-                    library: LibraryButton
-                },
-                styleTags: [
-                    'p',
-                    { title: 'Blockquote', tag: 'blockquote', className: 'blockquote', value: 'blockquote' },
-                    'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
-                ],
-                fontNames: ['Sarabun', 'Arial', 'Arial Black', 'Comic Sans MS', 'Courier New'],
-                addDefaultFonts: false
-            });
-        });
+        // Initial Run
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', window.summernoteInitHandler);
+        } else {
+            // Slight delay to ensure scripts parsed
+            setTimeout(window.summernoteInitHandler, 0);
+        }
     </script>
 }
 

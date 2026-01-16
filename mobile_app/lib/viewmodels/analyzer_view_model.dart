@@ -10,11 +10,11 @@ class AnalyzerViewModel extends ChangeNotifier {
   // State
   String _currentName = '';
   String _selectedDay = 'sunday';
-  bool _isAuspicious = false;
-  bool _showKlakini = true;
-  bool _showTop4 = false;
-  bool _showKlakiniTop4 = false;
-  bool _isTop4Switching = false;
+  int _loadingCount = 0; // NEW: Track progress
+  int _scannedCount = 0;
+  bool _isAuspicious = true;
+  bool _showTop10 = false;
+  bool _isTop10Switching = false;
   bool _isLoading = false;
   
   bool _isSolarLoading = false;
@@ -23,7 +23,7 @@ class AnalyzerViewModel extends ChangeNotifier {
   AnalysisResult? _analysisResult;
   bool _isLoggedIn = false;
   bool _isAvatarScrolling = true; // Shared state for avatar list scrolling
-  bool _showTutorial = false; 
+  bool _showTutorial = true; 
   
   // Scroll to top notifier - increment to trigger scroll
   final ValueNotifier<int> scrollToTopNotifier = ValueNotifier<int>(0);
@@ -44,12 +44,12 @@ class AnalyzerViewModel extends ChangeNotifier {
   
   // Getters
   String get currentName => _currentName;
+  int get loadingCount => _loadingCount;
+  int get scannedCount => _scannedCount;
   String get selectedDay => _selectedDay;
   bool get isAuspicious => _isAuspicious;
-  bool get showKlakini => _showKlakini;
-  bool get showTop4 => _showTop4;
-  bool get showKlakiniTop4 => _showKlakiniTop4;
-  bool get isTop4Switching => _isTop4Switching;
+  bool get showTop10 => _showTop10;
+  bool get isTop10Switching => _isTop10Switching;
   bool get isLoading => _isLoading;
 
   bool get isSolarLoading => _isSolarLoading;
@@ -137,34 +137,18 @@ class AnalyzerViewModel extends ChangeNotifier {
     analyze();
   }
   
-  void toggleShowKlakini(bool val) {
-    _showKlakini = val;
-    notifyListeners();
-    analyze();
-  }
   
-  void toggleShowTop4(bool val) {
-    _isTop4Switching = true;
-    _showTop4 = val;
+  void toggleShowTop10(bool val) {
+    _isTop10Switching = true;
+    _showTop10 = val;
     notifyListeners();
     
     Future.delayed(const Duration(milliseconds: 300), () {
-      _isTop4Switching = false;
+      _isTop10Switching = false;
       notifyListeners();
     });
   }
   
-  void toggleShowKlakiniTop4(bool val) {
-     _showKlakiniTop4 = val;
-     _isTop4Switching = true;
-     notifyListeners();
-     analyze();
-     
-     Future.delayed(const Duration(milliseconds: 300), () {
-       _isTop4Switching = false;
-       notifyListeners();
-     });
-  }
 
   Future<void> analyze() async {
     if (_currentName.isEmpty) {
@@ -184,8 +168,8 @@ class AnalyzerViewModel extends ChangeNotifier {
         _currentName,
         _selectedDay,
         auspicious: _isAuspicious,
-        disableKlakini: !_showKlakini,
-        disableKlakiniTop4: !_showKlakiniTop4,
+        disableKlakini: _isAuspicious, // If showing good names only, hide Klakini
+        disableKlakiniTop4: _isAuspicious, // If showing good names only, hide Klakini in TOP10
         section: 'solar',
       );
       
@@ -198,23 +182,48 @@ class AnalyzerViewModel extends ChangeNotifier {
       notifyListeners();
       
       // Step 2: Names (Slower)
-      final namesRes = await ApiService.analyzeName(
+      // Step 2: Names (Slower) - Stream Progress
+      _loadingCount = 0;
+      _scannedCount = 0;
+      notifyListeners();
+
+      final stream = ApiService.analyzeNameStream(
          _currentName,
         _selectedDay,
         auspicious: _isAuspicious,
-        disableKlakini: !_showKlakini,
-        disableKlakiniTop4: !_showKlakiniTop4,
+        disableKlakini: _isAuspicious,
+        disableKlakiniTop4: _isAuspicious,
         section: 'names',
       );
-      
-       if (_analysisResult == null) {
-        _analysisResult = namesRes;
-      } else {
-        _analysisResult = _analysisResult!.copyWith(
-          bestNames: namesRes.bestNames,
-          similarNames: namesRes.similarNames,
-          isVip: namesRes.isVip,
-        );
+
+      int lastUpdate = 0;
+      await for (final event in stream) {
+          if (event['type'] == 'progress') {
+             _loadingCount = event['count'] ?? 0;
+             _scannedCount = event['total'] ?? 0;
+             
+             // Throttle updates to prevent UI freeze (max 10fps)
+             final now = DateTime.now().millisecondsSinceEpoch;
+             if (now - lastUpdate > 100) {
+                 notifyListeners();
+                 lastUpdate = now;
+             }
+          } else if (event['type'] == 'result') {
+             final namesRes = AnalysisResult.fromJson(event['payload']);
+             
+             if (_analysisResult == null) {
+                _analysisResult = namesRes;
+              } else {
+                _analysisResult = _analysisResult!.copyWith(
+                  bestNames: namesRes.bestNames,
+                  similarNames: namesRes.similarNames,
+                  isVip: namesRes.isVip,
+                );
+              }
+          } else if (event['type'] == 'error') {
+             debugPrint("Stream Error: ${event['message']}");
+             // Don't throw to avoid crashing UI completely, but maybe show toast
+          }
       }
       
       _isNamesLoading = false;

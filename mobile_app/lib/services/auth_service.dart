@@ -61,6 +61,7 @@ class AuthService {
     try {
       final fb_auth.LoginResult result = await fb_auth.FacebookAuth.instance.login(
         permissions: ['email', 'public_profile'],
+        loginBehavior: fb_auth.LoginBehavior.webOnly, // Avoid Chrome Custom Tabs on Emulator
       );
 
       if (result.status != fb_auth.LoginStatus.success) {
@@ -255,6 +256,8 @@ class AuthService {
       await NotificationService().cancelAll();
       await LocalNotificationStorage.clearAll(); // Clear History List
       await FirebaseMessaging.instance.deleteToken();
+      // Force UI update
+      ApiService.unreadNotificationCount.value = 0;
       print("✅ Notification Token Deleted & History Cleared");
     } catch (e) {
       print("Logout Cleanup Error: $e");
@@ -281,6 +284,7 @@ class AuthService {
     await prefs.remove(keyEmail);
     await prefs.remove(keyAvatarUrl);
     await prefs.remove(keyAssignedColors);
+    await prefs.remove('miracle_user_birth_day'); // Clear Miracle Birth Day
   }
 
   static Future<bool> isLoggedIn() async {

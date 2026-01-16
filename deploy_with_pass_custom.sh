@@ -18,7 +18,7 @@ echo "Step 2: Stopping service..."
 $SSH_CMD $SERVER_USER@$SERVER_IP "echo $SSH_PASS | sudo -S systemctl stop numberniceic || true"
 
 echo "Step 3: Creating directories..."
-$SSH_CMD $SERVER_USER@$SERVER_IP "mkdir -p $REMOTE_DIR/migrations $REMOTE_DIR/static/css $REMOTE_DIR/static/js"
+$SSH_CMD $SERVER_USER@$SERVER_IP "mkdir -p $REMOTE_DIR/migrations $REMOTE_DIR/static/css $REMOTE_DIR/static/js $REMOTE_DIR/assets"
 
 echo "Step 4: Uploading files using SCP..."
 $SCP_CMD numbernice-linux $SERVER_USER@$SERVER_IP:$REMOTE_DIR/numbernice-linux
@@ -32,6 +32,9 @@ if [ -d "static/js" ]; then
 fi
 if [ -d "static/images" ]; then
     $SCP_CMD -r static/images $SERVER_USER@$SERVER_IP:$REMOTE_DIR/static/
+fi
+if [ -d "assets" ]; then
+    $SCP_CMD -r assets $SERVER_USER@$SERVER_IP:$REMOTE_DIR/
 fi
 $SCP_CMD static/favicon.* $SERVER_USER@$SERVER_IP:$REMOTE_DIR/static/
 $SCP_CMD -r views $SERVER_USER@$SERVER_IP:$REMOTE_DIR/

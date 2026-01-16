@@ -1,492 +1,421 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/name_analysis.dart';
+import '../../models/name_character.dart';
 import '../shimmering_gold_wrapper.dart';
+import 'best_name_card.dart';
+import 'analysis_toggles.dart';
+import '../background_pattern_painter.dart';
 
-class ActionsSection extends StatelessWidget {
+class ActionsSection extends StatefulWidget {
+  final String currentName;
+  final String selectedDayLabel;
   final List<NameAnalysis>? similarNames;
-  final bool showKlakini;
+  final int startRank; // Starting rank of first name in similarNames
   final bool showGoodOnly;
   final bool isVip;
   final bool isLoading;
-  final ValueChanged<bool> onToggleKlakini;
   final ValueChanged<bool> onToggleGoodOnly;
   final ValueChanged<String> onNameSelected;
   final VoidCallback onShopPressed;
+  final VoidCallback? onPageChanged;
   final Set<int> badNumbers;
-
+  final List<NameCharacter>? inputNameChars; // New: For finding Kalakini in input name
+  final bool isInputNamePerfect; // New: For shimmering input name
 
   const ActionsSection({
     Key? key,
+    required this.currentName,
+    required this.selectedDayLabel,
     required this.similarNames,
-    required this.showKlakini,
+    this.startRank = 1, // Default to rank 1
     required this.showGoodOnly,
     required this.isVip,
     this.isLoading = false,
-    required this.onToggleKlakini,
     required this.onToggleGoodOnly,
     required this.onNameSelected,
     required this.onShopPressed,
-    this.badNumbers = const {}, // Empty default, essentially required logic-wise but preventing break
+    this.onPageChanged,
+    this.badNumbers = const {},
+    this.inputNameChars,
+    this.isInputNamePerfect = false,
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    // const badNumbers = ... removed, using field.
+  State<ActionsSection> createState() => _ActionsSectionState();
+}
 
+class _ActionsSectionState extends State<ActionsSection> {
+  int _currentPage = 0;
+  static const int _pageSize = 100;
+
+  @override
+  void didUpdateWidget(ActionsSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reset page if name or filter changes
+    if (oldWidget.currentName != widget.currentName || 
+        oldWidget.showGoodOnly != widget.showGoodOnly) {
+      _currentPage = 0;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Prepare filtered list while preserving original rank
-    final List<MapEntry<int, NameAnalysis>> filteredList = [];
-    if (similarNames != null) {
-      for (var i = 0; i < similarNames!.length; i++) {
-        final name = similarNames![i];
+    final List<MapEntry<int, NameAnalysis>> fullFilteredList = [];
+    if (widget.similarNames != null) {
+      for (var i = 0; i < widget.similarNames!.length; i++) {
+        final name = widget.similarNames![i];
         
-        if (showGoodOnly) {
-           final isNumBad = _isListBad(name.tSat);
-           final isShaBad = _isListBad(name.tSha);
-           // Only add if BOTH are good (not bad)
-           if (!isNumBad && !isShaBad) {
-             filteredList.add(MapEntry(i, name));
+        if (widget.showGoodOnly) {
+           final hasKlakini = name.displayNameHtml.any((c) => c.isBad);
+           if (!name.hasBadPair && !hasKlakini) {
+             fullFilteredList.add(MapEntry(i, name));
            }
         } else {
-           filteredList.add(MapEntry(i, name));
+           fullFilteredList.add(MapEntry(i, name));
         }
       }
     }
 
+    final totalItems = fullFilteredList.length;
+    final totalPages = (totalItems / _pageSize).ceil().clamp(1, 999);
+    
+    // Slice for current page
+    final int start = _currentPage * _pageSize;
+    final int end = (start + _pageSize) > totalItems ? totalItems : (start + _pageSize);
+    final List<MapEntry<int, NameAnalysis>> pagedList = 
+        (totalItems > 0) ? fullFilteredList.sublist(start, end) : [];
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      color: const Color(0xFF1A1A2E),
+      color: Colors.transparent,
       child: Column(
         children: [
-          // VIP Banner
-          // VIP Banner removed as per request
-          
-          Container(
-            color: const Color(0xFF16213E),
-            height: 16,
-          ),
-
-          Container(
-            color: const Color(0xFF16213E),
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16), 
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  // Toggle: Show Good Only
-                  Row(
-                    children: [
-                      Text('แสดงเลขดีเท่านั้น', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF34D399))),
-                      const SizedBox(width: 8),
-                      Transform.scale(
-                        scale: 0.8,
-                        child: Switch.adaptive(
-                          value: showGoodOnly,
-                          onChanged: onToggleGoodOnly, 
-                          activeColor: Colors.white,
-                          activeTrackColor: const Color(0xFF34D399),
-                        ),
+        // Analysis Header Title
+        Padding(
+          padding: const EdgeInsets.only(top: 10, bottom: 5),
+          child: RichText(
+            text: TextSpan(
+              style: GoogleFonts.kanit(fontSize: 16, color: isDark ? Colors.white70 : const Color(0xFF334155)),
+              children: [
+                const TextSpan(text: 'หาชื่อดีให้ '),
+                // Quote start
+                TextSpan(text: '"', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF7E22CE))),
+                
+                // Name with Shimmer and Kalakini
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.baseline,
+                  baseline: TextBaseline.alphabetic,
+                  child: ShimmeringGoldWrapper(
+                    enabled: widget.isInputNamePerfect,
+                    child: RichText(
+                      text: TextSpan(
+                        children: widget.inputNameChars != null 
+                            ? widget.inputNameChars!.map((c) => TextSpan(
+                                text: c.char, 
+                                style: GoogleFonts.kanit(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: (c.isBad) 
+                                      ? const Color(0xFFEF4444) 
+                                      : (widget.isInputNamePerfect 
+                                          ? const Color(0xFF7E22CE) 
+                                          : const Color(0xFF111827)),
+                                ),
+                              )).toList()
+                            : [
+                                TextSpan(
+                                  text: widget.currentName,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF7E22CE)),
+                                )
+                              ],
                       ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(width: 16),
-                  
-                  // Toggle: Show Klakini
-                  Row(
-                    children: [
-                      RichText(
-                        text: TextSpan(
-                          style: GoogleFonts.kanit(fontSize: 12, color: Colors.white54),
-                          children: [
-                            const TextSpan(text: 'แสดง'),
-                            TextSpan(text: 'กาลกิณี', style: const TextStyle(color: Color(0xFFFF6B6B), fontWeight: FontWeight.bold)),
-                          ]
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Transform.scale(
-                        scale: 0.8,
-                        child: Switch.adaptive(
-                          value: showKlakini,
-                          onChanged: onToggleKlakini,
-                          activeColor: Colors.white,
-                          activeTrackColor: const Color(0xFFFF6B6B),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+                
+                // Quote end
+                TextSpan(text: '"', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF7E22CE))),
+                
+                const TextSpan(text: ' เกิดวัน '),
+                TextSpan(text: '"${widget.selectedDayLabel}"', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF7E22CE))),
+              ],
             ),
-          ),
-
-        // Table Header
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: const BoxDecoration(
-            color: Color(0xFF1F2E4D), // Lighter Navy Header
-            border: Border(bottom: BorderSide(color: Colors.white12)),
-          ),
-          child: Row(
-            children: [
-              Expanded(flex: 3, child: Text('ชื่อดี', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: Colors.white70, fontSize: 11))),
-              Expanded(flex: 2, child: Center(child: Text('ศาสตร์', textAlign: TextAlign.center, style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: Colors.white70, fontSize: 10, height: 1.0)))),
-              Expanded(flex: 2, child: Center(child: Text('เงา', textAlign: TextAlign.center, style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: Colors.white70, fontSize: 10, height: 1.0)))),
-              Expanded(flex: 2, child: Center(child: Text('คะแนน', style: GoogleFonts.kanit(fontWeight: FontWeight.bold, color: Colors.white70, fontSize: 11)))),
-              const SizedBox(width: 34), // Arrow space
-            ],
           ),
         ),
 
-        // Table Rows
-        if (isLoading) ...[
-          ...List.generate(3, (index) => Container(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.white12, width: 1.0)),
-              color: Color(0xFF16213E),
-            ),
+        // 2. Toggles
+        AnalysisToggles(
+          showGoodOnly: widget.showGoodOnly,
+          enabled: !widget.isLoading,
+          onToggleGoodOnly: widget.onToggleGoodOnly,
+        ),
+
+        // 3. Table Header (Navy)
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 0),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            border: Border(bottom: BorderSide(color: isDark ? Colors.white12 : Colors.grey[300]!)),
+          ),
+          child: Row(
+            children: [
+              Expanded(flex: 4, child: Text('ชื่อดี / คล้าย', style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.normal, color: isDark ? Colors.white60 : Colors.grey[700]))),
+              Expanded(flex: 4, child: Row(
+               mainAxisAlignment: MainAxisAlignment.center,
+               children: [
+                  Text('ศาสตร์', textAlign: TextAlign.center, style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.normal, color: isDark ? Colors.white60 : Colors.grey[700])),
+                  const SizedBox(width: 16),
+                  Text('เงา', textAlign: TextAlign.center, style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.normal, color: isDark ? Colors.white60 : Colors.grey[700])),
+               ],
+              )),
+              SizedBox(
+               width: 50, 
+               child: Text('คะแนน', textAlign: TextAlign.right, style: GoogleFonts.kanit(fontSize: 12, fontWeight: FontWeight.normal, color: isDark ? Colors.white60 : Colors.grey[700]))
+              ),
+              const SizedBox(width: 12),
+           ],
+         )
+        ),
+
+        // Table Rows Container
+        Container(
+           clipBehavior: Clip.hardEdge,
+           decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+              border: Border.all(color: isDark ? Colors.white12 : Colors.grey[300]!, width: 1.5),
+           ),
+           child: CustomPaint(
+             painter: BackgroundPatternPainter(
+               color: isDark ? Colors.white : const Color(0xFF94A3B8),
+               opacity: isDark ? 0.05 : 0.1,
+             ),
+             child: Column(
+               children: [
+                 if (widget.isLoading)
+                   ...List.generate(3, (index) => _buildSkeletonRow()),
+
+                  if (!widget.isLoading && pagedList.isNotEmpty)
+                    ...pagedList.asMap().entries
+                     .take(widget.isVip ? pagedList.length : 3)
+                     .map((entry) {
+                       final pagedIdx = entry.key;
+                       final filteredEntry = entry.value;
+                       final originalIndex = filteredEntry.key; // Original index in full list
+                       final name = filteredEntry.value;
+                       
+                       // Calculate actual rank using startRank
+                       final actualRank = widget.startRank + originalIndex;
+
+                       final hasKlakini = name.displayNameHtml.any((c) => c.isBad);
+                       // Premium name criteria: isTopTier (all pairs are D10/D8/D5) AND no Klakini
+                       final bool shouldBeGold = name.isTopTier && !hasKlakini;
+                       
+                       // Debug: Print ALL names being rendered
+                       print('🔍 [Rank $actualRank] ${name.thName}: isTopTier=${name.isTopTier}, hasKlakini=$hasKlakini, shouldBeGold=$shouldBeGold');
+
+                       return Container(
+                         decoration: BoxDecoration(
+                           border: Border(bottom: BorderSide(color: Colors.grey[300]!, width: 1.0)),
+                         ),
+                         child: BestNameCard(
+                           nameAnalysis: name,
+                           rank: actualRank,
+                           isGold: shouldBeGold,
+                           onTap: () => widget.onNameSelected(name.thName),
+                           isCompact: true,
+                           forceTransparentBg: true,
+                         ),
+                       );
+                     }),
+                    
+                 if (!widget.isLoading && pagedList.isEmpty)
+                   Padding(
+                     padding: const EdgeInsets.all(24),
+                     child: Center(child: Text('ไม่พบข้อมูลตามเงื่อนไข', style: GoogleFonts.kanit(color: Colors.grey[500]))),
+                   ),
+                   
+                 if (!widget.isVip && !widget.isLoading && _currentPage == 0)
+                   ...List.generate(97, (index) {
+                     final itemNumber = index + 4;
+                     return _buildLockedItem(itemNumber);
+                   }),
+               ],
+             ),
+           ),
+        ),
+
+        if (!widget.isLoading && totalPages > 1)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Expanded(
-                  flex: 3,
-                  child: Container(
-                    height: 20,
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(4)),
+                _buildPageButton(
+                   icon: Icons.chevron_left_rounded,
+                   enabled: _currentPage > 0,
+                   onTap: () {
+                     setState(() => _currentPage--);
+                     widget.onPageChanged?.call();
+                   },
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+                  ),
+                  child: Text(
+                    'หน้า ${_currentPage + 1} / $totalPages',
+                    style: GoogleFonts.kanit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF7E22CE),
+                    ),
                   ),
                 ),
-                Expanded(flex: 2, child: Center(child: Container(width: 24, height: 24, decoration: const BoxDecoration(color: Colors.white12, shape: BoxShape.circle)))),
-                Expanded(flex: 2, child: Center(child: Container(width: 24, height: 24, decoration: const BoxDecoration(color: Colors.white12, shape: BoxShape.circle)))),
-                Expanded(flex: 2, child: Center(child: Container(width: 40, height: 24, decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(6))))),
-                Container(width: 34, height: 34, decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12))),
+                const SizedBox(width: 8),
+                _buildPageButton(
+                   icon: Icons.chevron_right_rounded,
+                   enabled: _currentPage < totalPages - 1,
+                   onTap: () {
+                     setState(() => _currentPage++);
+                     widget.onPageChanged?.call();
+                   },
+                ),
               ],
             ),
-          )),
-        ],
-
-        if (!isLoading && filteredList.isNotEmpty)
-          ...filteredList
-              .take(isVip ? filteredList.length : 3)
-              .toList()
-              .asMap()
-              .entries
-              .map((entry) {
-            final displayIndex = entry.key; // 0, 1, 2... in the processed list
-            final filteredEntry = entry.value; 
-            final originalIndex = filteredEntry.key; // Original index in validNames
-            final name = filteredEntry.value;
-
-             final isNumBad = _isListBad(name.tSat);
-             final isShaBad = _isListBad(name.tSha);
-             final isScorePos = name.totalScore >= 0;
-             final hasKlakini = name.displayNameHtml.any((c) => c.isBad);
-             final isPerfectName = !isNumBad && !isShaBad && !hasKlakini;
-             final isTop3 = originalIndex < 3;
-             
-             // A name should be gold/shimmer if it's PerfectName (Good Num + Good Shadow + No Klakini)
-             // regardless of rank.
-             final bool shouldBeGold = isPerfectName;
-
-            return Container(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: shouldBeGold ? const Color(0xFFFFD700) : Colors.white12, width: 1.0)),
-                color: shouldBeGold ? const Color(0xFF2C250E) : Colors.transparent, // Gold tint or transparent
-              ),
-              child: Row(
-                children: [
-                  // Rank & Name
-                  Expanded(
-                    flex: 3,
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 40,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (isTop3) ...[
-                                if (showGoodOnly)
-                                  const Icon(Icons.workspace_premium, color: Color(0xFFFFD700), size: 16),
-                                Text('#${originalIndex + 1}', style: GoogleFonts.kanit(fontSize: showGoodOnly ? 10 : 12, color: const Color(0xFFFFD700), fontWeight: FontWeight.bold)),
-                              ] else 
-                                Text('#${originalIndex + 1}', style: GoogleFonts.kanit(fontSize: 12, color: Colors.white38, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ShimmeringGoldWrapper(
-                            enabled: shouldBeGold,
-                            child: RichText(
-                              text: TextSpan(
-                                style: GoogleFonts.kanit(
-                                  fontSize: 16, 
-                                  fontWeight: FontWeight.bold, 
-                                  color: shouldBeGold ? const Color(0xFFFFD700) : Colors.white
-                                ),
-                                children: name.displayNameHtml.map((char) {
-                                  return TextSpan(
-                                    text: char.char,
-                                      style: TextStyle(
-                                        color: char.isBad 
-                                            ? (showKlakini ? const Color(0xFFFF4757) : (shouldBeGold ? const Color(0xFFFFD700) : Colors.white))
-                                            : (shouldBeGold ? const Color(0xFFFFD700) : Colors.white),
-                                      ),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Numerology
-                  Expanded(
-                    flex: 2,
-                    child: Center(
-                      child: Container(
-                         width: 24, height: 24, 
-                         alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                           color: _getDynamicColor(name.tSat), 
-                           shape: BoxShape.circle,
-                           boxShadow: [
-                             BoxShadow(
-                               color: _getDynamicColor(name.tSat).withOpacity(0.3),
-                               blurRadius: 4,
-                               offset: const Offset(0, 2),
-                             )
-                           ]
-                         ),
-                         child: Text(
-                           '${name.totalNumerology}',
-                           style: GoogleFonts.kanit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold) 
-                         ),
-                      ),
-                    )
-                  ),
-
-                  // Shadow
-                  Expanded(
-                    flex: 2,
-                    child: Center(
-                       child: Container(
-                         width: 24, height: 24, 
-                         alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                           color: _getDynamicColor(name.tSha),
-                           shape: BoxShape.circle,
-                           boxShadow: [
-                             BoxShadow(
-                               color: _getDynamicColor(name.tSha).withOpacity(0.3),
-                               blurRadius: 4,
-                               offset: const Offset(0, 2),
-                             )
-                           ]
-                         ),
-                         child: Text(
-                           '${name.totalShadow}',
-                           style: GoogleFonts.kanit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold) 
-                         ),
-                       )
-                    )
-                  ),
-
-                  // Score
-                  Expanded(
-                    flex: 2,
-                    child: Center(
-                      child: Text(
-                          '${isScorePos ? '+' : ''}${name.totalScore}',
-                          style: GoogleFonts.kanit(
-                            color: isScorePos ? Colors.greenAccent : Colors.redAccent, 
-                            fontWeight: FontWeight.w900, 
-                            fontSize: 14
-                          ),
-                      ),
-                    ),
-                  ),
-
-                  // Arrow
-                  GestureDetector(
-                    onTap: () => onNameSelected(name.thName),
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      padding: EdgeInsets.zero,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white12),
-                      ),
-                      child: const Icon(Icons.keyboard_double_arrow_right_rounded, size: 18, color: Colors.white70),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-
-            
-          if (!isLoading && filteredList.isEmpty)
-             Padding(
-               padding: const EdgeInsets.all(24),
-               child: Center(child: Text('ไม่พบข้อมูลตามเงื่อนไข', style: GoogleFonts.kanit(color: Colors.white54))),
-             ),
-             
-
-          if (!isVip && !isLoading) _buildLockedSection(),
+          ),
       ],
     ),
   );
 }
 
+  Widget _buildPageButton({required IconData icon, required bool enabled, required VoidCallback onTap, String? tooltip}) {
+    return Tooltip(
+      message: tooltip ?? '',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: enabled 
+                  ? const Color(0xFF7E22CE).withOpacity(0.1) 
+                  : (Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: enabled ? const Color(0xFF7E22CE).withOpacity(0.3) : Colors.transparent),
+            ),
+            child: Icon(
+              icon,
+              color: enabled ? const Color(0xFF7E22CE) : Colors.white24,
+              size: 20,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonRow() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final skeletonColor = isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200];
+    final borderColor = isDark ? Colors.white10 : Colors.grey[300];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: borderColor!, width: 1.0)),
+      ),
+      child: Row(
+        children: [
+          Container(width: 30, height: 20, margin: const EdgeInsets.only(right: 12), decoration: BoxDecoration(color: skeletonColor, borderRadius: BorderRadius.circular(4))),
+          Expanded(child: Container(height: 20, decoration: BoxDecoration(color: skeletonColor, borderRadius: BorderRadius.circular(4)))),
+          const SizedBox(width: 16),
+          Container(width: 24, height: 24, decoration: BoxDecoration(color: skeletonColor, shape: BoxShape.circle)),
+          const SizedBox(width: 8),
+          Container(width: 24, height: 24, decoration: BoxDecoration(color: skeletonColor, shape: BoxShape.circle)),
+          const SizedBox(width: 16),
+          Container(width: 40, height: 20, decoration: BoxDecoration(color: skeletonColor, borderRadius: BorderRadius.circular(4))),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLockedSection() {
     // Show 7 locked items (positions 4-10)
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(7, (index) {
-        final itemNumber = index + 4; // 4, 5, 6, 7, 8, 9, 10
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Colors.white12, width: 1.0)),
-            color: Color(0xFF2A2A3E), // Gray locked background
-          ),
-          child: Stack(
-            children: [
-              // Grayed out content
-              Opacity(
-                opacity: 0.3,
-                child: Row(
-                  children: [
-                    // Rank & Name
-                    Expanded(
-                      flex: 3,
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 40,
-                            child: Text(
-                              '#$itemNumber',
-                              style: GoogleFonts.kanit(
-                                fontSize: 12,
-                                color: Colors.white38,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Container(
-                              height: 20,
-                              decoration: BoxDecoration(
-                                color: Colors.white24,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Numerology circle
-                    Expanded(
-                      flex: 2,
-                      child: Center(
-                        child: Container(
-                          width: 24,
-                          height: 24,
-                          decoration: const BoxDecoration(
-                            color: Colors.white24,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Shadow circle
-                    Expanded(
-                      flex: 2,
-                      child: Center(
-                        child: Container(
-                          width: 24,
-                          height: 24,
-                          decoration: const BoxDecoration(
-                            color: Colors.white24,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Score
-                    Expanded(
-                      flex: 2,
-                      child: Center(
-                        child: Container(
-                          width: 40,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            color: Colors.white24,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Arrow
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: Colors.white10,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white12),
-                      ),
-                      child: const Icon(
-                        Icons.lock_outline,
-                        size: 16,
-                        color: Colors.white38,
-                      ),
-                    ),
-                  ],
-                ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(7, (index) {
+          final itemNumber = index + 4; // 4, 5, 6, 7, 8, 9, 10
+          return _buildLockedItem(itemNumber);
+        }),
+      ),
+    );
+  }
+
+  Widget _buildLockedItem(int rank) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+        border: Border(bottom: BorderSide(color: isDark ? Colors.white12 : Colors.grey[300]!)),
+      ),
+      child: Row(
+        children: [
+           // Rank Badge (Greyed out)
+           Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
               ),
-              // Lock overlay in center
-              if (index == 3) // Show message on middle item (item #7)
-                Positioned.fill(
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1A1A2E).withOpacity(0.95),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFFFD700), width: 1),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.lock, color: Color(0xFFFFD700), size: 16),
-                          const SizedBox(width: 8),
-                          Text(
-                            'ปลดล็อกด้วย VIP',
-                            style: GoogleFonts.kanit(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFFFFD700),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        );
-      }),
+              alignment: Alignment.center,
+              child: Text(
+                '#$rank',
+                style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.w300, color: isDark ? Colors.white38 : Colors.grey[500]),
+              ),
+           ),
+           const SizedBox(width: 16),
+           Expanded(
+             child: Row(
+               children: [
+                 Icon(Icons.lock_outline, color: isDark ? Colors.white24 : Colors.grey[400], size: 20),
+                 const SizedBox(width: 8),
+                 Text(
+                   'สำหรับ VIP เท่านั้น',
+                   style: GoogleFonts.kanit(fontSize: 14, fontWeight: FontWeight.w500, color: isDark ? Colors.white38 : Colors.grey[500]),
+                 ),
+               ],
+             ),
+           ),
+           Container(
+             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+             decoration: BoxDecoration(
+               color: const Color(0xFFFFD700),
+               borderRadius: BorderRadius.circular(20),
+             ),
+             child: Text('VIP', style: GoogleFonts.kanit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black87)),
+           )
+        ],
+      ),
     );
   }
 

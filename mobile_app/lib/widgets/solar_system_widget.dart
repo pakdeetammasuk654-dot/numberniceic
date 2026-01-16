@@ -152,6 +152,17 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
                    BoxDecoration decoration;
                    TextStyle textStyle;
                    
+                   // Pre-calculate perfection for color/shimmer
+                   final bool hasBadChars = widget.displayName?.any((dc) => dc.isBad) ?? false;
+                   bool hasBadPairs = false;
+                   if (widget.mainPairs != null) {
+                     hasBadPairs = widget.mainPairs!.any((p) => p['meaning']?['is_bad'] == true);
+                   }
+                   if (!hasBadPairs && widget.hiddenPairs != null) {
+                     hasBadPairs = widget.hiddenPairs!.any((p) => p['meaning']?['is_bad'] == true);
+                   }
+                   final bool isPerfect = !hasBadChars && !hasBadPairs;
+
                    if (widget.isDead) { // Exernally forced dead state
                       decoration = BoxDecoration(
                          color: const Color(0xFF424242),
@@ -161,10 +172,10 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
                          ]
                       );
                       textStyle = GoogleFonts.kanit(
-                            fontSize: refSize * 0.18, 
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white70,
-                            height: 1.0,
+                             fontSize: refSize * 0.18, 
+                             fontWeight: FontWeight.bold,
+                             color: Colors.white70,
+                             height: 1.0,
                       );
                    } else if (isBadSum) { 
                       // BAD SUM -> RED SUN (Dead Star)
@@ -184,10 +195,10 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
                         ],
                       );
                       textStyle = GoogleFonts.kanit(
-                            fontSize: refSize * 0.18, 
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white, // White text on Red
-                            height: 1.0,
+                             fontSize: refSize * 0.18, 
+                             fontWeight: FontWeight.bold,
+                             color: Colors.white, // White text on Red
+                             height: 1.0,
                       );
                    } else {
                       // GOLD SUN (Soft & Warm) - Reduced Glare to minimum
@@ -208,15 +219,15 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
                           );
                       textStyle = GoogleFonts.kanit(
                             fontSize: refSize * 0.14, 
-                            fontWeight: FontWeight.w900,
-                            color: const Color(0xFF8D6E63), // Brown/Earth Tone for text (Softer than Gold/Orange)
+                            fontWeight: FontWeight.bold,
+                            // If not perfect (has bad pairs/chars), name should be BLACK
+                            color: !isPerfect 
+                                ? const Color(0xFF111827) // Darkest Black (Slate 950)
+                                : const Color(0xFFA07000), // Darker Gold to match shader base
                             height: 1.0,
                       );
                    }
                    
-                   // Check for Kalakini (Bad Characters) in the name
-                   bool hasBadChars = widget.displayName?.any((dc) => dc.isBad) ?? false;
-
                    // Prepare Text Widget
                    Widget textWidget;
                    if (widget.displayName != null && widget.displayName!.isNotEmpty) {
@@ -227,9 +238,9 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
                           Color charColor;
                           if (hasBadChars) {
                              // If Kalakini exists: Red for bad, Black for good
-                             charColor = dc.isBad ? const Color(0xFFD32F2F) : Colors.black;
+                             charColor = dc.isBad ? const Color(0xFFD32F2F) : const Color(0xFF111827);
                           } else {
-                             // Otherwise follow the base style (Brown or White)
+                             // Otherwise follow the base style (Brown/Black or White)
                              charColor = textStyle.color!;
                           }
 
@@ -246,18 +257,17 @@ class _SolarSystemWidgetState extends State<SolarSystemWidget> with TickerProvid
                       textWidget = Text(centerText, style: textStyle, textAlign: TextAlign.center);
                    }
 
-                   // Apply Golden Shader to TEXT ONLY (if Gold Sun, not dead, AND NO BAD CHARS)
-                   // If there are bad chars, we want the Black/Red contrast to be visible, so no shader.
-                   if (isGoldSun && !widget.isDead && !hasBadChars) {
+                   // Apply Golden Shader to TEXT ONLY (if Gold Sun, not dead, AND isPERFECT)
+                   if (isGoldSun && !widget.isDead && isPerfect) {
                       textWidget = ShaderMask(
                         shaderCallback: (bounds) {
                           return LinearGradient(
                             colors: const [
-                              Color(0xFFAA771C), // Gold Dark
-                              Color(0xFFFDD835), // Gold Light
+                              Color(0xFFA07000), // Darker Gold
+                              Color(0xFFD4AF37), // Metallic Gold
                               Colors.white,      // Sparkle
-                              Color(0xFFFDD835), // Gold Light
-                              Color(0xFFAA771C), // Gold Dark
+                              Color(0xFFD4AF37), // Metallic Gold
+                              Color(0xFFA07000), // Darker Gold
                             ],
                             stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
                             // Sweep animation

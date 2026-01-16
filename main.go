@@ -266,6 +266,13 @@ func main() {
 						c.Locals("user_id", uID)
 						c.Locals("UserID", uID)
 						c.Locals("IsLoggedIn", true)
+
+						// Fetch detailed status from DB (VIP/Admin)
+						if member, err := memberRepo.GetByID(uID); err == nil && member != nil {
+							c.Locals("IsVIP", member.IsVIP())
+							c.Locals("IsAdmin", member.Status == 9)
+							c.Locals("AvatarURL", member.AvatarURL)
+						}
 					}
 				}
 			}
@@ -408,6 +415,35 @@ func main() {
 			getLocStr("toast_error"),
 			getLocStr("AvatarURL"),
 			pages.ChartLogic(),
+		))
+	})
+
+	// Naming Conditions Explanation
+	app.Get("/naming-conditions", func(c *fiber.Ctx) error {
+		getLocStr := func(key string) string {
+			v := c.Locals(key)
+			if v == nil || v == "<nil>" {
+				return ""
+			}
+			return fmt.Sprintf("%v", v)
+		}
+		return templ_render.Render(c, layout.Main(
+			layout.SEOProps{
+				Title:       "เงื่อนไขการแสดงผลชื่อมงคล",
+				Description: "ทำความเข้าใจสัญลักษณ์และสีที่แสดงในผลวิเคราะห์ชื่อมงคล ทั้งสีทอง วงกลมเขียว/แดง และกาลกิณี",
+				Keywords:    "Naming Conditions, ชื่อสีทอง, กาลกิณี, ความหมายสี",
+				Canonical:   "https://xn--b3cu8e7ah6h.com/naming-conditions",
+				OGType:      "website",
+			},
+			c.Locals("IsLoggedIn").(bool),
+			c.Locals("IsAdmin").(bool),
+			c.Locals("IsVIP").(bool),
+			true,
+			"naming-conditions",
+			getLocStr("toast_success"),
+			getLocStr("toast_error"),
+			getLocStr("AvatarURL"),
+			pages.NamingConditions(),
 		))
 	})
 
@@ -603,7 +639,8 @@ func main() {
 
 	// API Routes
 	api := app.Group("/api")
-	api.Get("/analyze", numerologyHandler.AnalyzeAPI)
+	api.Get("/analyze", optionalAuthMiddleware, numerologyHandler.AnalyzeAPI)
+	api.Get("/analyze/stream", optionalAuthMiddleware, numerologyHandler.AnalyzeAPIStreaming)
 	api.Get("/numerology/bad-numbers", numerologyHandler.GetBadNumbersAPI) // New Route
 	api.Get("/number-analysis", numerologyHandler.AnalyzePhoneNumberAPI)   // Updated route path
 	api.Get("/analyze-linguistically", numerologyHandler.AnalyzeLinguisticallyAPI)
@@ -709,6 +746,8 @@ func main() {
 	admin.Get("/articles/edit/:id", adminHandler.ShowEditArticlePage)
 	admin.Post("/articles/edit/:id", adminHandler.UpdateArticle)
 	admin.Delete("/articles/:id", adminHandler.DeleteArticle)
+	admin.Get("/send-wallet-notification", adminHandler.ShowSendWalletNotificationPage)
+	admin.Post("/send-wallet-notification-form", adminHandler.SendWalletNotificationFromForm)
 
 	// Image Management Routes
 	admin.Get("/images", adminHandler.ShowImagesPage)
